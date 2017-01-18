@@ -75,38 +75,58 @@ bin/hitsToTerms2.pl < pubcache > queryprot.pubcache
 
 ### Build queries for the most popular genomes (so that locus tags can be found even if the paper is secret)
 cat queryprot.pubcache queryprot.oa | sort -u | ~/Genomics/util/tabulate.pl -skip 0 -column 1 > cnt.taxnames
+
 (head -301 cnt.taxnames | tail -300 | nice bin/queryProtByOrg.pl > queryprot.pop) >& queryprot.pop.log &
 
 ### download refseq (all the complete*.genomic.gbff.gz files). Note release79 would change.
 mkdir refseq
+
 cd refseq
+
 mkdir complete
+
 cd complete
+
 (for i in `grep complete ../release79.files.installed  | cut -f 2 | grep genomic.gbff.gz | sort`; do echo Fetching $i; wget -nv ftp://ftp.ncbi.nih.gov/refseq/release/complete/$i; done) >& fetch.log
 
 ### Build queries from RefSeq
 cut -f 2 oa.out/PMC*.words | sort -u > oa.words
+
 (for i in `(cd /usr2/people/gtl/data/refseq/release79; ls complete.*.genomic.gbff.gz | sed -e 's/.genomic.gbff.gz//')`; do echo "zcat /usr2/people/gtl/data/refseq/release79/$i.genomic.gbff.gz | bin/findRefSeqQueries.pl oa.words > refseq/$i.loci"; done) > refseq/cmds
+
 nice bin/submitter.pl refseq/cmds >& refseq/cmds.log
+
 (cat refseq/*.loci | bin/convertRefSeqQueries.pl > queryprot.refseq) >& refseq.convert.log
+
 (bin/removeDupQueries.pl queryprot.oa2 queryprot.pop < queryprot.refseq > queryprot.refseqnew) >& queryprot.refseq.duplog
 
 ### Run all the queries against EuropePMC
+
 mkdir parts # staging area for temporary files
+
 cat queryprot.oa queryprot.pubcache | sort -u > queryprot.oa2
-# queryEuropePMCBatch.pl submits queries in parallel, throttled to 5/second
-# Running all of these will probably take over a week
+
+###### queryEuropePMCBatch.pl submits queries in parallel, throttled to 5/second
+###### Running all of these will probably take over a week
 bin/queryEuropePMCBatch.pl -dir parts -in queryprot.oa2 -out hits.oa2 >& hits.oa2.log
+
 bin/queryEuropePMCBatch.pl -dir parts -in queryprot.pop -out pop.oa2 >& hits.pop.log
+
 bin/queryEuropePMCBatch.pl -dir parts -in queryprot.refseqnew -out refseq.hits >& refseq.hits.log
 
 ### Combine the results, find snippets, and build the database
 bin/parseEuropePMCHits.pl -in queryprot.oa2 -hits hits.oa2 -out epmc_oa2 >& epmc_oa2.log
+
 bin/parseEuropePMCHits.pl -in queryprot.pop -hits pop.oa2 -out epmc_pop >& epmc_pop.log
+
 bin/parseEuropePMCHits.pl -in queryprot2.pop -hits pop2.oa2 -out epmc_pop2 >& epmc_pop2.log
+
 bin/parseEuropePMCHits.pl -in queryprot.refseqnew -hits tmp.hits -out epmc_refseq >& epmc_refseq.log
+
 (for i in `cat oa/files | sed -e s/.xml.gz//`; do echo "./buildSnippets.pl -in oa/$i.xml.gz -out oa.out/$i.snippets epmc_oa2.papers epmc_pop.papers epmc_pop2.papers epmc_refseq.papers >& oa.out/$i.snippets.log"; done) > oa.out/snippets.cmds
+
 bin/submitter.pl oa.out/snippets.cmds >& oa.out/snippets.cmds.log
+
 bin/buildLitDb.pl -snippets snippets -dir data -sprot sprot.char.tab epmc_oa2 epmc_pop epmc_pop2 epmc_refseq
 
 
