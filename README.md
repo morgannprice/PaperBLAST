@@ -17,6 +17,8 @@ For litSearch.cgi to work, the data/ subdirectory must include the
 sqlite3 database and the protein BLAST database. These are both built
 by bin/buildLitDb.pl
 
+Create a tmp/ directory so that litSearch.cgi can write to ../tmp/
+
 DEPENDENCIES
 
 sqlite3 is required
