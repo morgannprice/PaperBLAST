@@ -1,11 +1,11 @@
 PaperBLAST is a tool to find papers about homologs of a protein of interest.
 
-SYSTEM REQUIREMENTS
+# System Requirements
 
 These scripts should work on any Linux system, and would probably work
 on other Unix or MacOS as well. All of the code is written in perl.
 
-INSTALLATION
+# Installation
 
 Please put the blast executables (formatdb,
 blastall, and fastacmd) in the bin/blast/ subdirectory.
@@ -19,7 +19,7 @@ by bin/buildLitDb.pl
 
 Create a tmp/ directory so that litSearch.cgi can write to ../tmp/
 
-DEPENDENCIES
+# Dependencies
 
 sqlite3 is required
 
@@ -47,7 +47,7 @@ URI::Escape
 CGI
 DBI
 
-BUILDING THE DATABASE
+# Building the Database
 
 To prepare the input files for buildLitDb.pl, you need to download
 RefSeq, UniProt, and the open-access part of EuropePMC, and you need
@@ -61,39 +61,37 @@ wget -O - --no-check-certificate https://europepmc.org/ftp/oa > oa/listing
 
 perl -ane 'print $1."\n" if m/"(PMC[a-zA-Z90-9_.-]+[.]gz)"/' < oa/listing > oa/files
 
-# Find potential locus tags
+### Find potential locus tags
 (for i in `cat oa/files | sed -e s/.xml.gz//`; do echo $i; gunzip -c oa/$i.xml.gz | bin/words.pl > oa.out/$i.words; done) >& words.log
 
-# Find locus tags corresponding to those words, using MicrobesOnline
+### Find locus tags corresponding to those words, using MicrobesOnline
 (cat oa.out/PMC*.words | bin/moIds.pl > PMC.oa.links) >& moIds.log
 
-# Build queries from those locus tags
+### Build queries from those locus tags
 (bin/oaquery.pl < PMC.oa.links > queryprot.oa) >& queryprot.oa.log &
 
-# Build queries from associations found using an earlier version of PaperBLAST
+### Build queries from associations found using an earlier version of PaperBLAST
 bin/hitsToTerms2.pl < pubcache > queryprot.pubcache
 
-# Build queries for the most popular genomes (so that locus tags can be found
-# even if the paper is secret)
+### Build queries for the most popular genomes (so that locus tags can be found even if the paper is secret)
 cat queryprot.pubcache queryprot.oa | sort -u | ~/Genomics/util/tabulate.pl -skip 0 -column 1 > cnt.taxnames
 (head -301 cnt.taxnames | tail -300 | nice bin/queryProtByOrg.pl > queryprot.pop) >& queryprot.pop.log &
 
-# download refseq (all the complete*.genomic.gbff.gz files)
+### download refseq (all the complete*.genomic.gbff.gz files). Note release79 would change.
 mkdir refseq
 cd refseq
 mkdir complete
 cd complete
-# this would change with the release #
 (for i in `grep complete ../release79.files.installed  | cut -f 2 | grep genomic.gbff.gz | sort`; do echo Fetching $i; wget -nv ftp://ftp.ncbi.nih.gov/refseq/release/complete/$i; done) >& fetch.log
 
-# Build queries from RefSeq
+### Build queries from RefSeq
 cut -f 2 oa.out/PMC*.words | sort -u > oa.words
 (for i in `(cd /usr2/people/gtl/data/refseq/release79; ls complete.*.genomic.gbff.gz | sed -e 's/.genomic.gbff.gz//')`; do echo "zcat /usr2/people/gtl/data/refseq/release79/$i.genomic.gbff.gz | bin/findRefSeqQueries.pl oa.words > refseq/$i.loci"; done) > refseq/cmds
 nice bin/submitter.pl refseq/cmds >& refseq/cmds.log
 (cat refseq/*.loci | bin/convertRefSeqQueries.pl > queryprot.refseq) >& refseq.convert.log
 (bin/removeDupQueries.pl queryprot.oa2 queryprot.pop < queryprot.refseq > queryprot.refseqnew) >& queryprot.refseq.duplog
 
-
+### Run all the queries against EuropePMC
 mkdir parts # staging area for temporary files
 cat queryprot.oa queryprot.pubcache | sort -u > queryprot.oa2
 # queryEuropePMCBatch.pl submits queries in parallel, throttled to 5/second
@@ -102,6 +100,7 @@ bin/queryEuropePMCBatch.pl -dir parts -in queryprot.oa2 -out hits.oa2 >& hits.oa
 bin/queryEuropePMCBatch.pl -dir parts -in queryprot.pop -out pop.oa2 >& hits.pop.log
 bin/queryEuropePMCBatch.pl -dir parts -in queryprot.refseqnew -out refseq.hits >& refseq.hits.log
 
+### Combine the results, find snippets, and build the database
 bin/parseEuropePMCHits.pl -in queryprot.oa2 -hits hits.oa2 -out epmc_oa2 >& epmc_oa2.log
 bin/parseEuropePMCHits.pl -in queryprot.pop -hits pop.oa2 -out epmc_pop >& epmc_pop.log
 bin/parseEuropePMCHits.pl -in queryprot2.pop -hits pop2.oa2 -out epmc_pop2 >& epmc_pop2.log
