@@ -1,4 +1,6 @@
-PaperBLAST is a tool to find papers about homologs of a protein of interest.
+PaperBLAST is a tool to find papers about homologs of a protein of interest. For an example see
+
+http://fit.genomics.lbl.gov/cgi-bin/papers/cgi/litSearch.cgi?vimss=14484
 
 # System Requirements
 
@@ -17,7 +19,8 @@ For litSearch.cgi to work, the data/ subdirectory must include the
 sqlite3 database and the protein BLAST database. These are both built
 by bin/buildLitDb.pl
 
-Create a tmp/ directory so that litSearch.cgi can write to ../tmp/
+Create a tmp/ directory and set it to writable by apache (or everyone)
+so that litSearch.cgi can write to ../tmp/
 
 # Dependencies
 

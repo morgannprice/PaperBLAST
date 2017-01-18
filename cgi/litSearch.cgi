@@ -47,6 +47,8 @@ my $documentation = <<END
 
 <P>Finally, we index proteins from Swiss-Prot if their curators identified experimental evidence for the protein\'s function, as indicated by evidence code ECO:0000269. Most of these entries include links to articles in <A HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A>.
 
+<P>The code for PaperBLAST is available <A HREF="https://github.com/morgannprice/PaperBLAST">here</A>.
+
 <center><A HREF="http://morgannprice.org/">Morgan Price</A><BR>
 <A HREF="http://genomics.lbl.gov/">Arkin group</A><BR>
 Lawrence Berkeley National Laboratory<BR>
