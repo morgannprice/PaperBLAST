@@ -95,9 +95,22 @@ unlink("$prefix.faa1");
 unlink("$prefix.faa2");
 unlink("$prefix.bl2seq");
 
+# remove lines up to the first alignment ("Score")
+do {
+    shift @lines
+} until $lines[0] =~ m/Score/i || $lines[0] =~ m/No hits/i || @lines == 1;
+my @out = ();
+foreach my $line (@lines) {
+    if ($line =~ m/^Lambda\s+K\s+H$/) {
+        last;
+    } else {
+        push @out, $line;
+    }
+}
+
 print
-    h3("Protein alignment from bl2seq"),
-    pre(join("\n", @lines));
+    h3("Protein alignments from bl2seq"),
+    pre(join("\n", @out));
 
 sub fetch_fasta($$) {
     my ($def, $db) = @_;
