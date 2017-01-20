@@ -18,7 +18,7 @@ use Time::HiRes qw{gettimeofday};
 use DBI;
 
 sub fail($);
-sub simstring($$$$$$$$$);
+sub simstring($$$$$$$$$$$);
 
 my $tmpDir = "../tmp";
 my $blastall = "../bin/blast/blastall";
@@ -178,7 +178,8 @@ if (!defined $seq) {
                 print
                     li($subjectShow, "from", i($gene->{organism}),
                        &simstring(length($seq), $gene->{protein_length},
-                                  $queryStart,$queryEnd,$subjectStart,$subjectEnd,$percIdentity,$eVal,$bitscore)),
+                                  $queryStart,$queryEnd,$subjectStart,$subjectEnd,$percIdentity,$eVal,$bitscore,
+                                  $def, join(", ", @terms), $seq, $subjectId )),
                     $cgi->start_ul(),
                     "\n";
                 foreach my $paper (@$papers) {
@@ -232,7 +233,8 @@ if (!defined $seq) {
                          "from",
                          i($gene->{organism}),
                          &simstring(length($seq), $gene->{protein_length},
-                                 $queryStart,$queryEnd,$subjectStart,$subjectEnd,$percIdentity,$eVal,$bitscore),
+                                    $queryStart,$queryEnd,$subjectStart,$subjectEnd,$percIdentity,$eVal,$bitscore,
+                                    $def, $subjectId, $seq, $subjectId ),
                          $cgi->start_ul,
                          small($comment),
                          $cgi->end_ul );
@@ -271,13 +273,16 @@ sub fail($) {
 }
 
 sub simstring($$$$$$$$$) {
-    my ($qLen, $sLen, $queryStart,$queryEnd,$subjectStart,$subjectEnd,$percIdentity,$eVal,$bitscore) = @_;
+    my ($qLen, $sLen, $queryStart,$queryEnd,$subjectStart,$subjectEnd,$percIdentity,$eVal,$bitscore,
+        $def1, $def2, $seq1, $acc2) = @_;
     $percIdentity = sprintf("%.0f", $percIdentity);
     # the minimum of coverage either way
     my $cov = ($queryEnd-$queryStart+1) / ($qLen > $sLen ? $qLen : $sLen);
     my $percentCov = sprintf("%.0f", 100 * $cov);
     my $title ="$queryStart:$queryEnd/$qLen of query is similar to $subjectStart:$subjectEnd/$sLen of hit (E = $eVal, $bitscore bits)";
-    return    "(" .
-        a({-title => $title}, "$percIdentity% identity, $percentCov% coverage")
+    return "(" .
+        a({ -title => $title,
+            -href => "showAlign.cgi?def1=$def1&def2=$def2&seq1=$seq1&acc2=$acc2" },
+          "$percIdentity% identity, $percentCov% coverage")
         . ")";
 }
