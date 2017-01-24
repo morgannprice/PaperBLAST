@@ -95,6 +95,8 @@ if ($query =~ m/[A-Za-z]/) {
 }
 
 if (!defined $seq) {
+    my $exampleId = "3615187";
+    my $refseqId = "WP_012018426.1";
     print
         h2($title),
         p(b("Find papers about a protein or its homologs")),
@@ -104,7 +106,16 @@ if (!defined $seq) {
           textarea( -name  => 'query', -value => '', -cols  => 70, -rows  => 10 )),
         p(submit('Search'), reset()),
         end_form,
-        p("Or see an", a({-href => "litSearch.cgi?vimss=14484"}, "example")),
+        p("Example: an 'alcohol dehydrogenase'",
+          small("(" .
+                a({ -href => "https://www.ncbi.nlm.nih.gov/protein/$refseqId",
+                    -style => "color: black;" },
+                  "$refseqId" )
+                . ")"),
+          "is actually the regulator",
+          a({ -href => "litSearch.cgi?vimss=$exampleId",
+              -title => "Show PaperBLAST hits" },
+            i("ercA")) . "."),
         $documentation;
 } else {
     my $procId = $$;
