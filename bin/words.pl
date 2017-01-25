@@ -3,9 +3,11 @@
 # find all the locus tag like words
 use strict;
 use XML::LibXML;
+use FindBin qw($Bin);
+use lib "$Bin/../lib";
+use Miner;
 
 sub ProcessArticle($);
-sub NodeText($);
 
 {
     die "Run as a filter\n" unless @ARGV==0;
@@ -67,8 +69,7 @@ sub ProcessArticle($) {
     }
 
     # For starters, just print the text
-    my $text = NodeText($dom);
-    $text =~ s/\P{IsASCII}//g; # remove wide characters
+    my $text = &RemoveWideCharacters( &NodeText($dom) );
     my @words = split /\s+/, $text;
     my %seen = ();
     foreach my $word (@words) {
@@ -79,19 +80,4 @@ sub ProcessArticle($) {
         print "$pmcid\t$word\n" unless exists $seen{$word};
         $seen{$word} = 1;
     }
-}
-
-sub NodeText($) {
-    my ($begin_node) = @_;
-    my @work = ( $begin_node );
-    # Depth first search -- work remembers the work left to do
-    my @pieces = ();
-    while(@work > 0) {
-        my $node = shift @work;
-        if ($node->nodeType == XML_TEXT_NODE) {
-            push @pieces, $node->data;
-        }
-        unshift @work, $node->childNodes();
-    }
-    return join(" ", grep { $_ ne "" } @pieces);
 }
