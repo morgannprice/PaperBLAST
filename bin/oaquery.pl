@@ -26,6 +26,6 @@ while(<STDIN>) {
         next unless $gene->type() eq "1";
         my $aaseq = $gene->protein();
         my $organism = $gene->taxonomyName();
-        print join("\t", $organism, $locustag, "VIMSS".$moId, $aaseq)."\n";
+        print join("\t", $organism, $locustag, "VIMSS".$moId, $aaseq, $gene->description())."\n";
     }
 }
