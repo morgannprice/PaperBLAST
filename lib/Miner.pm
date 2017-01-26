@@ -12,7 +12,8 @@ our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
 @EXPORT = qw( RemoveWideCharacters TextSnippets NodeText
               XMLFileToText TextFileToText PDFFileToText
-              ElsevierFetch CrossrefToURL CrossrefFetch );
+              ElsevierFetch CrossrefToURL CrossrefFetch
+              DomToPMCId );
 
 sub RemoveWideCharacters($) {
     my ($text) = @_;
@@ -190,6 +191,34 @@ sub PDFFileToText($) {
     my $lines  = &RemoveWideCharacters( &TextFileToText($txtfile) );
     unlink($txtfile);
     return $lines;
+}
+
+# Find the pmcid, i.e. <article-id pub-id-type="pmcid">1240566</article-id>
+# or <article-id pub-id-type="pmc">2268633</article-id>
+sub DomToPMCId($) {
+    my ($dom) = @_;
+
+    # Find the pmcid, i.e. <article-id pub-id-type="pmcid">1240566</article-id>
+    # First, use an XPath query to find article-id objects with pub-id-type attributes,
+    my @ids = $dom->findnodes(qq{//article-id[attribute::pub-id-type]});
+    if (@ids == 0) {
+        @ids = $dom->findnodes(qq{/article/front/article-meta/article-id[attribute::pub-id-type]});
+    }
+    if (@ids == 0) {
+        print STDERR "Warning: no article-id elements in dom\n";
+        return undef;
+    }
+
+    # then get the pmcid value, if any
+    foreach my $id (@ids) {
+        foreach my $attr ($id->attributes) {
+            if ($attr->nodeName eq "pub-id-type"
+                && ($attr->getValue eq "pmcid" || $attr->getValue eq "pmc")) {
+                return $id->textContent;
+            }
+        }
+    }
+    return undef;
 }
 
 1;

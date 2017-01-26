@@ -151,28 +151,9 @@ sub ProcessArticle($$$);
 sub ProcessArticle($$$) {
     my ($dom,$pmc2pm,$papers) = @_;
 
-    # Find the pmcid, i.e. <article-id pub-id-type="pmcid">1240566</article-id>
     # First, use an XPath query to find article-id objects with pub-id-type attributes,
-    my @ids = $dom->findnodes(qq{//article-id[attribute::pub-id-type]});
-    if (@ids == 0) {
-        @ids = $dom->findnodes(qq{/article/front/article-meta/article-id[attribute::pub-id-type]});
-    }
-    my $pmcid = "";
-    # then get the pmcid values, if any, from each
-    foreach my $id (@ids) {
-        foreach my $attr ($id->attributes) {
-            if ($attr->nodeName eq "pub-id-type"
-                && ($attr->getValue eq "pmcid" || $attr->getValue eq "pmc")) {
-                $pmcid = $id->textContent;
-            }
-        }
-    }
-    if (@ids == 0) {
-        print STDERR "Warning: no article-id elements\n";
-    } elsif ($pmcid eq "") {
-        print STDERR "Warning: no pmcid\n";
-    }
-    return 0 if $pmcid eq "";
+    my $pmcid = &DomToPMCId($dom);
+    return 0 if !defined $pmcid;
     $pmcid = "PMC" . $pmcid;
     return 0 if !exists $papers->{$pmcid};
 
