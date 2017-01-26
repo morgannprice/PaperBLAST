@@ -195,10 +195,11 @@ if (!defined $seq) {
                     "\n";
                 foreach my $paper (@$papers) {
                     my $url = undef;
+                    my $pubmed_url = "http://www.ncbi.nlm.nih.gov/pubmed/" . $paper->{pmId};
                     if ($paper->{pmcId}) {
                         $url = "http://www.ncbi.nlm.nih.gov/pmc/articles/" . $paper->{pmcId};
                     } elsif ($paper->{pmid}) {
-                        $url = "http://www.ncbi.nlm.nih.gov/pubmed/" . $paper->{pmId};
+                        $url = $pubmed_url;
                     } elsif ($paper->{doi}) {
                         $url = "http://doi.org/" . $paper->{doi};
                     }
@@ -206,9 +207,12 @@ if (!defined $seq) {
                     $title = a({-href => $url}, $title) if defined $url;
                     my $authorShort = $paper->{authors};
                     $authorShort =~ s/ .*//;
+                    my $extra = "";
+                    $extra = small(a({-href => $pubmed_url}, "(PubMed)"))
+                        if !$paper->{pmcId} && $paper->{pmId};
                     print li("$title,",
                              a({-title => $paper->{authors}}, "$authorShort,"),
-                             $paper->{journal}, $paper->{year});
+                             $paper->{journal}, $paper->{year}, $extra);
                     my $snippets = [];
                     $snippets = $dbh->selectall_arrayref(
                         "SELECT * from Snippet WHERE geneId = ? AND pmcId = ? AND pmId = ?",
