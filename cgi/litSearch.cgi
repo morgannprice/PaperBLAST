@@ -210,9 +210,11 @@ if (!defined $seq) {
                              a({-title => $paper->{authors}}, "$authorShort,"),
                              $paper->{journal}, $paper->{year});
                     my $snippets = [];
-                    my $snippets = $dbh->selectall_arrayref("SELECT * from Snippet WHERE geneId = ? AND pmcId = ?",
-                                                            { Slice => {} }, $subjectId, $paper->{pmcId})
-                        if defined $paper->{pmcId};
+                    $snippets = $dbh->selectall_arrayref(
+                        "SELECT * from Snippet WHERE geneId = ? AND pmcId = ? AND pmId = ?",
+                        { Slice => {} },
+                        $subjectId, $paper->{pmcId}, $paper->{pmId})
+                        if $paper->{pmcId} || $paper->{pmId};
                     if (@$snippets > 0) {
                         print $cgi->start_ul(), "\n";
                         foreach my $snippet (@$snippets) {

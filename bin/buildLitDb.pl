@@ -12,6 +12,7 @@ buildLitDb.pl -dir dir [ -sprot sprot.char.tab ] prefix1 ... prefixN
 
 where each prefix is the output of parseEuropePMCHits, and the
 (optional) sprot file is the output of sprotCharacterized.pl
+(optional) snippets file is the output of buildSnippetspl or combineSnippets.pl
 
 The -blast argument specifies the path to the blastall and formatdb executables
 (or else there must be a blast/ directory of the working directory or the executable directory).
@@ -137,9 +138,9 @@ sub csv_quote($);
         open(IN, "<", $snippetsFile) || die "Cannot read $snippetsFile";
         while(my $line = <IN>) {
             chomp $line;
-            my ($pmcId, $queryTerm, $queryId, $snippet) = split /\t/, $line;
+            my ($pmcId, $pmId, $queryTerm, $queryId, $snippet) = split /\t/, $line;
             die "Not enough fields in $snippetsFile\n$line" unless defined $snippet;
-            print OUT join("\t", $queryId, $queryTerm, $pmcId, &csv_quote($snippet))."\n";
+            print OUT join("\t", $queryId, $queryTerm, $pmcId, $pmId, &csv_quote($snippet))."\n";
         }
         
     }

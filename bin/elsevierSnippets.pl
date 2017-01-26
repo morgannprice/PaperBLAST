@@ -81,7 +81,7 @@ END
         } else {
             my @snippets = &TextSnippets($text, $queryTerm, $snippetBefore, $snippetAfter, $maxChar);
             foreach my $snippet (@snippets) {
-                print join("\t", $pmId, $queryTerm, $queryId, $snippet)."\n";
+                print join("\t", $pmcId, $pmId, $queryTerm, $queryId, $snippet)."\n";
             }
         }
     }

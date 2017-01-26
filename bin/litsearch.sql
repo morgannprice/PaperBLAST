@@ -18,9 +18,10 @@ CREATE TABLE Snippet(
 	geneId TEXT,
         queryTerm TEXT,
         pmcId TEXT,
+        pmId TEXT,
         snippet TEXT
 );
-CREATE INDEX 'GeneToSnippet' ON Snippet ('geneId' ASC, 'queryTerm' ASC, 'pmcId' ASC);
+CREATE INDEX 'GeneToSnippet' ON Snippet ('geneId' ASC, 'queryTerm' ASC, 'pmcId' ASC, 'pmId' ASC);
 
 CREATE TABLE Gene(
 	geneId TEXT NOT NULL,
