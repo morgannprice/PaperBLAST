@@ -214,8 +214,10 @@ if (!defined $seq) {
                              a({-title => $paper->{authors}}, "$authorShort,"),
                              $paper->{journal}, $paper->{year}, $extra);
                     my $snippets = [];
+                    # SELECT DISTINCT because results can be repeated; i.e. some pubmed abstracts
+                    # show up multiple times
                     $snippets = $dbh->selectall_arrayref(
-                        "SELECT * from Snippet WHERE geneId = ? AND pmcId = ? AND pmId = ?",
+                        "SELECT DISTINCT * from Snippet WHERE geneId = ? AND pmcId = ? AND pmId = ?",
                         { Slice => {} },
                         $subjectId, $paper->{pmcId}, $paper->{pmId})
                         if $paper->{pmcId} || $paper->{pmId};
