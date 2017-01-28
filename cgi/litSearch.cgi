@@ -45,7 +45,7 @@ my $documentation = <<END
 <P>To link proteins in sequenced genomes to papers in EuropePMC, we query every locus tag or <A HREF="https://www.ncbi.nlm.nih.gov/refseq/">RefSeq</A> protein id that appears in the open access part of EuropePMC. We obtain the protein sequences and identifiers from <A HREF="http://www.microbesonline.org/">MicrobesOnline</A> or from RefSeq. We use queries of the form "locus_tag AND genus_name" to try to ensure that the paper is actually discussing the gene as opposed to something else whose identifier happens to match a locus tag. Note that EuropePMC indexes secret papers as well as open-access papers, so some of the links may be to papers that you cannot read (and that it would be illegal for our computers to read).</P>
 <P>We also query EuropePMC for every locus tag that appears in the 300 most-referenced genomes. So, a gene may appear in the PaperBLAST results even though all of the papers that mention it are secret.</P>
 
-<P>Finally, we index proteins from Swiss-Prot if their curators identified experimental evidence for the protein\'s function, as indicated by evidence code ECO:0000269. Most of these entries include links to articles in <A HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A>.
+<P>Finally, we index proteins from Swiss-Prot if their curators identified experimental evidence for the protein\'s function, as indicated by evidence code ECO:0000269. Most of these entries include links to articles in <A HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A><sup>&reg;</sup>. (We also use PubMed<sup>&reg;</sup> abstracts to help identify snippets of text that contain the locus tag from the secret papers.)
 
 <P>The code for PaperBLAST is available <A HREF="https://github.com/morgannprice/PaperBLAST">here</A>.
 
