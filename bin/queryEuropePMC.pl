@@ -18,8 +18,8 @@ queryEuropePMC.pl -in queryprot -out out.tab
    [ -URL $baseURL ]
 
 The input format is tab-delimited with organism name, locus_tag or
-other query term, query_id (and usually the sequence as well, but that
-is ignored).
+other query term, query_id (and usually the sequence and description
+as well, but these are ignored).
 
 For each input line, the query will be of the form "locus_tag AND
 genus", where genus is the first word of the organism name.
