@@ -31,23 +31,27 @@ sub TextSnippets($$$$$) {
 
     my @hits = grep { $subwords[$_] eq uc($queryTerm) } (0..(scalar(@words)-1));
     my @snippets = ();
+    my $end1 = undef; # last word in 1st snippet
     for (my $i = 0; $i < 2 && $i < scalar(@hits); $i++) {
         my $j = $hits[$i]; # which word matches
         my $j1 = $j - $snippetBeforeWords;
         my $j2 = $j + $snippetAfterWords;
         $j1 = 0 if $j1 < 0;
         $j2 = scalar(@words)-1 if $j2 >= scalar(@words);
-            my $snippet = join(" ", @words[$j1..$j2]);
-            while (length($snippet) > $maxCharacters) {
-                $j1++;
-                $j2--;
-                if ($j2 <= $j1) {
-                    last;
-                } else {
-                    $snippet = join(" ", @words[$j1..$j2]);
-                }
+        # Ignore overlapping snippets
+        next if defined $end1 && $j1 <= $end1;
+        $end1 = $j2 if !defined $end1;
+        my $snippet = join(" ", @words[$j1..$j2]);
+        while (length($snippet) > $maxCharacters) {
+            $j1++;
+            $j2--;
+            if ($j2 <= $j1) {
+                last;
+            } else {
+                $snippet = join(" ", @words[$j1..$j2]);
             }
-            push @snippets, $snippet if $snippet ne "";
+        }
+        push @snippets, $snippet if $snippet ne "";
     }
     return @snippets;
 }
