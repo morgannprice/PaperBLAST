@@ -1,5 +1,9 @@
 #!/usr/bin/perl -w
 use strict;
+# If snippets were identified in an earlier file, ignore snippets in later files
+# (I.e., prefer snippets from full text to snippets from just the abstract)
+# Also ignores repeating lines, which can happen in rare caess
+# (i.e. redundant abstract entries in pubmed)
 
 my $usage = "Usage: combineSnippets.pl snippetsFile ... snippetsFile > uniqueSnippets\n";
 die $usage if @ARGV == 0;
@@ -16,6 +20,7 @@ foreach my $ifile (0..(scalar(@files)-1)) {
     open(FILE, "<", $file) || die "Error reading $file";
     my $nSkip = 0;
     my $nPrint = 0;
+    my $lastline = undef;
     while(my $line = <FILE>) {
         chomp $line;
         my ($pmcId, $pmId, $queryTerm, $queryId, $snippet) = split /\t/, $line;
@@ -25,7 +30,8 @@ foreach my $ifile (0..(scalar(@files)-1)) {
             $nSkip++;
         } else {
             $known{$key} = $ifile;
-            print $line."\n";
+            print $line."\n" unless defined $lastline && $line eq $lastline;
+            $lastline = $line;
             $nPrint++;
         }
     }
