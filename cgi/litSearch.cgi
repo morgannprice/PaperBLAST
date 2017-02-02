@@ -178,9 +178,8 @@ if (!defined $seq) {
                            WHERE locusId = ? AND priority=1 },
                             {}, $locusId);
                     }
-                } elsif ($subjectId =~ m/^[A-Z]+_\d+[.]\d+$/) {
-                    # NCBI accession
-                    $URL = "http://www.ncbi.nlm.nih.gov/protein/" . $subjectId;
+                } elsif ($subjectId =~ m/^[A-Z][A-Z0-9]+$/) { # SwissProt/TREMBL
+                    $URL = "http://www.uniprot.org/uniprot/$subjectId";
                 }
                 die "Cannot build URL for subject $subjectId" if $URL eq "";
                 $subjectShow = a({ -href => $URL,
