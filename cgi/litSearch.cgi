@@ -51,7 +51,18 @@ my $documentation = <<END
 
 <H3><A NAME="secret">Secrets</A></H3>
 
-<P>PaperBLAST cannot provide snippets for most of the "secret" papers that are published in non-open-access journals. This limitation applies even if the paper is marked as "free" on the publisher\'s web site and is available in PubmedCentral or EuropePMC. Because these papers are not open access, PaperBLAST cannot download these papers en masse and scan them for snippets. If a journal that you publish in is marked as secret, please complain to the journal staff. Overall, PaperBLAST has access to the full text for about half of the papers.
+<P>PaperBLAST cannot provide snippets for most of the "secret" papers that are published in non-open-access journals. This limitation applies even if the paper is marked as "free" on the publisher\'s web site and is available in PubmedCentral or EuropePMC. Because these papers are not open access, PaperBLAST cannot download these papers en masse and scan them for snippets. If a journal that you publish in is marked as secret, please consider publishing elsewhere. Overall, PaperBLAST has access to the full text for about half of the papers.
+
+<P>As of February 2017, these are the "most secret journals", that is, the journals with over 1,000 relevant papers that PaperBLAST cannot read the full text of:
+<TABLE>
+<TR><TD><B>Journal</B></TD><TD><B>Number of secret papers</B></TD></TR>
+<TR><TD>Journal of bacteriology</TD><TD align="right">5,396</TD></TR>
+<TR><TD>PNAS</TD><TD align="right">2,774</TD></TR>
+<TR><TD>Infection and immunity</TD><TD align="right">2,318</TD></TR>
+<TR><TD>Applied and environmental microbiology</TD><TD align="right">2,164</TD></TR>
+<TR><TD>The Journal of biological chemistry</TD><TD align="right">2,054</TD></TR>
+<TR><TD>Antimicrobial agents and chemotherapy</TD><TD align="right">1,009</TD></TR>
+</TABLE>
 
 <center><A HREF="http://morgannprice.org/">Morgan Price</A><BR>
 <A HREF="http://genomics.lbl.gov/">Arkin group</A><BR>
