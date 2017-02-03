@@ -23,6 +23,10 @@ abstractSnippets.pl -in abstracts -out pubmed.snippets oa.papers ... refseq.pape
 	Output will be tab-delimited with the fields
 	pmcId, pmId, queryTerm, queryId, snippet
 
+	Also writes to output_file.access, with tab-delimited records of the form
+	pmcId, pmId, "abstract"
+	if it was able to read the abstract for the paper
+
 	Optional arguments control the size of each snippet in words or characters:
 	-before $snippetBefore
         -after $snippetAfter
@@ -74,6 +78,8 @@ sub ProcessArticle($$$);
     my $nRelevant = 0;
     open(IN, "<", $infile) || die "Cannot read $infile";
     open(OUT, ">", $outfile) || die "Error writing to $outfile";
+    my $accfile = "$outfile.access";
+    open(ACC, ">", $accfile) || die "Error writing to $accfile";
     while(my $line = <IN>) {
         chomp $line;
         my ($pmId, $abstract) = split /\t/, $line;
@@ -82,6 +88,7 @@ sub ProcessArticle($$$);
         $nRelevant++;
         my $hash = $papers{$pmId};
         my $pmcId = $pm2pmc{$pmId};
+        print ACC join("\t", $pmcId, $pmId, "abstract")."\n";
         while (my ($queryTerm, $queryIds) = each %$hash) {
             next unless $abstract =~ m/$queryTerm/;
             my @snippets = TextSnippets($abstract, $queryTerm, $snippetBefore, $snippetAfter, $maxChar);
@@ -94,6 +101,8 @@ sub ProcessArticle($$$);
             }
         }
     }
+    close(OUT) || die "Error writing to $outfile";
+    close(ACC) || die "Error writing to $accfile";
     print STDERR "Processed $nRelevant relevant abstracts\n";
 }
 

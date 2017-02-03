@@ -39,3 +39,10 @@ CREATE TABLE UniProt(
         protein_length INT NOT NULL,
         PRIMARY KEY (acc)
 );
+
+CREATE TABLE PaperAccess(
+	pmcId TEXT,
+        pmId TEXT,
+        access TEXT,
+        PRIMARY KEY (pmcId,pmId)
+);

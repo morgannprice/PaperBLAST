@@ -26,6 +26,10 @@ buildSnippets.pl -list xml_file_list -out snippets oa.papers ... refseq.papers
 	Output will be tab-delimited with the fields
 	pmcId, pmId, queryTerm, queryId, snippet
 
+	Also writes to output_file.access, with tab-delimited records of the form
+	pmcId, pmId, "full"
+	if it was able to read the paper
+
 	Optional arguments control the size of each snippet in words or characters:
 	-before $snippetBefore
         -after $snippetAfter
@@ -96,7 +100,9 @@ sub ProcessArticle($$$);
     }
     print STDERR "Read " . scalar(keys %papers) . " pmcIds to search\n";
 
+    my $accfile = "$outfile.access";
     open(OUT, ">", $outfile) || die "Error writing to $outfile";
+    open(ACC, ">", $accfile) || die "Error writing to $accfile";
     my $n = 0;
     my $nSeen = 0;
     if (defined $infile) {
@@ -146,6 +152,7 @@ sub ProcessArticle($$$);
     }
     print STDERR "Processed $n articles with $nSeen relevant pmcIds\n";
     close(OUT) || die "Error writing to $outfile";
+    close(ACC) || die "Error writing to $accfile";
 }
 
 sub ProcessArticle($$$) {
@@ -158,6 +165,7 @@ sub ProcessArticle($$$) {
     return 0 if !exists $papers->{$pmcid};
 
     my $text = &RemoveWideCharacters( &NodeText($dom) );
+    print ACC join("\t", $pmcid, $pmc2pm->{$pmcid} || "", "full")."\n";
 
     while (my ($queryTerm, $queryIds) = each %{ $papers->{$pmcid} }) {
         my @snippets = TextSnippets($text, $queryTerm, $snippetBefore, $snippetAfter, $maxChar);

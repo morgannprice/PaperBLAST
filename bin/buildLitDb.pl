@@ -12,7 +12,8 @@ buildLitDb.pl -dir dir [ -sprot sprot.char.tab ] prefix1 ... prefixN
 
 where each prefix is the output of parseEuropePMCHits, and the
 (optional) sprot file is the output of sprotCharacterized.pl
-(optional) snippets file is the output of buildSnippetspl or combineSnippets.pl
+(optional) snippets file is the output of buildSnippets.pl or combineSnippets.pl
+	[the snippets.access file must exist as well]
 
 The -blast argument specifies the path to the blastall and formatdb executables
 (or else there must be a blast/ directory of the working directory or the executable directory).
@@ -37,6 +38,7 @@ sub csv_quote($);
     die "Not a directory: $dir\n" unless -d $dir;
     die "No such file: $sprotchar" if defined $sprotchar && ! -e $sprotchar;
     die "No such file: $snippetsFile\n" if defined $snippetsFile && ! -e $snippetsFile;
+    die "No such file: $snippetsFile.access\n" if defined $snippetsFile && ! -e "$snippetsFile.access";
 
     if (!defined $blastdir) {
         if (-d "blast") {
@@ -146,13 +148,31 @@ sub csv_quote($);
     }
     close(OUT) || die "Error writing to $dir/Snippet";
 
+    open(OUT, ">", "$dir/PaperAccess") || die "Cannot write to $dir/PaperAccess";
+    if (defined $snippetsFile) {
+        open(IN, "<", "$snippetsFile.access") || die "Cannot read $snippetsFile.access";
+        my %seen = ();
+        while(my $line = <IN>) {
+            chomp $line;
+            my ($pmcId, $pmId, $access) = split /\t/, $line;
+            die "Not enough fields in $snippetsFile.access\n$line" unless defined $access;
+            my $key = $pmcId."::".$pmId;
+            die "Duplicate row in $snippetsFile.access for $pmcId $pmId"
+                if exists $seen{$key};
+            $seen{$key} = 1;
+            print OUT join("\t", $pmcId, $pmId, $access)."\n";
+        }
+        close(IN) || die "Error reading $snippetsFile.access";
+    }
+    close(OUT) || die "Error writing to $dir/PaperAccess";
+
     system("$blastdir/formatdb", "-p", "T", "-i", "$faadb", "-o", "T") == 0
         || die "formatdb failed";
 
     open(SQLITE, "|-", "sqlite3", "$sqldb") || die "Cannot run sqlite3 on $sqldb";
     autoflush SQLITE 1;
     print SQLITE ".mode tabs\n";
-    my @tables = qw{GenePaper Gene UniProt Snippet};
+    my @tables = qw{GenePaper Gene UniProt Snippet PaperAccess};
     foreach my $table (@tables) {
         print STDERR "Loading table $table\n";
         print SQLITE ".import $dir/$table $table\n";
@@ -164,6 +184,7 @@ SELECT 'nPubMedIds', COUNT(DISTINCT pmId) FROM GenePaper;
 SELECT 'nPaperLinks', COUNT(*) FROM GenePaper;
 SELECT 'nSnippets', COUNT(*) FROM Snippet;
 SELECT 'nUniProts', COUNT(*) FROM UniProt;
+SELECT 'nFullPapers', COUNT(*) FROM PaperAccess WHERE access="full";
 END
     ;
     print SQLITE $reportCmds;

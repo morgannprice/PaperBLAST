@@ -49,6 +49,10 @@ my $documentation = <<END
 
 <P>The code for PaperBLAST is available <A HREF="https://github.com/morgannprice/PaperBLAST">here</A>.
 
+<H3><A NAME="secret">Secrets</A></H3>
+
+<P>PaperBLAST cannot provide snippets for most of the "secret" papers that are published in non-open-access journals. This limitation applies even if the paper is marked as "free" on the publisher\'s web site and is available in PubmedCentral or EuropePMC. Because these papers are not open access, PaperBLAST cannot download these papers en masse and scan them for snippets. If a journal that you publish in is marked as secret, please complain to the journal staff. Overall, PaperBLAST has access to the full text for about half of the papers.
+
 <center><A HREF="http://morgannprice.org/">Morgan Price</A><BR>
 <A HREF="http://genomics.lbl.gov/">Arkin group</A><BR>
 Lawrence Berkeley National Laboratory<BR>
@@ -157,7 +161,9 @@ if (!defined $seq) {
             my ($queryId,$subjectId,$percIdentity,$alnLength,$mmCnt,$gapCnt,$queryStart,$queryEnd,$subjectStart,$subjectEnd,$eVal,$bitscore) = @$row;
             my $gene = $dbh->selectrow_hashref("SELECT * FROM Gene WHERE geneId = ?", {}, $subjectId);
             if (defined $gene) {
-                my $papers = $dbh->selectall_arrayref("SELECT DISTINCT * from GenePaper WHERE geneId = ? ORDER BY year DESC",
+                my $papers = $dbh->selectall_arrayref(qq{ SELECT DISTINCT * FROM GenePaper
+                                                          LEFT JOIN PaperAccess USING (pmcId,pmId)
+                                                          WHERE geneId = ? ORDER BY year DESC },
                                                       { Slice => {} }, $subjectId);
                 my $n = scalar(@$papers);
                 next unless $n > 0; # not sure this should be possible
@@ -178,6 +184,8 @@ if (!defined $seq) {
                            WHERE locusId = ? AND priority=1 },
                             {}, $locusId);
                     }
+                } elsif ($subjectId =~ m/^[A-Z]+_[0-9]+[.]\d+$/) { # refseq
+                    $URL = "http://www.ncbi.nlm.nih.gov/protein/$subjectId";
                 } elsif ($subjectId =~ m/^[A-Z][A-Z0-9]+$/) { # SwissProt/TREMBL
                     $URL = "http://www.uniprot.org/uniprot/$subjectId";
                 }
@@ -229,11 +237,24 @@ if (!defined $seq) {
                             print li(small(qq{"...$text..."}));
                         }
                         print $cgi->end_ul(), "\n";
-                    } elsif ($paper->{isOpen} == 0 && $paper->{journal} ne "") {
-                        print
-                            $cgi->start_ul(),
-                            li(small("$paper->{journal} is secret, sorry")),
-                            $cgi->end_ul();
+                    } else {
+                        # Explain why there is no snippet
+                        my $excuse;
+                        if ($paper->{access} eq "full") {
+                            $excuse = "This term was not found in the full text, sorry.";
+                        } elsif ($paper->{isOpen} == 1) {
+                            if ($paper->{access} eq "abstract") {
+                                $excuse = "No snippet, sorry (this paper is open access but only the abstract was searched)";
+                            } else {
+                                $excuse = "No snippet, sorry (this paper is open access but neither the abstract nor the full text was searched)";
+                            }
+                        } elsif ($paper->{journal} eq "") {
+                            $excuse = qq{This paper is <A HREF="#secret">secret</A>, sorry};
+                        } else {
+                            $excuse = qq{$paper->{journal} is <A HREF="#secret">secret</A>, sorry};
+                        }
+                        print $cgi->start_ul() . li(small($excuse)) . $cgi->end_ul()
+                            if defined $excuse;
                     }
                 }
                 print $cgi->end_ul(), "\n";
