@@ -23,6 +23,13 @@ CREATE TABLE Snippet(
 );
 CREATE INDEX 'GeneToSnippet' ON Snippet ('geneId' ASC, 'queryTerm' ASC, 'pmcId' ASC, 'pmId' ASC);
 
+CREATE TABLE PaperAccess(
+	pmcId TEXT,
+        pmId TEXT,
+        access TEXT,
+        PRIMARY KEY (pmcId,pmId)
+);
+
 CREATE TABLE Gene(
 	geneId TEXT NOT NULL,
 	organism TEXT NOT NULL,
@@ -40,9 +47,16 @@ CREATE TABLE UniProt(
         PRIMARY KEY (acc)
 );
 
-CREATE TABLE PaperAccess(
-	pmcId TEXT,
-        pmId TEXT,
-        access TEXT,
-        PRIMARY KEY (pmcId,pmId)
+CREATE TABLE EcoCyc(
+	protein_id TEXT NOT NULL,
+        protein_name TEXT NOT NULL,
+        bnumber TEXT NOT NULL,
+        desc TEXT NOT NULL,
+        PRIMARY KEY (protein_id)
+);
+
+CREATE TABLE EcoCycToPubMed(
+	protein_id TEXT NOT NULL,
+        pmId TEXT NOT NULL,
+        PRIMARY KEY (protein_id, pmId)
 );

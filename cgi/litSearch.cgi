@@ -258,7 +258,31 @@ if (!defined $seq) {
                     }
                 }
                 print $cgi->end_ul(), "\n";
-            } else {
+            } elsif ($subjectId =~ m/^gnl\|ECOLI\|(.*)$/) { # EcoCyc gene
+                my $protein_id = $1;
+                my $URL = "http://ecocyc.org/gene?orgid=ECOLI&id=$protein_id";
+                my $gene = $dbh->selectrow_hashref("SELECT * FROM EcoCyc WHERE protein_id = ?", {}, $protein_id);
+                die "Unrecognized subject $protein_id" unless defined $gene;
+                my $organism = "Escherichia coli K-12";
+                my @ids = ( $gene->{protein_name}, $gene->{bnumber} );
+                @ids = grep { $_ ne "" } @ids;
+                my $show = join(" or ", @ids) || $protein_id;
+                my $papers = $dbh->selectcol_arrayref(
+                    "SELECT pmId FROM EcoCycToPubMed WHERE protein_id = ?",
+                    {}, $protein_id);
+                my $show_papers = "";
+                my $pubmed_url = "http://www.ncbi.nlm.nih.gov/pubmed/" . join(",", @$papers);
+                my $nPapers = scalar(@$papers);
+                if ($nPapers > 0) {
+                    $show_papers = " (see " . a({-href => $pubmed_url},
+                                                $nPapers > 1 ? "papers" : "paper")
+                        . ")";
+                }
+                print li(a({-href => $URL, -title => "see details in EcoCyc"}, "$show (EcoCyc)"),
+                          " from <I>$organism</I>: ",
+                         $gene->{desc}, $show_papers);
+
+            } else { # UniProt gene
                 $gene = $dbh->selectrow_hashref("SELECT * FROM UniProt WHERE acc = ?", {}, $subjectId);
                 die "Unrecognized subject $subjectId" unless defined $gene;
                 my @comments = split /_:::_/, $gene->{comment};
