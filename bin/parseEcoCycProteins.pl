@@ -61,6 +61,9 @@ sub ProcessRecord {
         while ($line =~ m/[|]CITS: \[(\d+)\][|]/g) {
             push @pubmedIds, $1;
         }
+        if ($line =~ m/^\^CITATIONS - (\d+):/) {
+            push @pubmedIds, $1;
+        }
     }
     my %pubmedIds = map { $_ => 1 } @pubmedIds;
     print join("\t", $uniqId, $bnum, $name, $common_name,

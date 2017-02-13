@@ -266,7 +266,7 @@ if (!defined $seq) {
                 my $organism = "Escherichia coli K-12";
                 my @ids = ( $gene->{protein_name}, $gene->{bnumber} );
                 @ids = grep { $_ ne "" } @ids;
-                my $show = join(" or ", @ids) || $protein_id;
+                my $show = join(" / ", @ids) || $protein_id;
                 my $papers = $dbh->selectcol_arrayref(
                     "SELECT pmId FROM EcoCycToPubMed WHERE protein_id = ?",
                     {}, $protein_id);
@@ -278,10 +278,13 @@ if (!defined $seq) {
                                                 $nPapers > 1 ? "papers" : "paper")
                         . ")";
                 }
-                print li(a({-href => $URL, -title => "see details in EcoCyc"}, "$show (EcoCyc)"),
-                          " from <I>$organism</I>: ",
-                         $gene->{desc}, $show_papers);
-
+                print li(a({-href => $URL, -title => "see details in EcoCyc"}, $show),
+                         b($gene->{desc}),
+                          " from ", i($organism),
+                         &simstring(length($seq), $gene->{protein_length},
+                                    $queryStart,$queryEnd,$subjectStart,$subjectEnd,$percIdentity,$eVal,$bitscore,
+                                    $def, $show, $seq, $subjectId ),
+                         $show_papers);
             } else { # UniProt gene
                 $gene = $dbh->selectrow_hashref("SELECT * FROM UniProt WHERE acc = ?", {}, $subjectId);
                 die "Unrecognized subject $subjectId" unless defined $gene;
@@ -299,6 +302,7 @@ if (!defined $seq) {
                                    a({-href => "http://www.ncbi.nlm.nih.gov/pubmed/" . join(",",@pmIds) },
                                      $note));
                 }
+                $comment = $cgi->start_ul() . small($comment) . $cgi->end_ul if $comment;
                 print li(a({-href => "http://www.uniprot.org/uniprot/$gene->{acc}"}, $gene->{acc}),
                          b($gene->{desc}),
                          "from",
@@ -306,9 +310,7 @@ if (!defined $seq) {
                          &simstring(length($seq), $gene->{protein_length},
                                     $queryStart,$queryEnd,$subjectStart,$subjectEnd,$percIdentity,$eVal,$bitscore,
                                     $def, $subjectId, $seq, $subjectId ),
-                         $cgi->start_ul,
-                         small($comment),
-                         $cgi->end_ul );
+                         $comment );
             }
         }
         print $cgi->end_ul, "\n";

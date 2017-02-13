@@ -52,6 +52,7 @@ CREATE TABLE EcoCyc(
         protein_name TEXT NOT NULL,
         bnumber TEXT NOT NULL,
         desc TEXT NOT NULL,
+        protein_length INT NOT NULL,
         PRIMARY KEY (protein_id)
 );
 

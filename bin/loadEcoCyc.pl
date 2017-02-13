@@ -56,7 +56,8 @@ print STDERR "Read " . scalar(keys %seq) . " sequences from $seqfile\n";
 
 my %prot = (); # protein_id to list of bnumber, short name, description
 my %protPub = (); # protein to list of pubmed ids
-my %protSkip = (); # protein_id => 1 if it has no sequence
+my %protLen = (); # protein_id => length, or missing if it has no sequence
+my %protSkip = (); # protein_id => 1 if missing
 open(TAB, "<", $tabfile) || die "Error reading $tabfile";
 while(my $line = <TAB>) {
     chomp $line;
@@ -66,7 +67,12 @@ while(my $line = <TAB>) {
     $prot{$protein_id} = [ $bnumber, $name, $desc ];
     my @pmids = split /,/, $pmid_string;
     $protPub{$protein_id} = \@pmids;
-    $protSkip{$protein_id} = 1 unless exists $seq{ "gnl|ECOLI|" . $protein_id };
+    my $seq_id = "gnl|ECOLI|" . $protein_id;
+    if (exists $seq{$seq_id}) {
+        $protLen{$protein_id} = length($seq{$seq_id});
+    } else {
+        $protSkip{$protein_id} = 1;
+    }
 }
 close(TAB) || die "Error reading $tabfile";
 print STDERR "Read " . scalar(keys %prot) . " rows from $tabfile, skipping " . scalar(keys %protSkip) . " proteins with no sequence\n";
@@ -76,7 +82,7 @@ open(OUT, ">", "$dir/EcoCyc") || die "Cannot write to $dir/EcoCyc";
 open(PUB, ">", "$dir/EcoCycToPubMed") || die "Cannot write to $dir/EcoCycToPubMed";
 foreach my $protein_id (sort keys %prot) {
     next if exists $protSkip{$protein_id};
-    print OUT join("\t", $protein_id, @{ $prot{$protein_id} })."\n";
+    print OUT join("\t", $protein_id, @{ $prot{$protein_id} }, $protLen{$protein_id})."\n";
     my $list = $protPub{$protein_id};
     foreach my $pubmedId (@$list) {
         print PUB join("\t", $protein_id, $pubmedId)."\n";
