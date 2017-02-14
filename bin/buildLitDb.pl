@@ -78,8 +78,8 @@ sub csv_quote($);
     my $sqldb = "$dir/litsearch.db";
     unlink($sqldb);
 
-    my $faadb = "$dir/litsearch.faa";
-    open(FAA, ">", $faadb) || die "Cannot write to $faadb";
+    my $faafile = "$dir/litsearch.faa";
+    open(FAA, ">", $faafile) || die "Cannot write to $faafile";
     open(UNIPROT, ">", "$dir/UniProt") || die "Cannot write to $dir/Gene";
 
     system("sqlite3 $sqldb < $schema");
@@ -152,7 +152,7 @@ sub csv_quote($);
     }
     close(GENEPAPER) || die "Error writing to $dir/GenePaper";
     close(GENETAG) || die "Error writing to $dir/Gene";
-    close(FAA) || die "Error writing to $faadb";
+    close(FAA) || die "Error writing to $faafile";
 
    
     open(OUT, ">", "$dir/Snippet") || die "Cannot write to $dir/Snippet";
@@ -212,7 +212,10 @@ END
             || die "Appending to $dir/litsearch.faa failed: $!";
     }
 
-    system("$blastdir/formatdb", "-p", "T", "-i", "$faadb", "-o", "T") == 0
+    system("$Bin/derepSequences.pl", "-dir", $dir) == 0
+        || die "derepSequences.pl failed: $!";
+
+    system("$blastdir/formatdb", "-p", "T", "-i", "$dir/uniq.faa", "-o", "T") == 0
         || die "formatdb failed";
 
     print STDERR "Success\n";
