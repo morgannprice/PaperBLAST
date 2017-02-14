@@ -61,3 +61,11 @@ CREATE TABLE EcoCycToPubMed(
         pmId TEXT NOT NULL,
         PRIMARY KEY (protein_id, pmId)
 );
+
+# From an (arbitrarily chosen) id with a unique sequence, to the identical sequence(s).
+# Singleton sequences (with no duplicates) will not be listed.
+CREATE TABLE SeqToDuplicate(
+	sequence_id TEXT NOT NULL,
+        duplicate_id TEXT NOT NULL,
+        PRIMARY KEY (sequence_id, duplicate_id)
+);

@@ -19,12 +19,13 @@ use DBI;
 
 sub fail($);
 sub simstring($$$$$$$$$$$);
+sub SubjectToGene($);
 
 my $tmpDir = "../tmp";
 my $blastall = "../bin/blast/blastall";
 my $nCPU = 4;
 my $base = "../data";
-my $blastdb = "$base/litsearch.faa";
+my $blastdb = "$base/uniq.faa";
 my $sqldb = "$base/litsearch.db";
 die "No such executable: $blastall" unless -x $blastall;
 die "No such file: $blastdb" unless -e $blastdb;
@@ -156,88 +157,82 @@ if (!defined $seq) {
         print p("Sorry, no hits to proteins in the literature.");
     } else {
         print p("Found $nHits similar proteins in the literature:"), "\n";
+
+        my %seen_subject = ();
         print $cgi->start_ul, "\n";
         foreach my $row (@hits) {
             my ($queryId,$subjectId,$percIdentity,$alnLength,$mmCnt,$gapCnt,$queryStart,$queryEnd,$subjectStart,$subjectEnd,$eVal,$bitscore) = @$row;
-            my $gene = $dbh->selectrow_hashref("SELECT * FROM Gene WHERE geneId = ?", {}, $subjectId);
-            if (defined $gene) {
-                my $papers = $dbh->selectall_arrayref(qq{ SELECT DISTINCT * FROM GenePaper
-                                                          LEFT JOIN PaperAccess USING (pmcId,pmId)
-                                                          WHERE geneId = ? ORDER BY year DESC },
-                                                      { Slice => {} }, $subjectId);
-                my $n = scalar(@$papers);
-                next unless $n > 0; # not sure this should be possible
-                my @terms = map { $_->{queryTerm} } @$papers;
-                my %terms = map { $_ => 1 } @terms;
-                @terms = sort keys %terms;
-                my $subjectShow = join(", ", @terms);
-                my $desc = $gene->{desc};
-                my $URL = "";
+            next if exists $seen_subject{$subjectId};
+            $seen_subject{$subjectId} = 1;
 
-                if ($subjectId =~ m/^VIMSS(\d+)$/) {
-                    my $locusId = $1;
-                    $URL = "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=$locusId";
-                    if ($desc eq "") {
-                        # Fetch the gene description from MicrobesOnline if not in the litsearch db
-                        ($desc) = $mo_dbh->selectrow_array(
-                            qq{SELECT description FROM Locus JOIN Description USING (locusId,version)
-                           WHERE locusId = ? AND priority=1 },
-                            {}, $locusId);
-                    }
-                } elsif ($subjectId =~ m/^[A-Z]+_[0-9]+[.]\d+$/) { # refseq
-                    $URL = "http://www.ncbi.nlm.nih.gov/protein/$subjectId";
-                } elsif ($subjectId =~ m/^[A-Z][A-Z0-9]+$/) { # SwissProt/TREMBL
-                    $URL = "http://www.uniprot.org/uniprot/$subjectId";
+            my $dups = $dbh->selectcol_arrayref("SELECT duplicate_id FROM SeqToDuplicate WHERE sequence_id = ?",
+                                                {}, $subjectId);
+            my @subject_ids = ($subjectId);
+            push @subject_ids, @$dups;
+
+            my @genes = map { &SubjectToGene($_) } @subject_ids;
+            @genes = sort { $a->{priority} <=> $b->{priority} } @genes;
+            my @headers = ();
+            my @content = ();
+            my %paperSeen = (); # to avoid redundant papers -- pmId.pmcId.doi => term => 1
+
+            # Produce top-level and lower-level output for each gene (@headers, @content)
+            # Suppress duplicate papers if no additional terms show up
+            # (But, a paper could show up twice with two different terms, instead of the snippets
+            # being merged...)
+            foreach my $gene (@genes) {
+                die "No subjectId" unless $gene->{subjectId};
+                foreach my $field (qw{showName URL priority subjectId desc organism protein_length source}) {
+                    die "No $field for $subjectId" unless $gene->{$field};
                 }
-                die "Cannot build URL for subject $subjectId" if $URL eq "";
-                $subjectShow = a({ -href => $URL,
-                                   -title => $desc || "no description" },
-                                 $subjectShow);
-                print
-                    li($subjectShow, "from", i($gene->{organism}),
-                       &simstring(length($seq), $gene->{protein_length},
-                                  $queryStart,$queryEnd,$subjectStart,$subjectEnd,$percIdentity,$eVal,$bitscore,
-                                  $def, join(", ", @terms), $seq, $subjectId )),
-                    $cgi->start_ul(),
-                    "\n";
-                foreach my $paper (@$papers) {
-                    my $url = undef;
-                    my $pubmed_url = "http://www.ncbi.nlm.nih.gov/pubmed/" . $paper->{pmId};
-                    if ($paper->{pmcId}) {
-                        $url = "http://www.ncbi.nlm.nih.gov/pmc/articles/" . $paper->{pmcId};
-                    } elsif ($paper->{pmid}) {
-                        $url = $pubmed_url;
-                    } elsif ($paper->{doi}) {
-                        $url = "http://doi.org/" . $paper->{doi};
-                    }
-                    my $title = $paper->{title};
-                    $title = a({-href => $url}, $title) if defined $url;
-                    my $authorShort = $paper->{authors};
-                    $authorShort =~ s/ .*//;
-                    my $extra = "";
-                    $extra = small(a({-href => $pubmed_url}, "(PubMed)"))
-                        if !$paper->{pmcId} && $paper->{pmId};
-                    print li("$title,",
-                             a({-title => $paper->{authors}}, "$authorShort,"),
-                             $paper->{journal}, $paper->{year}, $extra);
+                my @pieces = ( a({ -href => $gene->{URL}, -title => $gene->{source} }, $gene->{showName}),
+                               $gene->{priority} <= 2 ? b($gene->{desc}) : $gene->{desc},
+                               "from",
+                               i($gene->{organism}) );
+                push @pieces, &simstring(length($seq), $gene->{protein_length},
+                                         $queryStart,$queryEnd,$subjectStart,$subjectEnd,
+                                         $percIdentity,$eVal,$bitscore,
+                                         $def, $gene->{showName}, $seq, $gene->{subjectId})
+                    if $gene->{subjectId} eq $genes[0]{subjectId};
+                if ($gene->{pmIds}) {
+                    my @pmIds = @{ $gene->{pmIds} };
+                    my %seen = ();
+                    @pmIds = grep { my $keep = !exists $seen{$_}; $seen{$_} = 1; $keep; } @pmIds;
+                    my $note = @pmIds > 1 ? scalar(@pmIds) . " papers" : "paper";
+                    push @pieces, "(see " .
+                        a({-href => "http://www.ncbi.nlm.nih.gov/pubmed/" . join(",",@pmIds) }, $note)
+                        . ")";
+                }
+                push @headers, join(" ", @pieces);
+                push @content, small($gene->{comment}) if $gene->{comment};
+                foreach my $paper (@{ $gene->{papers} }) {
+                    my @pieces = (); # what to say about this paper
                     my $snippets = [];
-                    # SELECT DISTINCT because results can be repeated; i.e. some pubmed abstracts
-                    # show up multiple times
                     $snippets = $dbh->selectall_arrayref(
                         "SELECT DISTINCT * from Snippet WHERE geneId = ? AND pmcId = ? AND pmId = ?",
                         { Slice => {} },
-                        $subjectId, $paper->{pmcId}, $paper->{pmId})
+                        $gene->{subjectId}, $paper->{pmcId}, $paper->{pmId})
                         if $paper->{pmcId} || $paper->{pmId};
-                    if (@$snippets > 0) {
-                        print $cgi->start_ul(), "\n";
-                        foreach my $snippet (@$snippets) {
-                            my $text = $snippet->{snippet};
-                            my $term = $snippet->{queryTerm};
+                    my $paperId = join(":::", $paper->{pmId}, $paper->{pmcId}, $paper->{doi});
+                    my $nSkip = 0; # number of duplicate snippets
+                    foreach my $snippet (@$snippets) {
+                        my $text = $snippet->{snippet};
+                        my $term = $snippet->{queryTerm};
+                        if (exists $paperSeen{$paperId}{$term}) {
+                            $nSkip++;
+                        } else {
                             $text =~ s!$term!<span style="color: red;">$term</span>!g;
-                            print li(small(qq{"...$text..."}));
+                            push @pieces, small(qq{"...$text..."});
                         }
-                        print $cgi->end_ul(), "\n";
-                    } else {
+                    }
+                    # ignore this paper if all snippets were duplicate terms
+                    next if $nSkip == scalar(@$snippets) && $nSkip > 0;
+                    foreach my $snippet (@$snippets) {
+                        my $term = $snippet->{queryTerm};
+                        $paperSeen{$paperId}{$term} = 1;
+                    }
+                    
+                    if (@$snippets == 0) {
                         # Explain why there is no snippet
                         my $excuse;
                         if ($paper->{access} eq "full") {
@@ -253,65 +248,36 @@ if (!defined $seq) {
                         } else {
                             $excuse = qq{$paper->{journal} is <A HREF="#secret">secret</A>, sorry};
                         }
-                        print $cgi->start_ul() . li(small($excuse)) . $cgi->end_ul()
-                            if defined $excuse;
+                        push @pieces, small($excuse) if $excuse;
                     }
+                    my $pieces = join("<LI>", @pieces);
+                    $pieces = "<UL><LI>" . $pieces . "</UL>" if $pieces;
+                    my $paper_url = undef;
+                    my $pubmed_url = "http://www.ncbi.nlm.nih.gov/pubmed/" . $paper->{pmId};
+                    if ($paper->{pmcId}) {
+                        $paper_url = "http://www.ncbi.nlm.nih.gov/pmc/articles/" . $paper->{pmcId};
+                    } elsif ($paper->{pmid}) {
+                        $paper_url = $pubmed_url;
+                    } elsif ($paper->{doi}) {
+                        $paper_url = "http://doi.org/" . $paper->{doi};
+                    }
+                    my $title = $paper->{title};
+                    $title = a({-href => $paper_url}, $title) if defined $paper_url;
+                    my $authorShort = $paper->{authors};
+                    $authorShort =~ s/ .*//;
+                    my $extra = "";
+                    $extra = small(a({-href => $pubmed_url}, "(PubMed)"))
+                        if !$paper->{pmcId} && $paper->{pmId};
+                    my $paper_header = join(" ", "$title,",
+                                            a({-title => $paper->{authors}}, "$authorShort,"),
+                                            $paper->{journal}, $paper->{year}, $extra);
+
+                    push @content, $paper_header . $pieces;
                 }
-                print $cgi->end_ul(), "\n";
-            } elsif ($subjectId =~ m/^gnl\|ECOLI\|(.*)$/) { # EcoCyc gene
-                my $protein_id = $1;
-                my $URL = "http://ecocyc.org/gene?orgid=ECOLI&id=$protein_id";
-                my $gene = $dbh->selectrow_hashref("SELECT * FROM EcoCyc WHERE protein_id = ?", {}, $protein_id);
-                die "Unrecognized subject $protein_id" unless defined $gene;
-                my $organism = "Escherichia coli K-12";
-                my @ids = ( $gene->{protein_name}, $gene->{bnumber} );
-                @ids = grep { $_ ne "" } @ids;
-                my $show = join(" / ", @ids) || $protein_id;
-                my $papers = $dbh->selectcol_arrayref(
-                    "SELECT pmId FROM EcoCycToPubMed WHERE protein_id = ?",
-                    {}, $protein_id);
-                my $show_papers = "";
-                my $pubmed_url = "http://www.ncbi.nlm.nih.gov/pubmed/" . join(",", @$papers);
-                my $nPapers = scalar(@$papers);
-                if ($nPapers > 0) {
-                    $show_papers = " (see " . a({-href => $pubmed_url},
-                                                $nPapers > 1 ? "papers" : "paper")
-                        . ")";
-                }
-                print li(a({-href => $URL, -title => "see details in EcoCyc"}, $show),
-                         b($gene->{desc}),
-                          " from ", i($organism),
-                         &simstring(length($seq), $gene->{protein_length},
-                                    $queryStart,$queryEnd,$subjectStart,$subjectEnd,$percIdentity,$eVal,$bitscore,
-                                    $def, $show, $seq, $subjectId ),
-                         $show_papers);
-            } else { # UniProt gene
-                $gene = $dbh->selectrow_hashref("SELECT * FROM UniProt WHERE acc = ?", {}, $subjectId);
-                die "Unrecognized subject $subjectId" unless defined $gene;
-                my @comments = split /_:::_/, $gene->{comment};
-                @comments = map { s/[;. ]+$//; $_; } @comments;
-                @comments = grep m/^FUNCTION|COFACTOR|CATALYTIC|ENZYME|DISRUPTION/, @comments;
-                my $comment = "<LI>" . join("<LI>\n", @comments);
-                my @pmIds = $comment =~ m!{ECO:0000269[|]PubMed:(\d+)}!;
-                $comment =~ s!{ECO:[A-Za-z0-9|:,.| -]+}!!g;
-                if (@pmIds > 0) {
-                    my %seen = ();
-                    @pmIds = grep { my $keep = !exists $seen{$_}; $seen{$_} = 1; $keep; } @pmIds;
-                    my $note = @pmIds > 1 ? scalar(@pmIds) . " papers" : "paper";
-                    $comment .= li("See ",
-                                   a({-href => "http://www.ncbi.nlm.nih.gov/pubmed/" . join(",",@pmIds) },
-                                     $note));
-                }
-                $comment = $cgi->start_ul() . small($comment) . $cgi->end_ul if $comment;
-                print li(a({-href => "http://www.uniprot.org/uniprot/$gene->{acc}"}, $gene->{acc}),
-                         b($gene->{desc}),
-                         "from",
-                         i($gene->{organism}),
-                         &simstring(length($seq), $gene->{protein_length},
-                                    $queryStart,$queryEnd,$subjectStart,$subjectEnd,$percIdentity,$eVal,$bitscore,
-                                    $def, $subjectId, $seq, $subjectId ),
-                         $comment );
             }
+            my $content = join("<LI>", @content);
+            $content = "<UL><LI>" . $content . "</UL>" if $content;
+            print li(join("<BR>", @headers), $content);
         }
         print $cgi->end_ul, "\n";
     }
@@ -358,4 +324,86 @@ sub simstring($$$$$$$$$) {
             -href => "showAlign.cgi?def1=$def1&def2=$def2&seq1=$seq1&acc2=$acc2" },
           "$percIdentity% identity, $percentCov% coverage")
         . ")";
+}
+
+# The entry will include:
+# showName, URL, priority (for choosing what to show first), subjectId, desc, organism, protein_length, source,
+# and other entries that depend on the type -- either papers for a list of GenePaper/PaperAccess items,
+# or pmIds (a list of pubmed identifiers)
+sub SubjectToGene($) {
+    my ($subjectId) = @_;
+    if ($subjectId =~ m/^gnl\|ECOLI\|(.*)$/) {
+        my $protein_id = $1;
+        my $gene = $dbh->selectrow_hashref("SELECT * FROM EcoCyc WHERE protein_id = ?", {}, $protein_id);
+        die "Unrecognized subject $subjectId" unless defined $gene;
+        $gene->{subjectId} = $subjectId;
+        $gene->{protein_id} = $protein_id;
+        $gene->{source} = "EcoCyc";
+        $gene->{URL} = "http://ecocyc.org/gene?orgid=ECOLI&id=$protein_id";
+        my @ids = ( $gene->{protein_name}, $gene->{bnumber} );
+        @ids = grep { $_ ne "" } @ids;
+        $gene->{showName} = join(" / ", @ids) || $protein_id;
+        $gene->{priority} = 1;
+        $gene->{organism} = "Escherichia coli K-12";
+        $gene->{pmIds} = $dbh->selectcol_arrayref(
+            "SELECT pmId FROM EcoCycToPubMed WHERE protein_id = ?",
+            {}, $protein_id);
+        return $gene;
+    } else {
+        my $gene = $dbh->selectrow_hashref("SELECT * FROM Gene WHERE geneId = ?", {}, $subjectId);
+        if (defined $gene) {
+            $gene->{subjectId} = $subjectId;
+            $gene->{priority} = 3;
+            my $papers = $dbh->selectall_arrayref(qq{ SELECT DISTINCT * FROM GenePaper
+                                                          LEFT JOIN PaperAccess USING (pmcId,pmId)
+                                                          WHERE geneId = ? ORDER BY year DESC },
+                                                  { Slice => {} }, $subjectId);
+            
+            $gene->{papers} = $papers;
+            my @terms = map { $_->{queryTerm} } @$papers;
+            my %terms = map { $_ => 1 } @terms;
+            @terms = sort keys %terms;
+            $gene->{showName} = join(", ", @terms);
+            if ($subjectId =~ m/^VIMSS(\d+)$/) {
+                my $locusId = $1;
+                $gene->{locusId} = $locusId;
+                $gene->{source} = "MicrobesOnline";
+                $gene->{URL} = "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=$locusId";
+                if ($gene->{desc} eq "") {
+                    # Fetch the gene description from MicrobesOnline if not in the litsearch db
+                    my ($desc) = $mo_dbh->selectrow_array(
+                        qq{SELECT description FROM Locus JOIN Description USING (locusId,version)
+                           WHERE locusId = ? AND priority=1 },
+                        {}, $locusId);
+                    $gene->{desc} = $desc || "no description";
+                }
+            } elsif ($subjectId =~ m/^[A-Z]+_[0-9]+[.]\d+$/) { # refseq
+                $gene->{URL} = "http://www.ncbi.nlm.nih.gov/protein/$subjectId";
+                $gene->{source} = "RefSeq";
+            } elsif ($subjectId =~ m/^[A-Z][A-Z0-9]+$/) { # SwissProt/TREMBL
+                $gene->{URL} = "http://www.uniprot.org/uniprot/$subjectId";
+                $gene->{source} = "SwissProt/TReMBL";
+            } else {
+                die "Cannot build a URL for subject $subjectId";
+            }
+            return $gene;
+        } else { # UniProt
+            my $gene = $dbh->selectrow_hashref("SELECT * FROM UniProt WHERE acc = ?", {}, $subjectId);
+            die "Unrecognized subject $subjectId" unless defined $gene;
+            $gene->{subjectId} = $subjectId;
+            $gene->{priority} = 2;
+            $gene->{source} = "SwissProt";
+            $gene->{URL} = "http://www.uniprot.org/uniprot/$subjectId";
+            $gene->{showName} = $gene->{acc};
+            my @comments = split /_:::_/, $gene->{comment};
+            @comments = map { s/[;. ]+$//; $_; } @comments;
+            @comments = grep m/^FUNCTION|COFACTOR|CATALYTIC|ENZYME|DISRUPTION/, @comments;
+            my $comment = "<LI>" . join("<LI>\n", @comments);
+            my @pmIds = $comment =~ m!{ECO:0000269[|]PubMed:(\d+)}!;
+            $comment =~ s!{ECO:[A-Za-z0-9|:,.| -]+}!!g;
+            $gene->{comment} = $comment;
+            $gene->{pmIds} = \@pmIds;
+            return $gene;
+        }
+    }
 }

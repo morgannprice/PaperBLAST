@@ -12,21 +12,25 @@ on other Unix or MacOS as well. All of the code is written in perl.
 Please put the blast executables (formatdb,
 blastall, and fastacmd) in the bin/blast/ subdirectory.
 
-The cgi/ directory contains the common gateway interface script,
+Please put the usearch executable in the bin/ subdirectory. I have only
+tested usearch version 8.0.
+
+The cgi/ subdirectory contains the common gateway interface script,
 litSearch.cgi, which is the interface for using PaperBLAST.
 
 For litSearch.cgi to work, the data/ subdirectory must include the
 sqlite3 database and the protein BLAST database. These are both built
 by bin/buildLitDb.pl
 
-Create a tmp/ directory and set it to writable by apache (or everyone)
-so that litSearch.cgi can write to ../tmp/
+Create a tmp/ subdirectory and set it to writable by apache (or
+everyone) so that litSearch.cgi can write to ../tmp/
 
 # Dependencies
 
 sqlite3 is required
 
-The MicrobesOnline code base must be in ~/Genomics. See
+To identify search terms from MicrobesOnline, the MicrobesOnline code
+base must be in ~/Genomics. (This is not required by the CGI scripts.) See
 http://www.microbesonline.org/programmers.html#source
 
 The swissknife perl library must be in the SWISS subdirectory (so that
@@ -53,8 +57,8 @@ DBI
 # Building the Database
 
 To prepare the input files for buildLitDb.pl, you need to download
-RefSeq, UniProt, and the open-access part of EuropePMC, and you need
-to run many queries with the API of EuropePMC. The steps are:
+RefSeq, UniProt, the open-access part of EuropePMC, and EcoCyc, and
+you need to run many queries with the API of EuropePMC. The steps are:
 
 mkdir oa # directory for open access part of EuropePMC
 
@@ -130,10 +134,26 @@ bin/parseEuropePMCHits.pl -in queryprot.refseqnew -hits tmp.hits -out epmc_refse
 
 bin/submitter.pl oa.out/snippets.cmds >& oa.out/snippets.cmds.log
 
-bin/buildLitDb.pl -snippets snippets -dir data -sprot sprot.char.tab epmc_oa2 epmc_pop epmc_pop2 epmc_refseq
+bin/buildLitDb.pl -snippets snippets -dir data -sprot sprot.char.tab epmc_oa2 epmc_pop epmc_pop2 epmc_refseq -ecocyc ecocyc/data
 
+# The Databases
+
+PaperBLAST uses a SQL database (currently implemented with sqlite3)
+with information about proteins and links to papers as well as a
+protein BLAST database.
+
+See bin/litsearch.sql for the sqlite3 database schema. Note that genes
+curated functions in UniProt and from EcoCyc do not link to papers in
+the same way that the other genes (from MicrobesOnline or RefSeq)
+do. UniProt.comment contains the information about papers for UniProt
+genes. EcoCycToPubMed contains the links to papers from EcoCyc. The
+other links are in GenePaper. The sqlite3 database must be in
+../data/litsearch.db (this path is relative to the CGI scripts).  The
+full set of proteins are in ../data/litsearch.faa. The proteins with
+unique sequences is in ../data/uniq.faa, which is also a BLASTp
+database.
 
 -- Morgan Price
 Arkin group
 Lawrence Berkeley National Lab
-January 2017
+February 2017
