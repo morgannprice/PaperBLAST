@@ -159,7 +159,6 @@ if (!defined $seq) {
         print p("Found $nHits similar proteins in the literature:"), "\n";
 
         my %seen_subject = ();
-        print $cgi->start_ul, "\n";
         foreach my $row (@hits) {
             my ($queryId,$subjectId,$percIdentity,$alnLength,$mmCnt,$gapCnt,$queryStart,$queryEnd,$subjectStart,$subjectEnd,$eVal,$bitscore) = @$row;
             next if exists $seen_subject{$subjectId};
@@ -204,7 +203,7 @@ if (!defined $seq) {
                         . ")";
                 }
                 push @headers, join(" ", @pieces);
-                push @content, small($gene->{comment}) if $gene->{comment};
+                push @content, $gene->{comment} if $gene->{comment};
                 foreach my $paper (@{ $gene->{papers} }) {
                     my @pieces = (); # what to say about this paper
                     my $snippets = [];
@@ -250,8 +249,10 @@ if (!defined $seq) {
                         }
                         push @pieces, small($excuse) if $excuse;
                     }
-                    my $pieces = join("<LI>", @pieces);
-                    $pieces = "<UL><LI>" . $pieces . "</UL>" if $pieces;
+                    my $pieces = join(qq{<LI style="list-style-type: none;">}, @pieces);
+                    $pieces = qq{<UL style="margin-top: 0em; margin-bottom: 0em;"><LI style="list-style-type: none;">}
+                    . $pieces . "</UL>"
+                        if $pieces;
                     my $paper_url = undef;
                     my $pubmed_url = "http://www.ncbi.nlm.nih.gov/pubmed/" . $paper->{pmId};
                     if ($paper->{pmcId}) {
@@ -276,10 +277,11 @@ if (!defined $seq) {
                 }
             }
             my $content = join("<LI>", @content);
-            $content = "<UL><LI>" . $content . "</UL>" if $content;
-            print li(join("<BR>", @headers), $content);
+            $content = qq{<UL style="margin-top: 0em; margin-bottom: 0em;"><LI>} . $content . "</UL>"
+                if $content;
+            print p({-style => "margin-top: 0em; margin-bottom: 0em;"},
+                    join("<BR>", @headers) . $content) . "\n";
         }
-        print $cgi->end_ul, "\n";
     }
 
     print qq{<script src="http://fit.genomics.lbl.gov/d3js/d3.min.js"></script>
@@ -398,7 +400,7 @@ sub SubjectToGene($) {
             my @comments = split /_:::_/, $gene->{comment};
             @comments = map { s/[;. ]+$//; $_; } @comments;
             @comments = grep m/^FUNCTION|COFACTOR|CATALYTIC|ENZYME|DISRUPTION/, @comments;
-            my $comment = "<LI>" . join("<LI>\n", @comments);
+            my $comment = join("<LI>\n", @comments);
             my @pmIds = $comment =~ m!{ECO:0000269[|]PubMed:(\d+)}!;
             $comment =~ s!{ECO:[A-Za-z0-9|:,.| -]+}!!g;
             $gene->{comment} = $comment;
