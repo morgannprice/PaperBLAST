@@ -52,12 +52,12 @@ my $documentation = <<END
 
 <H3><A NAME="secret">Secrets</A></H3>
 
-<P>PaperBLAST cannot provide snippets for most of the "secret" papers that are published in non-open-access journals. This limitation applies even if the paper is marked as "free" on the publisher\'s web site and is available in PubmedCentral or EuropePMC. Because these papers are not open access, PaperBLAST cannot download these papers en masse and scan them for snippets. If a journal that you publish in is marked as secret, please consider publishing elsewhere. Overall, PaperBLAST has access to the full text for about half of the papers.
+<P>PaperBLAST cannot provide snippets for many of the papers that are published in non-open-access journals. This limitation applies even if the paper is marked as "free" on the publisher\'s web site and is available in PubmedCentral or EuropePMC. Because these papers are not open access, PaperBLAST cannot download these papers en masse and scan them for snippets. If a journal that you publish in is marked as "secret," please consider publishing elsewhere.
 
 <center><A HREF="http://morgannprice.org/">Morgan Price</A><BR>
 <A HREF="http://genomics.lbl.gov/">Arkin group</A><BR>
-Lawrence Berkeley National Laboratory<BR>
-January 2017</center>
+Lawrence Berkeley National Laboratory
+</center>
 END
     ;
 
@@ -230,29 +230,7 @@ if (!defined $seq) {
                         my $term = $snippet->{queryTerm};
                         $paperSeen{$paperId}{$term} = 1;
                     }
-                    
-                    if (@$snippets == 0) {
-                        # Explain why there is no snippet
-                        my $excuse;
-                        if ($paper->{access} eq "full") {
-                            $excuse = "This term was not found in the full text, sorry.";
-                        } elsif ($paper->{isOpen} == 1) {
-                            if ($paper->{access} eq "abstract") {
-                                $excuse = "No snippet, sorry (this paper is open access but only the abstract was searched)";
-                            } else {
-                                $excuse = "No snippet, sorry (this paper is open access but neither the abstract nor the full text was searched)";
-                            }
-                        } elsif ($paper->{journal} eq "") {
-                            $excuse = qq{This paper is <A HREF="#secret">secret</A>, sorry};
-                        } else {
-                            $excuse = qq{$paper->{journal} is <A HREF="#secret">secret</A>, sorry};
-                        }
-                        push @pieces, small($excuse) if $excuse;
-                    }
-                    my $pieces = join(qq{<LI style="list-style-type: none;">}, @pieces);
-                    $pieces = qq{<UL style="margin-top: 0em; margin-bottom: 0em;"><LI style="list-style-type: none;">}
-                    . $pieces . "</UL>"
-                        if $pieces;
+
                     my $paper_url = undef;
                     my $pubmed_url = "http://www.ncbi.nlm.nih.gov/pubmed/" . $paper->{pmId};
                     if ($paper->{pmcId}) {
@@ -272,14 +250,44 @@ if (!defined $seq) {
                     my $paper_header = join(" ", "$title,",
                                             a({-title => $paper->{authors}}, "$authorShort,"),
                                             $paper->{journal}, $paper->{year}, $extra);
-
+                    
+                    if (@$snippets == 0) {
+                        # Explain why there is no snippet
+                        my $excuse;
+                        my $short;
+                        if ($paper->{access} eq "full") {
+                            $short = "no snippet";
+                            $excuse = "This term was not found in the full text, sorry.";
+                        } elsif ($paper->{isOpen} == 1) {
+                            if ($paper->{access} eq "abstract") {
+                                $short = "No snippet";
+                                $excuse = "This paper is open access but only the abstract was searched.";
+                            } else {
+                                $excuse = "This paper is open access but neither the abstract nor the full text was searched)";
+                            }
+                        } elsif ($paper->{journal} eq "") {
+                            $short = "secret";
+                            $excuse = "PaperBLAST does not have access to this paper, sorry";
+                        } else {
+                            $short = "secret";
+                            $excuse = "$paper->{journal} is not open access, sorry";
+                        }
+                        if ($excuse) {
+                            my $url = "#secret" if $short eq "secret";
+                            $paper_header .= " (" . a({-href => $url, -title => $excuse}, $short) . ")";
+                        }
+                    }
+                    my $pieces = join(qq{<LI style="list-style-type: none;">}, @pieces);
+                    $pieces = qq{<UL style="margin-top: 0em; margin-bottom: 0em;"><LI style="list-style-type: none;">}
+                    . $pieces . "</UL>"
+                        if $pieces;
                     push @content, $paper_header . $pieces;
                 }
             }
             my $content = join("<LI>", @content);
             $content = qq{<UL style="margin-top: 0em; margin-bottom: 0em;"><LI>} . $content . "</UL>"
                 if $content;
-            print p({-style => "margin-top: 0em; margin-bottom: 0em;"},
+            print p({-style => "margin-top: 1em; margin-bottom: 0em;"},
                     join("<BR>", @headers) . $content) . "\n";
         }
     }
@@ -402,7 +410,7 @@ sub SubjectToGene($) {
             @comments = grep m/^FUNCTION|COFACTOR|CATALYTIC|ENZYME|DISRUPTION/, @comments;
             my $comment = join("<LI>\n", @comments);
             my @pmIds = $comment =~ m!{ECO:0000269[|]PubMed:(\d+)}!;
-            $comment =~ s!{ECO:[A-Za-z0-9|:,.| -]+}!!g;
+            $comment =~ s!{ECO:[A-Za-z0-9_:,.| -]+}!!g;
             $gene->{comment} = $comment;
             $gene->{pmIds} = \@pmIds;
             return $gene;
