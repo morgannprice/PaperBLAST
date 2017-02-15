@@ -7,7 +7,7 @@ use Miner;
 
 my $snippetBefore = 20;
 my $snippetAfter = 35;
-my $maxChar = 150;
+my $maxChar = 160;
 
 my $usage = <<END
 crossrefSnippets.pl -tokenfile token -papers epmc_pop.papers -dir cache -out snippets
