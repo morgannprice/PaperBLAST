@@ -220,8 +220,8 @@ if (!defined $seq) {
                         if (exists $paperSeen{$paperId}{$term}) {
                             $nSkip++;
                         } else {
-                            $text =~ s!$term!<span style="color: red;">$term</span>!g;
-                            push @pieces, small(qq{"...$text..."});
+                            $text =~ s!($term)!<B><span style="color: darkred;">$1</span></B>!gi;
+                            push @pieces, "...$text...";
                         }
                     }
                     # ignore this paper if all snippets were duplicate terms
@@ -245,11 +245,11 @@ if (!defined $seq) {
                     my $authorShort = $paper->{authors};
                     $authorShort =~ s/ .*//;
                     my $extra = "";
-                    $extra = small(a({-href => $pubmed_url}, "(PubMed)"))
+                    $extra = a({-href => $pubmed_url}, "(PubMed)")
                         if !$paper->{pmcId} && $paper->{pmId};
-                    my $paper_header = join(" ", "$title,",
-                                            a({-title => $paper->{authors}}, "$authorShort,"),
-                                            $paper->{journal}, $paper->{year}, $extra);
+                    my $paper_header = "$title, " .
+                        small( a({-title => $paper->{authors}}, "$authorShort,"),
+                               $paper->{journal}, $paper->{year}, $extra);
                     
                     if (@$snippets == 0) {
                         # Explain why there is no snippet
@@ -260,10 +260,11 @@ if (!defined $seq) {
                             $excuse = "This term was not found in the full text, sorry.";
                         } elsif ($paper->{isOpen} == 1) {
                             if ($paper->{access} eq "abstract") {
-                                $short = "No snippet";
-                                $excuse = "This paper is open access but only the abstract was searched.";
+                                $short = "no snippet";
+                                $excuse = "This paper is open access but PaperBLAST only searched the the abstract.";
                             } else {
-                                $excuse = "This paper is open access but neither the abstract nor the full text was searched)";
+                                $short = "no snippet";
+                                $excuse = "This paper is open access but PaperBLAST did not search either the full text or the abstract.";
                             }
                         } elsif ($paper->{journal} eq "") {
                             $short = "secret";
@@ -274,7 +275,9 @@ if (!defined $seq) {
                         }
                         if ($excuse) {
                             my $url = "#secret" if $short eq "secret";
-                            $paper_header .= " (" . a({-href => $url, -title => $excuse}, $short) . ")";
+                            my $href = $url ? a({-href => $url, -title => $excuse}, $short)
+                                : a({-title => $excuse}, $short);
+                            $paper_header .= " " . small("(" . $href . ")"); 
                         }
                     }
                     my $pieces = join(qq{<LI style="list-style-type: none;">}, @pieces);
