@@ -12,7 +12,7 @@ buildLitDb.pl -dir dir [ -sprot sprot.char.tab ] prefix1 ... prefixN
 
 where each prefix is the output of parseEuropePMCHits, and the
 (optional) sprot file is the output of sprotCharacterized.pl
-(optional) snippets file is the output of buildSnippets.pl or combineSnippets.pl
+snippets file is the output of buildSnippets.pl or combineSnippets.pl
 	[the snippets.access file must exist as well]
 
 The -blast argument specifies the path to the blastall and formatdb executables
@@ -39,11 +39,12 @@ sub csv_quote($);
                           'snippets=s' => \$snippetsFile,
                           'ecocyc=s' => \$ecocycdir )
         && defined $dir
+        && defined $snippetsFile
         && @ARGV > 0;
     die "Not a directory: $dir\n" unless -d $dir;
     die "No such file: $sprotchar" if defined $sprotchar && ! -e $sprotchar;
-    die "No such file: $snippetsFile\n" if defined $snippetsFile && ! -e $snippetsFile;
-    die "No such file: $snippetsFile.access\n" if defined $snippetsFile && ! -e "$snippetsFile.access";
+    die "No such file: $snippetsFile\n" if ! -e $snippetsFile;
+    die "No such file: $snippetsFile.access\n" if ! -e "$snippetsFile.access";
 
     if (defined $ecocycdir) {
         die "No such directory: $ecocycdir\n" unless -d $ecocycdir;
@@ -79,7 +80,6 @@ sub csv_quote($);
     unlink($sqldb);
 
     my $faafile = "$dir/litsearch.faa";
-    open(FAA, ">", $faafile) || die "Cannot write to $faafile";
     open(UNIPROT, ">", "$dir/UniProt") || die "Cannot write to $dir/Gene";
 
     system("sqlite3 $sqldb < $schema");
@@ -91,23 +91,24 @@ sub csv_quote($);
             || die "Error running loadEcoCyc.pl";
     }
 
+    # These are to prevent duplicates
+    my %locusLen = (); # geneId => length of protein sequence
+    my %aaseq = (); # geneId => sequence if already saw a sequence
+    my %isUniprot = (); # geneId => 1 if from uniprot
     if (defined $sprotchar) {
         open(SPROTIN, "<", $sprotchar) || die "Cannot read $sprotchar";
         while (my $line = <SPROTIN>) {
             chomp $line;
             my ($acc, $desc, $organism, $seq, $cc) = split /\t/, $line;
             die "Invalid sprot input:\n$line\n" unless defined $cc && $cc ne "";
-            print FAA ">$acc\n$seq\n";
+            $aaseq{$acc} = $seq;
+            $isUniprot{$acc} = 1;
             print UNIPROT join("\t", $acc, $desc, $organism, &csv_quote($cc), length($seq))."\n";
         }
         close(SPROTIN) || die "Error reading $sprotchar";
     }
     close(UNIPROT) || die "Error writing $dir/UniProt";
 
-    # These are to prevent duplicates
-    my %locusLen = (); # geneId => length of protein sequence
-    my %aaseq = (); # geneId => 1 if already put out the sequence
-    open(GENEPAPER, ">", "$dir/GenePaper") || die "Cannot write to $dir/GenePaper";
     open(GENETAG, ">", "$dir/Gene") || die "Cannot write to $dir/Gene";
     foreach my $prefix (@prefixes) {
         open (QUERYIN, "<", "$prefix.queries") || die "Cannot read $prefix.queries";
@@ -134,11 +135,59 @@ sub csv_quote($);
             die "Invalid faa file $prefix.faa" unless defined $seq;
             chomp $seq;
             die "Incorrect length for $geneId in $prefix.faa" unless length($seq) == $locusLen{$geneId};
-            print FAA ">$geneId\n$seq\n" unless exists $aaseq{$geneId};
-            $aaseq{$geneId} = 1;
+            if (exists $aaseq{$geneId}) {
+                print STDERR "Warning: non-matching sequences for $geneId in $prefix.faa\n"
+                    if $aaseq{$geneId} ne $seq;
+            } else {
+                $aaseq{$geneId} = $seq;
+            }
         }
         close(FAAIN) || die "Error reading $prefix.faa";
 
+    }
+    close(GENETAG) || die "Error writing to $dir/Gene";
+
+    open(OUT, ">", "$dir/Snippet") || die "Cannot write to $dir/Snippet";
+    my %hasSnippet = (); # pmcId::pmId => queryId => 1
+    my $nSuppressedByCase = 0;
+    open(IN, "<", $snippetsFile) || die "Cannot read $snippetsFile";
+    while(my $line = <IN>) {
+        chomp $line;
+        my ($pmcId, $pmId, $queryTerm, $queryId, $snippet) = split /\t/, $line;
+        die "Not enough fields in $snippetsFile\n$line" unless defined $snippet;
+        if ($queryTerm =~ m/^[a-zA-Z]\d+$/ && $snippet !~ m/$queryTerm/) {
+            $nSuppressedByCase++;
+        } else {
+            print OUT join("\t", $queryId, $queryTerm, $pmcId, $pmId, &csv_quote($snippet))."\n";
+            $hasSnippet{ join("::", $pmcId, $pmId) }{ $queryId } = 1;
+        }
+    }
+    print STDERR "Wrote $dir/Snippet, suppressed $nSuppressedByCase snippets with risky locus tags and the wrong case\n";
+    close(OUT) || die "Error writing to $dir/Snippet";
+
+    my %full = (); # paperId (pmcId::pmId) => full text
+    open(OUT, ">", "$dir/PaperAccess") || die "Cannot write to $dir/PaperAccess";
+    open(IN, "<", "$snippetsFile.access") || die "Cannot read $snippetsFile.access";
+    my %seen = ();
+    while(my $line = <IN>) {
+        chomp $line;
+        my ($pmcId, $pmId, $access) = split /\t/, $line;
+        die "Not enough fields in $snippetsFile.access\n$line" unless defined $access;
+        my $key = $pmcId."::".$pmId;
+        die "Duplicate row in $snippetsFile.access for $pmcId $pmId"
+            if exists $seen{$key};
+        $seen{$key} = 1;
+        print OUT join("\t", $pmcId, $pmId, $access)."\n";
+        $full{$key} = 1 if $access eq "full";
+    }
+    close(IN) || die "Error reading $snippetsFile.access";
+    close(OUT) || die "Error writing to $dir/PaperAccess";
+
+    # store which gene/paper combinations were left in
+    my %geneHasPaper = ();
+    my $nIgnoreNoSnippet = 0;
+    open(GENEPAPER, ">", "$dir/GenePaper") || die "Cannot write to $dir/GenePaper";
+    foreach my $prefix (@prefixes) {
         open(PAPERIN, "<", "$prefix.papers") || die "Cannot read $prefix.papers";
         while(my $line = <PAPERIN>) {
             chomp $line;
@@ -146,45 +195,30 @@ sub csv_quote($);
             die "Invalid papers line in $prefix.papers:\n$line\n" unless defined $isOpen;
             die "Unexpected gene $queryId in $prefix.papers" unless exists $aaseq{$queryId};
             # Do not bother to remove duplicates
-            print GENEPAPER join("\t", $queryId, $queryTerm, $pmcId, $pmId, $doi, &csv_quote($title), $authors, $journal, $year, $isOpen)."\n";
+            my $key = join("::", $pmcId, $pmId);
+            if (exists $full{$key} && !exists $hasSnippet{$key}{$queryId}) {
+                $nIgnoreNoSnippet++;
+            } else {
+                $geneHasPaper{$queryId} = 1;
+                print GENEPAPER join("\t", $queryId, $queryTerm, $pmcId, $pmId, $doi, &csv_quote($title), $authors, $journal, $year, $isOpen)."\n";
+            }
         }
         close(PAPERIN) || die "Error reading $prefix.papers";
     }
     close(GENEPAPER) || die "Error writing to $dir/GenePaper";
-    close(GENETAG) || die "Error writing to $dir/Gene";
+    print STDERR "Read papers: ignored $nIgnoreNoSnippet cases with full text and no snippet. " . scalar(keys %geneHasPaper) . " cases left\n";
+
+    my $nSkipGene = 0;
+    open(FAA, ">", $faafile) || die "Cannot write to $faafile";
+    while (my ($geneId, $seq) = each %aaseq) {
+        if (exists $geneHasPaper{$geneId} || $isUniprot{$geneId}) {
+            print FAA ">$geneId\n$seq\n";
+        } else {
+            $nSkipGene++;
+        }
+    }
     close(FAA) || die "Error writing to $faafile";
-
-   
-    open(OUT, ">", "$dir/Snippet") || die "Cannot write to $dir/Snippet";
-    if (defined $snippetsFile) {
-        open(IN, "<", $snippetsFile) || die "Cannot read $snippetsFile";
-        while(my $line = <IN>) {
-            chomp $line;
-            my ($pmcId, $pmId, $queryTerm, $queryId, $snippet) = split /\t/, $line;
-            die "Not enough fields in $snippetsFile\n$line" unless defined $snippet;
-            print OUT join("\t", $queryId, $queryTerm, $pmcId, $pmId, &csv_quote($snippet))."\n";
-        }
-        
-    }
-    close(OUT) || die "Error writing to $dir/Snippet";
-
-    open(OUT, ">", "$dir/PaperAccess") || die "Cannot write to $dir/PaperAccess";
-    if (defined $snippetsFile) {
-        open(IN, "<", "$snippetsFile.access") || die "Cannot read $snippetsFile.access";
-        my %seen = ();
-        while(my $line = <IN>) {
-            chomp $line;
-            my ($pmcId, $pmId, $access) = split /\t/, $line;
-            die "Not enough fields in $snippetsFile.access\n$line" unless defined $access;
-            my $key = $pmcId."::".$pmId;
-            die "Duplicate row in $snippetsFile.access for $pmcId $pmId"
-                if exists $seen{$key};
-            $seen{$key} = 1;
-            print OUT join("\t", $pmcId, $pmId, $access)."\n";
-        }
-        close(IN) || die "Error reading $snippetsFile.access";
-    }
-    close(OUT) || die "Error writing to $dir/PaperAccess";
+    print STDERR "Wrote $faafile, with $nSkipGene genes skipped because no remaining links to papers\n";
 
     open(SQLITE, "|-", "sqlite3", "$sqldb") || die "Cannot run sqlite3 on $sqldb";
     autoflush SQLITE 1;
