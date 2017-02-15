@@ -159,6 +159,8 @@ if (!defined $seq) {
         print p("Found $nHits similar proteins in the literature:"), "\n";
 
         my %seen_subject = ();
+        my $li_with_style = qq{<LI style="list-style-type: none;" margin-left: 6em; >};
+        my $ul_with_style = qq{<UL style="margin-top: 0em; margin-bottom: 0em;">};
         foreach my $row (@hits) {
             my ($queryId,$subjectId,$percIdentity,$alnLength,$mmCnt,$gapCnt,$queryStart,$queryEnd,$subjectStart,$subjectEnd,$eVal,$bitscore) = @$row;
             next if exists $seen_subject{$subjectId};
@@ -221,7 +223,7 @@ if (!defined $seq) {
                         if (exists $paperSeen{$paperId}{$term}) {
                             $nSkip++;
                         } else {
-                            $text =~ s!($term)!<B><span style="color: darkred;">$1</span></B>!gi;
+                            $text =~ s!($term)!<B><span style="color: red;">$1</span></B>!gi;
                             push @pieces, "...$text...";
                         }
                     }
@@ -248,7 +250,7 @@ if (!defined $seq) {
                     my $extra = "";
                     $extra = a({-href => $pubmed_url}, "(PubMed)")
                         if !$paper->{pmcId} && $paper->{pmId};
-                    my $paper_header = "$title, " .
+                    my $paper_header = $title . br() .
                         small( a({-title => $paper->{authors}}, "$authorShort,"),
                                $paper->{journal}, $paper->{year}, $extra);
                     
@@ -279,21 +281,19 @@ if (!defined $seq) {
                             $excuse = "$paper->{journal} is not open access, sorry";
                         }
                         if ($excuse) {
-                            my $url = "#secret" if $short eq "secret";
-                            my $href = $url ? a({-href => $url, -title => $excuse}, $short)
-                                : a({-title => $excuse}, $short);
+
+                            my $href = a({-title => $excuse}, $short);
                             $paper_header .= " " . small("(" . $href . ")"); 
                         }
                     }
-                    my $pieces = join(qq{<LI style="list-style-type: none;">}, @pieces);
-                    $pieces = qq{<UL style="margin-top: 0em; margin-bottom: 0em;"><LI style="list-style-type: none;">}
-                    . $pieces . "</UL>"
+                    my $pieces = join($li_with_style, @pieces);
+                    $pieces = join("", $ul_with_style, $li_with_style, $pieces, "</UL>")
                         if $pieces;
                     push @content, $paper_header . $pieces;
                 }
             }
-            my $content = join("<LI>", @content);
-            $content = qq{<UL style="margin-top: 0em; margin-bottom: 0em;"><LI>} . $content . "</UL>"
+            my $content = join($li_with_style, @content);
+            $content = join("", $ul_with_style, $li_with_style, $content, "</UL>")
                 if $content;
             print p({-style => "margin-top: 1em; margin-bottom: 0em;"},
                     join("<BR>", @headers) . $content) . "\n";
