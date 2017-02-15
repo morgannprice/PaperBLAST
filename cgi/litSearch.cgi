@@ -174,6 +174,7 @@ if (!defined $seq) {
             my @headers = ();
             my @content = ();
             my %paperSeen = (); # to avoid redundant papers -- pmId.pmcId.doi => term => 1
+            my %paperSeenNoSnippet = (); # to avoid redundant papers -- pmId.pmcId.doi => 1
 
             # Produce top-level and lower-level output for each gene (@headers, @content)
             # Suppress duplicate papers if no additional terms show up
@@ -252,6 +253,10 @@ if (!defined $seq) {
                                $paper->{journal}, $paper->{year}, $extra);
                     
                     if (@$snippets == 0) {
+                        # Skip if printed already for this gene (with no snippet)
+                        next if exists $paperSeenNoSnippet{$paperId};
+                        $paperSeenNoSnippet{$paperId} = 1;
+
                         # Explain why there is no snippet
                         my $excuse;
                         my $short;
