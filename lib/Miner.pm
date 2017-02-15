@@ -32,26 +32,35 @@ sub TextSnippets($$$$$) {
     my @hits = grep { $subwords[$_] eq uc($queryTerm) } (0..(scalar(@words)-1));
     my @snippets = ();
     my $end1 = undef; # last word in 1st snippet
-    for (my $i = 0; $i < 2 && $i < scalar(@hits); $i++) {
+    for (my $i = 0; $i < scalar(@hits) && scalar(@snippets) < 2; $i++) {
         my $j = $hits[$i]; # which word matches
         my $j1 = $j - $snippetBeforeWords;
         my $j2 = $j + $snippetAfterWords;
         $j1 = 0 if $j1 < 0;
         $j2 = scalar(@words)-1 if $j2 >= scalar(@words);
-        # Ignore overlapping snippets
-        next if defined $end1 && $j1 <= $end1;
-        $end1 = $j2 if !defined $end1;
         my $snippet = join(" ", @words[$j1..$j2]);
+        my $nWordsTrim = 0;
+        my $fBefore = $snippetBeforeWords/($snippetBeforeWords + $snippetAfterWords);
+        # final boundaries after trimming
+        my ($j1f, $j2f) = ($j1, $j2);
         while (length($snippet) > $maxCharacters) {
-            $j1++;
-            $j2--;
-            if ($j2 <= $j1) {
+            $nWordsTrim++;
+            my $trimLeft = int(0.5 + $nWordsTrim * $fBefore);
+            my $trimRight = $nWordsTrim - $trimLeft;
+            $j1f = $j1 + $trimLeft;
+            $j2f = $j2 - $trimRight;
+            if ($j2f < $j || $j1f > $j || $j2f <= $j1f) {
                 last;
             } else {
-                $snippet = join(" ", @words[$j1..$j2]);
+                $snippet = join(" ", @words[$j1f..$j2f]);
             }
         }
-        push @snippets, $snippet if $snippet ne "";
+        # Ignore overlapping snippets
+        next if defined $end1 && $j1f <= $end1;
+        if ($snippet ne "") {
+            $end1 = $j2f if !defined $end1;
+            push @snippets, $snippet;
+        }
     }
     return @snippets;
 }
@@ -187,7 +196,8 @@ sub TextFileToText($) {
 sub PDFFileToText($) {
     my ($file) = @_;
     my $txtfile = "$file.$$.txt";
-    unless (system("pdftotext $file $txtfile >& /dev/null") == 0) {
+    # use ASCII7 to convert ligatures to standard text
+    unless (system("pdftotext -enc ASCII7 $file $txtfile >& /dev/null") == 0) {
         print STDERR "Error: cannot run pdftotext on $file: $!";
         unlink($txtfile);
         return "";
