@@ -47,7 +47,7 @@ my $seq2 = $cgi->param('seq2');
 if (!defined $seq2) {
     my $acc2 = $cgi->param('acc2') || die "Either seq2 or acc2 must be specified";
     # Find it in the database using fastacmd
-    my $db = "../data/litsearch.faa";
+    my $db = "../data/uniq.faa";
     die "No such file: $db" unless -e $db;
     $seq2 = fetch_fasta($acc2, $db) || die "Cannot fetch sequence for $def2";
 }
