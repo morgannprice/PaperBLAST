@@ -41,18 +41,17 @@ my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", 
 my $documentation = <<END
 <H3><A NAME="works">How It Works</A></H3>
 
-<P>PaperBLAST relies on a database of protein sequences that are linked to scientific publications. These links come from automated text searches against <A HREF="http://europepmc.org/">EuropePMC</A> and from the manually curated information in <A HREF="http://www.uniprot.org/">Swiss-Prot</A> (the manually reviewed part of UniProt). Given this database and a query sequence, we use <A HREF="https://en.wikipedia.org/wiki/BLAST">protein-protein BLAST</A> to find similar sequences with E &lt; 0.001. As of January 2017, PaperBLAST contains over 200,000 proteins and links to over 50,000 papers.
+<P>PaperBLAST uses a database of protein sequences that are linked to scientific publications. These links come from automated text searches against <A HREF="http://europepmc.org/">EuropePMC</A> and from the manually curated information in <A HREF="http://www.uniprot.org/">Swiss-Prot</A> (the manually reviewed part of UniProt) and in <A HREF="http://ecocyc.org">EcoCyc</A>. Given this database and a query sequence, we use <A HREF="https://en.wikipedia.org/wiki/BLAST">protein-protein BLAST</A> to find similar sequences with E &lt; 0.001. As of February 2017, PaperBLAST links over 300,000 proteins to over 60,000 papers.
 
-<P>To link proteins in sequenced genomes to papers in EuropePMC, we query every locus tag or <A HREF="https://www.ncbi.nlm.nih.gov/refseq/">RefSeq</A> protein id that appears in the open access part of EuropePMC. We obtain the protein sequences and identifiers from <A HREF="http://www.microbesonline.org/">MicrobesOnline</A> or from RefSeq. We use queries of the form "locus_tag AND genus_name" to try to ensure that the paper is actually discussing the gene as opposed to something else whose identifier happens to match a locus tag. Note that EuropePMC indexes secret papers as well as open-access papers, so some of the links may be to papers that you cannot read (and that it would be illegal for our computers to read).</P>
-<P>We also query EuropePMC for every locus tag that appears in the 300 most-referenced genomes. So, a gene may appear in the PaperBLAST results even though all of the papers that mention it are secret.</P>
-
-<P>Finally, we index proteins from Swiss-Prot if their curators identified experimental evidence for the protein\'s function, as indicated by evidence code ECO:0000269. Most of these entries include links to articles in <A HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A><sup>&reg;</sup>. (We also use PubMed<sup>&reg;</sup> abstracts to help identify snippets of text that contain the locus tag from the secret papers.)
+<P>To link proteins in sequenced genomes to papers in EuropePMC, we query every locus tag or <A HREF="https://www.ncbi.nlm.nih.gov/refseq/">RefSeq</A> protein id that appears in the open access part of EuropePMC (including the author manuscripts part). We obtain the protein sequences and identifiers from <A HREF="http://www.microbesonline.org/">MicrobesOnline</A> or from RefSeq. We use queries of the form "locus_tag AND genus_name" to try to ensure that the paper is actually discussing the gene as opposed to something else whose identifier happens to match a locus tag. Note that EuropePMC indexes most recent biomedical papers, not just the open-access ones, so some of the links may be to papers that you cannot read (or that our computers cannot read).
+We also query EuropePMC for every locus tag that appears in the 300 most-referenced genomes. This way, a gene may appear in the PaperBLAST results even though none of the papers that mention it are open access.
+Finally, we index proteins from Swiss-Prot if their curators identified experimental evidence for the protein\'s function, as indicated by evidence code ECO:0000269, as well as every protein in EcoCyc. Most of these entries include links to articles in <A HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A><sup>&reg;</sup>. (We also use PubMed<sup>&reg;</sup> abstracts to select snippets of text from papers that we do not have full-text access to if the abstract mentions a locus tag, RefSeq id, or UniProt id.)</P>
 
 <P>The code for PaperBLAST is available <A HREF="https://github.com/morgannprice/PaperBLAST">here</A>.
 
 <H3><A NAME="secret">Secrets</A></H3>
 
-<P>PaperBLAST cannot provide snippets for many of the papers that are published in non-open-access journals. This limitation applies even if the paper is marked as "free" on the publisher\'s web site and is available in PubmedCentral or EuropePMC. Because these papers are not open access, PaperBLAST cannot download these papers en masse and scan them for snippets. If a journal that you publish in is marked as "secret," please consider publishing elsewhere.
+<P>PaperBLAST cannot provide snippets for many of the papers that are published in non-open-access journals. This limitation applies even if the paper is marked as "free" on the publisher\'s web site and is available in PubmedCentral or EuropePMC. If a journal that you publish in is marked as "secret," please consider publishing elsewhere.
 
 <center><A HREF="http://morgannprice.org/">Morgan Price</A><BR>
 <A HREF="http://genomics.lbl.gov/">Arkin group</A><BR>
@@ -111,17 +110,18 @@ if (!defined $seq) {
           textarea( -name  => 'query', -value => '', -cols  => 70, -rows  => 10 )),
         p(submit('Search'), reset()),
         end_form,
-        p("Example: an 'alcohol dehydrogenase'",
-          small("(" .
-                a({ -href => "https://www.ncbi.nlm.nih.gov/protein/$refseqId",
-                    -style => "color: black;" },
-                  "$refseqId" )
-                . ")"),
-          "is actually the regulator",
-          a({ -href => "litSearch.cgi?vimss=$exampleId",
-              -title => "Show PaperBLAST hits" },
-            i("ercA")) . "."),
-        $documentation;
+        p(a({ -href => "litSearch.cgi?vimss=$exampleId" }, "Example").":",
+            "an 'alcohol dehydrogenase'",
+            small("(" .
+                  a({ -href => "https://www.ncbi.nlm.nih.gov/protein/$refseqId",
+                      -style => "color: black;" },
+                    "$refseqId" )
+                  . ")"),
+            "is actually the regulator",
+            a({ -href => "litSearch.cgi?vimss=$exampleId",
+                -title => "Show PaperBLAST hits" },
+              i("ercA")) . "."),
+          $documentation;
 } else {
     my $procId = $$;
     my $timestamp = int (gettimeofday() * 1000);
