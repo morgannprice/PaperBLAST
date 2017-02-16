@@ -41,11 +41,11 @@ my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", 
 my $documentation = <<END
 <H3><A NAME="works">How It Works</A></H3>
 
-<P>PaperBLAST uses a database of protein sequences that are linked to scientific publications. These links come from automated text searches against <A HREF="http://europepmc.org/">EuropePMC</A> and from the manually curated information in <A HREF="http://www.uniprot.org/">Swiss-Prot</A> (the manually reviewed part of UniProt) and in <A HREF="http://ecocyc.org">EcoCyc</A>. Given this database and a query sequence, we use <A HREF="https://en.wikipedia.org/wiki/BLAST">protein-protein BLAST</A> to find similar sequences with E &lt; 0.001. As of February 2017, PaperBLAST links over 300,000 proteins to over 60,000 papers.
+<P>PaperBLAST builds a database of protein sequences that are linked to scientific publications. These links come from automated text searches against papers in <A HREF="http://europepmc.org/">EuropePMC</A> and from the manually-curated information about protein sequences in <A HREF="http://www.uniprot.org/">Swiss-Prot</A> and <A HREF="http://ecocyc.org">EcoCyc</A>. Given this database of proteins and a query sequence, PaperBLAST uses <A HREF="https://en.wikipedia.org/wiki/BLAST">protein-protein BLAST</A> to find similar sequences with E &lt; 0.001. As of February 2017, PaperBLAST links over 300,000 proteins to over 60,000 papers.
 
-<P>To link proteins in sequenced genomes to papers in EuropePMC, we query every locus tag or <A HREF="https://www.ncbi.nlm.nih.gov/refseq/">RefSeq</A> protein id that appears in the open access part of EuropePMC (including the author manuscripts part). We obtain the protein sequences and identifiers from <A HREF="http://www.microbesonline.org/">MicrobesOnline</A> or from RefSeq. We use queries of the form "locus_tag AND genus_name" to try to ensure that the paper is actually discussing the gene as opposed to something else whose identifier happens to match a locus tag. Note that EuropePMC indexes most recent biomedical papers, not just the open-access ones, so some of the links may be to papers that you cannot read (or that our computers cannot read).
-We also query EuropePMC for every locus tag that appears in the 300 most-referenced genomes. This way, a gene may appear in the PaperBLAST results even though none of the papers that mention it are open access.
-Finally, we index proteins from Swiss-Prot if their curators identified experimental evidence for the protein\'s function, as indicated by evidence code ECO:0000269, as well as every protein in EcoCyc. Most of these entries include links to articles in <A HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A><sup>&reg;</sup>. (We also use PubMed<sup>&reg;</sup> abstracts to select snippets of text from papers that we do not have full-text access to if the abstract mentions a locus tag, RefSeq id, or UniProt id.)</P>
+<P>To build PaperBLAST\'s database, we query every locus tag or <A HREF="https://www.ncbi.nlm.nih.gov/refseq/">RefSeq</A> protein id that appears in the open access part of EuropePMC (including the author manuscripts part). We obtain the protein sequences and identifiers from <A HREF="http://www.microbesonline.org/">MicrobesOnline</A> or from RefSeq. We use queries of the form "locus_tag AND genus_name" to try to ensure that the paper is actually discussing the gene as opposed to something else whose identifier happens to match a locus tag. Because EuropePMC indexes most recent biomedical papers, even if they are not open access, some of the links may be to papers that you cannot read (or that our computers cannot read).
+We also query EuropePMC for every locus tag that appears in the 300 most-referenced genomes, so that a gene may appear in the PaperBLAST results even though none of the papers that mention it are open access.
+Finally, we index proteins from Swiss-Prot if their curators identified experimental evidence for the protein\'s function (evidence code ECO:0000269), as well as every protein from <i> Escherichia coli</i> K-12 in EcoCyc. Most of these Swiss-Prot or EcoCyc entries include links to articles in <A HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A><sup>&reg;</sup>. (We also use PubMed<sup>&reg;</sup> abstracts to select snippets of text from papers that we do not have full-text access to if the abstract mentions a locus tag, a RefSeq id, or a UniProt accession.)</P>
 
 <P>The code for PaperBLAST is available <A HREF="https://github.com/morgannprice/PaperBLAST">here</A>.
 
@@ -53,7 +53,7 @@ Finally, we index proteins from Swiss-Prot if their curators identified experime
 
 <P>PaperBLAST cannot provide snippets for many of the papers that are published in non-open-access journals. This limitation applies even if the paper is marked as "free" on the publisher\'s web site and is available in PubmedCentral or EuropePMC. If a journal that you publish in is marked as "secret," please consider publishing elsewhere.
 
-<center><A HREF="http://morgannprice.org/">Morgan Price</A><BR>
+<center>by <A HREF="http://morgannprice.org/">Morgan Price</A>,
 <A HREF="http://genomics.lbl.gov/">Arkin group</A><BR>
 Lawrence Berkeley National Laboratory
 </center>
@@ -64,7 +64,8 @@ my $title = "PaperBLAST";
 # utf-8 because that is the encoding used by EuropePMC
 print
     header(-charset => 'utf-8'),
-    start_html($title);
+    start_html($title),
+    qq{<div style="background-color: #40C0CB; display: block; position: absolute; top: 0px; left: -1px; width: 100%; padding: 0.25em; z-index: 400;"><H2 style="margin: 0em;"><A HREF="litSearch.cgi" style="color: gold; font-family: 'Montserrat', sans-serif; font-style:italic; text-shadow: 1px 1px 1px #000000; text-decoration: none;">PaperBLAST &ndash; <small>Find papers about a protein or its homologs</small></A></H2></div><P style="margin: 0em;">&nbsp;</P>\n};
 
 my $seq;
 my $def = "";
@@ -102,22 +103,20 @@ if (!defined $seq) {
     my $exampleId = "3615187";
     my $refseqId = "WP_012018426.1";
     print
-        h2($title),
-        p(b("Find papers about a protein or its homologs")),
         start_form( -name => 'input', -method => 'POST', -action => 'litSearch.cgi'),
-        p("Enter a sequence in FASTA or Uniprot format: ",
+        p(br(),
+          b("Enter a sequence in FASTA or Uniprot format: "),
           br(),
           textarea( -name  => 'query', -value => '', -cols  => 70, -rows  => 10 )),
         p(submit('Search'), reset()),
         end_form,
-        p(a({ -href => "litSearch.cgi?vimss=$exampleId" }, "Example").":",
-            "an 'alcohol dehydrogenase'",
-            small("(" .
-                  a({ -href => "https://www.ncbi.nlm.nih.gov/protein/$refseqId",
+        p("Or see",
+          a({ -href => "litSearch.cgi?vimss=$exampleId" }, "example results"),
+            "for the putative alcohol dehydrogenase",
+          a({ -href => "https://www.ncbi.nlm.nih.gov/protein/$refseqId",
                       -style => "color: black;" },
-                    "$refseqId" )
-                  . ")"),
-            "is actually the regulator",
+                    small("$refseqId,") ),
+            "which is actually the regulator",
             a({ -href => "litSearch.cgi?vimss=$exampleId",
                 -title => "Show PaperBLAST hits" },
               i("ercA")) . "."),
@@ -134,7 +133,7 @@ if (!defined $seq) {
     $initial = "$seqlen a.a., $initial" if $hasDef;
 
     print
-        h2("PaperBLAST Hits for $def ($initial)"),
+        h3("PaperBLAST Hits for $def ($initial)"),
         "\n";
     open(SEQ, ">", $seqFile) || die "Cannot write to $seqFile";
     print SEQ ">$def\n$seq\n";
@@ -248,7 +247,7 @@ if (!defined $seq) {
                     my $authorShort = $paper->{authors};
                     $authorShort =~ s/ .*//;
                     my $extra = "";
-                    $extra = a({-href => $pubmed_url}, "(PubMed)")
+                    $extra = "(" . a({-href => $pubmed_url}, "PubMed") . ")"
                         if !$paper->{pmcId} && $paper->{pmId};
                     my $paper_header = $title . br() .
                         small( a({-title => $paper->{authors}}, "$authorShort,"),
