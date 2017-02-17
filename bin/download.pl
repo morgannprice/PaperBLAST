@@ -55,7 +55,7 @@ my $test;
 my $dir;
 die $usage
     unless GetOptions('dir=s' => \$dir, 'steps=s' => \$dosteps, 'test' => \$test)
-    && @ARGV == 0 && defined $usage;
+    && @ARGV == 0;
 die $usage unless defined $dir;
 die "No such directory: $dir\n" unless -d $dir;
 
