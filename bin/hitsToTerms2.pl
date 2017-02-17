@@ -1,4 +1,5 @@
 #!/usr/bin/perl -w
+# This script was used to help compute the list of popular genomes. It is obsolete.
 use strict;
 use JSON;
 use lib "$ENV{HOME}/Genomics/Perl/modules";
