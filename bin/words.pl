@@ -73,6 +73,7 @@ sub ProcessArticle($);
 sub ProcessArticle($) {
     my ($dom) = @_;
     my $pmcid = &DomToPMCId($dom);
+    $pmcid = "" if !defined $pmcid;
 
     # For starters, just print the text
     my $text = &RemoveWideCharacters( &NodeText($dom) );

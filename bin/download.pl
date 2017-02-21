@@ -2,6 +2,9 @@
 # The first phase of the pipeline: downloading
 use strict;
 use Getopt::Long;
+use FindBin qw($Bin);
+use lib "$Bin/../lib";
+use pbutils;
 
 my @allsteps = qw{oa am refseq pubmed uniprot ecocyc};
 my $dosteps = join(",", @allsteps);
@@ -45,13 +48,28 @@ From EcoCyc: ecoli.tar.gz (158 MB)
 END
     ;
 
-sub wget($$);
-sub maybe_wget($$);
-sub ftp_html_to_files($);
-sub write_list($$);
-sub mkdir_if_needed($);
-
 my $test;
+
+sub maybe_run($) {
+    my ($cmd) = @_;
+    if (defined $test) {
+        print STDERR "Would run\t$cmd\n";
+    } else {
+        print STDERR "Running $cmd\n";
+        system($cmd) == 0
+            || die "Error running $cmd: $!\n";
+    }
+}
+
+sub maybe_wget($$) {
+    my ($url, $file) = @_;
+    if (defined $test) {
+        print STDERR "Would wget $url into $file\n";
+    } else {
+        &wget($url, $file);
+    }
+}
+
 my $dir;
 die $usage
     unless GetOptions('dir=s' => \$dir, 'steps=s' => \$dosteps, 'test' => \$test)
@@ -148,49 +166,4 @@ if (defined $test) {
     print STDERR "Finished test\n";
 } else {
     print STDERR "Downloads complete\n";
-}
-
-sub wget($$) {
-    my ($url, $file) = @_;
-    system("wget", "-nv", "-O", $file, $url) == 0
-        || die "Failed to load $url\n";
-}
-
-sub maybe_wget($$) {
-    my ($url, $file) = @_;
-    if (defined $test) {
-        print STDERR "Would wget $url into $file\n";
-    } else {
-        wget($url, $file);
-    }
-}
-
-sub ftp_html_to_files($) {
-    my ($listfile) = @_;
-    my @files = ();
-    open(IN, "<", $listfile) || die;
-    while(<IN>) {
-        chomp;
-        next unless m!>([A-Za-z0-9_.-]+)<!;
-        my $file = $1;
-        push @files, $file;
-    }
-    close(IN) || die "Error reading $listfile";
-    return @files;
-}
-
-sub write_list($$) {
-    my ($files, $outfile) = @_;
-    open(LIST, ">", $outfile) || die "Cannot write to $outfile";
-    foreach my $file (@$files) {
-        print LIST "$file\n";
-    }
-    close(LIST) || die "Error writing to $outfile";
-    print STDERR "Wrote $outfile\n";
-
-}
-
-sub mkdir_if_needed($) {
-    my ($subdir) = @_;
-    (-d $subdir) || mkdir($subdir) || die "Cannot mkdir $subdir";
 }

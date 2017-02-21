@@ -27,6 +27,8 @@ while (my $line = <STDIN>) {
         # There can be multiple sections in the abstract
         my @abstractNodes = $article->findnodes("//MedlineCitation/Article/Abstract/AbstractText");
         my $abstract = join(" ", map { $_->textContent } @abstractNodes);
+        # occasionaly newline characters are within the text nodes
+        $abstract =~ s/\s/ /g;
         print join("\t", $pmId, $abstract)."\n" if $abstract ne "";
     }
 }

@@ -17,7 +17,7 @@ queryEuropePMCBatch.pl -in queryprot -out out.tab [ -dir $dir ]
    [ -URL alternate_url ]
 
 Splits the input into parts, runs queryEuropePMC.pl on each, combines
-the results, makes a list of failures, and reruns it on those parts.
+the results, and makes a list of failures
 
 The dir argument specifies where to put the temporary files.
 END

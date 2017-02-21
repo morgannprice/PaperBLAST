@@ -67,7 +67,7 @@ while (my ($query, $list) = each %queries) {
                $query,
                $attr->{protein_id},
                $attr->{translation},
-               $attr->{product} ) . "\n";
+               $attr->{product} || "" ) . "\n";
     $nOut++;
 }
 print STDERR "Wrote $nOut queries\n";

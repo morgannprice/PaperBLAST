@@ -1,4 +1,5 @@
 #!/usr/bin/perl -w
+# This script is obsolete -- see uniqueQueries.pl instead
 use strict;
 
 my $usage = <<END

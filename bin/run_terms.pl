@@ -3,24 +3,49 @@
 use strict;
 use Getopt::Long;
 use FindBin qw($Bin);
+use lib "$Bin/../lib";
+use pbutils;
 
-my @allsteps = qw{explodeam explodeeco parsepm pm pmc am mo refseq sprot byorg comb};
+my @allsteps = qw{explodeam explodeeco parsepm pm pmc am mo refseq sprot byorg comb stats};
 my $allsteps = join(",",@allsteps);
 
 my $usage = <<END
-run_terms.pl -in downloads -work work [ -test ] [ -steps $allsteps ]
+run_terms.pl -in downloads -work work [ -test ] [ -steps ... ]
 
-This script build the list of query terms to search against
-EuropePMC. It also explodes tar balls in the download directory, as
-needed, and parses the pubmed and ecocyc downloads.
+Given the downloads directory (populated by download.pl), build the
+list of query terms to search against EuropePMC.
+
+The steps are:
+explodeam: explode the author manuscript tarballs
+explodeeco: explode the EcoCyc tarball
+parsepm: parse the abstracts from PubMed
+pm: identify query terms in PubMed abstracts
+pmc: identify query terms in open access papers from EuropePMC
+am: identify query terms in author manuscript papers from EuropePMC
+mo: given the query terms, find locus tags in MicrobesOnline
+refseq: given the query terms, find locus tags or refseq ids in RefSeq
+sprot: given the query terms, find UniProt accessions or entry_names
+byorg: given the top genomes (see static/top_taxa), identify query terms
+comb: combine all the queries
+
+You can use the -steps argument with a comma-delimited subset of steps. The default is:
+	-steps $allsteps
 END
     ;
 
-sub read_list( $ );
-sub maybe_run( $ );
-
 my ($test, $indir, $workdir);
 my $dosteps = $allsteps;
+
+sub maybe_run($) {
+    my ($cmd) = @_;
+    if (defined $test) {
+        print STDERR "Would run\t$cmd\n";
+    } else {
+        print STDERR "Running $cmd\n";
+        system($cmd) == 0
+            || die "Error running $cmd: $!\n";
+    }
+}
 
 die $usage
     unless GetOptions('in=s' => \$indir,
@@ -57,7 +82,7 @@ if (exists $dosteps{"explodeeco"}) {
   my $ecotar = "$indir/ecoli.tar.gz";
   die "No such file: $ecotar\n" unless -e $ecotar;
   # Figure out what directory it will create
-  print "STDERR listing $ecotar to find the target directory -- ignore any write error warning\n";
+  print STDERR "Listing $ecotar to find the target directory -- ignore any write error warning\n";
   open(FILES, "zcat $ecotar | tar --list |") || die "Error running tar on $ecotar";
   my $first = <FILES>;
   close(FILES);
@@ -65,8 +90,13 @@ if (exists $dosteps{"explodeeco"}) {
   $first =~ s!/$!!;
   die "Error listing $ecotar" unless $first;
 
-  &maybe_run("(cd $indir; tar xzf $ecotar)");
-  &maybe_run("(ln -s ecocyc $first)");
+  &maybe_run("(cd $indir; tar xzf ecoli.tar.gz)");
+  &maybe_run("(cd $indir; rm ecocyc >& /dev/null; ln -s $first ecocyc)");
+  if (! defined $test) {
+    foreach my $file ("$indir/ecocyc/data/proteins.dat", "$indir/ecocyc/data/protseq.fsa") {
+      die "Cannot find ecocyc file $file\n" unless -e $file;
+    }
+  }
 }
 
 if (exists $dosteps{"parsepm"}) {
@@ -80,13 +110,13 @@ if (exists $dosteps{"parsepm"}) {
   foreach my $file (@files1) {
     my $base = $file; $base =~ s/[.]xml[.]gz$//;
     my $out = "$workdir/pubmed1_$base.tab";
-    print CMDS "zcat $indir/baseline/$base.xml.gz | $Bin/pubmedparse.pl > $out\n";
+    print CMDS "zcat $indir/pubmed/baseline/$base.xml.gz | $Bin/pubmedparse.pl > $out\n";
     print LIST "$out\n";
   }
   foreach my $file (@files2) {
     my $base = $file; $base =~ s/[.]xml[.]gz$//;
     my $out = "$workdir/pubmed2_$base.tab";
-    print CMDS "zcat $indir/updatefiles/$base.xml.gz | $Bin/pubmedparse.pl > $out\n";
+    print CMDS "zcat $indir/pubmed/updatefiles/$base.xml.gz | $Bin/pubmedparse.pl > $out\n";
     print LIST "$out\n";
   }
   close(CMDS) || die "Error writing to $cmdsfile";
@@ -158,6 +188,7 @@ if (exists $dosteps{"mo"} || exists $dosteps{"refseq"} || exists $dosteps{"sprot
   push @wordsfiles, &read_list("$workdir/pmcwords.list");
   push @wordsfiles, &read_list("$workdir/amwords.list");
   &maybe_run("cat " . join(" ", @wordsfiles) . " > $workdir/words");
+  &maybe_run("cut -f 2 $workdir/words | sort -u > $workdir/words.u");
 }
 
 # Given words from pm/pmc/am, find identifiers in MicrobesOnline
@@ -180,14 +211,14 @@ if (exists $dosteps{"refseq"}) {
     $file =~ m/[.]gbff[.]gz$/ || die "Cannot parse file name $file";
     $file =~ s/[.]gbff[.]gz$//;
     my $out = "$workdir/refseq_$file.words";
-    print CMDS "gunzip -c $indir/refseq/$file.gbff.gz | $Bin/findRefSeqQueries.pl $workdir/words > $out\n";
+    print CMDS "gunzip -c $indir/refseq/$file.gbff.gz | $Bin/findRefSeqQueries.pl $workdir/words.u > $out\n";
     print LIST "$out\n";
   }
   close(CMDS) || die "Error writing to $cmdsfile";
   close(LIST) || die "Error writing to $listfile";
   &maybe_run("$Bin/submitter.pl $cmdsfile");
   my @out = &read_list($listfile);
-  &maybe_run("cat " . join(" ", @out) . " | $Bin/convertRefSeqQueries.pl > refseq.query");
+  &maybe_run("(cat " . join(" ", @out) . " | $Bin/convertRefSeqQueries.pl > $workdir/refseq.query) >& $workdir/refseq.query.log");
 }
 
 # Given words from pm/pmc/am, find identifiers matching UniProt
@@ -195,7 +226,7 @@ if (exists $dosteps{"sprot"}) {
   &maybe_run("$Bin/select_uniprot_words.pl < $workdir/words > $workdir/words.uniprot");
   my $in = "$indir/uniprot_sprot.fasta.gz";
   die "No such file: $in\n" unless -e $in;
-  &maybe_run("zcat $in | $Bin/sprotToQuery.pl -words $workdir/words.uniprot > sprot.query");
+  &maybe_run("zcat $in | $Bin/sprotToQuery.pl -words $workdir/words.uniprot > $workdir/sprot.query");
 }
 
 if (exists $dosteps{"byorg"}) {
@@ -204,25 +235,16 @@ if (exists $dosteps{"byorg"}) {
 
 if (exists $dosteps{"comb"}) {
   my @in = map "$workdir/$_.query", qw{mo refseq sprot byorg};
-  &maybe_run("$Bin/removeDupQueries.pl " . join(" ", @in) . " > $workdir/comb.query");
+  &maybe_run("($Bin/uniqueQueries.pl " . join(" ", @in) . " > $workdir/comb.query) >& $workdir/comb.query.log");
 }
 
-sub read_list($) {
-  my ($file) = @_;
-  open(LIST, "<", $file) || die "Cannot read $file";
-    my @lines = <LIST>;
-    close(LIST) || die "Error reading $file";
-    @lines = map { chomp; $_ } @lines;
-    return(@lines);
-}
-
-sub maybe_run($) {
-    my ($cmd) = @_;
-    if (defined $test) {
-        print STDERR "Would run\t$cmd\n";
-    } else {
-        print STDERR "Running $cmd\n";
-        system($cmd) == 0
-            || die "Error running $cmd: $!\n";
+if (exists $dosteps{"stats"}) {
+  if (! defined $test) {
+    print STDERR join("\t", "file", "thousands\n");
+    foreach my $file (qw{words.u byorg.query mo.query refseq.query sprot.query comb.query}) {
+      my $nlines = `wc -l < $workdir/$file`;
+      chomp $nlines;
+      print STDERR join("\t", $file, sprintf("%.1f", $nlines/1000))."\n";
     }
+  }
 }
