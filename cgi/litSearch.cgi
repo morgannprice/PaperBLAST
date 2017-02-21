@@ -198,7 +198,7 @@ if (!defined $seq) {
                                          $percIdentity,$eVal,$bitscore,
                                          $def, $gene->{showName}, $seq, $subjectId)
                     if $gene->{subjectId} eq $genes[0]{subjectId};
-                if ($gene->{pmIds}) {
+                if (exists $gene->{pmIds} && @{ $gene->{pmIds} } > 0) {
                     my @pmIds = @{ $gene->{pmIds} };
                     my %seen = ();
                     @pmIds = grep { my $keep = !exists $seen{$_}; $seen{$_} = 1; $keep; } @pmIds;
@@ -418,7 +418,7 @@ sub SubjectToGene($) {
             my @comments = split /_:::_/, $gene->{comment};
             @comments = map { s/[;. ]+$//; $_; } @comments;
             @comments = grep m/^FUNCTION|COFACTOR|CATALYTIC|ENZYME|DISRUPTION/, @comments;
-            my $comment = join("<LI>\n", @comments);
+            my $comment = join("<BR>\n", @comments);
             my @pmIds = $comment =~ m!{ECO:0000269[|]PubMed:(\d+)}!;
             $comment =~ s!{ECO:[A-Za-z0-9_:,.| -]+}!!g;
             $gene->{comment} = $comment;
