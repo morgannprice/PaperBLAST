@@ -190,10 +190,13 @@ if (!defined $seq) {
                                $gene->{priority} <= 2 ? b($gene->{desc}) : $gene->{desc},
                                "from",
                                i($gene->{organism}) );
+                # The alignment to show is always the one reported, not necessarily the one for this gene
+                # (They are all identical, but only $subjectId is guaranteed to be in the blast database
+                # and to be a valid argument for showAlign.cgi)
                 push @pieces, &simstring(length($seq), $gene->{protein_length},
                                          $queryStart,$queryEnd,$subjectStart,$subjectEnd,
                                          $percIdentity,$eVal,$bitscore,
-                                         $def, $gene->{showName}, $seq, $gene->{subjectId})
+                                         $def, $gene->{showName}, $seq, $subjectId)
                     if $gene->{subjectId} eq $genes[0]{subjectId};
                 if ($gene->{pmIds}) {
                     my @pmIds = @{ $gene->{pmIds} };
