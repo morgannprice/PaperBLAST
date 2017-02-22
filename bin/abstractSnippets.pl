@@ -12,9 +12,9 @@ my $snippetAfter = 30;
 my $maxChar = 1000;
 
 my $usage = <<END
-abstractSnippets.pl -in abstracts -out pubmed.snippets oa.papers ... refseq.papers
+abstractSnippets.pl [ -in abstracts | -list files ] -out pubmed.snippets oa.papers ... refseq.papers
 
-	The input file should be tab-delimited with the 1st column
+	The input file(s) should be tab-delimited with the 1st column
 	having the pubmedId and the second column having the abstract
 	(as from pubmedparse.pl)
 
@@ -36,7 +36,7 @@ abstractSnippets.pl -in abstracts -out pubmed.snippets oa.papers ... refseq.pape
 END
     ;
 
-sub ProcessArticle($$$);
+sub ProcessLine($$$);
 
 {
     my ($infile, $listfile, $outfile);
@@ -56,11 +56,11 @@ sub ProcessArticle($$$);
     die "-after must be positive" if $snippetAfter < 1;
     die "-maxChar must be at least 50" if $maxChar < 50;
 
-    my %papers = (); # pmId => queryTerm => list of queryId
-    my %pm2pmc = (); # pmId => pmcId
     foreach my $paperfile (@paperfiles) {
         die "No such file: $paperfile\n" unless -e $paperfile;
     }
+    my %papers = (); # pmId => queryTerm => list of queryId
+    my %pm2pmc = (); # pmId => pmcId
     foreach my $paperfile (@paperfiles) {
         open(PAPERS, "<", $paperfile) || die "Error reading $paperfile";
         while(my $line = <PAPERS>) {
@@ -76,33 +76,51 @@ sub ProcessArticle($$$);
     print STDERR "Read " . scalar(keys %papers) . " pubmedIds to search\n";
 
     my $nRelevant = 0;
-    open(IN, "<", $infile) || die "Cannot read $infile";
     open(OUT, ">", $outfile) || die "Error writing to $outfile";
     my $accfile = "$outfile.access";
     open(ACC, ">", $accfile) || die "Error writing to $accfile";
-    while(my $line = <IN>) {
-        chomp $line;
-        my ($pmId, $abstract) = split /\t/, $line;
-        next unless $abstract;
-        next unless exists $papers{$pmId};
-        $nRelevant++;
-        my $hash = $papers{$pmId};
-        my $pmcId = $pm2pmc{$pmId};
-        print ACC join("\t", $pmcId, $pmId, "abstract")."\n";
-        while (my ($queryTerm, $queryIds) = each %$hash) {
-            next unless $abstract =~ m/$queryTerm/;
-            my @snippets = TextSnippets($abstract, $queryTerm, $snippetBefore, $snippetAfter, $maxChar);
-            my %queryIds = map { $_ => 1 } @$queryIds;
-            my @queryIds = keys(%queryIds);
-            foreach my $queryId (@queryIds) {
-                foreach my $snippet (@snippets) {
-                    print OUT join("\t", $pmcId, $pmId, $queryTerm, $queryId, $snippet)."\n";
-                }
-            }
+    if (defined $infile) {
+      open(IN, "<", $infile) || die "Cannot read $infile";
+      while(my $line = <IN>) {
+        $nRelevant++ if ProcessLine($line, \%papers, \%pm2pmc);
+      }
+      close(IN) || die "Error reading $infile";
+    } elsif (defined $listfile) {
+      open(LIST , "<", $listfile) || die "Cannot read $listfile";
+      while(my $file = <LIST>) {
+        chomp $file;
+        open(IN, "<", $file) || die "Cannot read $file";
+        while(my $line = <IN>) {
+          $nRelevant++ if ProcessLine($line, \%papers, \%pm2pmc);
         }
+        close(IN) || die "Error reading $file";
+      }
+      close(LIST) || die "Error reading $listfile";
     }
     close(OUT) || die "Error writing to $outfile";
     close(ACC) || die "Error writing to $accfile";
     print STDERR "Processed $nRelevant relevant abstracts\n";
 }
 
+sub ProcessLine($$$) {
+  my ($line,$papers,$pm2pmc) = @_;
+  chomp $line;
+  my ($pmId, $abstract) = split /\t/, $line;
+  return 0 unless $abstract && exists $papers->{$pmId};
+  my $hash = $papers->{$pmId};
+  my $pmcId = $pm2pmc->{$pmId};
+  print ACC join("\t", $pmcId, $pmId, "abstract")."\n";
+  while (my ($queryTerm, $queryIds) = each %$hash) {
+    if ($abstract =~ m/$queryTerm/) { # require case-sensitive match
+      my @snippets = TextSnippets($abstract, $queryTerm, $snippetBefore, $snippetAfter, $maxChar);
+      my %queryIds = map { $_ => 1 } @$queryIds;
+      my @queryIds = keys(%queryIds);
+      foreach my $queryId (@queryIds) {
+        foreach my $snippet (@snippets) {
+          print OUT join("\t", $pmcId, $pmId, $queryTerm, $queryId, $snippet)."\n";
+        }
+      }
+    }
+  }
+  return 1;
+}
