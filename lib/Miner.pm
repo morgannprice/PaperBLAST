@@ -28,6 +28,9 @@ sub TextSnippets($$$$$) {
     my @subwords = @words;
     # removing leading and trailing punctuation from each word
     @subwords = map { s/[.,;()-]+$//; s/^[.,;()-]+//; uc($_); } @subwords;
+    # remove trailing text like .1 or .2 if this is a refseq protein (in case the text includes the version)
+    @subwords = map { s/[.]\d$//; $_; } @subwords
+      if ($queryTerm =~ m/^[A-Z]P_\d+$/);
 
     my @hits = grep { $subwords[$_] eq uc($queryTerm) } (0..(scalar(@words)-1));
     my @snippets = ();
