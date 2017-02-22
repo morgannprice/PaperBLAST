@@ -18,7 +18,7 @@ buildSnippets.pl -list xml_file_list -out snippets oa.papers ... refseq.papers
 	The -in file should be a file in xml format (or gzipped, if its name
 	ends in .gz).
 
-	The -list file should have a list of xml files, one per line.
+	The -list file should have a list of xml files (or xml.gz files), one per line.
 
 	The papers files are from parseEuropePMCHits.pl and include
 	queryId, queryTerm, pmcId.
@@ -61,24 +61,20 @@ sub ProcessArticle($$$);
 
     my $gunzip;
     my @files = ();
+    my $in;
     if (defined $infile) {
-        die "No such file: $infile\n" unless -e $infile;
-        $gunzip = $infile =~ m/[.]gz$/;
-        if ($gunzip) {
-            open(IN, "zcat $infile |") || die "Cannot run zcat on $infile";
-        } else {
-        open(IN, "<", $infile) || die "Cannot read $infile";
-        }
+      die "No such file: $infile\n" unless -e $infile;
+      @files = ( $infile );
     } else {
-        die "No such file: $listfile" unless -e $listfile;
-        open(LIST, "<", $listfile) || die "Error reading $listfile";
-        while(my $line = <LIST>) {
-            chomp $line;
-            die "No such file: $line" unless -e $line;
-            push @files, $line;
-        }
-        close(LIST) || die "Error reading $listfile";
-        print STDERR "Read list of " . scalar(@files) . " input files\n";
+      die "No such file: $listfile" unless -e $listfile;
+      open(LIST, "<", $listfile) || die "Error reading $listfile";
+      while(my $line = <LIST>) {
+        chomp $line;
+        die "No such file: $line" unless -e $line;
+        push @files, $line;
+      }
+      close(LIST) || die "Error reading $listfile";
+      print STDERR "Read list of " . scalar(@files) . " input files\n";
     }
 
     my %papers = (); # pmcId => queryTerm => list of queryId
@@ -105,50 +101,46 @@ sub ProcessArticle($$$);
     open(ACC, ">", $accfile) || die "Error writing to $accfile";
     my $n = 0;
     my $nSeen = 0;
-    if (defined $infile) {
-        my $firstline = <IN>;
-        chomp $firstline;
-        die "First line should be: <articles>\n" unless $firstline eq "<articles>";
-        while(my $line = <IN>) {
+    foreach my $file (@files) {
+      $gunzip = $file =~ m/[.]gz$/;
+      if ($gunzip) {
+        open(IN, "zcat $file |") || die "Cannot run zcat on $file";
+      } else {
+        open(IN, "<", $file) || die "Cannot read $file";
+      }
+      my $firstline = <IN>;
+      chomp $firstline;
+      die "First line should be: <articles> or <!DOCTYPE ...>\n"
+        unless $firstline eq "<articles>" || $firstline =~ m/^<!DOCTYPE.*>$/;
+      while(my $line = <IN>) {
+        chomp $line;
+        next if $line eq "";
+        if ($line eq "</articles>") {
+          next;
+          last;
+        }
+        $line =~ m/^<article[> ]/ || die "Does not begin with an article: " . substr($line, 0, 100);
+        my @lines = ( $line );
+        while ($lines[-1] !~ m!</article>!) {
+          $line = <IN>;
+          if (defined $line) {
             chomp $line;
-            next if $line eq "";
-            if ($line eq "</articles>") {
-                next;
-                last;
-            }
-            $line =~ m/^<article[> ]/ || die "Does not begin with an article: " . substr($line, 0, 100);
-            my @lines = ( $line );
-            while ($lines[-1] !~ m!</article>!) {
-                $line = <IN>;
-                if (defined $line) {
-                    chomp $line;
-                    push @lines, $line;
-                } else {
-                    last;
-                }
-            }
-            if ($lines[-1] !~ m!</article>!) {
-                print STDERR "Last article is truncated? Starts with " . substr($lines[0], 0, 100);
-            }
-            # without recover, get errors like
-            # :1: parser error : Premature end of data in tag p line 1
-            # l 2004 news article &#x0201c;Reaching across the Border with the SBRP&#x0201d; [
-            
-            my $dom = XML::LibXML->load_xml(string => join("\n",@lines), recover => 1);
-            $n++;
-            print STDERR "Parsed $n articles\n" if ($n % 1000) == 0;
-            $nSeen += &ProcessArticle($dom, \%pmc2pm, \%papers);
+            push @lines, $line;
+          } else {
+            last;
+          }
         }
-    } else {
-        foreach my $file (@files) {
-            open(FILE, "<", $file) || die "Cannot read $file";
-            my @lines = <FILE>;
-            close(FILE) || die "Error reading $file";
-            my $dom = XML::LibXML->load_xml(string => join("",@lines), recover => 1);            
-            $n++;
-            print STDERR "Parsed $n articles\n" if ($n % 1000) == 0;
-            $nSeen += &ProcessArticle($dom, \%pmc2pm, \%papers);
+        if ($lines[-1] !~ m!</article>!) {
+          print STDERR "Last article is truncated? Starts with " . substr($lines[0], 0, 100);
         }
+        # without recover, get errors like
+        # :1: parser error : Premature end of data in tag p line 1
+        # l 2004 news article &#x0201c;Reaching across the Border with the SBRP&#x0201d; [
+        my $dom = XML::LibXML->load_xml(string => join("\n",@lines), recover => 1);
+        $n++;
+        print STDERR "Parsed $n articles\n" if ($n % 1000) == 0;
+        $nSeen += &ProcessArticle($dom, \%pmc2pm, \%papers);
+      }
     }
     print STDERR "Processed $n articles with $nSeen relevant pmcIds\n";
     close(OUT) || die "Error writing to $outfile";
