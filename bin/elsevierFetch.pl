@@ -55,10 +55,11 @@ END
       die "Invalid input in $papersfile: isOpen = $isOpen" unless $isOpen eq "1" || $isOpen eq "0";
       next unless $isOpen eq "0" && $pmId ne "" && exists $journals{$journal};
       my $file = "$cachedir/pubmed_$pmId.xml";
+      my $file2 = "$cachedir/pubmed_$pmId.pdf";
       $nTry++;
       if (exists $fail{$pmId}) {
         $nFail++;
-      } elsif (-e $file) {
+      } elsif (-e $file || -e $file2) {
         $nCache++;
       } elsif (! &ElsevierFetch($pmId, $key, $file, $journal)) {
         $fail{$pmId} = 1;
