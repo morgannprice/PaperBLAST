@@ -116,7 +116,7 @@ print
 sub fetch_fasta($$) {
     my ($def, $db) = @_;
     unlink("$prefix.fetch");
-    die "Invalid def2 argumnet: $def" if $def eq "" || $def =~ m/\s/ || $def =~ m/,/;
+    die "Invalid def2 argument: $def" if $def eq "" || $def =~ m/\s/ || $def =~ m/,/;
     system("$fastacmd","-s",$def,"-d",$db,"-o", "$prefix.fetch");
     open(SEQ, "<", "$prefix.fetch") || die "Cannot read $prefix.fetch -- fastacmd failed?";
     my @lines = <SEQ>;
