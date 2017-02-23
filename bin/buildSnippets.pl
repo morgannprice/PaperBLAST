@@ -153,13 +153,17 @@ sub ProcessArticle($$$) {
     # First, use an XPath query to find article-id objects with pub-id-type attributes,
     my $pmcid = &DomToPMCId($dom);
     return 0 if !defined $pmcid;
-    $pmcid = "PMC" . $pmcid;
-    return 0 if !exists $papers->{$pmcid};
+    $pmcid = "PMC" . $pmcid if $pmcid =~ m/^\d/; # do not use this prefix for PPR ids
+    my $pmcLookup = $pmcid; # it may show up in a different form in the search results
+    if (!exists $papers->{$pmcLookup} && $pmcid =~ m/^PPR/) {
+      $pmcLookup =~ s/^PPR/PMC-/;
+    }
+    return 0 if !exists $papers->{$pmcLookup};
 
     my $text = &RemoveWideCharacters( &NodeText($dom) );
     print ACC join("\t", $pmcid, $pmc2pm->{$pmcid} || "", "full")."\n";
 
-    while (my ($queryTerm, $queryIds) = each %{ $papers->{$pmcid} }) {
+    while (my ($queryTerm, $queryIds) = each %{ $papers->{$pmcLookup} }) {
         my @snippets = TextSnippets($text, $queryTerm, $snippetBefore, $snippetAfter, $maxChar);
         my %queryIds = map { $_ => 1 } @$queryIds;
         my @queryIds = keys(%queryIds);
