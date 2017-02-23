@@ -18,7 +18,7 @@ use Time::HiRes qw{gettimeofday};
 use DBI;
 
 sub fail($);
-sub simstring($$$$$$$$$$$);
+sub simstring($$$$$$$$$$$$$);
 sub SubjectToGene($);
 
 my $tmpDir = "../tmp";
@@ -331,7 +331,7 @@ sub fail($) {
     exit(0);
 }
 
-sub simstring($$$$$$$$$) {
+sub simstring($$$$$$$$$$$$$) {
     my ($qLen, $sLen, $queryStart,$queryEnd,$subjectStart,$subjectEnd,$percIdentity,$eVal,$bitscore,
         $def1, $def2, $seq1, $acc2) = @_;
     $percIdentity = sprintf("%.0f", $percIdentity);
