@@ -235,6 +235,17 @@ sub DomToPMCId($) {
             }
         }
     }
+
+    # or, return the PPR id for preprints
+    foreach my $id (@ids) {
+        foreach my $attr ($id->attributes) {
+            if ($attr->nodeName eq "pub-id-type"
+                && $attr->getValue eq "archive") {
+              return $id->textContent if $id->textContent =~ m/^PPR/;
+            }
+        }
+    }
+
     return undef;
 }
 
