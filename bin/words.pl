@@ -80,11 +80,13 @@ sub ProcessArticle($) {
     my @words = split /\s+/, $text;
     my %seen = ();
     foreach my $word (@words) {
-        # Looking for potential locus tags with a letter, ending with at least 3 numbers in a row,
-        # and possibly trailing punctuation
-        $word =~ s/[.,;-]+$//;
-        next unless $word =~ m/^[a-zA-Z][a-zA-Z90-9_]+\d\d\d$/;
-        print "$pmcid\t$word\n" unless exists $seen{$word};
-        $seen{$word} = 1;
+      # Looking for potential locus tags with a letter, ending with at least 3 numbers in a row,
+      # and removing any trailing punctuation
+      # This pattern also works for UniProt accessions and for RefSeq protein ids (without the version), but
+      # not for UniProt entry names, which generally start with digits or end with letters
+      $word =~ s/[.,;-]+$//;
+      next unless $word =~ m/^[a-zA-Z][a-zA-Z90-9_]+\d\d\d$/;
+      print "$pmcid\t$word\n" unless exists $seen{$word};
+      $seen{$word} = 1;
     }
 }
