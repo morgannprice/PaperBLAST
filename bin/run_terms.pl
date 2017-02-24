@@ -226,7 +226,9 @@ if (exists $dosteps{"sprot"}) {
   &maybe_run("$Bin/select_uniprot_words.pl < $workdir/words > $workdir/words.uniprot");
   my $in = "$indir/uniprot_sprot.fasta.gz";
   die "No such file: $in\n" unless -e $in;
-  &maybe_run("zcat $in | $Bin/sprotToQuery.pl -words $workdir/words.uniprot > $workdir/sprot.query");
+  my $in2 = "$indir/uniprot_trembl.fasta.gz";
+  die "No such file: $in2\n" unless -e $in2;
+  &maybe_run("zcat $in $in2 | $Bin/sprotToQuery.pl -words $workdir/words.uniprot > $workdir/sprot.query");
 }
 
 if (exists $dosteps{"byorg"}) {
