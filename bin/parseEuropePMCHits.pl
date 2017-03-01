@@ -29,7 +29,7 @@ END
     die "No such file: $infile\n" unless -e $infile;
     die "No such file: $hitsfile\n" unless -e $hitsfile;
 
-    my %seen = (); # queryId => 1 if it is in the hits file
+    my %seen = (); # queryId => query => 1 if it is in the hits file already
     my %hasHit = (); # queryId => 1 if it has a paper about it
     open(HITS, "<:encoding(UTF-8)", $hitsfile) || die "Cannot read $hitsfile";
     open(PAPERS, ">:encoding(UTF-8)", "$outpre.papers") || die "Cannot write to $outpre.papers";
@@ -37,10 +37,6 @@ END
         chomp $line;
         my ($queryId, $jsonstring) = split /\t/, $line;
         die "Invalid hits line\n$line\n" if !defined $jsonstring || $queryId eq "";
-        if (exists $seen{$queryId}) {
-            print STDERR "Skipping duplicate hits line for $queryId\n";
-            next;
-        }
         if ($jsonstring eq "") {
             print STDERR "No hits entry for $queryId\n";
         }
@@ -49,13 +45,17 @@ END
             print STDERR "Skipping bad hits line for $queryId\n";
             next;
         }
-        $seen{$queryId} = 1;
+        my $queryText = $json->{request}{query};
+        die "No query text for $queryId" unless defined $queryText;
+        if (exists $seen{$queryId}{$queryText}) {
+            print STDERR "Skipping duplicate hits line for $queryId $queryText\n";
+            next;
+        }
+        $seen{$queryId}{$queryText} = 1;
         if ($json->{hitCount} > 0) {
-            my $queryText = $json->{request}{query};
-            die "No query text for $queryId" unless defined $queryText;
+            $hasHit{$queryId} = 1;
             $queryText =~ m/^(.*) AND/ || die "Invalid query term $queryText";
             my $queryTerm = $1;
-            $hasHit{$queryId} = 1;
             foreach my $result (@{ $json->{resultList}{result} }) {
                 my $pmcId = $result->{pmcid} || "";
                 my $pmId = $result->{pmid} || "";
