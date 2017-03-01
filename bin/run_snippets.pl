@@ -92,7 +92,7 @@ if (exists $dosteps{"am"}) {
   my @files = &read_list("$indir/am/xml.list");
   my @in = map "$indir/am/$_", @files;
   &write_list(\@in, "$workdir/snippets.am.list");
-  &maybe_run("$Bin/buildSnippets.pl -list $workdir/snippets.am.list -out $workdir/snippets_am $workdir/hits.papers");
+  &maybe_run("$Bin/buildSnippets.pl -list $workdir/snippets.am.list -out $workdir/snippets_am $workdir/hits.papers >& $workdir/snippets_am.log");
 }
 
 if (exists $dosteps{"elsevier"} && !defined $cacheOnly) {
@@ -123,5 +123,5 @@ if (exists $dosteps{"stats"} && !defined $test) {
   chomp $nFull;
   my $nAbstract = `grep -c abstract $workdir/snippets_comb.access`;
   chomp $nAbstract;
-  print STDERR sprintf("By paper: full-text %.1fK abstract-only %.1fK\n", $nFull, $nAbstract);
+  print STDERR sprintf("By paper: full-text %.1fK abstract-only %.1fK\n", $nFull/1000.0, $nAbstract/1000.0);
 }
