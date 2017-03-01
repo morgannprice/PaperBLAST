@@ -32,7 +32,7 @@ my $usearch = "$Bin/usearch";
 die "No such executable: $usearch\n" unless -x $usearch;
 
 unlink("$dir/uc.derep");
-system($usearch, "-derep_fulllength", $faaIn, "-uc", "$dir/uc.derep", "-fastaout", $faaOut) == 0
+system($usearch, "-quiet", "-derep_fulllength", $faaIn, "-uc", "$dir/uc.derep", "-fastaout", $faaOut) == 0
     || die "Error running usearch -derep_fulllength: $!";
 
 open(UC, "<", "$dir/uc.derep") || die "Cannot read $dir/uc.derep";
