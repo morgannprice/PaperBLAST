@@ -110,8 +110,8 @@ sub ProcessArticle($$$);
       }
       my $firstline = <IN>;
       chomp $firstline;
-      die "First line should be: <articles> or <!DOCTYPE ...>\n"
-        unless $firstline eq "<articles>" || $firstline =~ m/^<!DOCTYPE.*>$/;
+      die "First line of $file should be: <articles> or <!DOCTYPE ...>\n"
+        unless $firstline eq "<articles>" || $firstline =~ m/^<!DOCTYPE.*>/;
       while(my $line = <IN>) {
         chomp $line;
         next if $line eq "";
@@ -119,7 +119,10 @@ sub ProcessArticle($$$);
           next;
           last;
         }
-        $line =~ m/^<article[> ]/ || die "Does not begin with an article: " . substr($line, 0, 100);
+        # sometimes there is an xml-stylesheet before the <article>
+        $line =~ s/^<[?]xml-stylesheet .*[?]>//;
+        next if $line eq "";
+        $line =~ m/^<article[> ]/ || die "File $file does not begin with an article: " . substr($line, 0, 100);
         my @lines = ( $line );
         while ($lines[-1] !~ m!</article>!) {
           $line = <IN>;
@@ -141,6 +144,7 @@ sub ProcessArticle($$$);
         print STDERR "Parsed $n articles\n" if ($n % 1000) == 0;
         $nSeen += &ProcessArticle($dom, \%pmc2pm, \%papers);
       }
+      close(IN) || die "Error reading $file" . ($gunzip ? " . with zcat" : "")
     }
     print STDERR "Processed $n articles with $nSeen relevant pmcIds\n";
     close(OUT) || die "Error writing to $outfile";
