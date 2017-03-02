@@ -71,77 +71,65 @@ END
         } else {
             $last_pmId = undef;
             $last_text = undef;
-
-            my ($type, $URL);
-            if (defined $cache_only) {
-                $type = "other"; # and check for other cases
-            } else {
-                ($type, $URL) = &CrossrefToURL($doi, $journal);
-                if (! $type) {
-                    $fail{$pmId}  = 1;
-                    next;
-                }
-            }
             my $prefix = "$cachedir/pubmed_$pmId";
-            my $file = "$prefix.$type";
-            my $file2 = "$prefix.xml";
-            my $file3 = "$prefix.pdf";
-            if (-e $file) {
-                print STDERR "Using cached $file for $doi $journal\n";
-            } elsif (-e $file2) {
-                print STDERR "Using cached $file2 for $doi $journal\n";
-                $file = $file2;
-                $type = "xml";
-            } elsif (-e $file3) {
-                print STDERR "Using cached $file3 for $doi $journal\n";
-                $file = $file3;
-                $type = "pdf";
-            } elsif (defined $cache_only) {
-                print STDERR "Skipping non-cached $doi $journal\n";
-                next;
-            } else {
-                my $newtype = &CrossrefFetch($URL, $type, $file, $journal);
-                if ($newtype) {
-                    # Figure out what type it is, and rename if necessary
-                    if ($newtype eq "application/xml") {
-                        $newtype = "xml";
-                    } elsif ($newtype eq "application/pdf") {
-                        $newtype = "pdf";
-                    } elsif ($newtype eq "application/octet-stream") {
-                        # Download in another way -- not sure why, but these never worked.
-                        my $tmp = "$file3.tmp";
-                        unlink($tmp);
-                        if (system("wget","-nv","-O",$tmp,$URL) == 0) {
-                            $file = $file3;
-                            rename($tmp, $file);
-                            $newtype = "pdf";
-                        } else {
-                            unlink($tmp);
-                            print STDERR "Failed to handle octet stream\n";
-                            next;
-                        }
-                    } elsif ($newtype eq "text/plain") {
-                        $newtype = "other";
-                    } else {
-                        print STDERR "Warning: unrecognized content type $newtype\n";
-                        $newtype = "other";
-                    }
-                    my $newfile = "$prefix.$newtype";
-                    if ($newfile ne $file) {
-                        rename($file,$newfile) || die "Error renaming $file to $newfile";
-                        $file = $newfile;
-                    }
-                    if ($type eq "pdf") {
-                        my $filereport = `file $newfile`;
-                        if (! $filereport =~ m/PDF document/) {
-                            print STDERR "Error: fetched $newfile for $doi but it is not in PDF format\n";
-                            unlink($file);
-                            $fail{$pmId} = 1;
-                            next;
-                        }
-                    }
-                    print STDERR "Fetched $doi into $file from $journal\n";
+            my ($type, $file, $URL);
+            if (-e "$prefix.pdf") {
+              $type = "pdf";
+              $file = "$prefix.pdf";
+            } elsif (-e "$prefix.xml") {
+              $type = "xml";
+              $file = "$prefix.xml";
+            } elsif (-e "$prefix.other") {
+              $type = "other"; # text
+              $file = "$prefix.other";
+            }
+            ($type, $URL) = &CrossrefToURL($doi, $journal) unless $file;
+            if (! $type) {
+              $fail{$pmId}  = 1;
+              next;
+            }
+            if (defined $cache_only && ! $file) {
+              print STDERR "Skipping non-cached $doi $journal\n";
+              next;
+            } elsif ($URL) {
+              my $tmpfile = "$prefix.tmp";
+              my $newtype = &CrossrefFetch($URL, $type, $tmpfile, $journal);
+              if ($newtype) {
+                # Figure out what type it is, and rename if necessary
+                if ($newtype eq "application/xml") {
+                  $newtype = "xml";
+                } elsif ($newtype eq "application/pdf") {
+                  $newtype = "pdf";
+                } elsif ($newtype eq "application/octet-stream") {
+                  # Download in another way -- not sure why, but these never worked.
+                  unlink($tmpfile);
+                  if (system("wget","-nv","-O",$tmpfile,$URL) == 0) {
+                    $newtype = "pdf";
+                  } else {
+                    unlink($tmpfile);
+                    print STDERR "Failed to handle octet stream\n";
+                    next;
+                  }
+                } elsif ($newtype eq "text/plain") {
+                  $newtype = "other";
                 } else {
+                  print STDERR "Warning: unrecognized content type $newtype\n";
+                  $newtype = "other";
+                }
+                $file = "$prefix.$newtype";
+                rename($tmpfile,$file) || die "Error renaming $tmpfile to $file";
+
+                if ($type eq "pdf") {
+                  my $filereport = `file $file`;
+                  if (! $filereport =~ m/PDF document/) {
+                    print STDERR "Error: fetched $file for $doi but it is not in PDF format\n";
+                    unlink($file);
+                    $fail{$pmId} = 1;
+                    next;
+                  }
+                }
+                print STDERR "Fetched $doi into $file from $journal\n";
+              } else {
                     print STDERR "Failed to fetch $doi from $journal\n";
                     $fail{$pmId} = 1;
                     next;
