@@ -35,8 +35,6 @@ my $cgi=CGI->new;
 my $query = $cgi->param('query') || "";
 
 my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
-my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
-    || die $DBI::errstr;
 
 my $documentation = <<END
 <H3><A NAME="works">How It Works</A></H3>
@@ -71,14 +69,10 @@ my $seq;
 my $def = "";
 
 if ($cgi->param('vimss')) {
-    my $locusId = $cgi->param('vimss');
-    die "Invalid vimss argument" unless $locusId =~ m/^\d+$/;
-    my ($aaseq) = $mo_dbh->selectrow_array(
-        qq{SELECT sequence FROM Locus JOIN AASeq USING (locusId,version)
-            WHERE locusId = ? AND priority=1 },
-        {}, $locusId);
-    die "Unknown VIMSS id $locusId" unless defined $aaseq;
-    $query = ">VIMSS$locusId\n$aaseq\n";
+  my $locusId = $cgi->param('vimss');
+  $query = &VIMSSToQuery($locusId);
+} elsif ($query =~ m/^VIMSS\d+$/i) {
+  $query = &VIMSSToQuery($query);
 }
 my $hasDef = 0;
 if ($query =~ m/[A-Za-z]/) {
@@ -389,14 +383,7 @@ sub SubjectToGene($) {
                 $gene->{locusId} = $locusId;
                 $gene->{source} = "MicrobesOnline";
                 $gene->{URL} = "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=$locusId";
-                if ($gene->{desc} eq "") {
-                    # Fetch the gene description from MicrobesOnline if not in the litsearch db
-                    my ($desc) = $mo_dbh->selectrow_array(
-                        qq{SELECT description FROM Locus JOIN Description USING (locusId,version)
-                           WHERE locusId = ? AND priority=1 },
-                        {}, $locusId);
-                    $gene->{desc} = $desc || "no description";
-                }
+                $gene->{desc} = "no description" if $gene->{desc} eq "";
             } elsif ($subjectId =~ m/^[A-Z]+_[0-9]+[.]\d+$/) { # refseq
                 $gene->{URL} = "http://www.ncbi.nlm.nih.gov/protein/$subjectId";
                 $gene->{source} = "RefSeq";
@@ -426,4 +413,18 @@ sub SubjectToGene($) {
             return $gene;
         }
     }
+}
+
+sub VIMSSToQuery($) {
+  my ($locusId) = @_;
+  die unless defined $locusId;
+  $locusId =~ s/^VIMSS//i;
+  $locusId =~ m/^\d+$/ || die "Invalid locusId argument";
+  my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
+    || die $DBI::errstr;
+  my ($aaseq) = $mo_dbh->selectrow_array( qq{SELECT sequence FROM Locus JOIN AASeq USING (locusId,version)
+                                             WHERE locusId = ? AND priority=1 },
+                                          {}, $locusId);
+  die "Unknown VIMSS id $locusId" unless defined $aaseq;
+  return ">VIMSS$locusId\n$aaseq\n";
 }
