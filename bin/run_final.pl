@@ -75,6 +75,9 @@ if (exists $dosteps{db}) {
 if (exists $dosteps{compare}) {
   my $newdb = "$outdir/litsearch.db";
   my $olddb = "$comparedir/litsearch.db";
-  die "No such file: $olddb\n" unless -e $olddb;
-  &maybe_run("$Bin/compare_dbs.pl -old $olddb -new $newdb -out $workdir/dbcmp");
+  if (! -e $olddb) {
+    print STDERR "No such file: $olddb -- skipping the comparison step\n";
+  } else {
+    &maybe_run("$Bin/compare_dbs.pl -old $olddb -new $newdb -out $workdir/dbcmp");
+  }
 }
