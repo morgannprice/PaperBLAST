@@ -85,6 +85,12 @@ sub ProcessArticle($) {
       # This pattern also works for UniProt accessions and for RefSeq protein ids (without the version), but
       # not for UniProt entry names, which generally start with digits or end with letters
       $word =~ s/[.,;-]+$//;
+      $word =~ s/^\[//;
+      $word =~ s/^\(//;
+      $word =~ s/\]$//;
+      $word =~ s/\)$//;
+      # remove version numbers from refseq ids
+      $word =~ s/[.]\d+$// if $word =~ m/^[A-Z][P]_\d+[.]\d+$/;
       next unless $word =~ m/^[a-zA-Z][a-zA-Z90-9_]+\d\d\d$/;
       print "$pmcid\t$word\n" unless exists $seen{$word};
       $seen{$word} = 1;
