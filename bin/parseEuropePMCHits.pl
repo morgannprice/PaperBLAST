@@ -58,6 +58,9 @@ END
             my $queryTerm = $1;
             foreach my $result (@{ $json->{resultList}{result} }) {
                 my $pmcId = $result->{pmcid} || "";
+                my $id = $result->{id} || "";
+                # I.e. use the PPR identifier not PMC-7028
+                $pmcId = $id if $pmcId =~ m/-/ && $id;
                 my $pmId = $result->{pmid} || "";
                 my $doi = $result->{doi} || "";
                 my $title = $result->{title} || "";
