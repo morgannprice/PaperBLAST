@@ -232,12 +232,16 @@ if (!defined $seq) {
 
                     my $paper_url = undef;
                     my $pubmed_url = "http://www.ncbi.nlm.nih.gov/pubmed/" . $paper->{pmId};
-                    if ($paper->{pmcId}) {
+                    if ($paper->{pmcId} && $paper->{pmcId} =~ m/^PMC\d+$/) {
                         $paper_url = "http://www.ncbi.nlm.nih.gov/pmc/articles/" . $paper->{pmcId};
                     } elsif ($paper->{pmid}) {
                         $paper_url = $pubmed_url;
                     } elsif ($paper->{doi}) {
+                      if ($paper->{doi} =~ m/^http/) {
+                        $paper_url = $paper->{doi};
+                      } else {
                         $paper_url = "http://doi.org/" . $paper->{doi};
+                      }
                     }
                     my $title = $paper->{title};
                     $title = a({-href => $paper_url}, $title) if defined $paper_url;
