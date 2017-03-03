@@ -13,7 +13,7 @@ our (@ISA,@EXPORT);
 @EXPORT = qw( RemoveWideCharacters TextSnippets NodeText
               XMLFileToText TextFileToText PDFFileToText
               ElsevierFetch CrossrefToURL CrossrefFetch
-              DomToPMCId );
+              DomToPMCId FetchPubMed );
 
 sub RemoveWideCharacters($) {
     my ($text) = @_;
@@ -247,6 +247,53 @@ sub DomToPMCId($) {
     }
 
     return undef;
+}
+
+# returns a list of XML objects, one per pm id
+sub FetchPubMed {
+  my @pmids = @_;
+  return () if @pmids == 0;
+  my %known = ();
+  @pmids = grep { my $keep = !exists $known{$_}; $known{$_} = 1; $keep } @pmids;
+  my @out = ();
+  while (@pmids > 0) {
+    my $maxTries = 2;
+    my $size = 50;
+    $size = @pmids if $size > @pmids;
+    my @set = ();
+    foreach my $i (1..$size) {
+      push @set, (shift @pmids);
+    }
+    my $iTry;
+    for ($iTry = 0; $iTry < $maxTries; $iTry++) {
+      sleep(1) if $iTry > 0; # wait for NCBI to recover
+      my $URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.cgi?db=PubMed&rettype=xml&id="
+        . join(",",@set);
+      my $results = LWP::Simple::get($URL);
+      unless (defined $results && $results =~ m/PubmedArticleSet/) {
+        print STDERR "Warning: Could not fetch results for ids $set[0] to $set[-1], retrying\n";
+        next;
+      }
+      my $dom = XML::LibXML->load_xml(string => $results, recover => 1);
+      if (! $dom) {
+        print STDERR "Warning: Could not parse results for ids $set[0] to $set[-1], retrying\n";
+        next;
+      }
+      next unless $dom;
+      my @children = $dom->findnodes("//PubmedArticle");
+      if (scalar(@children) == 0) {
+        print STDERR "Warning: no PubmedArticle nodes for ids $set[0] to $set[-1], retrying\n";
+        next;
+      }
+      print STDERR "Warning: expected " . scalar(@set) . " entries for ids $set[0] to $set[-1] but got " . scalar(@children) . "\n"
+        if scalar(@children) < scalar(@set);
+      push @out, @children;
+      last;
+    }
+    print STDERR "Warning: failed to fetch pubmd ids $set[0] to $set[-1]\n"
+      if $iTry == $maxTries;
+  }
+  return @out;
 }
 
 1;
