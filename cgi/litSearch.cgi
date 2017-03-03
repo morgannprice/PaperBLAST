@@ -349,74 +349,75 @@ sub simstring($$$$$$$$$$$$$) {
 # and other entries that depend on the type -- either papers for a list of GenePaper/PaperAccess items,
 # or pmIds (a list of pubmed identifiers)
 sub SubjectToGene($) {
-    my ($subjectId) = @_;
-    if ($subjectId =~ m/^gnl\|ECOLI\|(.*)$/) {
-        my $protein_id = $1;
-        my $gene = $dbh->selectrow_hashref("SELECT * FROM EcoCyc WHERE protein_id = ?", {}, $protein_id);
-        die "Unrecognized subject $subjectId" unless defined $gene;
-        $gene->{subjectId} = $subjectId;
-        $gene->{protein_id} = $protein_id;
-        $gene->{source} = "EcoCyc";
-        $gene->{URL} = "http://ecocyc.org/gene?orgid=ECOLI&id=$protein_id";
-        my @ids = ( $gene->{protein_name}, $gene->{bnumber} );
-        @ids = grep { $_ ne "" } @ids;
-        $gene->{showName} = join(" / ", @ids) || $protein_id;
-        $gene->{priority} = 1;
-        $gene->{organism} = "Escherichia coli K-12";
-        $gene->{pmIds} = $dbh->selectcol_arrayref(
-            "SELECT pmId FROM EcoCycToPubMed WHERE protein_id = ?",
-            {}, $protein_id);
-        return $gene;
-    } else {
-        my $gene = $dbh->selectrow_hashref("SELECT * FROM Gene WHERE geneId = ?", {}, $subjectId);
-        if (defined $gene) {
-            $gene->{subjectId} = $subjectId;
-            $gene->{priority} = 3;
-            my $papers = $dbh->selectall_arrayref(qq{ SELECT DISTINCT * FROM GenePaper
-                                                          LEFT JOIN PaperAccess USING (pmcId,pmId)
-                                                          WHERE geneId = ? ORDER BY year DESC },
-                                                  { Slice => {} }, $subjectId);
-            
-            $gene->{papers} = $papers;
-            my @terms = map { $_->{queryTerm} } @$papers;
-            my %terms = map { $_ => 1 } @terms;
-            @terms = sort keys %terms;
-            $gene->{showName} = join(", ", @terms);
-            if ($subjectId =~ m/^VIMSS(\d+)$/) {
-                my $locusId = $1;
-                $gene->{locusId} = $locusId;
-                $gene->{source} = "MicrobesOnline";
-                $gene->{URL} = "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=$locusId";
-                $gene->{desc} = "no description" if $gene->{desc} eq "";
-            } elsif ($subjectId =~ m/^[A-Z]+_[0-9]+[.]\d+$/) { # refseq
-                $gene->{URL} = "http://www.ncbi.nlm.nih.gov/protein/$subjectId";
-                $gene->{source} = "RefSeq";
-            } elsif ($subjectId =~ m/^[A-Z][A-Z0-9]+$/) { # SwissProt/TREMBL
-                $gene->{URL} = "http://www.uniprot.org/uniprot/$subjectId";
-                $gene->{source} = "SwissProt/TReMBL";
-            } else {
-                die "Cannot build a URL for subject $subjectId";
-            }
-            return $gene;
-        } else { # UniProt
-            my $gene = $dbh->selectrow_hashref("SELECT * FROM UniProt WHERE acc = ?", {}, $subjectId);
-            die "Unrecognized subject $subjectId" unless defined $gene;
-            $gene->{subjectId} = $subjectId;
-            $gene->{priority} = 2;
-            $gene->{source} = "SwissProt";
-            $gene->{URL} = "http://www.uniprot.org/uniprot/$subjectId";
-            $gene->{showName} = $gene->{acc};
-            my @comments = split /_:::_/, $gene->{comment};
-            @comments = map { s/[;. ]+$//; $_; } @comments;
-            @comments = grep m/^FUNCTION|COFACTOR|CATALYTIC|ENZYME|DISRUPTION/, @comments;
-            my $comment = join("<BR>\n", @comments);
-            my @pmIds = $comment =~ m!{ECO:0000269[|]PubMed:(\d+)}!;
-            $comment =~ s!{ECO:[A-Za-z0-9_:,.| -]+}!!g;
-            $gene->{comment} = $comment;
-            $gene->{pmIds} = \@pmIds;
-            return $gene;
-        }
+  my ($subjectId) = @_;
+  if ($subjectId =~ m/^gnl\|ECOLI\|(.*)$/) {
+    my $protein_id = $1;
+    my $gene = $dbh->selectrow_hashref("SELECT * FROM EcoCyc WHERE protein_id = ?", {}, $protein_id);
+    die "Unrecognized subject $subjectId" unless defined $gene;
+    $gene->{subjectId} = $subjectId;
+    $gene->{protein_id} = $protein_id;
+    $gene->{source} = "EcoCyc";
+    $gene->{URL} = "http://ecocyc.org/gene?orgid=ECOLI&id=$protein_id";
+    my @ids = ( $gene->{protein_name}, $gene->{bnumber} );
+    @ids = grep { $_ ne "" } @ids;
+    $gene->{showName} = join(" / ", @ids) || $protein_id;
+    $gene->{priority} = 1;
+    $gene->{organism} = "Escherichia coli K-12";
+    $gene->{pmIds} = $dbh->selectcol_arrayref("SELECT pmId FROM EcoCycToPubMed WHERE protein_id = ?",
+                                              {}, $protein_id);
+    return $gene;
+  } else {
+    # Check in UniProt before checking in Gene, but UniProt items may show up in Gene as well.
+    my $gene = $dbh->selectrow_hashref("SELECT * FROM UniProt WHERE acc = ?", {}, $subjectId);
+    if (defined $gene) {
+      $gene->{subjectId} = $subjectId;
+      $gene->{priority} = 2;
+      $gene->{source} = "SwissProt";
+      $gene->{URL} = "http://www.uniprot.org/uniprot/$subjectId";
+      $gene->{showName} = $gene->{acc};
+      my @comments = split /_:::_/, $gene->{comment};
+      @comments = map { s/[;. ]+$//; $_; } @comments;
+      @comments = grep m/^FUNCTION|COFACTOR|CATALYTIC|ENZYME|DISRUPTION/, @comments;
+      my $comment = join("<BR>\n", @comments);
+      my @pmIds = $comment =~ m!{ECO:0000269[|]PubMed:(\d+)}!;
+      $comment =~ s!{ECO:[A-Za-z0-9_:,.| -]+}!!g;
+      $gene->{comment} = $comment;
+      $gene->{pmIds} = \@pmIds;
+    } else { # look in Gene table
+      $gene = $dbh->selectrow_hashref("SELECT * FROM Gene WHERE geneId = ?", {}, $subjectId);
+      die "Unrecognized gene $subjectId" unless defined $gene;
+      $gene->{subjectId} = $subjectId;
+      $gene->{priority} = 3;
+      if ($subjectId =~ m/^VIMSS(\d+)$/) {
+        my $locusId = $1;
+        $gene->{source} = "MicrobesOnline";
+        $gene->{URL} = "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=$locusId";
+        $gene->{desc} = "no description" if $gene->{desc} eq "";
+      } elsif ($subjectId =~ m/^[A-Z]+_[0-9]+[.]\d+$/) { # refseq
+        $gene->{URL} = "http://www.ncbi.nlm.nih.gov/protein/$subjectId";
+        $gene->{source} = "RefSeq";
+      } elsif ($subjectId =~ m/^[A-Z][A-Z0-9]+$/) { # SwissProt/TREMBL
+        $gene->{URL} = "http://www.uniprot.org/uniprot/$subjectId";
+        $gene->{source} = "SwissProt/TReMBL";
+      } else {
+        die "Cannot build a URL for subject $subjectId";
+      }
     }
+    # add papers, even if from UniProt
+    my $papers = $dbh->selectall_arrayref(qq{ SELECT DISTINCT * FROM GenePaper
+                                              LEFT JOIN PaperAccess USING (pmcId,pmId)
+                                              WHERE geneId = ?
+                                              ORDER BY year DESC },
+                                          { Slice => {} }, $subjectId);
+    $gene->{papers} = $papers;
+    if (!defined $gene->{showName}) { # already set for UniProt genes
+      my @terms = map { $_->{queryTerm} } @$papers;
+      my %terms = map { $_ => 1 } @terms;
+      @terms = sort keys %terms;
+      $gene->{showName} = join(", ", @terms) if !defined $gene->{showName};
+    }
+    return $gene;
+  }
 }
 
 sub VIMSSToQuery($) {
