@@ -66,6 +66,7 @@ querying EuropePMC.
 Download information from RefSeq, UniProt, EcoCyc, EuropePMC, and
 PubMed:
 
+	mkdir indata
 	nice bin/download.pl -dir indata >& download.log
 
 Choose which queries to run against EuropePMC:
