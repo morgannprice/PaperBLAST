@@ -9,7 +9,7 @@ use pbutils;
 my @allsteps = qw{parse oa am elsevier crossref pubmed comb stats};
 my $allsteps = join(",", @allsteps);
 my $usage = <<END
-run_search.pl -in downloads -work work  [ -test ]
+run_search.pl -in downloads [ -work work ] [ -test ]
 	[ -cache cache ] [ -cache-only ]
 	[ -steps $allsteps ]
 
@@ -27,7 +27,8 @@ Given the EuropePMC results in work/epmc, compute snippets using:
 END
 ;
 
-my ($indir, $workdir, $test, $cacheOnly);
+my ($indir, $test, $cacheOnly);
+my $workdir = "work";
 my $cachedir = "cache";
 my $dosteps = $allsteps;
 

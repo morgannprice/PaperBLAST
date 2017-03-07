@@ -11,8 +11,8 @@ my $allsteps = join(",",@allsteps);
 my $comparedir = "$Bin/../data";
 
 my $usage = <<END
-run_final.pl -in downloads -work work [ -test ] [ -steps ... ]
-	[ -compare $comparedir ]
+run_final.pl -in downloads [ -work work ] [ -test ] [ -steps ... ]
+wo	[ -compare $comparedir ]
 
 Given the downloads and work directories, and the output of
 run_snippets.pl, builds a database in work/data, and compares it to
@@ -21,7 +21,8 @@ the existing database (from $comparedir)
 END
 ;
 
-my ($test, $indir, $workdir);
+my ($test, $indir);
+my $workdir = "work";
 my $dosteps = $allsteps;
 
 sub maybe_run($) {

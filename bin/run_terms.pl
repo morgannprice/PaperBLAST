@@ -10,7 +10,7 @@ my @allsteps = qw{explodeam explodeeco parsepm pm pmc am mo refseq sprot byorg c
 my $allsteps = join(",",@allsteps);
 
 my $usage = <<END
-run_terms.pl -in downloads -work work [ -test ] [ -steps ... ]
+run_terms.pl -in downloads [ -work work ] [ -test ] [ -steps ... ]
 
 Given the downloads directory (populated by download.pl), build the
 list of query terms to search against EuropePMC.
@@ -33,7 +33,8 @@ You can use the -steps argument with a comma-delimited subset of steps. The defa
 END
     ;
 
-my ($test, $indir, $workdir);
+my ($test, $indir);
+my $workdir = "work";
 my $dosteps = $allsteps;
 
 sub maybe_run($) {

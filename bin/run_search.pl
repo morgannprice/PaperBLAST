@@ -5,14 +5,15 @@ use Getopt::Long;
 use FindBin qw($Bin);
 
 my $usage = <<END
-run_search.pl -in downloads -work work [ -test ]
+run_search.pl -in downloads [ -work work ] [ -test ]
 
 Given queries in work/comb.query (computed by run_terms.pl), run the
 queries against EuropePMC.
 END
 ;
 
-my ($indir, $workdir, $test);
+my ($indir, $test);
+my $workdir = "work";
 
 sub maybe_run($) {
     my ($cmd) = @_;
