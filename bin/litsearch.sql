@@ -10,7 +10,7 @@ CREATE TABLE GenePaper(
 	authors TEXT,
 	journal TEXT,
 	year TEXT,
-        isOpen INT
+        isOpen INT /* missing for GeneRIF links */
 );
 CREATE INDEX 'GeneToPaper' ON GenePaper ('geneId' ASC);
 
@@ -46,6 +46,15 @@ CREATE TABLE UniProt(
         protein_length INT NOT NULL,
         PRIMARY KEY (acc)
 );
+
+CREATE TABLE GeneRIF(
+	/* geneId is actually a fully specified protein id like YP_006960813.1 */
+	geneId TEXT NOT NULL,
+        pmcId TEXT NOT NULL,
+        pmId TEXT NOT NULL,
+        comment TEXT NOT NULL
+);
+CREATE INDEX 'GeneToRIF' ON GeneRIF ('geneId' ASC, 'pmcId' ASC, 'pmId' ASC);
 
 CREATE TABLE EcoCyc(
 	protein_id TEXT NOT NULL,

@@ -211,6 +211,7 @@ if (!defined $seq) {
                         { Slice => {} },
                         $gene->{subjectId}, $paper->{pmcId}, $paper->{pmId})
                         if $paper->{pmcId} || $paper->{pmId};
+
                     my $paperId = join(":::", $paper->{pmId}, $paper->{pmcId}, $paper->{doi});
                     my $nSkip = 0; # number of duplicate snippets
                     foreach my $snippet (@$snippets) {
@@ -228,6 +229,23 @@ if (!defined $seq) {
                     foreach my $snippet (@$snippets) {
                         my $term = $snippet->{queryTerm};
                         $paperSeen{$paperId}{$term} = 1;
+                    }
+
+                    # Add RIFs
+                    my $rifs = [];
+                    $rifs = $dbh->selectall_arrayref(qq{ SELECT DISTINCT * from GeneRIF
+                                                        WHERE geneId = ? AND pmcId = ? AND pmId = ? },
+                                                    { Slice => {} },
+                                                    $gene->{subjectId}, $paper->{pmcId}, $paper->{pmId})
+                      if $paper->{pmcId} || $paper->{pmId};
+                    foreach my $rif (@$rifs) {
+                      push @pieces, $rif->{ comment }
+                        . " ("
+                          . a({ -title => "from Gene Reference into Function (NCBI)",
+                                -href => "https://www.ncbi.nlm.nih.gov/gene/about-generif",
+                                -style => "text-color: black;" },
+                              "GeneRIF")
+                            . ")";
                     }
 
                     my $paper_url = undef;
@@ -254,7 +272,7 @@ if (!defined $seq) {
                         small( a({-title => $paper->{authors}}, "$authorShort,"),
                                $paper->{journal}, $paper->{year}, $extra);
                     
-                    if (@$snippets == 0) {
+                    if (@pieces == 0) {
                         # Skip if printed already for this gene (with no snippet)
                         next if exists $paperSeenNoSnippet{$paperId};
                         $paperSeenNoSnippet{$paperId} = 1;
@@ -263,19 +281,23 @@ if (!defined $seq) {
                         my $excuse;
                         my $short;
                         if ($paper->{access} eq "full") {
-                            $short = "no snippet";
-                            $excuse = "This term was not found in the full text, sorry.";
+                          $short = "no snippet";
+                          $excuse = "This term was not found in the full text, sorry.";
                         } elsif ($paper->{isOpen} == 1) {
-                            if ($paper->{access} eq "abstract") {
-                                $short = "no snippet";
-                                $excuse = "This paper is open access but PaperBLAST only searched the the abstract.";
-                            } else {
-                                $short = "no snippet";
-                                $excuse = "This paper is open access but PaperBLAST did not search either the full text or the abstract.";
-                            }
+                          if ($paper->{access} eq "abstract") {
+                            $short = "no snippet";
+                            $excuse = "This paper is open access but PaperBLAST only searched the the abstract.";
+                          } else {
+                            $short = "no snippet";
+                            $excuse = "This paper is open access but PaperBLAST did not search either the full text or the abstract.";
+                          }
+                        } elsif ($paper->{isOpen} eq "") {
+                          # this happens if the link is from GeneRIF
+                          $short = "no snippet";
+                          $excuse = "PaperBLAST did not search either the full text or the abstract.";
                         } elsif ($paper->{journal} eq "") {
-                            $short = "secret";
-                            $excuse = "PaperBLAST does not have access to this paper, sorry";
+                          $short = "secret";
+                          $excuse = "PaperBLAST does not have access to this paper, sorry";
                         } else {
                             $short = "secret";
                             $excuse = "$paper->{journal} is not open access, sorry";
@@ -377,7 +399,7 @@ sub SubjectToGene($) {
       $gene->{showName} = $gene->{acc};
       my @comments = split /_:::_/, $gene->{comment};
       @comments = map { s/[;. ]+$//; $_; } @comments;
-      @comments = grep m/^FUNCTION|COFACTOR|CATALYTIC|ENZYME|DISRUPTION/, @comments;
+      @comments = grep m/^SUBUNIT|FUNCTION|COFACTOR|CATALYTIC|ENZYME|DISRUPTION/, @comments;
       my $comment = join("<BR>\n", @comments);
       my @pmIds = $comment =~ m!{ECO:0000269[|]PubMed:(\d+)}!;
       $comment =~ s!{ECO:[A-Za-z0-9_:,.| -]+}!!g;
@@ -416,6 +438,7 @@ sub SubjectToGene($) {
       @terms = sort keys %terms;
       $gene->{showName} = join(", ", @terms) if !defined $gene->{showName};
     }
+
     return $gene;
   }
 }
