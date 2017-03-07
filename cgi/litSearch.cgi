@@ -48,17 +48,50 @@ my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || 
 my $documentation = <<END
 <H3><A NAME="works">How It Works</A></H3>
 
-<P>PaperBLAST builds a database of protein sequences that are linked to scientific publications. These links come from automated text searches against papers in <A HREF="http://europepmc.org/">EuropePMC</A> and from the manually-curated information about protein sequences in <A HREF="http://www.uniprot.org/">Swiss-Prot</A> and <A HREF="http://ecocyc.org">EcoCyc</A>. Given this database of proteins and a query sequence, PaperBLAST uses <A HREF="https://en.wikipedia.org/wiki/BLAST">protein-protein BLAST</A> to find similar sequences with E &lt; 0.001. As of February 2017, PaperBLAST links over 300,000 proteins to over 60,000 papers.
+<P>PaperBLAST builds a database of protein sequences that are linked
+to scientific articles. These links come from automated text
+searches against the articles in
+<A HREF="http://europepmc.org/">EuropePMC</A>
+and from
+manually-curated information from
+<A HREF="https://www.ncbi.nlm.nih.gov/gene/about-generif" title="Gene Reference into Function (NCBI)">GeneRIF</A>,
+<A HREF="http://www.uniprot.org/">Swiss-Prot</A>, and
+<A HREF="http://ecocyc.org">EcoCyc</A>.
+As of February 2017,
+PaperBLAST links over 360,000 proteins to over 700,000 papers.
+Given this database and a protein sequence query, PaperBLAST uses
+<A HREF="https://en.wikipedia.org/wiki/BLAST">protein-protein BLAST</A>
+to find similar sequences with E &lt; 0.001.
 
-<P>To build PaperBLAST\'s database, we query every locus tag or <A HREF="https://www.ncbi.nlm.nih.gov/refseq/">RefSeq</A> protein id that appears in the open access part of EuropePMC (including the author manuscripts part). We obtain the protein sequences and identifiers from <A HREF="http://www.microbesonline.org/">MicrobesOnline</A> or from RefSeq. We use queries of the form "locus_tag AND genus_name" to try to ensure that the paper is actually discussing the gene as opposed to something else whose identifier happens to match a locus tag. Because EuropePMC indexes most recent biomedical papers, even if they are not open access, some of the links may be to papers that you cannot read (or that our computers cannot read).
-We also query EuropePMC for every locus tag that appears in the 300 most-referenced genomes, so that a gene may appear in the PaperBLAST results even though none of the papers that mention it are open access.
-Finally, we index proteins from Swiss-Prot if their curators identified experimental evidence for the protein\'s function (evidence code ECO:0000269), as well as every protein from <i> Escherichia coli</i> K-12 in EcoCyc. Most of these Swiss-Prot or EcoCyc entries include links to articles in <A HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A><sup>&reg;</sup>. (We also use PubMed<sup>&reg;</sup> abstracts to select snippets of text from papers that we do not have full-text access to if the abstract mentions a locus tag, a RefSeq id, or a UniProt accession.)</P>
+<P>We query EuropePMC with locus tags, with <A HREF="https://www.ncbi.nlm.nih.gov/refseq/">RefSeq</A>
+protein identifiers, and with <A HREF="http://www.uniprot.org/">UniProt</A> accessions.
+We obtain the locus tags from RefSeq or from <A HREF="http://www.microbesonline.org/">MicrobesOnline</A>.
+We use queries of the form "locus_tag AND genus_name" to try to ensure that the paper is actually discussing the gene as opposed to something else whose identifier happens to match a locus tag.
+Because EuropePMC indexes most recent biomedical papers, even if they are not open access, some of the links may be to papers that you cannot read or that our computers cannot read.
+We query each of these identifiers that appears in the open access part of EuropePMC, as well as
+every locus tag that appears in the 500 most-referenced genomes, so that a gene may appear in the PaperBLAST results even though none of the papers that mention it are open access.
+
+<P>For every article that mentions a locus tag, a RefSeq protein identifier, or a UniProt
+accession, we try to select one or two snippets
+of text that refer to the protein. If we cannot get access to the full text, we try to select a snippet from the abstract, but unfortunately,
+unique identifiers such as locus tags are rarely provided in abstracts.
+
+<P>We also use manually-curated links between protein sequences and papers.
+We index proteins from NCBI's RefSeq if they a GeneRIF entries links the gene to an article in
+<A HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A><sup>&reg;</sup>.
+GeneRIF also provides a short summary of the article's claim about the protein, which we provide instead of a snippet.
+We index proteins from Swiss-Prot (the curated part of UniProt) if the curators identified experimental evidence for the protein's function (evidence code ECO:0000269).
+And we index every protein EcoCyc, a curated database of the proteins in <i> Escherichia coli</i> K-12.
+For the entries from Swiss-Prot and EcoCyc, we provide a short curated description of the protein's function.
+Most of these entries also
+link to articles in
+<A HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A>.
 
 <P>The code for PaperBLAST is available <A HREF="https://github.com/morgannprice/PaperBLAST">here</A>.
 
 <H3><A NAME="secret">Secrets</A></H3>
 
-<P>PaperBLAST cannot provide snippets for many of the papers that are published in non-open-access journals. This limitation applies even if the paper is marked as "free" on the publisher\'s web site and is available in PubmedCentral or EuropePMC. If a journal that you publish in is marked as "secret," please consider publishing elsewhere.
+<P>PaperBLAST cannot provide snippets for many of the papers that are published in non-open-access journals. This limitation applies even if the paper is marked as "free" on the publisher's web site and is available in PubmedCentral or EuropePMC. If a journal that you publish in is marked as "secret," please consider publishing elsewhere.
 
 <center>by <A HREF="http://morgannprice.org/">Morgan Price</A>,
 <A HREF="http://genomics.lbl.gov/">Arkin group</A><BR>
