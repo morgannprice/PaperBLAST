@@ -20,17 +20,19 @@ litSearch.cgi, which is the interface for using PaperBLAST.
 
 For litSearch.cgi to work, the data/ subdirectory must include the
 sqlite3 database and the protein BLAST database. These are both built
-by bin/buildLitDb.pl
+by bin/run_final.pl (which invokes bin/buildLitDb.pl).
 
 Create a tmp/ subdirectory and set it to writable by apache (or
-everyone) so that litSearch.cgi can write to ../tmp/
+everyone) so that litSearch.cgi can write to ../tmp/ (relative to the
+directory that it is invoked from, which is usually the cgi directory)
 
 # Dependencies
 
 sqlite3 is required
 
 To identify search terms from MicrobesOnline, the MicrobesOnline code
-base must be in ~/Genomics. (This is not required by the CGI scripts.) See
+base must be in ~/Genomics. (This is required for building the
+database; it is not required by the CGI scripts.) See
 http://www.microbesonline.org/programmers.html#source
 
 The swissknife perl library must be in the SWISS subdirectory (so that
@@ -56,102 +58,51 @@ DBI
 
 # Building the Database
 
-To prepare the input files for buildLitDb.pl, you need to download
-RefSeq, UniProt, the open-access part of EuropePMC, and EcoCyc, and
-you need to run many queries with the API of EuropePMC. The steps are:
+The database can be built with the following series of scripts. As of
+March 2017, the process requires approximately 324 GB of free disk
+space and takes around a week to run. The majority of the time is for
+querying EuropePMC.
 
-mkdir oa # directory for open access part of EuropePMC
+1. Download information from RefSeq, UniProt, EcoCyc, EuropePMC, and
+PubMed:
 
-mkdir oa.out # directory for intermediate results
+nice bin/download.pl -dir indata >& download.log
 
-wget -O - --no-check-certificate https://europepmc.org/ftp/oa > oa/listing
 
-perl -ane 'print $1."\n" if m/"(PMC[a-zA-Z90-9_.-]+[.]gz)"/' < oa/listing > oa/files
+2. Choose which queries to run against EuropePMC:
 
-### Find potential locus tags
-(for i in `cat oa/files | sed -e s/.xml.gz//`; do echo $i; gunzip -c oa/$i.xml.gz | bin/words.pl > oa.out/$i.words; done) >& words.log
+nice bin/run_terms.pl -in indata -work work >& run_terms.log
 
-### Find locus tags corresponding to those words, using MicrobesOnline
-(cat oa.out/PMC*.words | bin/moIds.pl > PMC.oa.links) >& moIds.log
 
-### Build queries from those locus tags
-(bin/oaquery.pl < PMC.oa.links > queryprot.oa) >& queryprot.oa.log &
+3. Run all the queries against EuropePMC:
 
-### Build queries from associations found using an earlier version of PaperBLAST
-bin/hitsToTerms2.pl < pubcache > queryprot.pubcache
+nice bin/run_search.pl -in indata -work work >& run_search.log
 
-### Build queries for the most popular genomes (so that locus tags can be found even if the paper is secret)
-cat queryprot.pubcache queryprot.oa | sort -u | ~/Genomics/util/tabulate.pl -skip 0 -column 1 > cnt.taxnames
 
-(head -301 cnt.taxnames | tail -300 | nice bin/queryProtByOrg.pl > queryprot.pop) >& queryprot.pop.log &
+4. Extract snippets:
 
-### download refseq (all the complete*.genomic.gbff.gz files). Note release79 would change.
-mkdir refseq
+nice bin/run_snippets.pl -in indata -work work >& run_snippets.log
 
-cd refseq
+Before using run_snippets, you should set up a key for the elsevier API
+and a token for the CrossRef API. These should go in the cache/ directory, in files named elsevier key and crossref_token.
 
-mkdir complete
+The cache/ directory is also where the articles that are downloaded
+from the Elsevier API or from Crossref are stored. They are stored as
+cache_nnnn.pdf or .xml, where the number is the pubmed id. If you use
+other tools such as pubMunch2 to obtain articles, you need to rename
+the PDFs to this format and put them in the cache/ directory.
 
-cd complete
+4. Build the database:
 
-(for i in `grep complete ../release79.files.installed  | cut -f 2 | grep genomic.gbff.gz | sort`; do echo Fetching $i; wget -nv ftp://ftp.ncbi.nih.gov/refseq/release/complete/$i; done) >& fetch.log
+nice bin/run_final.pl -in indata -work work >& run_final.log
 
-### Build queries from RefSeq
-cut -f 2 oa.out/PMC*.words | sort -u > oa.words
-
-(for i in `(cd /usr2/people/gtl/data/refseq/release79; ls complete.*.genomic.gbff.gz | sed -e 's/.genomic.gbff.gz//')`; do echo "zcat /usr2/people/gtl/data/refseq/release79/$i.genomic.gbff.gz | bin/findRefSeqQueries.pl oa.words > refseq/$i.loci"; done) > refseq/cmds
-
-nice bin/submitter.pl refseq/cmds >& refseq/cmds.log
-
-(cat refseq/*.loci | bin/convertRefSeqQueries.pl > queryprot.refseq) >& refseq.convert.log
-
-(bin/removeDupQueries.pl queryprot.oa2 queryprot.pop < queryprot.refseq > queryprot.refseqnew) >& queryprot.refseq.duplog
-
-### Run all the queries against EuropePMC
-
-mkdir parts # staging area for temporary files
-
-cat queryprot.oa queryprot.pubcache | sort -u > queryprot.oa2
-
-###### queryEuropePMCBatch.pl submits queries in parallel, throttled to 5/second
-###### Running all of these will probably take over a week
-bin/queryEuropePMCBatch.pl -dir parts -in queryprot.oa2 -out hits.oa2 >& hits.oa2.log
-
-bin/queryEuropePMCBatch.pl -dir parts -in queryprot.pop -out pop.oa2 >& hits.pop.log
-
-bin/queryEuropePMCBatch.pl -dir parts -in queryprot.refseqnew -out refseq.hits >& refseq.hits.log
-
-### Combine the results, find snippets, and build the database
-bin/parseEuropePMCHits.pl -in queryprot.oa2 -hits hits.oa2 -out epmc_oa2 >& epmc_oa2.log
-
-bin/parseEuropePMCHits.pl -in queryprot.pop -hits pop.oa2 -out epmc_pop >& epmc_pop.log
-
-bin/parseEuropePMCHits.pl -in queryprot2.pop -hits pop2.oa2 -out epmc_pop2 >& epmc_pop2.log
-
-bin/parseEuropePMCHits.pl -in queryprot.refseqnew -hits tmp.hits -out epmc_refseq >& epmc_refseq.log
-
-(for i in `cat oa/files | sed -e s/.xml.gz//`; do echo "./buildSnippets.pl -in oa/$i.xml.gz -out oa.out/$i.snippets epmc_oa2.papers epmc_pop.papers epmc_pop2.papers epmc_refseq.papers >& oa.out/$i.snippets.log"; done) > oa.out/snippets.cmds
-
-bin/submitter.pl oa.out/snippets.cmds >& oa.out/snippets.cmds.log
-
-bin/buildLitDb.pl -snippets snippets -dir data -sprot sprot.char.tab epmc_oa2 epmc_pop epmc_pop2 epmc_refseq -ecocyc ecocyc/data
-
-# The Databases
-
-PaperBLAST uses a SQL database (currently implemented with sqlite3)
-with information about proteins and links to papers as well as a
-protein BLAST database.
-
-See bin/litsearch.sql for the sqlite3 database schema. Note that genes
-curated functions in UniProt and from EcoCyc do not link to papers in
-the same way that the other genes (from MicrobesOnline or RefSeq)
-do. UniProt.comment contains the information about papers for UniProt
-genes. EcoCycToPubMed contains the links to papers from EcoCyc. The
-other links are in GenePaper. The sqlite3 database must be in
-../data/litsearch.db (this path is relative to the CGI scripts).  The
-full set of proteins are in ../data/litsearch.faa. The proteins with
-unique sequences is in ../data/uniq.faa, which is also a BLASTp
-database.
+This will create the direcotry work/data, which will include a BLAST
+database of unique protein sequences and a sqlite3 relational
+database. See bin/litsearch.sql for the sqlite3 database schema. These
+contents can be copied or symbolically linked to the data/ directory,
+which is where the CGI scripts expect the database to be. (More
+precisely, the data should be in ../data/ relative to the directory
+that the CGI script is invoked from.)
 
 -- Morgan Price
 Arkin group
