@@ -63,23 +63,23 @@ March 2017, the process requires approximately 324 GB of free disk
 space and takes around a week to run. The majority of the time is for
 querying EuropePMC.
 
-1. Download information from RefSeq, UniProt, EcoCyc, EuropePMC, and
+. Download information from RefSeq, UniProt, EcoCyc, EuropePMC, and
 PubMed:
 
 nice bin/download.pl -dir indata >& download.log
 
 
-2. Choose which queries to run against EuropePMC:
+. Choose which queries to run against EuropePMC:
 
 nice bin/run_terms.pl -in indata -work work >& run_terms.log
 
 
-3. Run all the queries against EuropePMC:
+. Run all the queries against EuropePMC:
 
 nice bin/run_search.pl -in indata -work work >& run_search.log
 
 
-4. Extract snippets:
+. Extract snippets:
 
 nice bin/run_snippets.pl -in indata -work work >& run_snippets.log
 
@@ -92,11 +92,11 @@ cache_nnnn.pdf or .xml, where the number is the pubmed id. If you use
 other tools such as pubMunch2 to obtain articles, you need to rename
 the PDFs to this format and put them in the cache/ directory.
 
-4. Build the database:
+. Build the database:
 
 nice bin/run_final.pl -in indata -work work >& run_final.log
 
-This will create the direcotry work/data, which will include a BLAST
+This will create the directory work/data, which will include a BLAST
 database of unique protein sequences and a sqlite3 relational
 database. See bin/litsearch.sql for the sqlite3 database schema. These
 contents can be copied or symbolically linked to the data/ directory,
