@@ -71,6 +71,7 @@ PubMed:
 
 Choose which queries to run against EuropePMC:
 
+	mkdir work
 	nice bin/run_terms.pl -in indata -work work >& run_terms.log
 
 Run all the queries against EuropePMC:
