@@ -236,7 +236,7 @@ if (!defined $seq && ! $more_subjectId) {
                                          $queryStart,$queryEnd,$subjectStart,$subjectEnd,
                                          $percIdentity,$eVal,$bitscore,
                                          $def, $gene->{showName}, $seq, $subjectId)
-                    if $gene->{subjectId} eq $genes[0]{subjectId};
+                    if $gene->{subjectId} eq $genes[0]{subjectId} && ! $more_subjectId;
                 if (exists $gene->{pmIds} && @{ $gene->{pmIds} } > 0) {
                     my @pmIds = @{ $gene->{pmIds} };
                     my %seen = ();
