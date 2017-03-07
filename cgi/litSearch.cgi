@@ -8,8 +8,12 @@
 #######################################################
 #
 # Optional CGI garameters:
-# query (protein sequence in FASTA or UniProt or plain format)
-# vimss -- specify the vimss id to search for (mostly to make testing easier)
+# query -- this should be the protein sequence in FASTA or UniProt or plain format,
+#	or a VIMSS id, or a geneId in the database
+# or
+# more -- which geneId (in the database) to show the full list of papers for
+#
+# If none of these is specified, shows the query box, an example link, and some documentation
 
 use strict;
 use CGI qw(:standard Vars);
@@ -31,8 +35,13 @@ die "No such executable: $blastall" unless -x $blastall;
 die "No such file: $blastdb" unless -e $blastdb;
 die "No such file: $sqldb" unless -e $sqldb;
 
+# If a gene has more papers than this, there is a "more" lnik to show all the information
+# for that gene on a separate page
+
 my $cgi=CGI->new;
 my $query = $cgi->param('query') || "";
+my $more_subjectId = $cgi->param('more') || "";
+my $maxPapers = $more_subjectId ? 10000 : 8;
 
 my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
 
@@ -65,15 +74,41 @@ print
     start_html($title),
     qq{<div style="background-color: #40C0CB; display: block; position: absolute; top: 0px; left: -1px; width: 100%; padding: 0.25em; z-index: 400;"><H2 style="margin: 0em;"><A HREF="litSearch.cgi" style="color: gold; font-family: 'Montserrat', sans-serif; font-style:italic; text-shadow: 1px 1px 1px #000000; text-decoration: none;">PaperBLAST &ndash; <small>Find papers about a protein or its homologs</small></A></H2></div><P style="margin: 0em;">&nbsp;</P>\n};
 
+my $procId = $$;
+my $timestamp = int (gettimeofday() * 1000);
+my $filename = $procId . $timestamp;
+my $seqFile = "$tmpDir/$filename.fasta";
+
+# remove leading and trailing whitespace
+$query =~ s/^\s+//;
+$query =~ s/\s+$//;
+if ($query =~ m/^VIMSS\d+$/i) {
+  $query = &VIMSSToQuery($query);
+} elsif ($query !~ m/\n/ && $query =~ m/[0-9_]/) {
+  # a single line query with a number of underscore in it is assumed to be a gene id
+  my $gene = $dbh->selectrow_hashref("SELECT * from Gene WHERE geneId = ?", {}, $query);
+  die "Sorry, we have no papers linked to this gene id: $query\n" if ! $gene;
+  my $geneId = $gene->{geneId};
+  my $desc = $gene->{desc};
+  my $org = $gene->{organism};
+  my $dup = $dbh->selectrow_hashref("SELECT * from SeqToDuplicate WHERE sequence_id = ?", {}, $geneId);
+  my $seqId = $dup ? $dup->{sequence_id} : $geneId;
+  my $fastacmd = "../bin/blast/fastacmd";
+  die "No such executable: $fastacmd" unless -x $fastacmd;
+  system($fastacmd, "-s", $seqId, "-o", $seqFile, "-d", $blastdb) == 0 || die "fastacmd failed: $!";
+  open(SEQ, "<", $seqFile) || die "Cannot read $seqFile";
+  my $seq = "";
+  while (my $line = <SEQ>) {
+    next if $line =~ m/^>/;
+    chomp $line;
+    die "Invalid output from fastacmd" unless $line =~ m/^[A-Z*]+$/;
+    $seq .= $line;
+  }
+  $query = ">$geneId $desc ($org)\n$seq\n";
+}
+
 my $seq;
 my $def = "";
-
-if ($cgi->param('vimss')) {
-  my $locusId = $cgi->param('vimss');
-  $query = &VIMSSToQuery($locusId);
-} elsif ($query =~ m/^VIMSS\d+$/i) {
-  $query = &VIMSSToQuery($query);
-}
 my $hasDef = 0;
 if ($query =~ m/[A-Za-z]/) {
     $seq = "";
@@ -93,7 +128,7 @@ if ($query =~ m/[A-Za-z]/) {
     $def = length($seq) . " a.a." if $def eq "";
 }
 
-if (!defined $seq) {
+if (!defined $seq && ! $more_subjectId) {
     my $exampleId = "3615187";
     my $refseqId = "WP_012018426.1";
     print
@@ -116,40 +151,50 @@ if (!defined $seq) {
               i("ercA")) . "."),
           $documentation;
 } else {
-    my $procId = $$;
-    my $timestamp = int (gettimeofday() * 1000);
-    my $filename = $procId . $timestamp;
-    my $seqFile = "$tmpDir/$filename.fasta";
     my $seqlen = length($seq);
 
-    my $initial = substr($seq, 0, 10);
-    $initial .= "..." if $seqlen > 10;
-    $initial = "$seqlen a.a., $initial" if $hasDef;
-
-    print
-        h3("PaperBLAST Hits for $def ($initial)"),
-        "\n";
-    open(SEQ, ">", $seqFile) || die "Cannot write to $seqFile";
-    print SEQ ">$def\n$seq\n";
-    close(SEQ) || die "Error writing to $seqFile";
-    my $hitsFile = "$tmpDir/$filename.hits";
-    system($blastall, "-p", "blastp", "-d", $blastdb, "-i", $seqFile, "-o", $hitsFile,
-           "-e", 0.001, "-m", 8, "-a", $nCPU, "-F", "m S") == 0 || die "Error running blastall: $!";
+    my $defLong;
+    if ($more_subjectId) {
+      $defLong = $more_subjectId;
+    } else {
+      my $initial = substr($seq, 0, 10);
+      $initial .= "..." if $seqlen > 10;
+      $initial = "$seqlen a.a., $initial" if $hasDef;
+      $defLong = "$def ($initial)";
+    }
+    if ($more_subjectId) {
+      print h3("Full List of Papers Linked to $more_subjectId");
+    } else {
+      print
+        h3("PaperBLAST Hits for $defLong");
+    }
+    print "\n";
     my @hits = ();
-    open(HITS, "<", $hitsFile) || die "Cannot read $hitsFile";
-    while(<HITS>) {
+    if ($more_subjectId) {
+      push @hits, [ $more_subjectId, $more_subjectId, 100.0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
+    } else {
+      open(SEQ, ">", $seqFile) || die "Cannot write to $seqFile";
+      print SEQ ">$def\n$seq\n";
+      close(SEQ) || die "Error writing to $seqFile";
+      my $hitsFile = "$tmpDir/$filename.hits";
+      system($blastall, "-p", "blastp", "-d", $blastdb, "-i", $seqFile, "-o", $hitsFile,
+             "-e", 0.001, "-m", 8, "-a", $nCPU, "-F", "m S") == 0 || die "Error running blastall: $!";
+      open(HITS, "<", $hitsFile) || die "Cannot read $hitsFile";
+      while(<HITS>) {
         chomp;
         my @F = split /\t/, $_;
         push @hits, \@F;
+      }
+      close(HITS) || die "Error reading $hitsFile";
+      unlink($seqFile);
+      unlink($hitsFile);
     }
-    close(HITS) || die "Error reading $hitsFile";
-    unlink($seqFile);
-    unlink($hitsFile);
     my $nHits = scalar(@hits);
     if ($nHits == 0) {
         print p("Sorry, no hits to proteins in the literature.");
     } else {
-        print p("Found $nHits similar proteins in the literature:"), "\n";
+        print p("Found $nHits similar proteins in the literature:"), "\n"
+          unless $more_subjectId;
 
         my %seen_subject = ();
         my $li_with_style = qq{<LI style="list-style-type: none;" margin-left: 6em; >};
@@ -203,6 +248,7 @@ if (!defined $seq) {
                 }
                 push @headers, join(" ", @pieces);
                 push @content, $gene->{comment} if $gene->{comment};
+                my $nPaperShow = 0;
                 foreach my $paper (@{ $gene->{papers} }) {
                     my @pieces = (); # what to say about this paper
                     my $snippets = [];
@@ -221,11 +267,18 @@ if (!defined $seq) {
                             $nSkip++;
                         } else {
                             $text =~ s!($term)!<B><span style="color: red;">$1</span></B>!gi;
-                            push @pieces, "...$text...";
+                            push @pieces, "&ldquo;...$text...&rdquo;";
                         }
                     }
                     # ignore this paper if all snippets were duplicate terms
                     next if $nSkip == scalar(@$snippets) && $nSkip > 0;
+                    $nPaperShow++;
+                    if ($nPaperShow > $maxPapers) {
+                      push @content, a({-href => "litSearch.cgi?more=".$subjectId},
+                                       "More");
+                      last;
+                      next;
+                    }
                     foreach my $snippet (@$snippets) {
                         my $term = $snippet->{queryTerm};
                         $paperSeen{$paperId}{$term} = 1;
@@ -238,14 +291,15 @@ if (!defined $seq) {
                                                     { Slice => {} },
                                                     $gene->{subjectId}, $paper->{pmcId}, $paper->{pmId})
                       if $paper->{pmcId} || $paper->{pmId};
+                    my $GeneRIF_def = a({ -title => "from Gene Reference into Function (NCBI)",
+                                          -href => "https://www.ncbi.nlm.nih.gov/gene/about-generif",
+                                          -style => "color: black; text-decoration: none; font-style: italic;" },
+                                        "GeneRIF");
+                    # just 1 snippet if has a GeneRIF
+                    pop @pieces if @$rifs > 0 && @pieces > 1;
                     foreach my $rif (@$rifs) {
-                      push @pieces, $rif->{ comment }
-                        . " ("
-                          . a({ -title => "from Gene Reference into Function (NCBI)",
-                                -href => "https://www.ncbi.nlm.nih.gov/gene/about-generif",
-                                -style => "text-color: black;" },
-                              "GeneRIF")
-                            . ")";
+                      # normally there is just one
+                      unshift @pieces, $GeneRIF_def . ": " . $rif->{ comment };
                     }
 
                     my $paper_url = undef;
@@ -331,14 +385,15 @@ if (!defined $seq) {
              var seq = "$seq";
              fitblast_load_short("fitblast_short", server_root, seq);
              </script>
-    };
+    } unless $more_subjectId;
 
     my @pieces = $seq =~ /.{1,60}/g;
-    print
-        h3("Query Sequence"),
+    if (! $more_subjectId) {
+      print h3("Query Sequence"),
         p({-style => "font-family: monospace;"}, small(join(br(), ">$def", @pieces))),
-        h3(a({-href => "litSearch.cgi"}, "New Search")),
-        $documentation,
+      }
+    print h3(a({-href => "litSearch.cgi"}, "New Search")),
+      $documentation,
         end_html;
 }
 
