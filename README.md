@@ -63,25 +63,22 @@ March 2017, the process requires approximately 324 GB of free disk
 space and takes around a week to run. The majority of the time is for
 querying EuropePMC.
 
-. Download information from RefSeq, UniProt, EcoCyc, EuropePMC, and
+Download information from RefSeq, UniProt, EcoCyc, EuropePMC, and
 PubMed:
 
-nice bin/download.pl -dir indata >& download.log
+	nice bin/download.pl -dir indata >& download.log
 
+Choose which queries to run against EuropePMC:
 
-. Choose which queries to run against EuropePMC:
+	nice bin/run_terms.pl -in indata -work work >& run_terms.log
 
-nice bin/run_terms.pl -in indata -work work >& run_terms.log
+Run all the queries against EuropePMC:
 
+	nice bin/run_search.pl -in indata -work work >& run_search.log
 
-. Run all the queries against EuropePMC:
+Extract snippets:
 
-nice bin/run_search.pl -in indata -work work >& run_search.log
-
-
-. Extract snippets:
-
-nice bin/run_snippets.pl -in indata -work work >& run_snippets.log
+	nice bin/run_snippets.pl -in indata -work work >& run_snippets.log
 
 Before using run_snippets, you should set up a key for the elsevier API
 and a token for the CrossRef API. These should go in the cache/ directory, in files named elsevier key and crossref_token.
@@ -92,9 +89,9 @@ cache_nnnn.pdf or .xml, where the number is the pubmed id. If you use
 other tools such as pubMunch2 to obtain articles, you need to rename
 the PDFs to this format and put them in the cache/ directory.
 
-. Build the database:
+Build the database:
 
-nice bin/run_final.pl -in indata -work work >& run_final.log
+	nice bin/run_final.pl -in indata -work work >& run_final.log
 
 This will create the directory work/data, which will include a BLAST
 database of unique protein sequences and a sqlite3 relational
@@ -104,7 +101,4 @@ which is where the CGI scripts expect the database to be. (More
 precisely, the data should be in ../data/ relative to the directory
 that the CGI script is invoked from.)
 
--- Morgan Price
-Arkin group
-Lawrence Berkeley National Lab
-February 2017
+-- Morgan Price, Arkin group, Lawrence Berkeley National Lab, February 2017
