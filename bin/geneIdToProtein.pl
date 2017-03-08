@@ -1,16 +1,51 @@
 #!/usr/bin/perl -w
 use strict;
 use LWP::Simple;
+use Getopt::Long;
+use FindBin qw{$Bin};
+
+my $default_knownfile = "$Bin/../static/geneId_proteinId";
 
 my $usage = <<END
+geneIdToProtein.pl [ -known $default_knownfile ] < input > output
+
 Run as a filter with the first column being the gene id.
+Use -known /dev/null if you do not want to use known associations.
 END
 ;
+
 my $base = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/';
 my $batch_size = 50;
 sub HandleBatch;
 
+my $knownfile;
+die $usage
+  unless GetOptions('known=s' => \$knownfile)
+  && @ARGV == 0;
+
+if (!defined $knownfile) {
+  if ( -e $default_knownfile) {
+    $knownfile = $default_knownfile;
+  } else {
+    print STDERR "Warning: the known assocations file $knownfile is missing\n";
+    $knownfile = "/dev/null";
+  }
+} else {
+  die "No such file: $knownfile\n" unless -e $knownfile;
+}
+
 my %known = ();
+open(KNOWN, "<", $knownfile) || die "Cannot read $knownfile";
+while(my $line = <KNOWN>) {
+  chomp $line;
+  my ($geneId, $protId) = split /\t/, $line;
+  die "Invalid input in $knownfile" unless defined $protId && $geneId =~ m/^\d+$/;
+  $known{$geneId} = $protId;
+}
+close(KNOWN) || die "Error reading $knownfile";
+print STDERR "Read mappings for " . scalar(keys %known) . " genes\n";
+
+my %seen = ();
 my @batch = ();
 while(my $line = <STDIN>) {
   chomp $line;
@@ -19,12 +54,16 @@ while(my $line = <STDIN>) {
   next if $geneId =~ m/^gene/i; # skip any header line
   die "Invalid gene $geneId" unless $geneId =~ m/^\d+$/;
 
-  next if exists $known{$geneId};
-  $known{$geneId} = 1;
-  push @batch, $geneId;
-  if (@batch >= $batch_size) {
-    &HandleBatch(@batch);
-    @batch = ();
+  next if exists $seen{$geneId};
+  $seen{$geneId} = 1;
+  if (exists $known{$geneId}) {
+    print join("\t", $geneId, $known{$geneId})."\n";
+  } else {
+    push @batch, $geneId;
+    if (@batch >= $batch_size) {
+      &HandleBatch(@batch);
+      @batch = ();
+    }
   }
 }
 &HandleBatch(@batch);
