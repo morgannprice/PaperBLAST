@@ -23,6 +23,7 @@ pm: identify query terms in PubMed abstracts
 pmc: identify query terms in open access papers from EuropePMC
 am: identify query terms in author manuscript papers from EuropePMC
 mo: given the query terms, find locus tags in MicrobesOnline
+generif: convert gene ids to refseq protein ids
 refseq: given the query terms, find locus tags or refseq ids in RefSeq
 sprot: given the query terms, find UniProt accessions or entry_names
 byorg: given the top genomes (see static/top_taxa), identify query terms
