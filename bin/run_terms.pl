@@ -6,7 +6,7 @@ use FindBin qw($Bin);
 use lib "$Bin/../lib";
 use pbutils;
 
-my @allsteps = qw{explodeam explodeeco parsepm pm pmc am mo refseq sprot byorg comb stats};
+my @allsteps = qw{explodeam explodeeco parsepm pm pmc am mo generif refseq sprot byorg comb stats};
 my $allsteps = join(",",@allsteps);
 
 my $usage = <<END
@@ -198,8 +198,16 @@ if (exists $dosteps{"mo"}) {
   &maybe_run("$Bin/oaquery.pl < $workdir/mo.words > $workdir/mo.query");
 }
 
-# Given words from pm/pmc/am, find identifiers in RefSeq
+if (exists $dosteps{"generif"}) {
+  die "No such file: $indir/generifs_basic" unless -e "$indir/generifs_basic";
+  # Note -- these protein ids are without the version number
+  &maybe_run("cut -f 2 $indir/generifs_basic | sort -u | $Bin/geneIdToProtein.pl > $workdir/generifs_prot");
+}
+
+# Given words from pm/pmc/am/, find identifiers in RefSeq
 if (exists $dosteps{"refseq"}) {
+  &maybe_run("(cut -f 2 $workdir/generifs_prot; cat $workdir/words.u) | sort -u > $workdir/words.refseq");
+
   my @files = &read_list("$indir/refseq/files");
   @files = grep m/genomic.gbff.gz$/, @files;
   print STDERR "Found " . scalar(@files) . " genomic RefSeq files\n";
@@ -212,7 +220,7 @@ if (exists $dosteps{"refseq"}) {
     $file =~ m/[.]gbff[.]gz$/ || die "Cannot parse file name $file";
     $file =~ s/[.]gbff[.]gz$//;
     my $out = "$workdir/refseq_$file.words";
-    print CMDS "gunzip -c $indir/refseq/$file.gbff.gz | $Bin/findRefSeqQueries.pl $workdir/words.u > $out\n";
+    print CMDS "gunzip -c $indir/refseq/$file.gbff.gz | $Bin/findRefSeqQueries.pl $workdir/words.refseq > $out\n";
     print LIST "$out\n";
   }
   close(CMDS) || die "Error writing to $cmdsfile";
