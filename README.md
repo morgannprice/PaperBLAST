@@ -1,6 +1,6 @@
 PaperBLAST is a tool to find papers about homologs of a protein of interest. For an example see
 
-http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?vimss=14484
+http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=VIMSS14484
 
 # System Requirements
 
