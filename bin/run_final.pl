@@ -68,9 +68,10 @@ if (exists $dosteps{sprot}) {
 
 if (exists $dosteps{db}) {
   die "No such directory: $indir/ecocyc/data\n" unless -d "$indir/ecocyc/data";
-  die "No such file: $workdir/snippets_comb\n" unless -e "$workdir/snippets_comb";
-  die "No such file: $workdir/hits.papers\n" unless -e "$workdir/hits.papers";
-  &maybe_run("$Bin/buildLitDb.pl -dir $outdir -snippets $workdir/snippets_comb -sprot $workdir/sprot.char.tab -ecocyc $indir/ecocyc/data $workdir/hits");
+  foreach my $file (qw{snippets_comb hits.papers generif_tab.rif}) {
+    die "No such file: $workdir/$file" unless -e "$workdir/$file";
+  }
+  &maybe_run("$Bin/buildLitDb.pl -dir $outdir -snippets $workdir/snippets_comb -rif $workdir/generif_tab.rif -sprot $workdir/sprot.char.tab -ecocyc $indir/ecocyc/data $workdir/hits $workdir/generif_tab");
 }
 
 if (exists $dosteps{compare}) {

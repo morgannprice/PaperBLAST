@@ -6,7 +6,7 @@ use FindBin qw($Bin);
 use lib "$Bin/../lib";
 use pbutils;
 
-my @allsteps = qw{parse oa am elsevier crossref pubmed comb stats};
+my @allsteps = qw{parse oa am elsevier crossref pubmed comb generif stats};
 my $allsteps = join(",", @allsteps);
 my $usage = <<END
 run_search.pl -in downloads [ -work work ] [ -test ]
@@ -113,9 +113,41 @@ if (exists $dosteps{"comb"}) {
   &maybe_run("$Bin/combineSnippets.pl -out $workdir/snippets_comb $workdir/snippets_oa $workdir/snippets_am $workdir/snippets_crossref $workdir/snippets_pubmed  >& $workdir/snippets_comb.log");
 }
 
+if (exists $dosteps{"generif"}) {
+  &maybe_run("$Bin/join.pl -header 0 -match 1.2=2.1 -keep 1.3 $indir/generifs_basic $workdir/generifs_prot | sed -e 's/,/\\n/g' | sort -u > $workdir/generifs_pmid");
+  my @files1 = read_list("$indir/pubmed/baseline/files");
+  my @files2 = read_list("$indir/pubmed/updatefiles/files");
+  my $cmdsfile = "$workdir/parsepm_generif.cmds";
+  my $listfile = "$workdir/parsepm_generif.list";
+  open(CMDS, ">", $cmdsfile) || die "Cannot write to $cmdsfile";
+  open(LIST, ">", $listfile) || die "Cannot write to $listfile";
+  foreach my $file (@files1) {
+    my $base = $file; $base =~ s/[.]xml[.]gz$//;
+    my $out = "$workdir/pubmed1_generif_$base.tab";
+    print CMDS "$Bin/pubmedFields.pl -gz $indir/pubmed/baseline/$base.xml.gz < $workdir/generifs_pmid > $out\n";
+    print LIST "$out\n";
+  }
+  foreach my $file (@files2) {
+    my $base = $file; $base =~ s/[.]xml[.]gz$//;
+    my $out = "$workdir/pubmed2_generif_$base.tab";
+    print CMDS "$Bin/pubmedFields.pl -gz $indir/pubmed/updatefiles/$base.xml.gz < $workdir/generifs_pmid > $out\n";
+    print LIST "$out\n";
+  }
+  close(CMDS) || die "Error writing to $cmdsfile";
+  close(LIST) || die "Error writing to $listfile";
+  &maybe_run("$Bin/submitter.pl $cmdsfile");
+  &maybe_run("xargs cat < $listfile > $workdir/generifs_pmid.tab");
+  # Note -- we give generifTables *all* of the potential refseq queries to work with.
+  # These should virtually all have hits, either from GeneRIF or from searching EuropePMC, but
+  # there could be exceptions. This will lead to unnecessary entries in generif_tab.queries
+  # buildLitDb.pl will remove these from the final FAA file, so they will not show up as BLAST hits,
+  # and they will not be in the GenePaper table, but, they could be in the final Gene table.
+  &maybe_run("$Bin/generifTables.pl -rif $indir/generifs_basic -prot $workdir/generifs_prot -query $workdir/refseq.query -known $workdir/hits.queries -papers $workdir/generifs_pmid.tab -out $workdir/generif_tab >& $workdir/generifTables.log");
+}
+
 if (exists $dosteps{"stats"} && !defined $test) {
   print STDERR join("\t", "file", "thousands\n");
-  foreach my $file (qw{hits.queries hits.papers snippets_oa snippets_am snippets_crossref snippets_pubmed snippets_comb}) {
+  foreach my $file (qw{hits.queries hits.papers snippets_oa snippets_am snippets_crossref snippets_pubmed snippets_comb generif_tab.papers generif_tab.rif}) {
     my $nlines = `wc -l < $workdir/$file`;
     chomp $nlines;
     print STDERR join("\t", $file, sprintf("%.1f", $nlines/1000))."\n";
