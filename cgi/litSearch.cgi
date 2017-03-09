@@ -57,16 +57,16 @@ manually-curated information from
 <A HREF="https://www.ncbi.nlm.nih.gov/gene/about-generif" title="Gene Reference into Function (NCBI)">GeneRIF</A>,
 <A HREF="http://www.uniprot.org/">Swiss-Prot</A>, and
 <A HREF="http://ecocyc.org">EcoCyc</A>.
-As of February 2017,
-PaperBLAST links over 360,000 proteins to over 700,000 papers.
+As of March 2017,
+PaperBLAST links over 360,000 different protein sequences to over 700,000 articles.
 Given this database and a protein sequence query, PaperBLAST uses
 <A HREF="https://en.wikipedia.org/wiki/BLAST">protein-protein BLAST</A>
 to find similar sequences with E &lt; 0.001.
 
-<P>We query EuropePMC with locus tags, with <A HREF="https://www.ncbi.nlm.nih.gov/refseq/">RefSeq</A>
+<P>To build the database, we query EuropePMC with locus tags, with <A HREF="https://www.ncbi.nlm.nih.gov/refseq/">RefSeq</A>
 protein identifiers, and with <A HREF="http://www.uniprot.org/">UniProt</A> accessions.
 We obtain the locus tags from RefSeq or from <A HREF="http://www.microbesonline.org/">MicrobesOnline</A>.
-We use queries of the form "locus_tag AND genus_name" to try to ensure that the paper is actually discussing the gene as opposed to something else whose identifier happens to match a locus tag.
+We use queries of the form "locus_tag AND genus_name" to try to ensure that the paper is actually discussing that gene.
 Because EuropePMC indexes most recent biomedical papers, even if they are not open access, some of the links may be to papers that you cannot read or that our computers cannot read.
 We query each of these identifiers that appears in the open access part of EuropePMC, as well as
 every locus tag that appears in the 500 most-referenced genomes, so that a gene may appear in the PaperBLAST results even though none of the papers that mention it are open access.
@@ -76,8 +76,8 @@ accession, we try to select one or two snippets
 of text that refer to the protein. If we cannot get access to the full text, we try to select a snippet from the abstract, but unfortunately,
 unique identifiers such as locus tags are rarely provided in abstracts.
 
-<P>We also use manually-curated links between protein sequences and papers.
-We index proteins from NCBI's RefSeq if they a GeneRIF entries links the gene to an article in
+<P>We also use manually-curated links between protein sequences and articles.
+We index proteins from NCBI's RefSeq if a GeneRIF entries links the gene to an article in
 <A HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A><sup>&reg;</sup>.
 GeneRIF also provides a short summary of the article's claim about the protein, which we provide instead of a snippet.
 We index proteins from Swiss-Prot (the curated part of UniProt) if the curators identified experimental evidence for the protein's function (evidence code ECO:0000269).
@@ -120,8 +120,14 @@ if ($query =~ m/^VIMSS\d+$/i) {
 } elsif ($query !~ m/\n/ && $query =~ m/[0-9_]/) {
   # a single line query with a number of underscore in it is assumed to be a gene id
   my $gene = $dbh->selectrow_hashref("SELECT * from Gene WHERE geneId = ?", {}, $query);
-  die "Sorry, we have no papers linked to this gene id: $query\n" if ! $gene;
-  my $geneId = $gene->{geneId};
+  my $geneId;
+  if ($gene) {
+    $geneId = $gene->{geneId};
+  } else {
+    $gene = $dbh->selectrow_hashref("SELECT * from UniProt WHERE acc = ?", {}, $query);
+    die "Sorry, we have no papers linked to this gene id: $query\n" unless $gene;
+    $geneId = $gene->{acc};
+  }
   my $desc = $gene->{desc};
   my $org = $gene->{organism};
   my $dup = $dbh->selectrow_hashref("SELECT * from SeqToDuplicate WHERE sequence_id = ?", {}, $geneId);
