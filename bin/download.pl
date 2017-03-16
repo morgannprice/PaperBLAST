@@ -6,7 +6,7 @@ use FindBin qw($Bin);
 use lib "$Bin/../lib";
 use pbutils;
 
-my @allsteps = qw{oa am refseq generif pubmed uniprot ecocyc};
+my @allsteps = qw{ecocyc oa am refseq generif pubmed uniprot};
 my $dosteps = join(",", @allsteps);
 
 my $usage = <<END
@@ -99,6 +99,26 @@ print STDERR "Test mode\n" if defined $test;
 
 my $listfile = "$dir/listing.$$";
 
+if (exists $dosteps{"ecocyc"}) {
+    print STDERR "Step ecocyc\n";
+    if (!defined $ecocyc_URL) {
+      if (-e "ecocyc.URL") {
+        open(URL, "<", "ecocyc.URL") || die "Cannot read ecocyc.URL";
+        $ecocyc_URL = <URL>;
+        chomp $ecocyc_URL;
+        close(URL) || die "Error reading ecocyc.URL";
+        die "Invalid URL in $ecocyc_URL" unless $ecocyc_URL =~ m/^http|ftp/;
+        print STDERR "URL for ecocyc: $ecocyc_URL\n";
+      }
+    }
+    if (defined $ecocyc_URL) {
+      &maybe_wget($ecocyc_URL, "$dir/ecoli.tar.gz");
+    } elsif (-e "ecoli.tar.gz") {
+      print STDERR "No URL for EcoCyc found -- using manually downloaded tarball\n";
+      &maybe_run("cp ecoli.tar.gz $dir/");
+    }
+}
+
 if (exists $dosteps{"oa"}) {
     print STDERR "Step oa\n";
     &mkdir_if_needed("$dir/oa");
@@ -169,26 +189,6 @@ if (exists $dosteps{"uniprot"}) {
     foreach my $file (qw{uniprot_sprot.dat.gz uniprot_sprot.fasta.gz uniprot_trembl.fasta.gz}) {
         &maybe_wget("ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/$file",
                     "$dir/$file");
-    }
-}
-
-if (exists $dosteps{"ecocyc"}) {
-    print STDERR "Step ecocyc\n";
-    if (!defined $ecocyc_URL) {
-      if (-e "ecocyc.URL") {
-        open(URL, "<", "ecocyc.URL") || die "Cannot read ecocyc.URL";
-        $ecocyc_URL = <URL>;
-        chomp $ecocyc_URL;
-        close(URL) || die "Error reading ecocyc.URL";
-        die "Invalid URL in $ecocyc_URL" unless $ecocyc_URL =~ m/^http|ftp/;
-        print STDERR "URL for ecocyc: $ecocyc_URL\n";
-      }
-    }
-    if (defined $ecocyc_URL) {
-      &maybe_wget($ecocyc_URL, "$dir/ecoli.tar.gz");
-    } elsif (-e "ecoli.tar.gz") {
-      print STDERR "No URL for EcoCyc found -- using manually downloaded tarball\n";
-      &maybe_run("cp ecoli.tar.gz $dir/");
     }
 }
 
