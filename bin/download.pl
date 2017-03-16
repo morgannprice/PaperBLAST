@@ -11,6 +11,7 @@ my $dosteps = join(",", @allsteps);
 
 my $usage = <<END
 download.pl -dir downloads [ -steps $dosteps ] [ -test ]
+	[ -ecocyc ecoli_tar_gz_or_URL ]
 
 This script downloads all of the inputs for building a PaperBLAST
 database. These are all put into the specified directory. These inputs
@@ -45,13 +46,19 @@ TReMBL (non-curated) sequences: dir/uniprot_trembl.fasta.gz (16 GB)
 From EcoCyc: ecoli.tar.gz (158 MB)
 	This is then exploded to give the dir/ecocyc/version.number subdirectory,
 	and then a symlink is created for dir/ecocyc_latest/
+	Unfortunately, there is no standard public URL for downloading EcoCyc.
+	You need to contact them to obtain a URL and password.
+	You can specify a URL with the -ecocyc argument, with something like
+	-ecocyc http://biocyc-flatfiles:data-12345\@bioinformatics.ai.sri.com/ecocyc/dist/flatfiles-12345678/ecoli.tar.gz
+	or you can put the URL in the file ecocyc.URL
+	or you can download the tar ball manually into ecoli.tar.gz
 
 (All sizes for downloads are as of January 2017)
-
 END
     ;
 
 my $test;
+my $ecocyc_URL;
 
 sub maybe_run($) {
     my ($cmd) = @_;
@@ -75,7 +82,8 @@ sub maybe_wget($$) {
 
 my $dir;
 die $usage
-    unless GetOptions('dir=s' => \$dir, 'steps=s' => \$dosteps, 'test' => \$test)
+    unless GetOptions('dir=s' => \$dir, 'steps=s' => \$dosteps, 'test' => \$test,
+                     'ecocyc=s' => \$ecocyc_URL)
     && @ARGV == 0;
 die $usage unless defined $dir;
 die "No such directory: $dir\n" unless -d $dir;
@@ -166,8 +174,22 @@ if (exists $dosteps{"uniprot"}) {
 
 if (exists $dosteps{"ecocyc"}) {
     print STDERR "Step ecocyc\n";
-    &maybe_wget("http://brg-files.ai.sri.com/public/ecoli.tar.gz",
-                "$dir/ecoli.tar.gz");
+    if (!defined $ecocyc_URL) {
+      if (-e "ecocyc.URL") {
+        open(URL, "<", "ecocyc.URL") || die "Cannot read ecocyc.URL";
+        $ecocyc_URL = <URL>;
+        chomp $ecocyc_URL;
+        close(URL) || die "Error reading ecocyc.URL";
+        die "Invalid URL in $ecocyc_URL" unless $ecocyc_URL =~ m/^http|ftp/;
+        print STDERR "URL for ecocyc: $ecocyc_URL\n";
+      }
+    }
+    if (defined $ecocyc_URL) {
+      &maybe_wget($ecocyc_URL, "$dir/ecoli.tar.gz");
+    } elsif (-e "ecoli.tar.gz") {
+      print STDERR "No URL for EcoCyc found -- using manually downloaded tarball\n";
+      &maybe_run("cp ecoli.tar.gz $dir/");
+    }
 }
 
 unlink($listfile);

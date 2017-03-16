@@ -63,11 +63,16 @@ March 2017, the process requires approximately 324 GB of free disk
 space and takes around a week to run. The majority of the time is for
 querying EuropePMC.
 
-Download information from RefSeq, UniProt, EcoCyc, EuropePMC, and
-PubMed:
+Download information from RefSeq, UniProt, EcoCyc, EuropePMC,
+EcoCyc, and PubMed:
 
 	mkdir indata
 	nice bin/download.pl -dir indata >& download.log
+
+Before running download.pl, you will need to either set up ecocyc.URL
+with the URL to ecoli.tar.gz (something like
+http://biocyc-flatfiles:data-12345@bioinformatics.ai.sri.com/ecocyc/dist/flatfiles-12345678/ecoli.tar.gz)
+or download ecoli.tar.gz manually and put it in the current directory.
 
 Choose which queries to run against EuropePMC:
 
