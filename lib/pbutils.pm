@@ -16,11 +16,18 @@ sub read_list($) {
     return(@lines);
 }
 
+# Retry wget calls to increase odds of success
+my $nFailures = 0;
+my $nFailMax = 5;
 
 sub wget($$) {
     my ($url, $file) = @_;
-    system("wget", "-nv", "-O", $file, $url) == 0
-        || die "Failed to load $url\n";
+    while(system("wget", "-nv", "-O", $file, $url) != 0) {
+      $nFailures++;
+      die "Failed to load $url\n" if $nFailures >= $nFailMax;
+      print STDERR "Waiting and retrying\n";
+      sleep(1);
+    }
 }
 
 sub ftp_html_to_files($) {
