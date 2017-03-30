@@ -12,7 +12,7 @@ my $comparedir = "$Bin/../data";
 
 my $usage = <<END
 run_final.pl -in downloads [ -work work ] [ -test ] [ -steps ... ]
-wo	[ -compare $comparedir ]
+	[ -compare $comparedir ]
 
 Given the downloads and work directories, and the output of
 run_snippets.pl, builds a database in work/data, and compares it to
@@ -41,7 +41,7 @@ die $usage
                       'work=s' => \$workdir,
                       'steps=s' => \$dosteps,
                       'test' => \$test,
-                      'compare' => \$comparedir)
+                      'compare=s' => \$comparedir)
     && @ARGV == 0
     && defined $indir && defined $workdir;
 die "No such directory: $indir\n" unless -d $indir;
