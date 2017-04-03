@@ -6,7 +6,7 @@ use FindBin qw($Bin);
 use lib "$Bin/../lib";
 use pbutils;
 
-my @allsteps = qw{ecocyc oa am refseq generif pubmed uniprot};
+my @allsteps = qw{ecocyc oa am pmclinks refseq generif pubmed uniprot};
 my $dosteps = join(",", @allsteps);
 
 my $usage = <<END
@@ -23,6 +23,8 @@ The open access manuscripts, into dir/oa/*.xml.gz (21 GB)
 The author manuscripts, into dir/am/*.tar.gz (8.5 GB)
 	These are then exploded to give dir/am/*/*.xml
 	The directory names are listed in dir/am/files
+Thir Links of PMC ids to RefSeq or UniProt, into
+	dir/UniProt_PMC.csv and dir/RefSeq_PMC.csv
 
 From RefSeq:
 The compressed genbank format files, into dir/refseq/complete.*.gbff.gz (86 GB)
@@ -145,6 +147,13 @@ if (exists $dosteps{"am"}) {
     foreach my $file (@files) {
         &maybe_wget("http://europepmc.org/ftp/manuscripts/$file", "$dir/am/$file");
     }
+}
+
+if (exists $dosteps{"pmclinks"}) {
+  print STDERR "Step pmclinks\n";
+  foreach my $file qw(UniProt_PMC.csv RefSeq_PMC.csv) {
+    &maybe_wget("ftp://ftp.ebi.ac.uk/pub/databases/pmc/TextMinedTerms/$file", "$dir/$file");
+  }
 }
 
 if (exists $dosteps{"refseq"}) {

@@ -201,5 +201,5 @@ close(QUERIES) || die "Error writing to $out.queries";
 close(PAPERS) || die "Error writing to $out.papers";
 close(FAA) || die "Error writing to $out.faa";
 
-print STDERR "Wrote $nLinksWritten links for " . scalar(keys %queryWritten) . " proteins\n";
+print STDERR "Wrote $nLinksWritten links and " . scalar(keys %queryWritten) . " previously uncovered proteins\n";
 print STDERR "Success: wrote $out.{queries.papers,faa}\n";

@@ -78,3 +78,4 @@ CREATE TABLE SeqToDuplicate(
         duplicate_id TEXT NOT NULL,
         PRIMARY KEY (sequence_id, duplicate_id)
 );
+CREATE INDEX 'DupToId' ON SeqToDuplicate ('duplicate_id' ASC, 'sequence_id' ASC);

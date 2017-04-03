@@ -6,14 +6,15 @@ use FindBin qw($Bin);
 use lib "$Bin/../lib";
 use pbutils;
 
-my @allsteps = qw{parse oa am elsevier crossref pubmed comb generif stats};
+my @allsteps = qw{parse pmclinks oa am elsevier crossref pubmed comb generif stats};
 my $allsteps = join(",", @allsteps);
 my $usage = <<END
 run_search.pl -in downloads [ -work work ] [ -test ]
 	[ -cache cache ] [ -cache-only ]
 	[ -steps $allsteps ]
 
-Given the EuropePMC results in work/epmc, compute snippets using:
+Given the EuropePMC results in work/epmc, identify
+additional links from EuropePMC, and compute snippets using:
   The open access manuscripts in downloads/
   The author manuscripts in downloads/
   Full text fetched with the Elsevier API
@@ -24,6 +25,8 @@ Given the EuropePMC results in work/epmc, compute snippets using:
 
   (The elsevier key and the crossref token must be in the cache directory
   unless this is cache-only mode.)
+
+Also parses GeneRIF.
 END
 ;
 
@@ -82,18 +85,22 @@ if (exists $dosteps{"parse"}) {
   &maybe_run("$Bin/parseEuropePMCHits.pl -in $workdir/comb.query -hits $workdir/epmc -out $workdir/hits >& $workdir/epmc_parse.log");
 }
 
+if (exists $dosteps{"pmclinks"}) {
+  &maybe_run("$Bin/addPMCLinks.pl -query $workdir/comb.query -papers $workdir/hits.papers -in $indir -out $workdir/pmclinks >& $workdir/addpmclinks.log");
+}
+
 if (exists $dosteps{"oa"}) {
   my @files = &read_list("$indir/oa/files");
   my @in = map "$indir/oa/$_", @files;
   &write_list(\@in, "$workdir/snippets.oa.list");
-  &maybe_run("$Bin/buildSnippets.pl -list $workdir/snippets.oa.list -out $workdir/snippets_oa $workdir/hits.papers >& $workdir/snippets_oa.log");
+  &maybe_run("$Bin/buildSnippets.pl -list $workdir/snippets.oa.list -out $workdir/snippets_oa $workdir/hits.papers $workdir/pmclinks.papers >& $workdir/snippets_oa.log");
 }
 
 if (exists $dosteps{"am"}) {
   my @files = &read_list("$indir/am/xml.list");
   my @in = map "$indir/am/$_", @files;
   &write_list(\@in, "$workdir/snippets.am.list");
-  &maybe_run("$Bin/buildSnippets.pl -list $workdir/snippets.am.list -out $workdir/snippets_am $workdir/hits.papers >& $workdir/snippets_am.log");
+  &maybe_run("$Bin/buildSnippets.pl -list $workdir/snippets.am.list -out $workdir/snippets_am $workdir/hits.papers $workdir/pmclinks.papers >& $workdir/snippets_am.log");
 }
 
 if (exists $dosteps{"elsevier"} && !defined $cacheOnly) {
@@ -147,7 +154,7 @@ if (exists $dosteps{"generif"}) {
 
 if (exists $dosteps{"stats"} && !defined $test) {
   print STDERR join("\t", "file", "thousands\n");
-  foreach my $file (qw{hits.queries hits.papers snippets_oa snippets_am snippets_crossref snippets_pubmed snippets_comb generif_tab.papers generif_tab.rif}) {
+  foreach my $file (qw{hits.queries hits.papers pmclinks.queries pmclinks.papers snippets_oa snippets_am snippets_crossref snippets_pubmed snippets_comb generif_tab.papers generif_tab.rif}) {
     my $nlines = `wc -l < $workdir/$file`;
     chomp $nlines;
     print STDERR join("\t", $file, sprintf("%.1f", $nlines/1000))."\n";
