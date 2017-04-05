@@ -9,9 +9,12 @@
 #
 # Optional CGI garameters:
 # query -- this should be the protein sequence in FASTA or UniProt or plain format,
-#	or a VIMSS id, or a geneId in the database
-# or
+#	or a VIMSS id, or a gene identifier in the database,
+#	or a locus tag in MicrobesOnline,
+#	or a UniProt id or other gene name that UniProt recognizes
+#	or a Genbank protein (or RefSeq protein) identifier.
 # more -- which geneId (in the database) to show the full list of papers for
+#	(not to be used with query)
 #
 # If none of these is specified, shows the query box, an example link, and some documentation
 
@@ -20,6 +23,8 @@ use CGI qw(:standard Vars);
 use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
 use Time::HiRes qw{gettimeofday};
 use DBI;
+use LWP::Simple;
+use IO::Handle; # for autoflush
 
 sub fail($);
 sub simstring($$$$$$$$$$$$$);
@@ -69,19 +74,23 @@ We obtain the locus tags from RefSeq or from <A HREF="http://www.microbesonline.
 We use queries of the form "locus_tag AND genus_name" to try to ensure that the paper is actually discussing that gene.
 Because EuropePMC indexes most recent biomedical papers, even if they are not open access, some of the links may be to papers that you cannot read or that our computers cannot read.
 We query each of these identifiers that appears in the open access part of EuropePMC, as well as
-every locus tag that appears in the 500 most-referenced genomes, so that a gene may appear in the PaperBLAST results even though none of the papers that mention it are open access.
+every locus tag that appears in the 500 most-referenced genomes, so that a gene may appear in the PaperBLAST results even though none of the papers that mention it are open access. We also incorporate
+text mined links from EuropePMC that link open access articles to UniProt or RefSeq identifiers.
+(This yields some additional links because EuropePMC uses different heuristics for their text mining than we do.)
 
 <P>For every article that mentions a locus tag, a RefSeq protein identifier, or a UniProt
 accession, we try to select one or two snippets
 of text that refer to the protein. If we cannot get access to the full text, we try to select a snippet from the abstract, but unfortunately,
 unique identifiers such as locus tags are rarely provided in abstracts.
 
-<P>We also use manually-curated links between protein sequences and articles.
-We index proteins from NCBI's RefSeq if a GeneRIF entries links the gene to an article in
+<P>We also use manually-curated links between protein sequences and articles:
+<UL>
+<LI>We index proteins from NCBI's RefSeq if a GeneRIF entries links the gene to an article in
 <A HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A><sup>&reg;</sup>.
 GeneRIF also provides a short summary of the article's claim about the protein, which we provide instead of a snippet.
-We index proteins from Swiss-Prot (the curated part of UniProt) if the curators identified experimental evidence for the protein's function (evidence code ECO:0000269).
-And we index every protein EcoCyc, a curated database of the proteins in <i> Escherichia coli</i> K-12.
+<LI>We index proteins from Swiss-Prot (the curated part of UniProt) if the curators identified experimental evidence for the protein's function (evidence code ECO:0000269).
+<LI>We index every protein EcoCyc, a curated database of the proteins in <i> Escherichia coli</i> K-12.
+</UL>
 For the entries from Swiss-Prot and EcoCyc, we provide a short curated description of the protein's function.
 Most of these entries also
 link to articles in
@@ -115,35 +124,66 @@ my $seqFile = "$tmpDir/$filename.fasta";
 # remove leading and trailing whitespace
 $query =~ s/^\s+//;
 $query =~ s/\s+$//;
-if ($query =~ m/^VIMSS\d+$/i) {
-  $query = &VIMSSToQuery($query);
-} elsif ($query !~ m/\n/ && $query =~ m/[0-9_]/) {
-  # a single line query with a number of underscore in it is assumed to be a gene id
-  my $gene = $dbh->selectrow_hashref("SELECT * from Gene WHERE geneId = ?", {}, $query);
-  my $geneId;
-  if ($gene) {
-    $geneId = $gene->{geneId};
-  } else {
-    $gene = $dbh->selectrow_hashref("SELECT * from UniProt WHERE acc = ?", {}, $query);
-    die "Sorry, we have no papers linked to this gene id: $query\n" unless $gene;
-    $geneId = $gene->{acc};
+if ($query ne "" && $query !~ m/\n/ && $query !~ m/ /) {
+  # a single word query is assumed to be a gene id
+  my $short = $query;
+  $query = undef;
+  fail("Sorry, query has a FASTA header but no sequence") if $short =~ m/^>/;
+
+  # Is it a VIMSS id?
+  $query = &VIMSSToQuery($short) if $short =~ m/^VIMSS\d+$/i;
+
+  # Is it in the database?
+  if (!defined $query) {
+    my $gene = $dbh->selectrow_hashref("SELECT * from Gene WHERE geneId = ?", {}, $short);
+    my $geneId;
+    if ($gene) {
+      $geneId = $gene->{geneId};
+    } else {
+      $gene = $dbh->selectrow_hashref("SELECT * from UniProt WHERE acc = ?", {}, $short);
+      $geneId = $gene->{acc} if $gene;
+    }
+    if (defined $geneId) {
+      # look for the duplicate
+      my $desc = $gene->{desc};
+      my $org = $gene->{organism};
+      my $dup = $dbh->selectrow_hashref("SELECT * from SeqToDuplicate WHERE duplicate_id = ?", {}, $geneId);
+      my $seqId = $dup ? $dup->{sequence_id} : $geneId;
+      my $fastacmd = "../bin/blast/fastacmd";
+      die "No such executable: $fastacmd" unless -x $fastacmd;
+      # Note some genes are dropped from the database during construction so it
+      # may fail to find it
+      if (system($fastacmd, "-s", $seqId, "-o", $seqFile, "-d", $blastdb) == 0) {
+        open(SEQ, "<", $seqFile) || die "Cannot read $seqFile";
+        my $seq = "";
+        while (my $line = <SEQ>) {
+          next if $line =~ m/^>/;
+          chomp $line;
+          die "Invalid output from fastacmd" unless $line =~ m/^[A-Z*]+$/;
+          $seq .= $line;
+        }
+        $query = ">$geneId $desc ($org)\n$seq\n";
+      }
+    }
   }
-  my $desc = $gene->{desc};
-  my $org = $gene->{organism};
-  my $dup = $dbh->selectrow_hashref("SELECT * from SeqToDuplicate WHERE sequence_id = ?", {}, $geneId);
-  my $seqId = $dup ? $dup->{sequence_id} : $geneId;
-  my $fastacmd = "../bin/blast/fastacmd";
-  die "No such executable: $fastacmd" unless -x $fastacmd;
-  system($fastacmd, "-s", $seqId, "-o", $seqFile, "-d", $blastdb) == 0 || die "fastacmd failed: $!";
-  open(SEQ, "<", $seqFile) || die "Cannot read $seqFile";
-  my $seq = "";
-  while (my $line = <SEQ>) {
-    next if $line =~ m/^>/;
-    chomp $line;
-    die "Invalid output from fastacmd" unless $line =~ m/^[A-Z*]+$/;
-    $seq .= $line;
+
+  # is it a UniProt id or gene name or protein name?
+  if (!defined $query) {
+    $query = &UniProtToQuery($short);
   }
-  $query = ">$geneId $desc ($org)\n$seq\n";
+
+  # is it in VIMSS as a locus tag or other synonym?
+  if (!defined $query) {
+    $query = &VIMSSToQuery($short);
+  }
+
+  # is it in RefSeq?
+  if (!defined $query) {
+    $query = &RefSeqToQuery($short);
+  }
+
+  &fail("Sorry -- we were not able to find a protein sequence for the identifier <b>$short</b>. We checked it against our database of proteins that are linked to papers, against UniProt (including their ID mapping service), against MicrobesOnline, and against the NCBI protein database (RefSeq and Genbank). Please use the sequence as a query instead.")
+    if !defined $query;
 }
 
 my $seq;
@@ -173,7 +213,7 @@ if (!defined $seq && ! $more_subjectId) {
     print
         start_form( -name => 'input', -method => 'POST', -action => 'litSearch.cgi'),
         p(br(),
-          b("Enter a sequence in FASTA or Uniprot format: "),
+          b("Enter a sequence in FASTA or Uniprot format,<BR>or an identifier from UniProt, RefSeq, or MicrobesOnline: "),
           br(),
           textarea( -name  => 'query', -value => '', -cols  => 70, -rows  => 10 )),
         p(submit('Search'), reset()),
@@ -207,7 +247,16 @@ if (!defined $seq && ! $more_subjectId) {
       print
         h3("PaperBLAST Hits for $defLong");
     }
+    my @nt = $seq =~ m/[ACGTUN]/g;
+    my $fACGTUN = scalar(@nt) / $seqlen;
+    if ($fACGTUN >= 0.9) {
+      printf("<P><font color='red'>Warning: sequence is %.1f%% nucleotide characters -- are you sure this is a protein query?</font>",
+             100 * $fACGTUN);
+    }
+
+    autoflush STDOUT 1; # show preliminary results
     print "\n";
+
     my @hits = ();
     if ($more_subjectId) {
       push @hits, [ $more_subjectId, $more_subjectId, 100.0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
@@ -537,16 +586,61 @@ sub SubjectToGene($) {
   }
 }
 
+# Given a locus tag or VIMSSnnnn query, get it in FASTA format
 sub VIMSSToQuery($) {
-  my ($locusId) = @_;
-  die unless defined $locusId;
-  $locusId =~ s/^VIMSS//i;
-  $locusId =~ m/^\d+$/ || die "Invalid locusId argument";
+  my ($short) = @_;
+  die unless defined $short;
   my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
     || die $DBI::errstr;
+  my $locusId;
+  if ($short =~ m/^VIMSS(\d+)$/i) {
+    $locusId = $1;
+  } else {
+    # try to find the locus tag
+    ($locusId) = $mo_dbh->selectrow_array( qq{SELECT locusId FROM Synonym JOIN Locus USING (locusId,version)
+						WHERE name = ? AND priority = 1 },
+                                              {}, $short );
+  }
+  return undef unless $locusId;
   my ($aaseq) = $mo_dbh->selectrow_array( qq{SELECT sequence FROM Locus JOIN AASeq USING (locusId,version)
                                              WHERE locusId = ? AND priority=1 },
                                           {}, $locusId);
-  die "Unknown VIMSS id $locusId" unless defined $aaseq;
-  return ">VIMSS$locusId\n$aaseq\n";
+
+  &fail("Sorry, VIMSS$locusId is not a protein in MicrobesOnline") unless defined $aaseq;
+  my ($desc) = $mo_dbh->selectrow_array( qq{SELECT description FROM Locus JOIN Description USING (locusId,version)
+                                             WHERE locusId = ? AND priority=1 },
+                                          {}, $locusId);
+  return ">$short $desc\n$aaseq\n" if $desc;
+  return ">$short\n$aaseq\n" if $desc;
+}
+
+sub RefSeqToQuery($) {
+  my ($short) = @_;
+  die unless defined $short;
+  return undef unless $short =~ m/_/;
+  my $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.cgi?db=Protein&rettype=fasta&id=$short";
+  my $results = get($url);
+  return $results if $results =~ m/^>/;
+  return undef;
+}
+
+sub UniProtToQuery($) {
+  my ($short) = @_;
+  die unless defined $short;
+  # include=no -- no isoforms
+  my $url = "http://www.uniprot.org/uniprot/?query=${short}&format=fasta&sort=score&include=no&limit=2";
+  my $results = get($url);
+  if ($results =~ m/^>/) {
+    # select the first hit only
+    my @lines = split /\n/, $results;
+    my @out = ();
+    my $nHeader = 0;
+    foreach my $line (@lines) {
+      $nHeader++ if substr($line, 0, 1) eq ">";
+      push @out, $line if $nHeader <= 1;
+    }
+    return join("\n", @out)."\n";
+  }
+  # else
+  return undef;
 }
