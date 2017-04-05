@@ -5,8 +5,9 @@ use Getopt::Long;
 use FindBin qw($Bin);
 use lib "$Bin/../lib";
 use pbutils;
+use DBI;
 
-my @allsteps = qw{sprot db compare};
+my @allsteps = qw{sprot db stats compare};
 my $allsteps = join(",",@allsteps);
 my $comparedir = "$Bin/../data";
 
@@ -72,6 +73,33 @@ if (exists $dosteps{db}) {
     die "No such file: $workdir/$file" unless -e "$workdir/$file";
   }
   &maybe_run("$Bin/buildLitDb.pl -dir $outdir -snippets $workdir/snippets_comb -rif $workdir/generif_tab.rif -sprot $workdir/sprot.char.tab -ecocyc $indir/ecocyc/data $workdir/hits $workdir/pmclinks $workdir/generif_tab");
+}
+
+if (exists $dosteps{stats}) {
+  if (!defined $test) {
+    my $sqldb = "$outdir/litsearch.db";
+    my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
+    my $pm1 = $dbh->selectcol_arrayref(qq{ SELECT DISTINCT pmId FROM GenePaper WHERE pmId <> "" });
+    my $pm2 = $dbh->selectcol_arrayref(qq{ SELECT DISTINCT pmId FROM GeneRIF });
+    my $pmc = $dbh->selectcol_arrayref(qq{ SELECT DISTINCT pmcId FROM GenePaper
+                                           WHERE pmId = "" AND pmcId <> "" });
+    my %pm = map { $_ =>  1 } @$pm1;
+    foreach my $pm (@$pm2) { $pm{$pm} = 1; }
+    my $nPaper = scalar(keys %pm) + scalar(@$pmc);
+
+    my $nSeq = `grep -c ">" $outdir/uniq.faa`;
+    chomp $nSeq;
+    my $date = `date -r $workdir/epmc '+%B %-d %Y'`;
+    chomp $date;
+    my %stats = ( "nSeq" => $nSeq, "nPaper" => $nPaper, "date" => $date );
+    open(STATS, ">", "$outdir/stats") || die "Error writing to $outdir/stats";
+    while (my ($key,$value) = each %stats) {
+      print STATS "$key\t$value\n";
+    }
+    close(STATS) || die "Error writing to $outdir/stats\n";
+    $dbh->disconnect();
+  }
+  &maybe_run("cat $outdir/stats");
 }
 
 if (exists $dosteps{compare}) {
