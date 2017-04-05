@@ -50,7 +50,24 @@ my $maxPapers = $more_subjectId ? 10000 : 8;
 
 my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
 
+my %stats = ();
+open(STATS, "<", "$base/stats") || die "Cannot read $base/stats";
+while(my $line = <STATS>) {
+  chomp $line;
+  my ($key,$value) = split /\t/, $line, -1;
+  $stats{$key} = $value;
+}
+close(STATS) || die "Error reading $base/stats";
+foreach my $key (qw{nSeq nPaper}) {
+  $stats{$key} = commify( $stats{$key} );
+}
+
 my $documentation = <<END
+
+<H3><A NAME="stats">Statistics</A></H3>
+
+The PaperBLAST database links $stats{nSeq} different protein sequences to $stats{nPaper} scientific articles. The database was built on $stats{date}.
+
 <H3><A NAME="works">How It Works</A></H3>
 
 <P>PaperBLAST builds a database of protein sequences that are linked
@@ -643,4 +660,10 @@ sub UniProtToQuery($) {
   }
   # else
   return undef;
+}
+
+sub commify($) {
+    local $_  = shift;
+    1 while s/^(-?\d+)(\d{3})/$1,$2/;
+    return $_;
 }
