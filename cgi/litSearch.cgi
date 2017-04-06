@@ -66,7 +66,7 @@ my $documentation = <<END
 
 <H3><A NAME="stats">Statistics</A></H3>
 
-The PaperBLAST database links $stats{nSeq} different protein sequences to $stats{nPaper} scientific articles. The database was built on $stats{date}.
+The PaperBLAST database links $stats{nSeq} different protein sequences to $stats{nPaper} scientific articles. Searches against EuropePMC were last performed on $stats{date}.
 
 <H3><A NAME="works">How It Works</A></H3>
 
@@ -118,6 +118,13 @@ link to articles in
 <H3><A NAME="secret">Secrets</A></H3>
 
 <P>PaperBLAST cannot provide snippets for many of the papers that are published in non-open-access journals. This limitation applies even if the paper is marked as "free" on the publisher's web site and is available in PubmedCentral or EuropePMC. If a journal that you publish in is marked as "secret," please consider publishing elsewhere.
+
+<H3><A NAME="omission">Omissions from the PaperBLAST Database</A></H3>
+
+<P>Some important articles are missing from PaperBLAST because of heuristics or because the article is secret. If you notice an article that characterizes a protein's function but is missing from PaperBLAST, please add an entry to <A HREF="https://www.ncbi.nlm.nih.gov/gene/submit-generif">GeneRIF</A> or notify the curators at <A HREF="http://www.uniprot.org/update">UniProt</A>. 
+Entries in either of these databases will eventually be incorporated into PaperBLAST.
+Note that to add an entry to GeneRIF, you will need an NCBI Gene identifier (but unfortunately some prokaryotic proteins in RefSeq do not have corresponding Gene identifers).
+To add an entry to UniProt, you will need find the UniProt identifier.
 
 <center>by <A HREF="http://morgannprice.org/">Morgan Price</A>,
 <A HREF="http://genomics.lbl.gov/">Arkin group</A><BR>
@@ -228,7 +235,7 @@ if (!defined $seq && ! $more_subjectId) {
     my $exampleId = "3615187";
     my $refseqId = "WP_012018426.1";
     print
-        start_form( -name => 'input', -method => 'POST', -action => 'litSearch.cgi'),
+        start_form( -name => 'input', -method => 'GET', -action => 'litSearch.cgi'),
         p(br(),
           b("Enter a sequence in FASTA or Uniprot format,<BR>or an identifier from UniProt, RefSeq, or MicrobesOnline: "),
           br(),
