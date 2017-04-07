@@ -1,0 +1,34 @@
+Limitations of PaperBLAST that cause gene-article associations to be
+missed:
+
+Links from EuropePMC's text mining effort are assumed to be for open
+access articles. If the article is not open access (i.e. in the
+EuropePMC downloads), then (1) PaperBLAST does not even try to extract
+a snippet, and (2) the link is suppressed because there should always
+be a snippet for an OA link. Either the PMC links should be "blessed"
+so that they are not suppressed later on, and/or the open access
+status of these articles should be corrected (i.e., by fetching their
+metadata from EuropePMC rather than pubmed).
+
+Limitations of snippet identification. For example, "sp|P12273|" or
+"sp|P12273" or "P10275.2" may be references to UniProt P10275, but are
+missed by PaperBLAST's snippet selection. This can cause valid links to
+OA articles to be suppressed.
+
+Changes to genus names -- PaperBLAST's uses "genus_name AND
+identifier" to search for references to genes. If the genus name
+changes, and the sequence database (MicrobesOnline or RefSeq) and the
+article choose different genus names, the article will be
+missed. Possible solutions include making note of changes to genus
+name (is this information available from NCBI taxonomy?) and sending
+additional queries to EuropePMC, or perhaps searching for these cases
+in the downloaded articles.
+
+Hits in downloaded articles -- sometimes PaperBLAST has access to the
+full text of an article but EuropePMC does not (i.e., if the article
+is linked to a paper via pubmedId and is downloaded by pubMunch, but
+has no pmcId because it is too old). In these cases, we could search
+the article for additional gene identifiers.
+
+
+
