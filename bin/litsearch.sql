@@ -30,6 +30,7 @@ CREATE TABLE PaperAccess(
         PRIMARY KEY (pmcId,pmId)
 );
 
+/* Note that some genes may be in Gene but have no links */
 CREATE TABLE Gene(
 	geneId TEXT NOT NULL,
 	organism TEXT NOT NULL,
@@ -57,6 +58,9 @@ CREATE TABLE GeneRIF(
 CREATE INDEX 'GeneToRIF' ON GeneRIF ('geneId' ASC, 'pmcId' ASC, 'pmId' ASC);
 
 CREATE TABLE EcoCyc(
+       /* The protein_id will be something like 1-PFK-MONOMER
+          In contrast, the protein_id in SeqToDuplicate or in the fasta file will be
+          gnl|ECOLI|1-PFK-MONOMER */
 	protein_id TEXT NOT NULL,
         protein_name TEXT NOT NULL,
         bnumber TEXT NOT NULL,
