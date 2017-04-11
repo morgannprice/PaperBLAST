@@ -56,6 +56,12 @@ URI::Escape
 CGI
 DBI
 
+# Downloading the database
+
+The April 2017 version of the PaperBLAST database is avalable at
+
+https://doi.org/10.6084/m9.figshare.4836407
+
 # Building the Database
 
 The database can be built with the following series of scripts. As of
