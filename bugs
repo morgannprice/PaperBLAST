@@ -26,9 +26,9 @@ in the downloaded articles.
 
 Hits in downloaded articles -- sometimes PaperBLAST has access to the
 full text of an article but EuropePMC does not (i.e., if the article
-is linked to a paper via pubmedId and is downloaded by pubMunch, but
-has no pmcId because it is too old). In these cases, we could search
-the article for additional gene identifiers.
+is linked to a gene via UniProt or GeneRIF and is downloaded by
+pubMunch, but has no pmcId because it is too old). In these cases, we
+could search the article for additional gene identifiers.
 
 
 
