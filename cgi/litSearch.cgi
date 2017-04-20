@@ -360,6 +360,7 @@ if (!defined $seq && ! $more_subjectId) {
             # being merged...)
             foreach my $gene (@genes) {
                 die "No subjectId" unless $gene->{subjectId};
+                $gene->{desc} = "No description" unless $gene->{desc}; # could be missing in MicrobesOnline or EcoCyc
                 foreach my $field (qw{showName URL priority subjectId desc organism protein_length source}) {
                     die "No $field for $subjectId" unless $gene->{$field};
                 }
@@ -607,7 +608,6 @@ sub SubjectToGene($) {
         my $locusId = $1;
         $gene->{source} = "MicrobesOnline";
         $gene->{URL} = "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=$locusId";
-        $gene->{desc} = "no description" if $gene->{desc} eq "";
       } elsif ($subjectId =~ m/^[A-Z]+_[0-9]+[.]\d+$/) { # refseq
         $gene->{URL} = "http://www.ncbi.nlm.nih.gov/protein/$subjectId";
         $gene->{source} = "RefSeq";
