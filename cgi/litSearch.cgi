@@ -23,12 +23,13 @@ use CGI qw(:standard Vars);
 use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
 use Time::HiRes qw{gettimeofday};
 use DBI;
-use LWP::Simple;
+use LWP::Simple qw{get};
 use IO::Handle; # for autoflush
 
 sub fail($);
 sub simstring($$$$$$$$$$$$$);
 sub SubjectToGene($);
+sub commify($);
 
 my $tmpDir = "../tmp";
 my $blastall = "../bin/blast/blastall";
@@ -473,7 +474,9 @@ if (!defined $seq && ! $more_subjectId) {
                         # Explain why there is no snippet
                         my $excuse;
                         my $short;
-                        if ($paper->{access} eq "full") {
+                        if (!defined $paper->{access}) {
+                          ;
+                        } elsif ($paper->{access} eq "full") {
                           $short = "no snippet";
                           $excuse = "This term was not found in the full text, sorry.";
                         } elsif ($paper->{isOpen} == 1) {
