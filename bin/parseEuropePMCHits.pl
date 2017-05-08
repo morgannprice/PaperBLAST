@@ -40,7 +40,8 @@ END
         if ($jsonstring eq "") {
             print STDERR "No hits entry for $queryId\n";
         }
-        my $json = from_json($jsonstring);
+        my $json;
+        eval{ $json = from_json($jsonstring) };
         if (!defined $json) {
             print STDERR "Skipping bad hits line for $queryId\n";
             next;
