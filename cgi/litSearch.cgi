@@ -125,8 +125,9 @@ description of the protein's function.  Most of these entries also
 link to articles in <A
 HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A>.
 
-<P>The code for PaperBLAST is available <A
-HREF="https://github.com/morgannprice/PaperBLAST">here</A>.
+<P>For more information see the <A HREF="http://biorxiv.org/content/early/2017/05/02/133041">preprint</A> or the
+<A
+HREF="https://github.com/morgannprice/PaperBLAST">code</A>.
 
 <H3><A NAME="secret">Secrets</A></H3>
 
