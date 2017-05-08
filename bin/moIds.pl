@@ -7,7 +7,11 @@ die "Usage: moIds.pl < words > words.filtered\n"
     unless @ARGV==0;
 
 {
-    GenomicsUtils::connect('localhost') || die "Cannot connect to localhost";
+    GenomicsUtils::connect('-host' => 'pub.microbesonline.org',
+                           '-user' => 'guest',
+                           '-pass' => 'guest',
+                           '-dbname' => 'genomics')
+        || die "Cannot connect to pub.microbesonline.org";
     my $rows;
     # type 1 for standard locus tag
     # type 3 for NCBI accession

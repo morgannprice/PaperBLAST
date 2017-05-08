@@ -8,7 +8,12 @@ use Gene;
 die "Run as a filter on a tab-delimited file with organism names\n"
   unless @ARGV == 0;
 
-GenomicsUtils::connect("localhost") || die "Cannot connect to MicrobesOnline";
+GenomicsUtils::connect('-host' => 'pub.microbesonline.org',
+                       '-user' => 'guest',
+                       '-pass' => 'guest',
+                       '-dbname' => 'genomics')
+  || die "Cannot connect to pub.microbesonline.org";
+
 my %nameToTaxId = ();
 my $q = GenomicsUtils::query("SELECT name, taxonomyId FROM Taxonomy");
 foreach my $row (@$q) {

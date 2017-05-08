@@ -8,7 +8,11 @@ die "Run as a filter\n" unless @ARGV==0;
 
 my %seen = ();
 
-GenomicsUtils::connect("localhost") || die "Cannot connect to MicrobesOnline";
+GenomicsUtils::connect('-host' => 'pub.microbesonline.org',
+                       '-user' => 'guest',
+                       '-pass' => 'guest',
+                       '-dbname' => 'genomics')
+  || die "Cannot connect to pub.microbesonline.org";
 
 while(<STDIN>) {
     chomp;
