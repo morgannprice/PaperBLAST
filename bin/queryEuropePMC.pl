@@ -77,6 +77,13 @@ END
         # This should not happen because of the uri_escape above,
         # but if it does, set it to empty
         $results = "" if !defined $results || $results =~ m/^[<]/;
+        # Check that the json is parseable
+        my $json;
+        eval{ $json = from_json($results) };
+        if (!defined $json) {
+          print STDERR "Could not parse EuropePMC results for $query\n";
+          $results = "";
+        }
         print OUT join("\t", $queryId, $results)."\n";
         $nIn++;
         $nSuccess++ if $results =~ m/"hitCount"/;
