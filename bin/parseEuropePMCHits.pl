@@ -46,7 +46,8 @@ END
             print STDERR "Skipping bad hits line for $queryId\n";
             next;
         }
-        my $queryText = $json->{request}{query};
+        # Sometimes this information is in "queryString" instead of in "query"
+        my $queryText = $json->{request}{query} || $json->{request}{queryString};
         die "No query text for $queryId" unless defined $queryText;
         if (exists $seen{$queryId}{$queryText}) {
             print STDERR "Skipping duplicate hits line for $queryId $queryText\n";
