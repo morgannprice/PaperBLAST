@@ -282,28 +282,22 @@ if (!defined $seq && ! $more_subjectId) {
               i("ercA")) . "."),
           $documentation;
 } else {
-    my $seqlen = length($seq);
-
-    my $defLong;
-    if ($more_subjectId) {
-      $defLong = $more_subjectId;
-    } else {
-      my $initial = substr($seq, 0, 10);
-      $initial .= "..." if $seqlen > 10;
-      $initial = "$seqlen a.a., $initial" if $hasDef;
-      $defLong = "$def ($initial)";
-    }
     if ($more_subjectId) {
       print h3("Full List of Papers Linked to $more_subjectId");
     } else {
-      print
-        h3("PaperBLAST Hits for $defLong");
-    }
-    my @nt = $seq =~ m/[ACGTUN]/g;
-    my $fACGTUN = scalar(@nt) / $seqlen;
-    if ($fACGTUN >= 0.9) {
-      printf("<P><font color='red'>Warning: sequence is %.1f%% nucleotide characters -- are you sure this is a protein query?</font>",
-             100 * $fACGTUN);
+      die "No sequence to searcH" unless $seq;
+      my $initial = substr($seq, 0, 10);
+      my $seqlen = length($seq);
+      $initial .= "..." if $seqlen > 10;
+      $initial = "$seqlen a.a., $initial" if $hasDef;
+      print h3("PaperBLAST Hits for $def ($initial)");
+
+      my @nt = $seq =~ m/[ACGTUN]/g;
+      my $fACGTUN = scalar(@nt) / $seqlen;
+      if ($fACGTUN >= 0.9) {
+        printf("<P><font color='red'>Warning: sequence is %.1f%% nucleotide characters -- are you sure this is a protein query?</font>",
+               100 * $fACGTUN);
+      }
     }
 
     autoflush STDOUT 1; # show preliminary results
