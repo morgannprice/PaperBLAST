@@ -39,6 +39,7 @@ open(SEQ, "<", $seqfile) || die "Cannot read $seqfile";
 my $seqname;
 while(my $line = <SEQ>) {
     chomp $line;
+    $line =~ s/\r$//; # an occasional issue
     if ($line =~ m/^>(\S+) /) {
         $seqname = $1;
         die "Duplicate sequence name $seqname" if exists $seq{$seqname};
