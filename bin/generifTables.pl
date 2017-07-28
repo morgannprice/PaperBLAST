@@ -120,7 +120,10 @@ open(PAPERS, "<", $papersfile) || die "Cannot read $papersfile";
 while(my $line = <PAPERS>) {
   chomp $line;
   my ($pmId, $pmcId, $doi, $title, $authors, $journal, $year) = split /\t/, $line;
-  die "Invalid paper from pubmed" unless defined $year;
+  if (!defined $year) {
+    print STDERR "Warning: invalid paper from pubmed with ids $pmId $pmcId $doi\n";
+    next;
+  }
   $papers{$pmId} = [ $pmcId, $doi, $title, $authors, $journal, $year ];
 }
 close(PAPERS) || die "Error reading $papersfile";
