@@ -124,9 +124,13 @@ sub PrintDom($) {
   foreach my $author (@authors) {
     push @authStrings, $author->find("LastName") . " " . $author->find("Initials");
   }
-  my $line = join("\t", $pmid, $pmcid, $doi, $title, join(", ", @authStrings), $journal, $year)."\n";
+  # remove leading and trailing white space from title (occasionally get new lines)
+  $title =~ s/^\s+//;
+  $title =~ s/\s+$//;
+  my $line = join("\t", $pmid, $pmcid, $doi, $title, join(", ", @authStrings), $journal, $year);
+  $line =~ s/\n//g; # just in case some sneak through
   utf8::encode($line);
-  print $line;
+  print $line."\n";
 }
 
 sub DomToPubmedId($) {
