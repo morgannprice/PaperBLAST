@@ -78,8 +78,8 @@ and from manually-curated information from <A
 HREF="https://www.ncbi.nlm.nih.gov/gene/about-generif" title="Gene
 Reference into Function (NCBI)">GeneRIF</A>, <A
 HREF="http://www.uniprot.org/">Swiss-Prot</A>, and <A
-HREF="http://ecocyc.org">EcoCyc</A>.  As of March 2017, PaperBLAST
-links over 360,000 different protein sequences to over 700,000
+HREF="http://ecocyc.org">EcoCyc</A>.  As of September 2017, PaperBLAST
+links over 340,000 different protein sequences to over 750,000
 articles.  Given this database and a protein sequence query,
 PaperBLAST uses <A
 HREF="https://en.wikipedia.org/wiki/BLAST">protein-protein BLAST</A>
@@ -125,9 +125,13 @@ description of the protein's function.  Most of these entries also
 link to articles in <A
 HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A>.
 
-<P>For more information see the <A HREF="http://biorxiv.org/content/early/2017/05/02/133041">preprint</A> or the
+<P>For more information see the <A title="PaperBLAST: Text Mining Papers for Information about Homologs" HREF="http://msystems.asm.org/content/2/4/e00039-17">paper</A> (<i>mSystems</i> 2017) or the
 <A
 HREF="https://github.com/morgannprice/PaperBLAST">code</A>.
+
+Also note some changes since the paper was written:
+
+<LI>September 2017: EuropePMC no longer returns some table entries in their search results. This has shrunk PaperBLAST's database, but has also reduced the number of low-relevance hits.
 
 <H3><A NAME="secret">Secrets</A></H3>
 
@@ -176,8 +180,9 @@ my $seqFile = "$tmpDir/$filename.fasta";
 # remove leading and trailing whitespace
 $query =~ s/^\s+//;
 $query =~ s/\s+$//;
-if ($query ne "" && $query !~ m/\n/ && $query !~ m/ /) {
-  # a single word query is assumed to be a gene id
+# a single word query is assumed to be a gene id if it contains any non-sequence character
+# But, putting a protein sequence on a line is allowed (if all uppercase)
+if ($query ne "" && $query !~ m/\n/ && $query !~ m/ / && $query =~ m/[^A-Z*]/) {
   my $short = $query;
   $query = undef;
   fail("Sorry, query has a FASTA header but no sequence") if $short =~ m/^>/;
@@ -265,7 +270,7 @@ if (!defined $seq && ! $more_subjectId) {
     print
         start_form( -name => 'input', -method => 'GET', -action => 'litSearch.cgi'),
         p(br(),
-          b("Enter a sequence in FASTA or Uniprot format,<BR>or an identifier from UniProt, RefSeq, or MicrobesOnline: "),
+          b("Enter a protein sequence in FASTA or Uniprot format,<BR>or an identifier from UniProt, RefSeq, or MicrobesOnline: "),
           br(),
           textarea( -name  => 'query', -value => '', -cols  => 70, -rows  => 10 )),
         p(submit('Search'), reset()),
