@@ -30,6 +30,7 @@ sub fail($);
 sub simstring($$$$$$$$$$$$$);
 sub SubjectToGene($);
 sub commify($);
+sub loggerjs($$); # type, proteinid => onclick javascript code for a link related to the specified protein
 
 my $tmpDir = "../tmp";
 my $blastall = "../bin/blast/blastall";
@@ -170,7 +171,8 @@ my $title = "PaperBLAST";
 print
     header(-charset => 'utf-8'),
     start_html($title),
-    qq{<div style="background-color: #40C0CB; display: block; position: absolute; top: 0px; left: -1px; width: 100%; padding: 0.25em; z-index: 400;"><H2 style="margin: 0em;"><A HREF="litSearch.cgi" style="color: gold; font-family: 'Montserrat', sans-serif; font-style:italic; text-shadow: 1px 1px 1px #000000; text-decoration: none;">PaperBLAST &ndash; <small>Find papers about a protein or its homologs</small></A></H2></div><P style="margin: 0em;">&nbsp;</P>\n};
+    qq{<div style="background-color: #40C0CB; display: block; position: absolute; top: 0px; left: -1px; width: 100%; padding: 0.25em; z-index: 400;"><H2 style="margin: 0em;"><A HREF="litSearch.cgi" style="color: gold; font-family: 'Montserrat', sans-serif; font-style:italic; text-shadow: 1px 1px 1px #000000; text-decoration: none;">PaperBLAST &ndash; <small>Find papers about a protein or its homologs</small></A></H2></div><P style="margin: 0em;">&nbsp;</P>\n},
+    qq{<SCRIPT src="../static/pb.js"></SCRIPT>\n};
 
 my $procId = $$;
 my $timestamp = int (gettimeofday() * 1000);
@@ -365,7 +367,9 @@ if (!defined $seq && ! $more_subjectId) {
                 foreach my $field (qw{showName URL priority subjectId desc organism protein_length source}) {
                     die "No $field for $subjectId" unless $gene->{$field};
                 }
-                my @pieces = ( a({ -href => $gene->{URL}, -title => $gene->{source} }, $gene->{showName}),
+                my @pieces = ( a({ -href => $gene->{URL}, -title => $gene->{source},
+                                   -onmousedown => loggerjs("curated", $gene->{showName}) },
+                                 $gene->{showName}),
                                $gene->{priority} <= 2 ? b($gene->{desc}) : $gene->{desc},
                                "from",
                                i($gene->{organism}) );
@@ -383,8 +387,10 @@ if (!defined $seq && ! $more_subjectId) {
                     @pmIds = grep { my $keep = !exists $seen{$_}; $seen{$_} = 1; $keep; } @pmIds;
                     my $note = @pmIds > 1 ? scalar(@pmIds) . " papers" : "paper";
                     push @pieces, "(see " .
-                        a({-href => "http://www.ncbi.nlm.nih.gov/pubmed/" . join(",",@pmIds) }, $note)
-                        . ")";
+                        a({ -href => "http://www.ncbi.nlm.nih.gov/pubmed/" . join(",",@pmIds),
+                            -onmousedown => loggerjs("curatedpaper", $gene->{showName})},
+                          $note)
+                          . ")";
                 }
                 push @headers, join(" ", @pieces);
                 push @content, $gene->{comment} if $gene->{comment};
@@ -456,14 +462,15 @@ if (!defined $seq && ! $more_subjectId) {
                       }
                     }
                     my $title = $paper->{title};
-                    $title = a({-href => $paper_url}, $title) if defined $paper_url;
+                    $title = a({-href => $paper_url, -onmousedown => loggerjs("pb", $gene->{showName})}, $title)
+                      if defined $paper_url;
                     my $authorShort = $paper->{authors};
                     $authorShort =~ s/ .*//;
                     my $extra = "";
-                    $extra = "(" . a({-href => $pubmed_url}, "PubMed") . ")"
+                    $extra = "(" . a({ -href => $pubmed_url, -onmousedown => loggerjs("pb", $gene->{showName}) }, "PubMed") . ")"
                         if !$paper->{pmcId} && $paper->{pmId};
                     my $paper_header = $title . br() .
-                        small( a({-title => $paper->{authors}}, "$authorShort,"),
+                        small( a({ -title => $paper->{authors} }, "$authorShort,"),
                                $paper->{journal}, $paper->{year}, $extra);
                     
                     if (@pieces == 0) {
@@ -703,3 +710,10 @@ sub commify($) {
     1 while s/^(-?\d+)(\d{3})/$1,$2/;
     return $_;
 }
+
+sub loggerjs($$) {
+  my ($type, $prot) = @_;
+  my $string = $type . "::" . $prot;
+  return qq{logger(this, '$string')};
+}
+
