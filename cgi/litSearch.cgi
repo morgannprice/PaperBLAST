@@ -266,10 +266,20 @@ if ($query =~ m/[A-Za-z]/) {
     $def = length($seq) . " a.a." if $def eq "";
 }
 
+my $motd = "";
+if (open(MOTD, "<", "../motd")) {
+  $motd = join("\n", <MOTD>);
+  close(MOTD);
+  $motd =~ s/\r//g;
+  $motd =~ s/\s+$//;
+}
+$motd = p($motd) if $motd ne "";
+
 if (!defined $seq && ! $more_subjectId) {
     my $exampleId = "3615187";
     my $refseqId = "WP_012018426.1";
     print
+        $motd,
         start_form( -name => 'input', -method => 'GET', -action => 'litSearch.cgi'),
         p(br(),
           b("Enter a protein sequence in FASTA or Uniprot format,<BR>or an identifier from UniProt, RefSeq, or MicrobesOnline: "),
@@ -292,12 +302,14 @@ if (!defined $seq && ! $more_subjectId) {
     if ($more_subjectId) {
       print h3("Full List of Papers Linked to $more_subjectId");
     } else {
-      die "No sequence to searcH" unless $seq;
+      die "No sequence to search" unless $seq;
       my $initial = substr($seq, 0, 10);
       my $seqlen = length($seq);
       $initial .= "..." if $seqlen > 10;
       $initial = "$seqlen a.a., $initial" if $hasDef;
-      print h3("PaperBLAST Hits for $def ($initial)");
+      print
+        $motd,
+        h3("PaperBLAST Hits for $def ($initial)");
 
       my @nt = $seq =~ m/[ACGTUN]/g;
       my $fACGTUN = scalar(@nt) / $seqlen;
