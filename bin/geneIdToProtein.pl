@@ -16,6 +16,9 @@ END
 
 my $base = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/';
 my $batch_size = 50;
+my $max_retries = 50;
+my $n_retries = 0;
+my $nWarnings = 0;
 sub HandleBatch;
 
 my $knownfile;
@@ -67,6 +70,7 @@ while(my $line = <STDIN>) {
   }
 }
 &HandleBatch(@batch);
+print STDERR "Finished with $n_retries retries and $nWarnings cases of potentially missed mappings due to empty results\n";
 
 sub HandleBatch {
   my @geneIds = @_;
@@ -74,6 +78,13 @@ sub HandleBatch {
   my $db = 'Gene';
   my $url = $base . "efetch.cgi?db=$db&id=" . join(",",@geneIds);
   my $results = get($url);
+  while (!defined $results) {
+    die "Too many retries for URL $url\nGiving up"
+      if $n_retries >= $max_retries;
+    $n_retries++;
+    sleep(1);
+    $results = get($url);
+  }
   my @parts = split /Entrezgene ::= /, $results;
   shift @parts; # the first one should be empty
   print STDERR "Warning: " . scalar(@geneIds) . " queries, $geneIds[0] to $geneIds[-1], but got " . scalar(@parts) . " results\n"
@@ -84,6 +95,7 @@ sub HandleBatch {
     my @genelines = grep m/^ +geneid \d+,?$/, @lines;
     if (@genelines == 0) {
       print STDERR "Warning: No gene found for a query in $geneIds[0] to $geneIds[-1], probably $geneIds[$iQuery]\n";
+      $nWarnings++;
       next;
     }
     $genelines[0] =~ m/geneid (\d+),?$/ || die;
