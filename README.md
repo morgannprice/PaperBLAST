@@ -87,7 +87,7 @@ EcoCyc, and PubMed:
 	nice bin/download.pl -dir indata >& download.log
 
 Before running download.pl, you will need to either download ecoli.tar.gz manually from EcoCyc and put it in the current directory, or, set up a file named ecocyc.URL in the current directory that contains a valid URL to fetch
-ecoli.tar.gz. The contents of ecocyc.URL would look somethign like
+ecoli.tar.gz. The contents of ecocyc.URL would look something like
 http://biocyc-flatfiles:data-12345@bioinformatics.ai.sri.com/ecocyc/dist/flatfiles-12345678/ecoli.tar.gz but you will need to register at EcoCyc to get a valid URL.
 
 Choose which queries to run against EuropePMC:
