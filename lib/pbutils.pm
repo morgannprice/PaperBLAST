@@ -5,7 +5,7 @@ use strict;
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw(read_list wget ftp_html_to_files write_list mkdir_if_needed);
+@EXPORT = qw(read_list wget ftp_html_to_files write_list mkdir_if_needed ReadFasta);
 
 sub read_list($) {
   my ($file) = @_;
@@ -58,6 +58,26 @@ sub write_list($$) {
 sub mkdir_if_needed($) {
     my ($subdir) = @_;
     (-d $subdir) || mkdir($subdir) || die "Cannot mkdir $subdir";
+}
+
+# returns a reference to a hash of name => sequence
+sub ReadFasta ($) {
+    my ($filename) = @_;
+    open(IN, "<", $filename) || die "Cannot read $filename";
+    my %seqs = ();
+    my $name = undef;
+    while(<IN>) {
+	chomp;
+	if (m/>(\S+)/) {
+	    die "Duplicate entry for $1 in filename" if exists $seqs{$1};
+	    $name = $1;
+	} else {
+	    die "Unexpected line $_" unless defined $name;
+	    $seqs{$name} .= $_;
+	}
+    }
+    close(IN) || die "Error reading $filename";
+    return(\%seqs);
 }
 
 1;
