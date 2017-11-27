@@ -1,2 +1,4 @@
 pubcache binary
 data/* binary
+static/geneId_proteinId binary
+static/*.curated_parsed binary
