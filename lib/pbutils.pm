@@ -5,7 +5,7 @@ use strict;
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw(read_list wget ftp_html_to_files write_list mkdir_if_needed ReadFasta ParsePTools ReadFastaEntry);
+@EXPORT = qw(read_list wget ftp_html_to_files write_list mkdir_if_needed ReadFasta ParsePTools ReadFastaEntry ReadTable ReadColumnNames);
 
 sub read_list($) {
   my ($file) = @_;
@@ -175,4 +175,49 @@ sub ReadFastaEntry {
   return () if $state->{header} eq ""; # empty file
   return ($state->{header}, $state->{sequence});
 }
+
+# filename and list of required fields => list of hashes, each with field->value
+# The list can be a single name or a reference to a list
+sub ReadTable {
+    my ($filename,@required) = @_;
+    if (scalar(@required) == 1 && ref $required[0]) {
+        @required = @{ $required[0] };
+    }
+    open(IN, "<", $filename) || die "Cannot read $filename";
+    my $headerLine = <IN>;
+    $headerLine =~ s/[\r\n]+$//; # for DOS
+    # Check for Mac style files -- these are not supported, but give a useful error
+    die "Tab-delimited input file $filename is a Mac-style text file, which is not supported\n"
+        . "Use\ndos2unix -c mac $filename\nto convert it to a Unix text file.\n"
+        if $headerLine =~ m/\t/ && $headerLine =~ m/\r/;
+    my @cols = split /\t/, $headerLine;
+    my %cols = map { $cols[$_] => $_ } (0..(scalar(@cols)-1));
+    foreach my $field (@required) {
+	die "No field $field in $filename" unless exists $cols{$field};
+    }
+    my @rows = ();
+    while(my $line = <IN>) {
+	$line =~ s/[\r\n]+$//;
+	my @F = split /\t/, $line, -1;
+	die "Wrong number of columns in:\n$line\nin $filename"
+	    unless scalar(@F) == scalar(@cols);
+	my %row = map { $cols[$_] => $F[$_] } (0..(scalar(@cols)-1));
+	push @rows, \%row;
+    }
+    close(IN) || die "Error reading $filename";
+    return @rows;
+}
+
+# filename to list of column names
+sub ReadColumnNames($) {
+    my ($filename) = @_;
+    open(IN, "<", $filename) || die "Cannot read $filename";
+    my $line = <IN>;
+    close(IN) || die "Error reading $filename";
+
+    $line =~ s/[\r\n]+$//; # for DOS
+    my @cols = split /\t/, $line;
+    return @cols;
+}
+
 1;
