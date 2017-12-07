@@ -42,7 +42,9 @@ while(<STDIN>) {
   my @os = @{ $entry->OSs->list() };
   my @cc = map $_->comment(), $entry->CCs->elements;
   my $cc = join(";_", @cc); # in practice there is just one and there is no clear topic
-  print join("\t", $id, $acc[0] || "",
+  print join("\t",
+             "CharProtDB",
+             $id, $acc[0] || "",
              $entry->GNs->getFirst() || "",
              $desc,
              $os[0]->text() || "",
