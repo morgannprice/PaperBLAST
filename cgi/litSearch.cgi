@@ -84,9 +84,7 @@ HREF="http://www.uniprot.org/">Swiss-Prot</A>,
 <A HREF="http://metacyc.org/">MetaCyc</A>,
 <A HREF="http://ecocyc.org">EcoCyc</A>,
 and the <A HREF="http://fit.genomics.lbl.gov/" title="Reannotations from genome-wide fitness data">Fitness Browser</A>.
-As of September 2017, PaperBLAST
-links over 340,000 different protein sequences to over 750,000
-articles.  Given this database and a protein sequence query,
+Given this database and a protein sequence query,
 PaperBLAST uses <A
 HREF="https://en.wikipedia.org/wiki/BLAST">protein-protein BLAST</A>
 to find similar sequences with E &lt; 0.001.
@@ -644,6 +642,12 @@ sub SubjectToGene($) {
       $gene->{priority} = 4;
       # their site is not useful, so just link to the paper
       $gene->{URL} = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/";
+      if ($gene->{comment}) {
+        # label the comment as being from CharProtDB, as otherwise it is a bit mysterious.
+        # And remove the Alias or Aliaess part.
+        $gene->{comment} =~ s/Aliase?s?: [^ ;]+;? ?//;
+        $gene->{comment} = i("CharProtDB") . " " . $gene->{comment};
+      }
     } elsif ($db eq "SwissProt") {
       $gene->{URL} = "http://www.uniprot.org/uniprot/$protId";
       $gene->{priority} = 2;
@@ -662,7 +666,7 @@ sub SubjectToGene($) {
           $out =~ s/ Evidence=[^ ]*;?//g;
           $out =~ s/ Xref=[^ ]+;?//g;
           # Transform Name=x; to x;
-          $out =~ s/ Name=([^;]+);/ \1;/g;
+          $out =~ s/ Name=([^;]+);/ $1;/g;
         }
         $out;
       } @comments;
