@@ -387,6 +387,8 @@ if (!defined $seq && ! $more_subjectId) {
             my @content = ();
             my %paperSeen = (); # to avoid redundant papers -- pmId.pmcId.doi => term => 1
             my %paperSeenNoSnippet = (); # to avoid redundant papers -- pmId.pmcId.doi => 1
+            my %seen_uniprot = (); # to avoid showing the curated Swiss-Prot entry and then the text-mined Swiss-Prot entry
+            # (A metacyc entry could also mask a text-mined Swiss-Prot entry; that also seems ok)
 
             # Produce top-level and lower-level output for each gene (@headers, @content)
             # Suppress duplicate papers if no additional terms show up
@@ -436,7 +438,13 @@ if (!defined $seq && ! $more_subjectId) {
                         . ")";
                   }
                 }
-                push @headers, join(" ", @pieces);
+                # Skip the header if this is a UniProt entry that is redundant with a curated
+                # (Swiss-Prot) entry
+                push @headers, join(" ", @pieces)
+                  unless exists $seen_uniprot{$gene->{showName}} && !exists $gene->{curated};
+                $seen_uniprot{ $gene->{curatedId} } = 1
+                  if exists $gene->{curatedId};
+
                 push @content, $gene->{comment} if $gene->{comment};
                 my $nPaperShow = 0;
                 foreach my $paper (@{ $gene->{papers} }) {
@@ -627,6 +635,7 @@ sub SubjectToGene($) {
     $gene->{subjectId} = $subjectId;
     $gene->{source} = $db;
     $gene->{curated} = 1;
+    $gene->{curatedId} = $protId;
     if ($db eq "CAZy") {
       $gene->{source} = "CAZy via dbCAN";
       $gene->{URL} = "http://www.cazy.org/search?page=recherche&lang=en&recherche=$protId&tag=4";
