@@ -36,12 +36,35 @@ while(<STDIN>) {
   my $comment = "";
   my @pmids = ();
   foreach my $ref (@{ $entry->Refs->list }) {
-    push @pmids, @{ $ref->RX->{PMID} }
-      if exists $ref->RX->{PMID};
+    if (exists $ref->RX->{PMID}) {
+      foreach my $part (@{ $ref->RX->{PMID} }) {
+        $part =~ s/ //g; # occasionally a space is in there
+        push @pmids, split /,/, $part;
+      }
+    }
   }
+  my @filtered= ();
+  foreach my $pmid (@pmids) {
+    # remove common prefixes or suffixes
+    $pmid =~ s/^PMID://;
+    $pmid =~ s/[|]PMID$//;
+    if ($pmid =~ m/^\d+$/) {
+      push @filtered, $pmid;
+    } else {
+      print STDERR "Skipping invalid pubmed id $pmid for $id\n";
+    }
+  }
+
+  my %pmids = map { $_ => 1 } @filtered;
+  @pmids = sort { $a <=> $b } keys %pmids;
+
   my @os = @{ $entry->OSs->list() };
   my @cc = map $_->comment(), $entry->CCs->elements;
-  my $cc = join(";_", @cc); # in practice there is just one and there is no clear topic
+  my $cc = join("; ", @cc); # in practice there is just one and there is no clear topic
+  # Fixing up multiple comments
+  $cc =~ s/\nCC +/ /g;
+  $cc =~ s/[\r\n\t]/ /g;
+
   print join("\t",
              "CharProtDB",
              $id, $acc[0] || "",

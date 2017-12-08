@@ -8,7 +8,7 @@ compare_dbs.pl -old old.db -new new.db -out comparison
 
     This script will compare two databases and will make a table of
     the paper-gene mappings that are present in only one database or
-    the other.
+    the other. It does not consider the curated links.
 END
 ;
 

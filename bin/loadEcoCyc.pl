@@ -1,4 +1,5 @@
 #!/usr/bin/perl -w
+# This script is obsolete; see parse_ecocyc.pl instead
 use strict;
 use IO::Handle; # for autoflush
 use Getopt::Long;

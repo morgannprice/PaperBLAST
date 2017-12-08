@@ -78,8 +78,13 @@ against the articles in <A HREF="http://europepmc.org/">EuropePMC</A>
 and from manually-curated information from <A
 HREF="https://www.ncbi.nlm.nih.gov/gene/about-generif" title="Gene
 Reference into Function (NCBI)">GeneRIF</A>, <A
-HREF="http://www.uniprot.org/">Swiss-Prot</A>, and <A
-HREF="http://ecocyc.org">EcoCyc</A>.  As of September 2017, PaperBLAST
+HREF="http://www.uniprot.org/">Swiss-Prot</A>,
+<A HREF="http://www.cazy.org/" title="Carbohydrate-Active enZYmes Database">CAZy</A> (as made available by <A HREF="http://csbl.bmb.uga.edu/dbCAN/download.php">dbCAN</A>),
+<A HREF="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/" title="Database of experimentally characterized protein annotations">CharProtDB</A>,
+<A HREF="http://metacyc.org/">MetaCyc</A>,
+<A HREF="http://ecocyc.org">EcoCyc</A>,
+and the <A HREF="http://fit.genomics.lbl.gov/" title="Reannotations from genome-wide fitness data">Fitness Browser</A>.
+As of September 2017, PaperBLAST
 links over 340,000 different protein sequences to over 750,000
 articles.  Given this database and a protein sequence query,
 PaperBLAST uses <A
@@ -111,28 +116,40 @@ the full text, we try to select a snippet from the abstract, but
 unfortunately, unique identifiers such as locus tags are rarely
 provided in abstracts.
 
-<P>We also use manually-curated links between protein sequences and
-articles: <UL> <LI>We index proteins from NCBI's RefSeq if a GeneRIF
-entries links the gene to an article in <A
+<P>PaperBLAST also incorporates manually-curated links between protein sequences and
+articles: <UL> <LI>Proteins from NCBI's RefSeq are included if a
+<A HREF="https://www.ncbi.nlm.nih.gov/gene/about-generif">GeneRIF</A>
+entry links the gene to an article in <A
 HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A><sup>&reg;</sup>.
 GeneRIF also provides a short summary of the article's claim about the
-protein, which we provide instead of a snippet.  <LI>We index proteins
-from Swiss-Prot (the curated part of UniProt) if the curators
+protein, which is shown instead of a snippet.  <LI>Proteins
+from Swiss-Prot (the curated part of <A HREF="http://uniprot.org">UniProt</A>) are included if the curators
 identified experimental evidence for the protein's function (evidence
-code ECO:0000269).  <LI>We index every protein EcoCyc, a curated
-database of the proteins in <i> Escherichia coli</i> K-12.  </UL> For
-the entries from Swiss-Prot and EcoCyc, we provide a short curated
-description of the protein's function.  Most of these entries also
+code ECO:0000269). For these proteins, the fields of the Swiss-Prot entry that
+describe the protein's function are shown (with bold headings).
+  <LI>Every protein from <A HREF="http://ecocyc.org">EcoCyc</A>, a curated
+database of the proteins in <i> Escherichia coli</i> K-12, is included, regardless
+of whether they are characterized or not.
+<LI>Proteins from the <A HREF="http://metacyc.org">MetaCyc</A> metabolic pathway database are included if they are linked to a paper in PubMed.
+<LI>Every protein from <A HREF="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/">CharProtDB</A>, a database of experimentally characterized protein annotations, is included.
+<LI>Proteins from the <A HREF="http://www.cazy.org/">CAZy</A> database of carbohydrate-active enzymes are included if they are associated with an Enzyme Classification number. Even though CAZy does not provide links from individual protein sequences to papers, these should all be experimentally-characterized proteins..
+<LI>Every protein with an evidence-based reannotation (based on mutant phenotypes) in the <A HREF="http://fit.genomics.lbl.gov/">Fitness Browser</A> is included.
+  </UL>Except for GeneRIF,
+the curated entries include a short curated
+description of the protein's function.  Many of these entries also
 link to articles in <A
 HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A>.
 
-<P>For more information see the <A title="PaperBLAST: Text Mining Papers for Information about Homologs" HREF="http://msystems.asm.org/content/2/4/e00039-17">paper</A> (<i>mSystems</i> 2017) or the
+<P>For more information see the <A title="PaperBLAST: Text Mining Papers for Information about Homologs" HREF="http://msystems.asm.org/content/2/4/e00039-17">PaperBLAST paper</A> (<i>mSystems</i> 2017) or the
 <A
 HREF="https://github.com/morgannprice/PaperBLAST">code</A>.
 
 Also note some changes since the paper was written:
 
+<UL>
+<LI>December 2017: incorporate MetaCyc, CharProtDB, CAZy, and the reannotations from the Fitness Browser.
 <LI>September 2017: EuropePMC no longer returns some table entries in their search results. This has shrunk PaperBLAST's database, but has also reduced the number of low-relevance hits.
+</UL>
 
 <H3><A NAME="secret">Secrets</A></H3>
 
@@ -184,6 +201,7 @@ $query =~ s/^\s+//;
 $query =~ s/\s+$//;
 # a single word query is assumed to be a gene id if it contains any non-sequence character
 # But, putting a protein sequence on a line is allowed (if all uppercase)
+
 if ($query ne "" && $query !~ m/\n/ && $query !~ m/ / && $query =~ m/[^A-Z*]/) {
   my $short = $query;
   $query = undef;
@@ -199,8 +217,9 @@ if ($query ne "" && $query !~ m/\n/ && $query !~ m/ / && $query =~ m/[^A-Z*]/) {
     if ($gene) {
       $geneId = $gene->{geneId};
     } else {
-      $gene = $dbh->selectrow_hashref("SELECT * from UniProt WHERE acc = ?", {}, $short);
-      $geneId = $gene->{acc} if $gene;
+      $gene = $dbh->selectrow_hashref("SELECT * from CuratedGene WHERE db = 'SwissProt' AND protId = ?",
+                                      {}, $short);
+      $geneId = "SwissProt::".$short;
     }
     if (defined $geneId) {
       # look for the duplicate
@@ -376,15 +395,15 @@ if (!defined $seq && ! $more_subjectId) {
             foreach my $gene (@genes) {
                 die "No subjectId" unless $gene->{subjectId};
                 $gene->{desc} = "No description" unless $gene->{desc}; # could be missing in MicrobesOnline or EcoCyc
-                foreach my $field (qw{showName URL priority subjectId desc organism protein_length source}) {
+                foreach my $field (qw{showName priority subjectId desc protein_length source}) {
                     die "No $field for $subjectId" unless $gene->{$field};
                 }
+                die "URL not set for $subjectId" unless exists $gene->{URL};
+                my $fromText = $gene->{organism} ? " from " . i($gene->{organism}) : "";
                 my @pieces = ( a({ -href => $gene->{URL}, -title => $gene->{source},
                                    -onmousedown => loggerjs("curated", $gene->{showName}) },
                                  $gene->{showName}),
-                               $gene->{priority} <= 2 ? b($gene->{desc}) : $gene->{desc},
-                               "from",
-                               i($gene->{organism}) );
+                               ($gene->{curated} ? b($gene->{desc}) : $gene->{desc}) . $fromText);
                 # The alignment to show is always the one reported, not necessarily the one for this gene
                 # (They are all identical, but only $subjectId is guaranteed to be in the blast database
                 # and to be a valid argument for showAlign.cgi)
@@ -403,6 +422,19 @@ if (!defined $seq && ! $more_subjectId) {
                             -onmousedown => loggerjs("curatedpaper", $gene->{showName})},
                           $note)
                           . ")";
+                }
+                # For CAZy entries, add a link to the actual genbank entry because the CAZy entry is a bit mysterious
+                if ($gene->{source} =~ m/^CAZy/) {
+                  my $id = $gene->{showName};
+                  $id =~ s/[.]\d+$//;
+                  if ($id =~ m/^[A-Z0-9_]+/) {
+                    push @pieces, "(see " .
+                      a({ -href => "https://www.ncbi.nlm.nih.gov/protein/$id",
+                          -title => "NCBI protein entry",
+                          -onmounsedown => loggerjs("cazygenbank", $gene->{showName}) },
+                        "protein")
+                        . ")";
+                  }
                 }
                 push @headers, join(" ", @pieces);
                 push @content, $gene->{comment} if $gene->{comment};
@@ -539,7 +571,7 @@ if (!defined $seq && ! $more_subjectId) {
 
     print qq{<script src="http://fit.genomics.lbl.gov/d3js/d3.min.js"></script>
              <script src="http://fit.genomics.lbl.gov/images/fitblast.js"></script>
-             <H3><A title="Fitness BLAST searches for similarity to bacterial proteins that have mutant phenotypes" HREF="http://fit.genomics.lbl.gov/" NAME="#fitness">Fitness Blast</A></H3>
+             <H3><A title="Fitness BLAST searches for similarity to bacterial proteins that have mutant phenotypes" HREF="http://fit.genomics.lbl.gov/" NAME="#fitness">Fitness Blast Results</A></H3>
              <P><DIV ID="fitblast_short"></DIV></P>
              <script>
              var server_root = "http://fit.genomics.lbl.gov/";
@@ -588,71 +620,103 @@ sub simstring($$$$$$$$$$$$$) {
 # or pmIds (a list of pubmed identifiers)
 sub SubjectToGene($) {
   my ($subjectId) = @_;
-  if ($subjectId =~ m/^gnl\|ECOLI\|(.*)$/) {
-    my $protein_id = $1;
-    my $gene = $dbh->selectrow_hashref("SELECT * FROM EcoCyc WHERE protein_id = ?", {}, $protein_id);
+  if ($subjectId =~ m/::/) { # curated gene
+    my ($db, $protId) = split /::/, $subjectId;
+    my $gene = $dbh->selectrow_hashref("SELECT * FROM CuratedGene WHERE db = ? AND protId = ?", {}, $db, $protId);
     die "Unrecognized subject $subjectId" unless defined $gene;
     $gene->{subjectId} = $subjectId;
-    $gene->{protein_id} = $protein_id;
-    $gene->{source} = "EcoCyc";
-    $gene->{URL} = "http://ecocyc.org/gene?orgid=ECOLI&id=$protein_id";
-    my @ids = ( $gene->{protein_name}, $gene->{bnumber} );
-    @ids = grep { $_ ne "" } @ids;
-    $gene->{showName} = join(" / ", @ids) || $protein_id;
-    $gene->{priority} = 1;
-    $gene->{organism} = "Escherichia coli K-12";
-    $gene->{pmIds} = $dbh->selectcol_arrayref("SELECT pmId FROM EcoCycToPubMed WHERE protein_id = ?",
-                                              {}, $protein_id);
-    return $gene;
-  } else {
-    # Check in UniProt before checking in Gene, but UniProt items may show up in Gene as well.
-    my $gene = $dbh->selectrow_hashref("SELECT * FROM UniProt WHERE acc = ?", {}, $subjectId);
-    if (defined $gene) {
-      $gene->{subjectId} = $subjectId;
+    $gene->{source} = $db;
+    $gene->{curated} = 1;
+    if ($db eq "CAZy") {
+      $gene->{source} = "CAZy via dbCAN";
+      $gene->{URL} = "http://www.cazy.org/search?page=recherche&lang=en&recherche=$protId&tag=4";
+      $gene->{priority} = 4;
+    } elsif ($db eq "CharProtDB") {
+      $gene->{priority} = 4;
+      # their site is not useful, so just link to the paper
+      $gene->{URL} = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/";
+    } elsif ($db eq "SwissProt") {
+      $gene->{URL} = "http://www.uniprot.org/uniprot/$protId";
       $gene->{priority} = 2;
-      $gene->{source} = "SwissProt";
-      $gene->{URL} = "http://www.uniprot.org/uniprot/$subjectId";
-      $gene->{showName} = $gene->{acc};
+      # and clean up the comments
       my @comments = split /_:::_/, $gene->{comment};
       @comments = map { s/[;. ]+$//; $_; } @comments;
       @comments = grep m/^SUBUNIT|FUNCTION|COFACTOR|CATALYTIC|ENZYME|DISRUPTION/, @comments;
+      @comments = map {
+        my @words = split / /, $_;
+        my $cofactor = $words[0] eq "COFACTOR:";
+        $words[0] = b(lc($words[0]));
+        $words[1] = b(lc($words[1])) if @words > 1 && $words[1] =~ m/^[A-Z]+:$/;
+        my $out = join(" ", @words);
+        if ($cofactor) {
+          # Remove Evidence= and Xref= fields., as often found in the cofactor entry
+          $out =~ s/ Evidence=[^ ]*;?//g;
+          $out =~ s/ Xref=[^ ]+;?//g;
+          # Transform Name=x; to x;
+          $out =~ s/ Name=([^;]+);/ \1;/g;
+        }
+        $out;
+      } @comments;
       my $comment = join("<BR>\n", @comments);
-      my @pmIds = $comment =~ m!{ECO:0000269[|]PubMed:(\d+)}!;
       $comment =~ s!{ECO:[A-Za-z0-9_:,.| -]+}!!g;
       $gene->{comment} = $comment;
-      $gene->{pmIds} = \@pmIds;
-    } else { # look in Gene table
-      $gene = $dbh->selectrow_hashref("SELECT * FROM Gene WHERE geneId = ?", {}, $subjectId);
-      die "Unrecognized gene $subjectId" unless defined $gene;
-      $gene->{subjectId} = $subjectId;
+    } elsif ($db eq "ecocyc") {
+      $gene->{source} = "EcoCyc";
+      $gene->{URL} = "https://ecocyc.org/gene?orgid=ECOLI&id=$protId";
+      $gene->{priority} = 1;
+    } elsif ($db eq "metacyc") {
+      $gene->{source} = "MetaCyc";
+      $gene->{URL} = "https://metacyc.org/gene?orgid=META&id=$protId";
       $gene->{priority} = 3;
-      if ($subjectId =~ m/^VIMSS(\d+)$/) {
-        my $locusId = $1;
-        $gene->{source} = "MicrobesOnline";
-        $gene->{URL} = "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=$locusId";
-      } elsif ($subjectId =~ m/^[A-Z]+_[0-9]+[.]\d+$/) { # refseq
-        $gene->{URL} = "http://www.ncbi.nlm.nih.gov/protein/$subjectId";
-        $gene->{source} = "RefSeq";
-      } elsif ($subjectId =~ m/^[A-Z][A-Z0-9]+$/) { # SwissProt/TREMBL
-        $gene->{URL} = "http://www.uniprot.org/uniprot/$subjectId";
-        $gene->{source} = "SwissProt/TReMBL";
-      } else {
-        die "Cannot build a URL for subject $subjectId";
-      }
+    } elsif ($db eq "reanno") {
+      $gene->{source} = "Fitness-based Reannotations";
+      $gene->{comment} = "Mutant Phenotype: " . $gene->{comment};
+      $gene->{priority} = 5;
+      my ($orgId, $locusId) = split /:/, $protId;
+      die "Invalid protId $protId" unless $locusId;
+      $gene->{URL} = "http://fit.genomics.lbl.gov/cgi-bin/singleFit.cgi?orgId=$orgId&locusId=$locusId";
+    } else {
+      die "Unexpeced database $db";
     }
-    # add papers, even if from UniProt
+
+    my @ids = ( $gene->{name}, $gene->{id2} );
+    push @ids, $protId if $db eq "SwissProt";
+    @ids = grep { $_ ne "" } @ids;
+    $gene->{showName} = join(" / ", @ids) || $protId;
+    $gene->{pmIds} = $dbh->selectcol_arrayref("SELECT pmId FROM CuratedPaper WHERE db = ? AND protId = ?",
+                                              {}, $db, $protId);
+    return $gene;
+  } else { # look in Gene table
+    my $gene = $dbh->selectrow_hashref("SELECT * FROM Gene WHERE geneId = ?", {}, $subjectId);
+    die "Unrecognized gene $subjectId" unless defined $gene;
+    $gene->{subjectId} = $subjectId;
+    $gene->{priority} = 6; # literature mined is lowest
+    if ($subjectId =~ m/^VIMSS(\d+)$/) {
+      my $locusId = $1;
+      $gene->{source} = "MicrobesOnline";
+      $gene->{URL} = "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=$locusId";
+    } elsif ($subjectId =~ m/^[A-Z]+_[0-9]+[.]\d+$/) { # refseq
+      $gene->{URL} = "http://www.ncbi.nlm.nih.gov/protein/$subjectId";
+      $gene->{source} = "RefSeq";
+    } elsif ($subjectId =~ m/^[A-Z][A-Z0-9]+$/) { # SwissProt/TREMBL
+      $gene->{URL} = "http://www.uniprot.org/uniprot/$subjectId";
+      $gene->{source} = "SwissProt/TReMBL";
+    } else {
+      die "Cannot build a URL for subject $subjectId";
+    }
+
     my $papers = $dbh->selectall_arrayref(qq{ SELECT DISTINCT * FROM GenePaper
                                               LEFT JOIN PaperAccess USING (pmcId,pmId)
                                               WHERE geneId = ?
                                               ORDER BY year DESC },
                                           { Slice => {} }, $subjectId);
     $gene->{papers} = $papers;
-    if (!defined $gene->{showName}) { # already set for UniProt genes
-      my @terms = map { $_->{queryTerm} } @$papers;
-      my %terms = map { $_ => 1 } @terms;
-      @terms = sort keys %terms;
-      $gene->{showName} = join(", ", @terms) if !defined $gene->{showName};
-    }
+
+    # set up showName
+    my @terms = map { $_->{queryTerm} } @$papers;
+    my %terms = map { $_ => 1 } @terms;
+    @terms = sort keys %terms;
+    $gene->{showName} = join(", ", @terms) if !defined $gene->{showName};
 
     return $gene;
   }

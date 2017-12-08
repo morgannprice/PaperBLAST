@@ -7,7 +7,7 @@ use lib "$Bin/../lib";
 use pbutils;
 use DBI;
 
-my @allsteps = qw{sprot db stats compare};
+my @allsteps = qw{sprot ecocyc db stats compare};
 my $allsteps = join(",",@allsteps);
 my $comparedir = "$Bin/../data";
 
@@ -64,15 +64,34 @@ my $outdir = "$workdir/data";
 if (exists $dosteps{sprot}) {
   my $sprot = "$indir/uniprot_sprot.dat.gz";
   die "No such file: $sprot\n" unless -e $sprot;
-  &maybe_run("(zcat $sprot | $Bin/sprotCharacterized.pl > $workdir/sprot.char.tab) >& $workdir/sprot.char.log");
+  &maybe_run("zcat $sprot | bin/sprotCharacterized.pl > $workdir/sprot.curated_parsed");
+}
+
+if (exists $dosteps{ecocyc}) {
+  my $datfile = "$indir/ecocyc/data/proteins.dat";
+  die "No such file: $datfile\n" unless -e $datfile;
+  my $fsafile = "$indir/ecocyc/data/protseq.fsa";
+  die "No such file: $fsafile\n" unless -e $fsafile;
+  &maybe_run("bin/parse_ecocyc.pl $datfile $fsafile > $workdir/ecocyc.curated_parsed");
 }
 
 if (exists $dosteps{db}) {
-  die "No such directory: $indir/ecocyc/data\n" unless -d "$indir/ecocyc/data";
-  foreach my $file (qw{snippets_comb hits.papers pmclinks.papers generif_tab.rif}) {
-    die "No such file: $workdir/$file" unless -e "$workdir/$file";
+  foreach my $file (qw{snippets_comb hits.papers pmclinks.papers generif_tab.rif sprot.curated_parsed ecocyc.curated_parsed/}) {
+    die "No such file: $workdir/$file" unless -e "$workdir/$file" || defined $test;
   }
-  &maybe_run("$Bin/buildLitDb.pl -dir $outdir -snippets $workdir/snippets_comb -rif $workdir/generif_tab.rif -sprot $workdir/sprot.char.tab -ecocyc $indir/ecocyc/data $workdir/hits $workdir/pmclinks $workdir/generif_tab");
+  my @cmd = ("$Bin/buildLitDb.pl",
+             "-dir", $outdir,
+             "-snippets", "$workdir/snippets_comb",
+             "-rif", "$workdir/generif_tab.rif",
+             "-curated",
+             "$workdir/sprot.curated_parsed", "$workdir/ecocyc.curated_parsed",
+             "static/CAZy.curated_parsed", "static/CharProtDB.curated_parsed",
+             "static/metacyc.curated_parsed", "static/reanno.curated_parsed",
+            "-prefix",
+            "$workdir/hits",
+             "$workdir/pmclinks",
+             "$workdir/generif_tab");
+  &maybe_run(join(" ", @cmd));
 }
 
 if (exists $dosteps{stats}) {
@@ -81,10 +100,12 @@ if (exists $dosteps{stats}) {
     my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
     my $pm1 = $dbh->selectcol_arrayref(qq{ SELECT DISTINCT pmId FROM GenePaper WHERE pmId <> "" });
     my $pm2 = $dbh->selectcol_arrayref(qq{ SELECT DISTINCT pmId FROM GeneRIF });
+    my $pm3 = $dbh->selectcol_arrayref(qq{ SELECT DISTINCT pmId FROM CuratedPaper });
     my $pmc = $dbh->selectcol_arrayref(qq{ SELECT DISTINCT pmcId FROM GenePaper
                                            WHERE pmId = "" AND pmcId <> "" });
     my %pm = map { $_ =>  1 } @$pm1;
     foreach my $pm (@$pm2) { $pm{$pm} = 1; }
+    foreach my $pm (@$pm3) { $pm{$pm} = 1; }
     my $nPaper = scalar(keys %pm) + scalar(@$pmc);
 
     my $nSeq = `grep -c ">" $outdir/uniq.faa`;

@@ -68,6 +68,7 @@ foreach my $anno (@anno) {
     $comment =~ s/;$//;
     print join("\t", "reanno", $anno->{orgId} . ":" . $anno->{locusId},
                $anno->{sysName} || $anno->{locusId},
+               "", # short name
                $anno->{new_annotation},
                join(" ", $org->{genus}, $org->{species}, $org->{strain}),
                $anno->{seq},

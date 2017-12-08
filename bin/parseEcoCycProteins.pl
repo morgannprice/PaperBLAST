@@ -1,4 +1,5 @@
 #!/usr/bin/perl -w
+# This script is obsolete -- use parse_ecocyc.pl instead
 use strict;
 # Output format is tab-delimited with:
 # Ecocyc protein id (i.e., G6760-MONOMER)

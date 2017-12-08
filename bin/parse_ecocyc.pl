@@ -23,7 +23,11 @@ my $nPrint = 0;
 
 open(my $fh, "<", $protfile) || die "Cannot read $protfile";
 while (my $prot = ParsePTools($fh)) {
-  next unless $prot->{TYPES}[0]{value} eq "Polypeptides";
+  # does it have TYPES = Polypeptides (not necessarily as the first value)
+  my @types = map { $_->{value} } @{ $prot->{TYPES} };
+  my @poly = grep { $_ eq "Polypeptides" } @types;
+  next unless @poly > 0;
+
   my $id = $prot->{"UNIQUE-ID"}[0]{value};
   die "No unique identifier" unless $id;
   my $key = "gnl|ECOLI|$id";

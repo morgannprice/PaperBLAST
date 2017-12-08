@@ -1,11 +1,13 @@
 
-/* No PRIMARY KEY because may have duplicate entries */
+/* This table includes text-mined links and GeneRIF links, but not curated links.
+ * It has no PRIMARY KEY because it can have duplicate entries.
+ */
 CREATE TABLE GenePaper(
 	geneId TEXT,
         queryTerm TEXT,
-	pmcId TEXT, /* including the leading PMC */
-	pmId TEXT,
-	doi TEXT,
+	pmcId TEXT, /* PubMedCentral identifier, including the leading PMC */
+	pmId TEXT, /* PubMed identifier */
+	doi TEXT, /* digital object identifier */
         title TEXT,
 	authors TEXT,
 	journal TEXT,
@@ -13,22 +15,6 @@ CREATE TABLE GenePaper(
         isOpen INT /* missing for GeneRIF links */
 );
 CREATE INDEX 'GeneToPaper' ON GenePaper ('geneId' ASC);
-
-CREATE TABLE Snippet(
-	geneId TEXT,
-        queryTerm TEXT,
-        pmcId TEXT,
-        pmId TEXT,
-        snippet TEXT
-);
-CREATE INDEX 'GeneToSnippet' ON Snippet ('geneId' ASC, 'queryTerm' ASC, 'pmcId' ASC, 'pmId' ASC);
-
-CREATE TABLE PaperAccess(
-	pmcId TEXT,
-        pmId TEXT,
-        access TEXT,
-        PRIMARY KEY (pmcId,pmId)
-);
 
 /* Note that some genes may be in Gene but have no links */
 CREATE TABLE Gene(
@@ -39,15 +25,17 @@ CREATE TABLE Gene(
         PRIMARY KEY (geneId)
 );
 
-CREATE TABLE UniProt(
-	acc TEXT NOT NULL,
-        desc TEXT NOT NULL,
-        organism TEXT NOT NULL,
-        comment TEXT NOT NULL,
-        protein_length INT NOT NULL,
-        PRIMARY KEY (acc)
+/* This table stores snippets extracted from the text of articles */
+CREATE TABLE Snippet(
+	geneId TEXT,
+        queryTerm TEXT,
+        pmcId TEXT,
+        pmId TEXT,
+        snippet TEXT
 );
+CREATE INDEX 'GeneToSnippet' ON Snippet ('geneId' ASC, 'queryTerm' ASC, 'pmcId' ASC, 'pmId' ASC);
 
+/* This table stores comments from GeneRIF about the gene-paper links */
 CREATE TABLE GeneRIF(
 	/* geneId is actually a fully specified protein id like YP_006960813.1 */
 	geneId TEXT NOT NULL,
@@ -57,26 +45,42 @@ CREATE TABLE GeneRIF(
 );
 CREATE INDEX 'GeneToRIF' ON GeneRIF ('geneId' ASC, 'pmcId' ASC, 'pmId' ASC);
 
-CREATE TABLE EcoCyc(
-       /* The protein_id will be something like 1-PFK-MONOMER
-          In contrast, the protein_id in SeqToDuplicate or in the fasta file will be
-          gnl|ECOLI|1-PFK-MONOMER */
-	protein_id TEXT NOT NULL,
-        protein_name TEXT NOT NULL,
-        bnumber TEXT NOT NULL,
+CREATE TABLE PaperAccess(
+	pmcId TEXT,
+        pmId TEXT,
+        access TEXT,
+        PRIMARY KEY (pmcId,pmId)
+);
+
+/* The curated proteins */
+CREATE TABLE CuratedGene(
+	/* The sequence id for these entries should be db::protId */
+	db TEXT NOT NULL,
+        protId TEXT NOT NULL,
+        id2 TEXT NOT NULL, /* may be empty */
+        name TEXT NOT NULL, /* may be empty */
         desc TEXT NOT NULL,
+        organism TEXT NOT NULL, /* may be empty */
         protein_length INT NOT NULL,
-        PRIMARY KEY (protein_id)
+        comment TEXT NOT NULL, /* may be empty */
+        PRIMARY KEY (db,protId)
 );
 
-CREATE TABLE EcoCycToPubMed(
-	protein_id TEXT NOT NULL,
+/* Link curated proteins to papers */
+CREATE TABLE CuratedPaper(
+	db TEXT NOT NULL,
+        protId TEXT NOT NULL,
         pmId TEXT NOT NULL,
-        PRIMARY KEY (protein_id, pmId)
+        PRIMARY KEY (db,protId,pmId)
 );
 
-/* From an (arbitrarily chosen) id with a unique sequence, to the identical sequence(s).
-   Singleton sequences (with no duplicates) will not be listed. */
+/* This table supports a size reduction of the protein database
+   by identifying identical sequences.
+
+   It maps an (arbitrarily chosen) id with a unique sequence, which appears in
+   the BLAST database, to the identical sequence(s), which do not.
+   Singleton sequences (with no duplicates) are not listed.
+*/
 CREATE TABLE SeqToDuplicate(
 	sequence_id TEXT NOT NULL,
         duplicate_id TEXT NOT NULL,
