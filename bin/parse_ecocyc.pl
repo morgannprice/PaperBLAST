@@ -5,7 +5,9 @@ use lib "$Bin/../lib";
 use pbutils; # for ParsePTools, ReadFasta
 
 my $usage = <<END
-parse_ecocyc.pl proteins.dat protseq.fsa > ecocyc.curated_parsed
+Usage: parse_ecocyc.pl ecocyc_data_dir > ecocyc.curated_parsed
+
+Reads proteins.dat, enzrxns.dat and protseq.fsa from the ecocyc data directory.
 
 The output file is in curated_parsed format with fields ecocyc, ecocyc
 identifier, bnumber, gene name, description, organism, comment
@@ -13,13 +15,27 @@ identifier, bnumber, gene name, description, organism, comment
 END
 ;
 
-die $usage unless @ARGV == 2;
-my ($protfile, $faafile) = @ARGV;
+die $usage unless @ARGV == 1;
+my ($dir) = @ARGV;
+die "Not a directory: $dir\n$usage" unless -d $dir;
+
+my $protfile = "$dir/proteins.dat";
+my $enzrxnsfile = "$dir/enzrxns.dat";
+my $faafile = "$dir/protseq.fsa";
 
 # a hash, with keys of the form gnl|ECOLI|id
 my $seqs = ReadFasta($faafile);
 my $nNoSeq = 0;
 my $nPrint = 0;
+
+my %enzrxnName = (); # enzrxnId to common name
+open(my $fhEnz, "<", $enzrxnsfile) || die "Cannot read $enzrxnsfile";
+while (my $enzrxn = ParsePTools($fhEnz)) {
+  my $id = $enzrxn->{"UNIQUE-ID"}[0]{value};
+  my $name = $enzrxn->{"COMMON-NAME"}[0]{value};
+  $enzrxnName{$id} = $name if defined $id && defined $name;
+}
+close($fhEnz) || die "Error reading $enzrxnsfile";
 
 open(my $fh, "<", $protfile) || die "Cannot read $protfile";
 while (my $prot = ParsePTools($fh)) {
@@ -49,6 +65,10 @@ while (my $prot = ParsePTools($fh)) {
 
   my $name = $prot->{"ABBREV-NAME"}[0]{value} || $prot->{"SYNONYMS"}[0]{value} || "";
   my $desc = $prot->{"COMMON-NAME"}[0]{value} || "";
+  if ($desc eq "" && exists $prot->{"CATALYZES"}) {
+    my $enzrxnId = $prot->{"CATALYZES"}[0]{value};
+    $desc = $enzrxnName{ $enzrxnId } if $enzrxnId && exists $enzrxnName{ $enzrxnId };
+  }
 
   # Links to papers may be in the CITATIONS attribute or in the CITATIONS annotation of GO-TERMS
   # or in the COMMENT field as entries like |CITS: [8621577]| or |CITS: [2693216][1425658]| or |CITS: [9755155] [9388228]|
