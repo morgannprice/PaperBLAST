@@ -72,11 +72,11 @@ if (exists $dosteps{ecocyc}) {
   die "No such file: $datfile\n" unless -e $datfile;
   my $fsafile = "$indir/ecocyc/data/protseq.fsa";
   die "No such file: $fsafile\n" unless -e $fsafile;
-  &maybe_run("bin/parse_ecocyc.pl $datfile $fsafile > $workdir/ecocyc.curated_parsed");
+  &maybe_run("bin/parse_ecocyc.pl $indir/ecocyc/data > $workdir/ecocyc.curated_parsed");
 }
 
 if (exists $dosteps{db}) {
-  foreach my $file (qw{snippets_comb hits.papers pmclinks.papers generif_tab.rif sprot.curated_parsed ecocyc.curated_parsed/}) {
+  foreach my $file (qw{snippets_comb hits.papers pmclinks.papers generif_tab.rif sprot.curated_parsed ecocyc.curated_parsed}) {
     die "No such file: $workdir/$file" unless -e "$workdir/$file" || defined $test;
   }
   my @cmd = ("$Bin/buildLitDb.pl",
