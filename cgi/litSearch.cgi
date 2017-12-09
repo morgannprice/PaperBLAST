@@ -83,6 +83,7 @@ HREF="http://www.uniprot.org/">Swiss-Prot</A>,
 <A HREF="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/" title="Database of experimentally characterized protein annotations">CharProtDB</A>,
 <A HREF="http://metacyc.org/">MetaCyc</A>,
 <A HREF="http://ecocyc.org">EcoCyc</A>,
+<A HREF="http://rebase.neb.com/rebase/rebase.html" title="The Restriction Enzyme Database">REBASE</A>,
 and the <A HREF="http://fit.genomics.lbl.gov/" title="Reannotations from genome-wide fitness data">Fitness Browser</A>.
 Given this database and a protein sequence query,
 PaperBLAST uses <A
@@ -130,7 +131,8 @@ database of the proteins in <i> Escherichia coli</i> K-12, is included, regardle
 of whether they are characterized or not.
 <LI>Proteins from the <A HREF="http://metacyc.org">MetaCyc</A> metabolic pathway database are included if they are linked to a paper in PubMed.
 <LI>Every protein from <A HREF="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/">CharProtDB</A>, a database of experimentally characterized protein annotations, is included.
-<LI>Proteins from the <A HREF="http://www.cazy.org/">CAZy</A> database of carbohydrate-active enzymes are included if they are associated with an Enzyme Classification number. Even though CAZy does not provide links from individual protein sequences to papers, these should all be experimentally-characterized proteins..
+<LI>Proteins from the <A HREF="http://www.cazy.org/">CAZy</A> database of carbohydrate-active enzymes are included if they are associated with an Enzyme Classification number. Even though CAZy does not provide links from individual protein sequences to papers, these should all be experimentally-characterized proteins.
+<LI>Proteins from the <A HREF="http://rebase.neb.com/rebase/rebase.html">REBASE</A> database of restriction enzymes if they have known specificity.
 <LI>Every protein with an evidence-based reannotation (based on mutant phenotypes) in the <A HREF="http://fit.genomics.lbl.gov/">Fitness Browser</A> is included.
   </UL>Except for GeneRIF,
 the curated entries include a short curated
@@ -145,7 +147,7 @@ HREF="https://github.com/morgannprice/PaperBLAST">code</A>.
 Also note some changes since the paper was written:
 
 <UL>
-<LI>December 2017: incorporate MetaCyc, CharProtDB, CAZy, and the reannotations from the Fitness Browser.
+<LI>December 2017: incorporated MetaCyc, CharProtDB, CAZy, REBASE, and the reannotations from the Fitness Browser.
 <LI>September 2017: EuropePMC no longer returns some table entries in their search results. This has shrunk PaperBLAST's database, but has also reduced the number of low-relevance hits.
 </UL>
 
@@ -431,7 +433,7 @@ if (!defined $seq && ! $more_subjectId) {
                     push @pieces, "(see " .
                       a({ -href => "https://www.ncbi.nlm.nih.gov/protein/$id",
                           -title => "NCBI protein entry",
-                          -onmounsedown => loggerjs("cazygenbank", $gene->{showName}) },
+                          -onmousedown => loggerjs("cazygenbank", $gene->{showName}) },
                         "protein")
                         . ")";
                   }
@@ -688,6 +690,9 @@ sub SubjectToGene($) {
       my ($orgId, $locusId) = split /:/, $protId;
       die "Invalid protId $protId" unless $locusId;
       $gene->{URL} = "http://fit.genomics.lbl.gov/cgi-bin/singleFit.cgi?orgId=$orgId&locusId=$locusId";
+    } elsif ($db eq "REBASE") {
+      $gene->{priority} = 4;
+      $gene->{URL} = "http://rebase.neb.com/rebase/enz/$protId.html";
     } else {
       die "Unexpeced database $db";
     }
@@ -696,6 +701,7 @@ sub SubjectToGene($) {
     push @ids, $protId if $db eq "SwissProt";
     @ids = grep { $_ ne "" } @ids;
     $gene->{showName} = join(" / ", @ids) || $protId;
+    $gene->{showName} = $protId if $db eq "REBASE";
     $gene->{pmIds} = $dbh->selectcol_arrayref("SELECT pmId FROM CuratedPaper WHERE db = ? AND protId = ?",
                                               {}, $db, $protId);
     return $gene;
@@ -730,6 +736,7 @@ sub SubjectToGene($) {
     my %terms = map { $_ => 1 } @terms;
     @terms = sort keys %terms;
     $gene->{showName} = join(", ", @terms) if !defined $gene->{showName};
+
 
     return $gene;
   }
