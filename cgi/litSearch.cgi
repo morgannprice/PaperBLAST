@@ -524,7 +524,7 @@ if (!defined $seq && ! $more_subjectId) {
                     my $paper_header = $title . br() .
                         small( a({ -title => $paper->{authors} }, "$authorShort,"),
                                $paper->{journal}, $paper->{year}, $extra);
-                    
+
                     if (@pieces == 0) {
                         # Skip if printed already for this gene (with no snippet)
                         next if exists $paperSeenNoSnippet{$paperId};
@@ -588,11 +588,11 @@ if (!defined $seq && ! $more_subjectId) {
              </script>
     } unless $more_subjectId;
 
-    my @pieces = $seq =~ /.{1,60}/g;
     if (! $more_subjectId) {
+      my @pieces = $seq =~ /.{1,60}/g;
       print h3("Query Sequence"),
-        p({-style => "font-family: monospace;"}, small(join(br(), ">$def", @pieces))),
-      }
+        p({-style => "font-family: monospace;"}, small(join(br(), ">$def", @pieces)));
+    }
     print h3(a({-href => "litSearch.cgi"}, "New Search")),
       $documentation,
         end_html;
