@@ -188,7 +188,7 @@ my $title = "PaperBLAST";
 print
     header(-charset => 'utf-8'),
     start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
-               $title),
+               -title => $title),
     qq{<div style="background-color: #40C0CB; display: block; position: absolute; top: 0px; left: -1px; width: 100%; padding: 0.25em; z-index: 400;"><H2 style="margin: 0em;"><A HREF="litSearch.cgi" style="color: gold; font-family: 'Montserrat', sans-serif; font-style:italic; text-shadow: 1px 1px 1px #000000; text-decoration: none;">PaperBLAST &ndash; <small>Find papers about a protein or its homologs</small></A></H2></div><P style="margin: 0em;">&nbsp;</P>\n},
     qq{<SCRIPT src="../static/pb.js"></SCRIPT>\n};
 
