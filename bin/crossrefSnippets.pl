@@ -65,6 +65,8 @@ END
         die "Invalid input in $papersfile: isOpen = $isOpen" unless $isOpen eq "1" || $isOpen eq "0";
         next unless $isOpen eq "0" && $pmId ne "" && $doi ne "";
         next if exists $fail{$pmId};
+        $queryTerm =~ s/^"//;
+        $queryTerm =~ s/"$//;
         my $text;
         if (defined $last_pmId && $pmId eq $last_pmId) {
             $text = $last_text;

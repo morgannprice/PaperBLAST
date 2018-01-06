@@ -68,6 +68,8 @@ sub ProcessLine($$$);
             my ($queryId, $queryTerm, $pmcId, $pmId) = split /\t/, $line;
             die "Not enough fields in line\n$line\nin $paperfile" unless defined $pmId;
             next if $pmId eq "";
+            $queryTerm =~ s/^"//;
+            $queryTerm =~ s/"$//;
             push @{ $papers{$pmId}{$queryTerm} }, $queryId;
             $pm2pmc{$pmId} = $pmcId;
         }

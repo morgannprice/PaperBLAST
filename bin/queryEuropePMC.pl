@@ -21,8 +21,8 @@ The input format is tab-delimited with organism name, locus_tag or
 other query term, query_id (and usually the sequence and description
 as well, but these are ignored).
 
-For each input line, the query will be of the form "locus_tag AND
-genus", where genus is the first word of the organism name.
+For each input line, the query will be of the form "locus_tag" AND
+genus, where genus is the first word of the organism name.
 
 The output format is tab-delimited with the query_id and the json
 format output (or empty if there was an error).
@@ -70,7 +70,7 @@ END
             && $queryId ne "";
         my $genus = $organism; $genus =~ s/ .*//;
         die "Invalid organism $organism\n" if $genus eq "";
-        my $query  = uri_escape("$locustag AND $genus");
+        my $query  = uri_escape(qq{"$locustag" AND $genus});
         my $url = $baseURL . "?query=$query&format=json&resulttype=core";
         my $results = LWP::Simple::get("http://www.ebi.ac.uk/europepmc/webservices/rest/search?query=$query&format=json&resulttype=core");
         # In rare cases, may get XML back instead of a JSON object

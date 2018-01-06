@@ -21,7 +21,7 @@ buildSnippets.pl -list xml_file_list -out snippets oa.papers ... refseq.papers
 	The -list file should have a list of xml files (or xml.gz files), one per line.
 
 	The papers files are from parseEuropePMCHits.pl and include
-	queryId, queryTerm, pmcId.
+	queryId, queryTerm, pmcId. If queryTerm is quoted, the quotes are removed.
 
 	Output will be tab-delimited with the fields
 	pmcId, pmId, queryTerm, queryId, snippet
@@ -89,6 +89,8 @@ sub ProcessArticle($$$);
             my ($queryId, $queryTerm, $pmcId, $pmId) = split /\t/, $line;
             die "Not enough fields in line\n$line\nin $paperfile" unless defined $pmId;
             next if $pmcId eq "";
+            $queryTerm =~ s/^"//;
+            $queryTerm =~ s/"$//;
             push @{ $papers{$pmcId}{$queryTerm} }, $queryId;
             $pmc2pm{$pmcId} = $pmId;
         }
