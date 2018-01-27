@@ -104,11 +104,12 @@ while(my $record =<STDIN>) {
       $protid = uc($protid);
       my @protid = ($protid);
       # And handle AND entries, which will show up as strings of " uniprotid AND" at the end of $org
-      while($org =~ s/ (\S++) AND *$//) {
+      while($org =~ s/\s+(\S+)\s+AND\s*$//i) {
         my $newid = $1;
         die "Invalid protein id $newid for id $id PR $prnum\n" unless $newid =~ m/^[A-Z][A-Z0-9_]+$/;
         push @protid, $newid;
       }
+      die "Cannot parse $value for id $id PR $prnum" if $org =~ m/\t/;
       $pr{$prnum} = { 'organism' => $org, 'protdb' => $db, 'protids' => \@protid, 'refnos' => \@refnos };
     } elsif ($field eq "RF") {
       $value =~ m/^<(\d+)> (.*)$/ || die "Cannot parse RF line: $value";
@@ -169,17 +170,27 @@ foreach my $faafile (@faa) {
     die "Invalid header $header" if @ids == 0;
     foreach my $protid (@ids) {
       next unless exists $acc{$protid};
+      my @descs = ();
+      my %pmids = ();
+      # Used to exclude duplicate EC #s
+      my %ecSoFar = ();
       foreach my $row (@{ $acc{$protid} }) {
         my ($org, $desc, $ec, $pmids) = @$row;
-        print join("\t", "BRENDA", $protid,
-                   "", "", # secondary identifier and short name
-                   "$desc (EC $ec)", $org, $seq,
-                   "", # comment
-                   $pmids)."\n";
-        $nPrint++;
+        next if exists $ecSoFar{$ec};
+        $ecSoFar{$ec} = 1;
+        push @descs, "$desc (EC $ec)";
+        foreach my $pmid (split /,/, $pmids) { $pmids{$pmid} = 1; }
       }
+      my $org = $acc{$protid}[0][0];
+      my @pmids = sort {$a <=> $b} keys %pmids;
+      print join("\t", "BRENDA", $protid,
+                   "", "", # secondary identifier and short name
+                   join("; ", @descs), $org, $seq,
+                   "", # comment
+                   join(",", @pmids))."\n";
+      $nPrint++;
     }
   }
   close($fh) || die "Error reading $faafile\n";
 }
-print STDERR "Wrote $nPrint accession : EC links from BRENDA\n";
+print STDERR "Wrote EC information from BRENDA for $nPrint accessions\n";
