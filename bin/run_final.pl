@@ -12,7 +12,8 @@ my $allsteps = join(",",@allsteps);
 my $comparedir = "$Bin/../data";
 
 my $usage = <<END
-run_final.pl -in downloads [ -work work ] [ -test ] [ -steps ... ]
+run_final.pl -in downloads [ -work work ] [ -test ]
+	[ -steps $allsteps ]
 	[ -compare $comparedir ]
 
 Given the downloads and work directories, and the output of
@@ -87,7 +88,7 @@ if (exists $dosteps{db}) {
              "$workdir/sprot.curated_parsed", "$workdir/ecocyc.curated_parsed",
              "static/CAZy.curated_parsed", "static/CharProtDB.curated_parsed",
              "static/metacyc.curated_parsed", "static/reanno.curated_parsed",
-             "static/REBASE.curated_parsed",
+             "static/REBASE.curated_parsed", "static/BRENDA.curated_parsed",
             "-prefix",
             "$workdir/hits",
              "$workdir/pmclinks",
