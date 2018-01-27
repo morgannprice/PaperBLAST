@@ -74,15 +74,16 @@ The PaperBLAST database links $stats{nSeq} different protein sequences to $stats
 
 <P>PaperBLAST builds a database of protein sequences that are linked
 to scientific articles. These links come from automated text searches
-against the articles in <A HREF="http://europepmc.org/">EuropePMC</A>
+against the articles in <A HREF="http://europepmc.org/" title="Europe PMC (PubMedCentral)">EuropePMC</A>
 and from manually-curated information from <A
 HREF="https://www.ncbi.nlm.nih.gov/gene/about-generif" title="Gene
 Reference into Function (NCBI)">GeneRIF</A>, <A
-HREF="http://www.uniprot.org/">Swiss-Prot</A>,
+HREF="http://www.uniprot.org/" title="The manually annotated and reviewed section of UniProt">UniProtKB/Swiss-Prot</A>,
+<A HREF="http://www.brenda-enzymes.org/index.php" title="The Comprehensive Enzyme Information System">BRENDA</A>,
 <A HREF="http://www.cazy.org/" title="Carbohydrate-Active enZYmes Database">CAZy</A> (as made available by <A HREF="http://csbl.bmb.uga.edu/dbCAN/download.php">dbCAN</A>),
 <A HREF="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/" title="Database of experimentally characterized protein annotations">CharProtDB</A>,
-<A HREF="http://metacyc.org/">MetaCyc</A>,
-<A HREF="http://ecocyc.org">EcoCyc</A>,
+<A HREF="http://metacyc.org/" title="MetaCyc Metabolic Pathway Database">MetaCyc</A>,
+<A HREF="http://ecocyc.org" title="Ecocyc: Encyclopedia of E. coli Genes and Metabolic Pathways">EcoCyc</A>,
 <A HREF="http://rebase.neb.com/rebase/rebase.html" title="The Restriction Enzyme Database">REBASE</A>,
 and the <A HREF="http://fit.genomics.lbl.gov/" title="Reannotations from genome-wide fitness data">Fitness Browser</A>.
 Given this database and a protein sequence query,
@@ -103,7 +104,7 @@ computers cannot read.  We query each of these identifiers that
 appears in the open access part of EuropePMC, as well as every locus
 tag that appears in the 500 most-referenced genomes, so that a gene
 may appear in the PaperBLAST results even though none of the papers
-that mention it are open access. We also incorporate text mined links
+that mention it are open access. We also incorporate text-mined links
 from EuropePMC that link open access articles to UniProt or RefSeq
 identifiers.  (This yields some additional links because EuropePMC
 uses different heuristics for their text mining than we do.)
@@ -126,13 +127,14 @@ from Swiss-Prot (the curated part of <A HREF="http://uniprot.org">UniProt</A>) a
 identified experimental evidence for the protein's function (evidence
 code ECO:0000269). For these proteins, the fields of the Swiss-Prot entry that
 describe the protein's function are shown (with bold headings).
+<LI>Proteins from <A HREF="http://www.brenda-enzymes.org/index.php">BRENDA</A>, a curated database of enzymes, are included if they are linked to a paper in PubMed and their full sequence is known.
   <LI>Every protein from <A HREF="http://ecocyc.org">EcoCyc</A>, a curated
 database of the proteins in <i> Escherichia coli</i> K-12, is included, regardless
 of whether they are characterized or not.
 <LI>Proteins from the <A HREF="http://metacyc.org">MetaCyc</A> metabolic pathway database are included if they are linked to a paper in PubMed.
 <LI>Every protein from <A HREF="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/">CharProtDB</A>, a database of experimentally characterized protein annotations, is included.
 <LI>Proteins from the <A HREF="http://www.cazy.org/">CAZy</A> database of carbohydrate-active enzymes are included if they are associated with an Enzyme Classification number. Even though CAZy does not provide links from individual protein sequences to papers, these should all be experimentally-characterized proteins.
-<LI>Proteins from the <A HREF="http://rebase.neb.com/rebase/rebase.html">REBASE</A> database of restriction enzymes if they have known specificity.
+<LI>Proteins from the <A HREF="http://rebase.neb.com/rebase/rebase.html">REBASE</A> database of restriction enzymes are included if they have known specificity.
 <LI>Every protein with an evidence-based reannotation (based on mutant phenotypes) in the <A HREF="http://fit.genomics.lbl.gov/">Fitness Browser</A> is included.
   </UL>Except for GeneRIF,
 the curated entries include a short curated
@@ -147,6 +149,7 @@ HREF="https://github.com/morgannprice/PaperBLAST">code</A>.
 Also note some changes since the paper was written:
 
 <UL>
+<LI>January 2017: incorporated BRENDA.
 <LI>December 2017: incorporated MetaCyc, CharProtDB, CAZy, REBASE, and the reannotations from the Fitness Browser.
 <LI>September 2017: EuropePMC no longer returns some table entries in their search results. This has shrunk PaperBLAST's database, but has also reduced the number of low-relevance hits.
 </UL>
@@ -161,16 +164,17 @@ in is marked as "secret," please consider publishing elsewhere.
 
 <H3><A NAME="omission">Omissions from the PaperBLAST Database</A></H3>
 
-<P>Some important articles are missing from PaperBLAST, either because
+<P>Many important articles are missing from PaperBLAST, either because
 the article's full text is not in EuropePMC (as for many older
-articles) or because of PaperBLAST's heuristics. If you notice an
+articles), or because the paper does not mention a protein identifier such as a locus tag, or because of PaperBLAST's heuristics. If you notice an
 article that characterizes a protein's function but is missing from
 PaperBLAST, please notify the curators at <A
-HREF="http://www.uniprot.org/update">UniProt</A> or add an entry to <A
+HREF="http://www.uniprot.org/update">UniProt</A>
+or add an entry to <A
 HREF="https://www.ncbi.nlm.nih.gov/gene/submit-generif">GeneRIF</A>.
 Entries in either of these databases will eventually be incorporated
 into PaperBLAST.  Note that to add an entry to UniProt, you will need
-find the UniProt identifier for the protein.  If the protein is not
+to find the UniProt identifier for the protein.  If the protein is not
 already in UniProt, you can ask them to create an entry.  To add an
 entry to GeneRIF, you will need an NCBI Gene identifier, but
 unfortunately many prokaryotic proteins in RefSeq do not have
@@ -694,8 +698,12 @@ sub SubjectToGene($) {
     } elsif ($db eq "REBASE") {
       $gene->{priority} = 4;
       $gene->{URL} = "http://rebase.neb.com/rebase/enz/$protId.html";
+    } elsif ($db eq "BRENDA") {
+      $gene->{priority} = 2.5; # just behind Swiss-Prot
+      $gene->{source} = "BRENDA";
+      $gene->{URL} = "http://www.brenda-enzymes.org/sequences.php?AC=" . $protId;
     } else {
-      die "Unexpeced database $db";
+      die "Unexpected database $db";
     }
 
     my @ids = ( $gene->{name}, $gene->{id2} );
