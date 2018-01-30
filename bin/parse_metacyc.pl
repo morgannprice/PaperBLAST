@@ -7,8 +7,8 @@ use pbutils; # for ParsePTools, ReadFastaEntry
 my $usage = <<END
 Usage: parse_metacyc.pl [ -debug ] metacyc_data_directory uniprot_fasta trembl_fasta > metacyc.curated_parsed
 
-The data directory must contain proteins.dat and enzrxn.dat
-in attribute-value format.
+The data directory must contain proteins.dat, enzrxn.dat, and
+reactions.dat, all in attribute-value format.
 
 The uniprot and trembl fasta filenames can be .gz files instead.
 
@@ -38,6 +38,8 @@ my @prot = ();
 # and either a useful description ("COMMON-NAME") or a link to an enzymatic reaction
 # (where we can get a description).
 
+my %catalyzes = (); # object => list of reactions
+
 my $pfile = "$metadir/proteins.dat";
 my $nProt = 0;
 open(my $fhProt, "<", $pfile) || die "Cannot read $pfile\n";
@@ -47,6 +49,15 @@ while (my $prot = ParsePTools($fhProt)) {
   # Note that these objects contain SPECIES attributes of the form
   # TAX-nnnn, where the number is an NCBI taxonomy id, but that is
   # ignored in favor of the OS field in the uniprot fasta file.
+
+  # Always store the catalyzes information
+  my @catalyzes = ();
+  my $id = $prot->{"UNIQUE-ID"}[0]{"value"};
+  die unless $id;
+  if (exists $prot->{CATALYZES}) {
+    @catalyzes = map $_->{value}, @{ $prot->{CATALYZES} };
+    $catalyzes{$id} = \@catalyzes;
+  }
 
   # Try to link to sequence
   my @dblinks = map { $_->{"value"} } @{ $prot->{"DBLINKS"} };
@@ -92,18 +103,19 @@ while (my $prot = ParsePTools($fhProt)) {
   next unless @pmIds > 0;
 
   my $save = { 'CITATIONS' => \@pmIds, 'UNIPROT' => $uniprotId };
-  foreach my $key (qw/UNIQUE-ID ABBREV-NAME COMMON-NAME CATALYZES/) {
+  foreach my $key (qw/UNIQUE-ID ABBREV-NAME COMMON-NAME COMPONENT-OF/) {
     $save->{$key} = $prot->{$key}[0]{"value"} || "";
   }
   # Only a handful of proteins lack a COMMON-NAME *and* are not associated with an enzymatic reaction.
   # Ignore those.
-  push @prot, $save if $save->{"COMMON-NAME"} || $save->{"CATALYZES"};
+  push @prot, $save if $save->{"COMMON-NAME"} || @catalyzes > 0;
   last if @prot >= 100 && $debug;
 }
 close($fhProt) || die "Error reading $pfile\n";
 print STDERR "Read $nProt protein entries and saved " . scalar(@prot) . "\n";
 
 my %enzrxn = (); # unique id => common name
+my %enzrxn_to_rxn = (); # unique id => unique id
 
 # Parse the enzymatic reactions file to get descriptions for the catalyzed reactions
 my $enzfile = "$metadir/enzrxns.dat";
@@ -112,16 +124,55 @@ while (my $enzrxn = ParsePTools($fhEnz)) {
   my $id = $enzrxn->{"UNIQUE-ID"}[0]{"value"};
   my $desc = $enzrxn->{"COMMON-NAME"}[0]{"value"};
   $enzrxn{$id} = $desc if $id && $desc;
+  $enzrxn_to_rxn{$id} = $enzrxn->{"REACTION"}[0]{"value"}
+    if exists $enzrxn->{"REACTION"};
 }
 close($fhEnz) || die "Error reading $fhEnz";
 print STDERR "Parsed descriptions for " . scalar(keys %enzrxn) . " enzymatic reactions\n";
 
-foreach my $prot (@prot) {
-  if ($prot->{"COMMON-NAME"} eq "" && $prot->{"CATALYZES"}) {
-    my $enzrxnId = $prot->{"CATALYZES"};
-    $prot->{"COMMON-NAME"} = $enzrxn{$enzrxnId} if exists$enzrxn{$enzrxnId};
+my %rxn_to_ec = ();
+
+my $reactfile = "$metadir/reactions.dat";
+open (my $fhReact, "<", $reactfile) || die "Cannot read $reactfile";
+while (my $react = ParsePTools($fhReact)) {
+  my $id = $react->{"UNIQUE-ID"}[0]{"value"};
+  my $EC = $react->{"EC-NUMBER"}[0]{"value"} || "";
+  # Many reactions have values like "|EC-1.17.98.c|" which seem not to be official EC numbers
+  # and so are not saved.
+  # (Although RXN-16226 is given |EC-1.8.3.b| which is supposedly official.)
+  # Some other reactions have partially specified EC numbers -- again, skip those.
+  if ($EC =~ m/^EC-([0-9]+[.][0-9]+[.][0-9]+[.][0-9]+)$/) {
+    die unless $id;
+    $rxn_to_ec{$id} = $1;
+  } else {
+    print STDERR "Ignoring non-standard EC number $EC for $id\n" if $EC ne "";
   }
 }
+
+foreach my $prot (@prot) {
+  # First, try to link it to enzymatic reactions, either directly or via component-of
+  my $enzrxns = [];
+  if (exists $catalyzes{$prot->{"UNIQUE-ID"}}) {
+    $enzrxns = $catalyzes{$prot->{"UNIQUE-ID"}};
+  } elsif (exists $prot->{"COMPONENT-OF"}) {
+    my $id2 = $prot->{"COMPONENT-OF"};
+    if (exists $catalyzes{$id2}) {
+      $enzrxns = $catalyzes{$id2};
+    }
+  }
+
+  foreach my $enzrxnId (@$enzrxns) {
+    $prot->{"COMMON-NAME"} = $enzrxn{$enzrxnId}
+      if $prot->{"COMMON-NAME"} eq "";
+    if (exists $enzrxn_to_rxn{$enzrxnId}) {
+      my $rxnId = $enzrxn_to_rxn{$enzrxnId};
+      if (exists $rxn_to_ec{$rxnId}) {
+        push @{ $prot->{"EC"} }, $rxn_to_ec{$rxnId};
+      }
+    }
+  }
+}
+
 @prot = grep { $_->{"COMMON-NAME"} } @prot;
 print STDERR "Reduced to " . scalar(@prot) . " proteins\n";
 
@@ -139,6 +190,8 @@ foreach my $faafile ($faa1, $faa2) {
   }
   my $state = {};
   while(my ($header,$seq) = ReadFastaEntry($fh,$state)) {
+    # ignore non-full-length sequences because they are difficult to interpret for annotation
+    next if $header =~ m/[(]Fragment[)]/;
     my ($ids) = split / /, $header;
     my @ids = split /[|]/, $ids;
     shift @ids; # ignore sp or tr at front
@@ -163,9 +216,21 @@ foreach my $prot (@prot) {
   if ($seq eq "") {
     print STDERR "Warning: no sequence found for $uniprotId\n";
   } else {
+    my $desc = $prot->{"COMMON-NAME"};
+    if (exists $prot->{"EC"}) {
+      my @ec = @{ $prot->{"EC"} };
+      my %seen = ();
+      my @parts = ();
+      foreach my $ec (@ec) {
+        next if exists $seen{$ec};
+        $seen{$ec} = 1;
+        push @parts, "EC $ec";
+      }
+      $desc .= " (" . join("; ", @parts) . ")";
+    }
     print join("\t",
                "metacyc", $prot->{"UNIQUE-ID"}, $uniprotId,
-               $prot->{"ABBREV-NAME"}, $prot->{"COMMON-NAME"}, $org,
+               $prot->{"ABBREV-NAME"}, $desc, $org,
                $seq, "", join(",", @{ $prot->{"CITATIONS"} })
               )."\n";
   }
