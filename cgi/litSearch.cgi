@@ -131,7 +131,7 @@ describe the protein's function are shown (with bold headings).
   <LI>Every protein from <A HREF="http://ecocyc.org">EcoCyc</A>, a curated
 database of the proteins in <i> Escherichia coli</i> K-12, is included, regardless
 of whether they are characterized or not.
-<LI>Proteins from the <A HREF="http://metacyc.org">MetaCyc</A> metabolic pathway database are included if they are linked to a paper in PubMed.
+<LI>Proteins from the <A HREF="http://metacyc.org">MetaCyc</A> metabolic pathway database are included if they are linked to a paper in PubMed and their full sequence is known.
 <LI>Every protein from <A HREF="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/">CharProtDB</A>, a database of experimentally characterized protein annotations, is included.
 <LI>Proteins from the <A HREF="http://www.cazy.org/">CAZy</A> database of carbohydrate-active enzymes are included if they are associated with an Enzyme Classification number. Even though CAZy does not provide links from individual protein sequences to papers, these should all be experimentally-characterized proteins.
 <LI>Proteins from the <A HREF="http://rebase.neb.com/rebase/rebase.html">REBASE</A> database of restriction enzymes are included if they have known specificity.
@@ -182,20 +182,38 @@ corresponding Gene identifers.
 
 <H3>References</H3>
 
-    <UL>
-      <LI>PaperBLAST: Text-mining papers for information about homologs. (2017) M. N. Price and A. P. Arkin. mSystems, <A HREF="http://msystems.asm.org/content/2/4/e00039-17">10.1128/mSystems.00039-17</A>.
-      <LI>Europe PMC in 2017. (2017) M. Levchenko et al. Nucleic Acids Research, <A HREF="https://doi.org/10.1093/nar/gkx1005">10.1093/nar/gkx1005</A>.
-      <LI>Gene indexing: characterization and analysis of NLM's GeneRIFs. (2003) J. A. Mitchell et al, AMIA Annu Symp Proc 2003:460-464.
-      <LI>UniProt: the universal protein knowledgebase. (2016) The UniProt Consortium. Nucleic Acids Research, <A HREF="https://doi.org/10.1093/nar/gkw1099">10.1093/nar/gkw1099</A>.
-      <LI>BRENDA in 2017: new perspectives and new tools in BRENDA. (2017) S. Placzek et al.  Nucleic Acids Research, <A HREF="https://doi.org/10.1093/nar/gkw952">10.1093/nar/gkw952</A>.
-      <LI>The EcoCyc database: reflecting new knowledge about Escherichia coli K-12. (2016) I. M. Keeseler et al. Nucleic Acids Research, <A HREF="https://doi.org/10.1093/nar/gkw1003">10.1093/nar/gkw1003</A>.
-      <LI>The MetaCyc database of metabolic pathways and enzymes. (2018) R. Caspi et al. Nucleic Acids Research, <A HREF="https://doi.org/10.1093/nar/gkx935">10.1093/nar/gkx935</A>.
-      <LI> CharProtDB: a database of experimentally characterized protein annotations. (2012) R. Madupu et al. Nucleic Acids Research, <A HREF="https://academic.oup.com/nar/article/40/D1/D237/2903195">10.1093/nar/gkr1133</A>.
-      <LI>The carbohydrate-active enzymes database (CAZy) in 2013. (2014) V. Lombard et al. Nucleic Acids Research, <A HREF="https://doi.org/10.1093/nar/gkt1178">10.1093/nar/gkt1178</A>.
-      <LI>REBASE - a database for DNA restriction and modification: enzymes, genes and genomes. (2015) R. J. Roberts et al. Nucleic Acids Research, <A HREF="https://doi.org/10.1093/nar/gku1046">10.1093/nar/gku1046</A>.
-      <LI>Deep annotation of protein function across diverse bacteria from mutant phenotypes. (2016) M. N. Price et al. bioRxiv, <A HREF="http://dx.doi.org/10.1101/072470">10.1101/072470</A>.
-    </UL>
+<P><A HREF="http://msystems.asm.org/content/2/4/e00039-17">PaperBLAST: Text-mining papers for information about homologs.</A><BR>
+ <small>M. N. Price and A. P. Arkin (2017). mSystems, 10.1128/mSystems.00039-17.</small>
 
+<P><A HREF="https://doi.org/10.1093/nar/gkx1005">Europe PMC in 2017.</A><BR>
+<small>M. Levchenko et al (2017). Nucleic Acids Research, 10.1093/nar/gkx1005.</small>
+
+<P><A HREF="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1480312/">Gene indexing: characterization and analysis of NLM's GeneRIFs.</A><BR>
+<small>J. A. Mitchell et al (2003). AMIA Annu Symp Proc 2003:460-464.</small>
+
+<P><A HREF="https://doi.org/10.1093/nar/gkw1099">UniProt: the universal protein knowledgebase.</A><BR>
+<small>The UniProt Consortium (2016). Nucleic Acids Research, 10.1093/nar/gkw1099.</small>
+
+<P><A HREF="https://doi.org/10.1093/nar/gkw952">BRENDA in 2017: new perspectives and new tools in BRENDA.</A><BR>
+<small>S. Placzek et al (2017). Nucleic Acids Research, 10.1093/nar/gkw952.</small>
+
+<P><A HREF="https://doi.org/10.1093/nar/gkw1003">The EcoCyc database: reflecting new knowledge about Escherichia coli K-12.</A><BR>
+<small>I. M. Keeseler et al (2016). Nucleic Acids Research, 10.1093/nar/gkw1003.</small>
+
+<P><A HREF="https://doi.org/10.1093/nar/gkx935">The MetaCyc database of metabolic pathways and enzymes.</A><BR>
+<small>R. Caspi et al (2018). Nucleic Acids Research, 10.1093/nar/gkx935.</small>
+
+<P><A HREF="https://academic.oup.com/nar/article/40/D1/D237/2903195">CharProtDB: a database of experimentally characterized protein annotations.</A><BR>
+<small>R. Madupu et al (2012). Nucleic Acids Research, 10.1093/nar/gkr1133.</small>
+
+<P><A HREF="https://doi.org/10.1093/nar/gkt1178">The carbohydrate-active enzymes database (CAZy) in 2013.</A><BR>
+<small>V. Lombard et al (2014). Nucleic Acids Research, 10.1093/nar/gkt1178.</small>
+
+<P><A HREF="https://doi.org/10.1093/nar/gku1046">REBASE - a database for DNA restriction and modification: enzymes, genes and genomes.</A><BR>
+<small>R. J. Roberts et al (2015). Nucleic Acids Research, 10.1093/nar/gku1046.</small>
+
+<P><A HREF="http://dx.doi.org/10.1101/072470">Deep annotation of protein function across diverse bacteria from mutant phenotypes.</A><BR>
+<small>M. N. Price et al (2016). bioRxiv, 10.1101/072470.</small>
 
 <center>by <A HREF="http://morgannprice.org/">Morgan Price</A>,
 <A HREF="http://genomics.lbl.gov/">Arkin group</A><BR>
