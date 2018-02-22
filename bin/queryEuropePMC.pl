@@ -8,7 +8,7 @@ use Getopt::Long;
 use IO::Handle; # for autoflush
 
 my $wait = 1.0;
-my $baseURL = "http://www.ebi.ac.uk/europepmc/webservices/rest/search";
+my $baseURL = "https://www.ebi.ac.uk/europepmc/webservices/rest/search";
 my $maxQueries = -1;
 # will add on query=, format=json, resulttype=core
 
@@ -72,7 +72,8 @@ END
         die "Invalid organism $organism\n" if $genus eq "";
         my $query  = uri_escape(qq{"$locustag" AND $genus});
         my $url = $baseURL . "?query=$query&format=json&resulttype=core";
-        my $results = LWP::Simple::get("http://www.ebi.ac.uk/europepmc/webservices/rest/search?query=$query&format=json&resulttype=core");
+        print STDERR "Fetching $url\n" if $debug;
+        my $results = LWP::Simple::get($url);
         # In rare cases, may get XML back instead of a JSON object
         # This should not happen because of the uri_escape above,
         # but if it does, set it to empty
