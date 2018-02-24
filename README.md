@@ -56,13 +56,19 @@ URI::Escape
 CGI
 DBI
 
+and the functional residues part of the alignment page (at bottom of
+showAlign.cgi) requires BioPerl. (See alnreport.pl) The page should
+work correctly without bioperl but would not report the conservation
+of functional residues.
+
 # Downloading the database
 
 The April 2017 version of the PaperBLAST database is avalable at
 
 https://doi.org/10.6084/m9.figshare.4836407
 
-The current database is available as a FASTA file and a sqlite3 relational database (which is large! 1.5 GB as of July 2017)
+The current database is available as a FASTA file and a sqlite3
+relational database (which is large! 1.5 GB as of July 2017)
 
 http://papers.genomics.lbl.gov/data/uniq.faa
 http://papers.genomics.lbl.gov/data/litsearch.db
