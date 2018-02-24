@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 # Given a UniProt identifier and a bl2seq alignment (with that identifier as the subject),
-# make a tabl-delimited table of 
+# make a tab-delimited table of features and whether they are conserved.
 
 use strict;
 use Bio::AlignIO;
@@ -74,7 +74,7 @@ foreach my $ft (@ft2) {
 # Which types of features to report on, in what order
 my @types = qw/ ACT_SITE BINDING CA_BIND ZN_FING METAL DNA_BIND NP_BIND DOMAIN MOTIF REGION REPEAT PROPEP SIGNAL TRANSIT TRANSMEM INTRAMEM NON_STD MOD_RES CARBOHYD LIPID DISULFID CROSSLNK MUTAGEN HELIX STRAND COILED TURN SITE /;
 
-print join("\t", qw/type begin end nAligned nMatch subjectSeq querySeq comment/)."\n";
+print join("\t", qw/type sbegin send qbegin qend nAligned nMatch subjectSeq querySeq comment/)."\n";
 
 foreach my $type (@types) {
   next unless exists $ft{$type};
@@ -86,6 +86,7 @@ foreach my $type (@types) {
     my $nMatch = "";
     my $partS = "";
     my $partQ = "";
+    my @qpos = ();
     if (exists $sposToAlnpos{$begin} && exists $sposToAlnpos{$end}) {
       my $begAln = $sposToAlnpos{$begin};
       my $endAln = $sposToAlnpos{$end};
@@ -99,10 +100,15 @@ foreach my $type (@types) {
           my $sval = substr($sseq->seq, $alnpos-1, 1);
           my $qval = substr($qseq->seq, $alnpos-1, 1);
           $nMatch++ if $sval eq $qval;
+          push @qpos, $sposToQpos{$i};
         }
       }
     }
-    print join("\t", $type, $begin, $end, $nAln, $nMatch, $partS, $partQ, $comment)."\n";
+    my $qbeg = "";
+    $qbeg = $qpos[0] if @qpos > 0;
+    my $qend = "";
+    $qend = $qpos[-1] if @qpos > 0;
+    print join("\t", $type, $begin, $end, $qbeg, $qend, $nAln, $nMatch, $partS, $partQ, $comment)."\n";
   }
 }
 
