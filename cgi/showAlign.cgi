@@ -131,16 +131,28 @@ if (defined $acc2) {
     $uniprotId = $1;
   } else {
     # try to find acc2 via SeqToDuplicate
-    my $dups = $dbh->selectcol_arrayref("SELECT duplicate_id FROM SeqToDuplicate WHERE sequence_id = ?",
+    my @dups = $dbh->selectrow_array("SELECT duplicate_id FROM SeqToDuplicate WHERE sequence_id = ?",
                                         {}, $acc2);
-    foreach my $dup (@$dups) {
-      if ($dup =~ m/SwissProt::(.*)$/) {
-        $uniprotId = $1;
-        last;
+    unshift @dups, $acc2;
+    foreach my $dup (@dups) {
+      if ($dup =~ m/^[A-Z][0-9A-Z]+$/ && $dup !~ m/^VIMSS/) {
+        $uniprotId = $dup;
+      } elsif ($dup =~ m/(SwissProt|BRENDA)::(.*)$/) {
+        $uniprotId = $2;
+      } elsif ($dup =~ m/(metacyc|CharProtDB)::(.*)$/) {
+        my ($db,$id) = ($1,$2);
+        my ($id2) = $dbh->selectrow_array("SELECT id2 FROM CuratedGene WHERE db = ? AND protId = ?",
+                                          {}, $db, $id);
+        if ($db eq "metacyc" && $id2) {
+          $uniprotId = $id2;
+        } elsif ($db eq "CharProtDB" && $id2 =~ m/SP[|]/) {
+          my %id2 = split /[|]/, $id2;
+          $uniprotId = $id2{"SP"} if $id2{"SP"};
+        }
       }
+      last if $uniprotId;
     }
   }
-
   my %typeNames = ("ACT_SITE" => "Active site",
                    "BINDING" => "Binding site",
                    "CA_BIND" => "Calcium binding",
@@ -206,11 +218,17 @@ if (defined $acc2) {
                           td($qpos),
                           td($short ? $row->{querySeq} : "..."));
         }
-        print h3("Conservation of Sequence Features"),
+        print h3("Conservation of Functional Sites and Regions"),
           table({cellspacing => 0, cellpadding => 3, border => 1}, @trows),
-          p(a({ -href => "http://uniprot.org/uniprot/$uniprotId" }, "Also see UniProt entry for $def2" ));
+            p(small("Conservation of each site or region is based on the highest-scoring alignment only.")),
+              p(a({ -href => "http://uniprot.org/uniprot/$uniprotId" }, "Also see UniProt entry for $def2" ));
+      } else {
+        print p(small("No functional sites for the subject",
+                    a({ -href => "http://www.uniprot.org/uniprot/$uniprotId" }, $uniprotId)));
       }
     }
+  } else {
+    print p(small("No functional sites because the subject $def2 is not linked to a UniProt identifier in PaperBLAST's database"));
   }
 }
 unlink("$prefix.bl2seq");
