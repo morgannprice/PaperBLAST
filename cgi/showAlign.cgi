@@ -199,10 +199,12 @@ if (defined $acc2) {
             $spos = $row->{sbegin};
             $qpos = $row->{qbegin};
           } else {
-            $spos = $row->{sbegin} . ".." . $row->{send};
-            $qpos = $row->{qbegin} eq "" ? "" : $row->{qbegin} . ".." . $row->{qend};
+            my $joinby = $row->{type} eq "DISULFID" ? "," : "..";
+            $spos = $row->{sbegin} . $joinby . $row->{send};
+            $qpos = $row->{qbegin} eq "" ? "" : $row->{qbegin} . $joinby . $row->{qend};
           }
           my $slen = $row->{send} - $row->{sbegin} + 1;
+          $slen = 2 if $slen > 1 && $row->{type} eq "DISULFID";
           my $short = length($row->{subjectSeq}) <= 10;
           $row->{nAligned} = 0 if $row->{nAligned} eq "";
           $row->{nMatch} = 0 if $row->{nMatch} eq "";

@@ -75,7 +75,7 @@ foreach my $ft (@ft2) {
 }
 
 # Which types of features to report on, in what order
-my @types = qw/ACT_SITE BINDING CA_BIND ZN_FING METAL DNA_BIND NP_BIND DOMAIN MOTIF REGION REPEAT PROPEP SIGNAL TRANSIT TRANSMEM INTRAMEM NON_STD MOD_RES CARBOHYD LIPID DISULFID CROSSLNK MUTAGEN HELIX STRAND COILED TURN SITE/;
+my @types = qw/ACT_SITE BINDING CA_BIND ZN_FING METAL DNA_BIND NP_BIND MUTAGEN DOMAIN MOTIF REGION REPEAT PROPEP SIGNAL TRANSIT TRANSMEM INTRAMEM NON_STD MOD_RES CARBOHYD LIPID DISULFID CROSSLNK HELIX STRAND COILED TURN SITE/;
 
 print join("\t", qw/type sbegin send qbegin qend nAligned nMatch subjectSeq querySeq comment/)."\n";
 
@@ -89,8 +89,12 @@ foreach my $type (@types) {
     my $nMatch = "";
     my @qpos = ();
     my ($begAln, $endAln);
+    my @pos = ($begin..$end);
+    @pos = ($begin,$end) if ($type eq "DISULFID");
+      
 
-    foreach my $i ($begin..$end) {
+
+    foreach my $i (@pos) {
       if (exists $sposToQpos{$i}) {
         $nAln++;
         my $alnpos = $sposToAlnpos{$i};
@@ -107,6 +111,11 @@ foreach my $type (@types) {
     my $qend = @qpos > 0 ? $qpos[-1] : "";
     my $partS = @qpos > 0 ? substr($sseq->seq, $begAln-1, $endAln-$begAln+1) : "";
     my $partQ = @qpos > 0 ? substr($qseq->seq, $begAln-1, $endAln-$begAln+1) : "";
+    if ($type eq "DISULFID" && @pos > 1 && $partS ne "") {
+      $partS = substr($partS, 0, 1) . "," . substr($partS, length($partS)-1, 1);
+      $partQ = substr($partQ, 0, 1) . "," . substr($partQ, length($partQ)-1, 1)
+        if $partQ ne "";
+    }
     print join("\t", $type, $begin, $end, $qbeg, $qend, $nAln, $nMatch, $partS, $partQ, $comment)."\n";
   }
 }
