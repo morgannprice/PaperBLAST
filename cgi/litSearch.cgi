@@ -149,7 +149,8 @@ HREF="https://github.com/morgannprice/PaperBLAST">code</A>.
 Also note some changes since the paper was written:
 
 <UL>
-<LI>January 2017: incorporated BRENDA.
+<LI>February 2018: the alignment page reports the conservation of the hit's functional sites (if available from from Swiss-Prot or UniProt)
+<LI>January 2018: incorporated BRENDA.
 <LI>December 2017: incorporated MetaCyc, CharProtDB, CAZy, REBASE, and the reannotations from the Fitness Browser.
 <LI>September 2017: EuropePMC no longer returns some table entries in their search results. This has shrunk PaperBLAST's database, but has also reduced the number of low-relevance hits.
 </UL>
