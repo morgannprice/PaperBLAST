@@ -62,9 +62,12 @@ foreach my $ft (@ft2) {
   $ft =~ m/^FT +([A-Z_]+) +([0-9<>]+) +([0-9<>]+) *(.*)$/
     || die "Invalid FT\n$ft\nin UniProt entry for $subjectId";
   my ($type,$begin,$end,$comment) = ($1,$2,$3,$4);
-  # remove evidence codes from comments
+  # remove evidence codes from comments. The top two are curated; the remainder are not;
+  # but decided not to distinguish them.
   $comment .= " (by similarity)"
-    if $comment =~ m/ECO:0000250/ || $comment =~ m/ECO:0000255/;
+    if $comment =~ m/ECO:0000250/ || $comment =~ m/ECO:0000255/
+      || $comment =~ m/ECO:0000256/ || $comment =~ m/ECO:0000259/
+        || $comment =~ m/ECO:0000259/ || $comment =~ m/ECO:0000213/;
   $comment =~ s/[{]ECO:\d+[^}]+[}][.]?//g;
   $comment =~ s/ +/ /g;
   push @{ $ft{$type} }, [ $begin, $end, $comment ]
@@ -72,7 +75,7 @@ foreach my $ft (@ft2) {
 }
 
 # Which types of features to report on, in what order
-my @types = qw/ ACT_SITE BINDING CA_BIND ZN_FING METAL DNA_BIND NP_BIND DOMAIN MOTIF REGION REPEAT PROPEP SIGNAL TRANSIT TRANSMEM INTRAMEM NON_STD MOD_RES CARBOHYD LIPID DISULFID CROSSLNK MUTAGEN HELIX STRAND COILED TURN SITE /;
+my @types = qw/ACT_SITE BINDING CA_BIND ZN_FING METAL DNA_BIND NP_BIND DOMAIN MOTIF REGION REPEAT PROPEP SIGNAL TRANSIT TRANSMEM INTRAMEM NON_STD MOD_RES CARBOHYD LIPID DISULFID CROSSLNK MUTAGEN HELIX STRAND COILED TURN SITE/;
 
 print join("\t", qw/type sbegin send qbegin qend nAligned nMatch subjectSeq querySeq comment/)."\n";
 
@@ -84,30 +87,26 @@ foreach my $type (@types) {
     my $nPos = $end-$begin+1;
     my $nAln = "";
     my $nMatch = "";
-    my $partS = "";
-    my $partQ = "";
     my @qpos = ();
-    if (exists $sposToAlnpos{$begin} && exists $sposToAlnpos{$end}) {
-      my $begAln = $sposToAlnpos{$begin};
-      my $endAln = $sposToAlnpos{$end};
-      $partS = substr($sseq->seq, $begAln-1, $endAln-$begAln+1);
-      $partQ = substr($qseq->seq, $begAln-1, $endAln-$begAln+1);
+    my ($begAln, $endAln);
 
-      foreach my $i ($begin..$end) {
-        if (exists $sposToQpos{$i}) {
-          $nAln++;
-          my $alnpos = $sposToAlnpos{$i};
-          my $sval = substr($sseq->seq, $alnpos-1, 1);
-          my $qval = substr($qseq->seq, $alnpos-1, 1);
-          $nMatch++ if $sval eq $qval;
-          push @qpos, $sposToQpos{$i};
-        }
+    foreach my $i ($begin..$end) {
+      if (exists $sposToQpos{$i}) {
+        $nAln++;
+        my $alnpos = $sposToAlnpos{$i};
+        $begAln = $alnpos if !defined $begAln;
+        $endAln = $alnpos;
+        my $sval = substr($sseq->seq, $alnpos-1, 1);
+        my $qval = substr($qseq->seq, $alnpos-1, 1);
+        $nMatch++ if $sval eq $qval;
+        push @qpos, $sposToQpos{$i};
       }
     }
-    my $qbeg = "";
-    $qbeg = $qpos[0] if @qpos > 0;
-    my $qend = "";
-    $qend = $qpos[-1] if @qpos > 0;
+
+    my $qbeg = @qpos > 0 ? $qpos[0] : "";
+    my $qend = @qpos > 0 ? $qpos[-1] : "";
+    my $partS = @qpos > 0 ? substr($sseq->seq, $begAln-1, $endAln-$begAln+1) : "";
+    my $partQ = @qpos > 0 ? substr($qseq->seq, $begAln-1, $endAln-$begAln+1) : "";
     print join("\t", $type, $begin, $end, $qbeg, $qend, $nAln, $nMatch, $partS, $partQ, $comment)."\n";
   }
 }
