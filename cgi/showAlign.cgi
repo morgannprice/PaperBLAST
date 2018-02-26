@@ -210,6 +210,8 @@ if (defined $acc2) {
           $row->{nMatch} = 0 if $row->{nMatch} eq "";
           my $comment = $row->{comment};
           $comment =~ s![(]by similarity[)]!<small>(by similarity)</small>!g;
+          $comment =~ s! ?/FTId=.*$!!;
+          $comment =~ s/[.] *$// if $comment =~ m/^[^.]+[.] *$/;
           my $match = $row->{nAligned} > 0 ? "$row->{nMatch} / $slen" : "--";
           push @trows, Tr({ -valign => 'top', -align => "left" },
                           td($typeNames{$row->{type}} || $row->{type}),
