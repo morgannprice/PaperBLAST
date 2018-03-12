@@ -82,7 +82,7 @@ sub ReadFasta ($) {
 
 # Read a record from a pathway tools attribute-value file
 # and returns the result as a reference to a hash of
-# attribute_name => value_name => list of { value => value, annotation_name => anno }
+# attribute_name => list of { value => value, annotation_name => anno }
 # where the key 'value' is the main attribute value and the annotation names vary.
 #
 # Multiple values for an attribute are supported, but if there are
