@@ -260,7 +260,7 @@ if ($query ne "" && $query !~ m/\n/ && $query !~ m/ / && $query =~ m/[^A-Z*]/) {
     } else {
       $gene = $dbh->selectrow_hashref("SELECT * from CuratedGene WHERE db = 'SwissProt' AND protId = ?",
                                       {}, $short);
-      $geneId = "SwissProt::".$short;
+      $geneId = "SwissProt::".$short if $gene;
     }
     if (defined $geneId) {
       # look for the duplicate
