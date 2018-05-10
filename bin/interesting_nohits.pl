@@ -26,16 +26,18 @@ die $usage
 die "No such file: $hitsfile\n" unless -e $hitsfile;
 die "No such file: $intfile\n" unless -e $intfile;
 
+my %seq = (); # sequence id to sequence
 my %seqlen = (); # sequence id to length
 my %seqInt = (); # sequence id to #pubs
 
 open(my $fhInt, "<", $intfile) || die "Cannot read $intfile";
 my $state = {};
 while(my ($header,$sequence) = ReadFastaEntry($fhInt,$state)) {
-  my ($seq, $n) = split / /, $header;
+  my ($id, $n) = split / /, $header;
   die $header unless $n > 0;
-  $seqlen{$seq} = length($sequence);
-  $seqInt{$seq} = $n;
+  $seq{$id} = $sequence;
+  $seqlen{$id} = length($sequence);
+  $seqInt{$id} = $n;
 }
 close($fhInt) || die "Error reading $intfile";
 print STDERR "Read " . scalar(keys %seqlen) . " sequences from $intfile\n";
@@ -61,7 +63,7 @@ while (my ($seq, $int) = each %seqInt) {
   push @{ $intSeqs{$int} }, $seq;
 }
 
-print join("\t", qw{id nPapers begin end})."\n";
+print join("\t", qw{id nPapers length begin end subseq})."\n";
 my @intValues = sort { $b <=> $a } keys %intSeqs;
 foreach my $int (@intValues) {
   foreach my $seq (sort @{ $intSeqs{$int} }) {
@@ -84,7 +86,9 @@ foreach my $int (@intValues) {
     foreach my $range (@out) {
       my ($beg,$end) = @$range;
       die if $end - $beg + 1 < $minRegion;
-      print join("\t", $seq, $int, $beg, $end)."\n";
+      print join("\t", $seq, $int, $seqlen{$seq},
+                 $beg, $end,
+                 substr($seq{$seq}, $beg-1, $end-$beg+1))."\n";
     }
   }
 }
