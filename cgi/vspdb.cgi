@@ -18,7 +18,7 @@ my $filterSoluble = param('soluble') || "";
 my $filterPFam = param('PFam') || 0;
 my $filterOrder = param('ordered') || 0;
 my $disorderThreshold = 0.4;
-my $nToShow = param('n') || 50;
+my $nToShow = param('n') || 100;
 
 my @orgChoices = sort ("Caenorhabditis elegans", "Saccharomyces cerevisiae", "Schizosaccharomyces pombe", "Pseudomonas aeruginosa", "Chlamydia trachomatis", "Mycobacterium tuberculosis", "Drosophila melanogaster", "Arabidopsis thaliana", "Rattus norvegicus", "Escherichia coli", "Mus musculus", "Homo sapiens");
 
@@ -39,24 +39,30 @@ print
   header(-charset => 'utf-8'),
   start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
              -title => $title),
-  h2("Papers vs. PDB: Well-studied proteins that lack structural information."),
+  h2("Papers vs. PDB: Well-studied proteins that lack structural information"),
   p(a({-href => "vspdb.cgi"}, "Papers vs. PDB"),
-    "shows proteins that are linked to at least 10 papers yet they lack homologs in the",
-    a({-href => "http://www.rcsb.org"}, "RSCB Protein Data Bank") . "."),
+    "shows proteins that are",
+    a({-href => "litSearch.cgi", -title => "PaperBLAST"}, "mentioned in at least 10 papers"),
+    "yet are not",
+    a({-title => "over 30% identical"}, "similar"),
+    "to any protein of",
+    a({-title => "RCSB Protein Data Bank (PDB)", -href => "http://www.rcsb.org"}, "known structure") . "."),
   h3("Filtering:"),
   start_form( -name => 'input', -method => 'GET', -action => 'vspdb.cgi'),
-  p("Organism:", popup_menu('org', \@orgChoices2, $filterOrg, \%orgLabels)),
-  p("Entire protein lacks homologs in PDB:",
-    popup_menu('complete', [0,1], $filterComplete, $labelYesNo),
-    "Has a hit in PFam:",
-    popup_menu('PFam', [0,1], $filterPFam, {1=>"Yes", 0=>"Either"}),
-    "Exclude Disordered:",
-    popup_menu('ordered', [0,1], $filterOrder, $labelYesNo) ),
+  p("Proteins to show:", popup_menu('n', [100,500], $nToShow),
+    "&nbsp;",
+    "Organism:", popup_menu('org', \@orgChoices2, $filterOrg, \%orgLabels) ),
+  p("If part of the protein is similar to a structure:",
+    popup_menu('complete', [0,1], $filterComplete, {0=>"include",1=>"exclude"})),
+  p("Exclude disordered proteins:",
+    popup_menu('ordered', [0,1], $filterOrder, $labelYesNo),
+    "&nbsp;",
+    "Require a hit in PFam:",
+    popup_menu('PFam', [0,1], $filterPFam, $labelYesNo)),
   p("Solubility:",
     popup_menu('soluble', ["","yes","partly","no"], $filterSoluble,
-               { "" => "Any", "yes" => "Entirely soluble", "partly" => "Partly soluble", "no" => "Integral membrane protein"}) ),
-  p("Proteins to show:", popup_menu('n', [20,50,100,200,500], $nToShow)),
-  p(submit('Go'), reset()),
+               { "" => "Any", "yes" => "Entirely soluble", "partly" => "Partly soluble", "no" => "Membrane protein"}) ),
+  p(submit('Go')),
   end_form();
 
 my $tsv = "../vspdb/unhit.tsv";
@@ -124,8 +130,8 @@ while(my $line = <TSV>) {
   }
   push @pfamlinks, a({ -title => join(", ", @pfamextra) }, "...")
     if @pfamextra;
-  my $pfamShow = @pfamlinks == 0 ? "no PFam hits" : "PFams: " . join(", ", @pfamlinks);
-
+  my $pfamShow = @pfamlinks == 0 ? "no PFam hits" :
+    (@pfamlinks == 1 ? "PFam $pfamlinks[0]" : "PFams " . join(", ", @pfamlinks));
 
   my $idShort = $values{sequenceId}; $idShort =~ s/^.*:://;
   my $newline = "%0A";
@@ -161,8 +167,12 @@ while(my $line = <TSV>) {
   my $region = $values{begin} == 1 && $values{end} == $values{length} ?
     "All $values{length}" : "$values{begin}:$values{end}/$values{length}";
 
+  $nShown++;
+  my $desc = $values{desc};
+  $desc =~ s/ [(]NCBI ptt file[)]$//;
   my @row1 = ( td({ -colspan => 3 },
-                  a({ -title => "description from $values{source}", -href => $URL }, $values{desc}) ),
+                  "$nShown.",
+                  a({ -title => "description from $values{source}", -href => $URL }, $desc) ),
                td($region),
                td({ -align => "right" },
                   a({ -title => "Number of papers", -href => "litSearch.cgi?query=" . $values{subseq} },
@@ -181,7 +191,6 @@ while(my $line = <TSV>) {
     Tr({ -valign => "top", -bgcolor => $bgcolor },@row1),
       Tr({ -valign => "top", -bgcolor => $bgcolor }, @row2),
         "\n";
-  $nShown++;
   last if $nShown >= $nToShow;
 }
 print CGI::end_table() . "\n";
@@ -190,17 +199,32 @@ print p(small("Only the $nShown most-cited proteins were shown.")) if $nShown >=
 
 my $date = `date -r $tsv "+%B %e, %Y"`; $date =~ s/\s+$//;
 my $disorderThresholdPercent = $disorderThreshold * 100;
-print h3("Technical Details"),
+print
+  hr(),
+  h3("Technical Details"),
   start_ul(),
-  li("This analysis is from $date."),
-  li("A protein is considered to lack structural information if at least half of the protein,",
-    "constituting at least 50 amino acids, has no homolog in PDB with &ge;30% average amino acid identity."),
-  li("Transmembrane helices were identified with",
+  li("A protein is considered to lack structural information if at least half of the protein",
+     " has no homolog in PDB with &ge;30% average amino acid identity.",
+     "Furthermore this region must be at least 50 amino acids long."),
+  li("Homologs were identified using",
+     a({-href => "https://en.wikipedia.org/wiki/BLAST"}, "protein BLAST"),
+     qq{with the options -e 0.01 -m "F S".}),
+  li("As of May 2018, 27,408 proteins are linked to at least 10 papers.",
+     "7,632 of these lack structural information and 3,897 lack structural information over their entire length."),
+  li("Transmembrane helices (TMHs) were identified with",
      a({-href => "http://www.cbs.dtu.dk/services/TMHMM"}, "TMHMM.")),
-  li("A protein is considered partly soluble if it has one or more TMHs but a region of at least 50 amino acids has none."),
+  li("A protein is considered partly soluble if it has one or more TMHs but a region of at least 50 amino acids has no TMHs."),
   li("Average disorder was predicted using", a({-href => "http://iupred.enzim.hu/"}, "IUPredL.")),
-  li("A protein is considered disordered if the averarage disorder was above ${disorderThresholdPercent}%."),
+  li("A protein is considered disordered if the average probability of disorder is above ${disorderThresholdPercent}%."),
+  li("This analysis is from $date."),
   end_ul(),
   h3("Downloads"),
-  p(a({ -href => $tsv }, "The complete table"), "(tab-delimited)."),
+  start_ul(),
+  li(a({ -href => $tsv }, "All uncovered well-cited proteins"), "(tab-delimited)"),
+  end_ul(),
+  p({ -style => "text-align: center; font-size: smaller;" },
+    "Developed by",
+    a({-href => "http://morgannprice.org/" }, "Morgan Price") . ",",
+    a({-href => "http://genomics.lbl.gov/" }, "Arkin lab") . ",",
+    "LBL"),
   end_html;
