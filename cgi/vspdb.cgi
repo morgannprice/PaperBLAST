@@ -23,9 +23,9 @@ my $nToShow = param('n') || 100;
 my @orgChoices = sort ("Caenorhabditis elegans", "Saccharomyces cerevisiae", "Schizosaccharomyces pombe", "Pseudomonas aeruginosa", "Chlamydia trachomatis", "Mycobacterium tuberculosis", "Drosophila melanogaster", "Arabidopsis thaliana", "Rattus norvegicus", "Escherichia coli", "Mus musculus", "Homo sapiens");
 
 my %orgLabels = map { $_ => $_ } @orgChoices;
-$orgLabels{""} = "Any";
+$orgLabels{""} = "any";
 my @orgChoices2 = @orgChoices; unshift @orgChoices2, "";
-my $labelYesNo = {0=>"No",1=>"Yes"};
+my $labelYesNo = {0=>"no",1=>"yes"};
 
 my $orgSelector = 
 my $completeSelector = 
@@ -61,7 +61,7 @@ print
     popup_menu('PFam', [0,1], $filterPFam, $labelYesNo)),
   p("Solubility:",
     popup_menu('soluble', ["","yes","partly","no"], $filterSoluble,
-               { "" => "Any", "yes" => "Entirely soluble", "partly" => "Partly soluble", "no" => "Membrane protein"}) ),
+               { "" => "any", "yes" => "entirely soluble", "partly" => "partly soluble", "no" => "membrane protein"}) ),
   p(submit('Go')),
   end_form();
 
@@ -221,6 +221,7 @@ print
   li("A protein is considered partly soluble if it has one or more TMHs but a region of at least 50 amino acids has no TMHs."),
   li("Average disorder was predicted using", a({-href => "http://iupred.enzim.hu/"}, "IUPredL.")),
   li("A protein is considered disordered if the average probability of disorder is above ${disorderThresholdPercent}%."),
+  li("Hits to PFam were computed using PFam-A. HMMer 3.1b2, and the gathering cutoff (--cut_ga)."),
   li("This analysis is from $date."),
   end_ul(),
   h3("Downloads"),
