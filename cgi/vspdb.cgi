@@ -179,10 +179,15 @@ while(my $line = <TSV>) {
                     $values{nPapers} ))
              );
 
+  # More red if more disordered
+  my @disorderRed = map int(255 * $_ / 10 + 0.5), 0..10;
+  my @disordercolors = map sprintf("#%2.2X%2.2X%2.2X", $_, 0, 0), @disorderRed;
+  my $disordercolor = $disordercolors[ int($disorder/10) ];
   my @row2 = ( td("&nbsp;"),
                td($values{organism}),
                td(small($pfamShow)),
-               td(small(a({-title => "%disordered from IUPredL",
+               td(small(a({-title => "Average probability of disorder from IUPredL",
+                           -style => "color: $disordercolor;",
                           -href => "http://iupred.enzim.hu/pred.php?WS=500&type=long&output=graph&seq=$values{subseq}" }, "$disorder% dis."))),
                td(small($showSoluble))
              );
