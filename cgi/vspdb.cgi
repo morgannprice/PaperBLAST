@@ -20,7 +20,7 @@ my $filterOrder = param('ordered') || 0;
 my $disorderThreshold = 0.4;
 my $nToShow = param('n') || 100;
 
-my @orgChoices = sort ("Caenorhabditis elegans", "Saccharomyces cerevisiae", "Schizosaccharomyces pombe", "Pseudomonas aeruginosa", "Chlamydia trachomatis", "Mycobacterium tuberculosis", "Drosophila melanogaster", "Arabidopsis thaliana", "Rattus norvegicus", "Escherichia coli", "Mus musculus", "Homo sapiens");
+my @orgChoices = sort ("Caenorhabditis elegans", "Saccharomyces cerevisiae", "Schizosaccharomyces pombe", "Pseudomonas aeruginosa", "Chlamydia trachomatis", "Mycobacterium tuberculosis", "Drosophila melanogaster", "Arabidopsis thaliana", "Rattus norvegicus", "Escherichia coli", "Mus musculus", "Homo sapiens", "Helicobacter pylori");
 
 my %orgLabels = map { $_ => $_ } @orgChoices;
 $orgLabels{""} = "any";
@@ -222,6 +222,7 @@ print
   li("Average disorder was predicted using", a({-href => "http://iupred.enzim.hu/"}, "IUPredL.")),
   li("A protein is considered disordered if the average probability of disorder is above ${disorderThresholdPercent}%."),
   li("Hits to PFam were computed using PFam-A. HMMer 3.1b2, and the gathering cutoff (--cut_ga)."),
+  li("The organism selector includes all organisms with 50 or more entries. These organisms cover 90% of all entries."),
   li("This analysis is from $date."),
   end_ul(),
   h3("Downloads"),
