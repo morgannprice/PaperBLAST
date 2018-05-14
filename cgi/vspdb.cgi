@@ -27,13 +27,6 @@ $orgLabels{""} = "any";
 my @orgChoices2 = @orgChoices; unshift @orgChoices2, "";
 my $labelYesNo = {0=>"no",1=>"yes"};
 
-my $orgSelector = 
-my $completeSelector = 
-my $pfamSelector = 
-my $disorderSelector = 
-my $solubleSElector = 
-my $nSelector = 
-
 my $title = "Papers vs. PDB";
 print
   header(-charset => 'utf-8'),
@@ -97,17 +90,17 @@ my %sourceToURL = ( "SwissProt" => "http://www.uniprot.org/uniprot/",
 my $nShown = 0;
 while(my $line = <TSV>) {
   chomp $line;
-  my @values = split /\t/, $line;
+  my @values = split /\t/, $line, -1;
   die "Invalid line $line\n" unless scalar(@values) == scalar(@cols);
   my %values = map { $cols[$_] => $values[$_] } (0..(scalar(@cols)-1));
   next unless $filterOrg eq "" || $values{organism} =~ m/^$filterOrg/;
   next if $filterComplete && ($values{begin} != 1 || $values{end} != $values{length});
   if ($filterSoluble eq "yes") {
-    next unless $values{nTMH} == 0;
+    next unless $values{nTMH} == 0 && ! $values{BOMP};
   } elsif ($filterSoluble eq "partly") {
-    next unless $values{soluble} == 1;
+    next unless $values{soluble} == 1 && ! $values{BOMP};
   } elsif ($filterSoluble eq "no") {
-    next unless $values{nTMH} > 1;
+    next unless $values{nTMH} > 1 || $values{BOMP};
   }
   next if $filterPFam && $values{nPFam} == 0;
   next if $filterOrder && $values{IUPredL} > $disorderThreshold;
@@ -141,7 +134,10 @@ while(my $line = <TSV>) {
            "outform=-noshort",
            "SEQ=>${idShort}$newline$values{subseq}");
   my $showSoluble;
-  if ($values{nTMH} == 0) {
+  if ($values{BOMP}) {
+    $showSoluble = a({-title => "beta barrel outer membrane protein (BOMP confidence level: $values{BOMP} out of 5)"},
+                     "&beta;B OMP");
+  } elsif ($values{nTMH} == 0) {
     $showSoluble = a({-title => "no transmembrane helices", -href => $url_TMHMM}, "no TMH");
   } elsif ($values{soluble} == 0) {
     $showSoluble = a({-href => $url_TMHMM}, "$values{nTMH} TMH");
