@@ -345,19 +345,22 @@ if (!defined $seq && ! $more_subjectId) {
           b("Enter a protein sequence in FASTA or Uniprot format,<BR>or an identifier from UniProt, RefSeq, or MicrobesOnline: "),
           br(),
           textarea( -name  => 'query', -value => '', -cols  => 70, -rows  => 10 )),
-        p(submit('Search'), reset()),
+            p(submit('Search'), reset()),
         end_form,
         p("Or see",
           a({ -href => "litSearch.cgi?query=VIMSS$exampleId" }, "example results"),
             "for the putative alcohol dehydrogenase",
           a({ -href => "https://www.ncbi.nlm.nih.gov/protein/$refseqId",
-                      -style => "color: black;" },
-                    small("$refseqId,") ),
-            "which is actually the regulator",
-            a({ -href => "litSearch.cgi?query=VIMSS$exampleId",
-                -title => "Show PaperBLAST hits" },
-              i("ercA")) . "."),
-          $documentation;
+              -style => "color: black;" },
+            small("$refseqId,") ),
+          "which is actually the regulator",
+          a({ -href => "litSearch.cgi?query=VIMSS$exampleId",
+              -title => "Show PaperBLAST hits" }, i("ercA")) . "."),
+        p("Or see",
+          a({ -href => "http://papers.genomics.lbl.gov/vspdb",
+              -title => "Papers vs. PDB: Well-studied proteins that lack structural information" },
+            "Papers vs. PDB")),
+        $documentation;
 } else {
     if ($more_subjectId) {
       print h3("Full List of Papers Linked to $more_subjectId");
