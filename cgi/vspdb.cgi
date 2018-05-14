@@ -135,8 +135,8 @@ while(my $line = <TSV>) {
            "SEQ=>${idShort}$newline$values{subseq}");
   my $showSoluble;
   if ($values{BOMP}) {
-    $showSoluble = a({-title => "beta barrel outer membrane protein (BOMP confidence level: $values{BOMP} out of 5)"},
-                     "&beta;B OMP");
+    $showSoluble = a({-title => "beta barrel membrane protein (BOMP confidence level: $values{BOMP} out of 5)"},
+                     "&beta;B MP");
   } elsif ($values{nTMH} == 0) {
     $showSoluble = a({-title => "no transmembrane helices", -href => $url_TMHMM}, "no TMH");
   } elsif ($values{soluble} == 0) {
