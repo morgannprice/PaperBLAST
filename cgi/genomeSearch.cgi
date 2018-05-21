@@ -24,7 +24,9 @@ use pbutils; # for ReadFastaEntry()
 # maximum size of posted data, in bytes
 my $maxMB = 100;
 $CGI::POST_MAX = $maxMB*1024*1024;
-my $maxseqs = 100*1000;
+my $maxseqsK = 100;
+my $maxseqs = $maxseqsK * 1000;
+my $maxseqsComma = "$maxseqsK,000";
 my $maxEval = 0.01;
 
 my $base = "../data";
@@ -54,7 +56,7 @@ my %sourceToURL = ( "SwissProt" => "http://www.uniprot.org/uniprot/",
                     "CAZy" => "http://www.cazy.org/search?page=recherche&lang=en&tag=4&recherche="
                   );
 
-my $title = "PaperBLAST a Genome";
+my $title = "Curated BLAST for Genomes";
 print
   header(-charset => 'utf-8'),
   start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
@@ -179,7 +181,8 @@ if ($upfile && $query) {
   }
   my @inputs = sort { $maxScore{$b} <=> $maxScore{$a} } (keys %maxScore);
   foreach my $input (@inputs) {
-    my $header = "Hits for $input";
+    my $header = "Hits for " .
+      a({ -href => "litSearch.cgi?query=>${input}%0A$seqs{$input}", -title => "run PaperBLAST on $input" }, $input);
     my @show = ();
     my $rows = $parsed{$input};
     foreach my $row (@$rows) {
@@ -221,12 +224,15 @@ if ($upfile && $query) {
     print p("Cannot search without an input genome.") unless $upfile;
     print p("Please enter a query.") unless $query;
   }
-  print start_form( -name => 'input', -method => 'POST', -action => 'genomeSearch.cgi'),
-    p("Query:", textfield(-name => "query", -value => '', -size => 50, -maxlength => 200)),
-    p("Upload amino acid sequences in FASTA format (up to $maxseqs sequences or $maxMB MB)"),
-      filefield(-name=>'file', -size=>50),
-        p(submit('Search')),
-          end_form;
+  print
+    p("Given a query term, find characterized proteins that are relevant and find their homologs in a genome."),
+    start_form( -name => 'input', -method => 'POST', -action => 'genomeSearch.cgi'),
+    p("1. Query:", textfield(-name => "query", -value => '', -size => 50, -maxlength => 200)),
+    p({-style => "margin-left: 5em;" }, "use % as a wild card that matches any substring"),
+    p("2. Genome: upload proteins in FASTA format", filefield(-name=>'file', -size=>50)),
+    p({-style => "margin-left: 5em;" },"up to $maxseqsComma amino acid sequences or $maxMB MB"),
+    p(submit('Search')),
+    end_form;
 }
 
 print end_html;
