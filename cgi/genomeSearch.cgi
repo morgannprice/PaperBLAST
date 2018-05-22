@@ -10,8 +10,10 @@
 # Optional CGI garameters:
 # query -- what to search for
 # alternative ways to specify which genome to search in:
-#	file -- an uploaded file with protein sequences in FASTA format
 #	orgId -- an organism identifier in the fitness browser
+#	mogenome -- an genone name in MicrobesOnline
+#	file -- an uploaded file with protein sequences in FASTA format
+#
 # Search -- set if the search button was pressed
 
 use strict;
@@ -43,9 +45,10 @@ die "No such executable: $fastacmd" unless -x $fastacmd;
 my $blastdb = "$base/uniq.faa";
 die "No such file: $blastdb" unless -e $blastdb;
 my $cgi=CGI->new;
+my $orgId = $cgi->param('orgId');
+my $mogenome = $cgi->param('mogenome');
 my $upfile = $cgi->param('file');
 my $query = $cgi->param('query');
-my $orgId = $cgi->param('orgId');
 
 # A symbolic link to the Fitness Browser data directory is used (if it exists)
 # to allow quick access to fitness browser genomes.
@@ -61,6 +64,16 @@ if (-e $fbdata) {
   foreach my $hash (values %$orginfo) {
     $hash->{genome} = join(" ", $hash->{genus}, $hash->{species}, $hash->{strain});
   }
+}
+
+# The MicrobesOnline taxonomy table (must include the taxonomyId and name fields)
+# This file is optional. If it exists, uses MicrobesOnline's public mysql server
+# to fetch genomes for a taxonomyId
+my $mofile = "../static/Taxonomy.mo";
+my %moTax = (); # name to taxonomyId
+if (-e $mofile) {
+  my @tax = &ReadTable($mofile, ["taxonomyId","name"]);
+  %moTax = map { $_->{name} => $_->{taxonomyId} } @tax;
 }
 
 my $tmpDir = "../tmp";
@@ -86,8 +99,10 @@ print
   start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
              -title => $title),
   h2($title);
+  autoflush STDOUT 1; # show preliminary results
+print "\n";
 
-if (($upfile || $orgId) && $query) {
+if (($mogenome || $orgId || $upfile) && $query) {
   # Sufficient information to execute a query
   my $fh; # read the fasta file
   if ($orgId) {
@@ -116,6 +131,41 @@ if (($upfile || $orgId) && $query) {
       rename($tmpfile, $cachedfile) || die "Rename $tmpfile to $cachedfile failed";
     }
     open($fh, "<", $cachedfile) || die "Cannot read $cachedfile";
+  } elsif ($mogenome) {
+    my $taxId = $moTax{$mogenome}
+      || die "Invalid MicrobesOnline genome name $mogenome";
+    print p("Loading the genome of $mogenome from", a({-href => "http://www.microbesonline.org/" }, "MicrobesOnline")), "\n";
+    my $cachedfile = "$tmpDir/mogenome_${taxId}.faa";
+    if (! -e $cachedfile) {
+      my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
+        || die $DBI::errstr;
+      my $genes = $mo_dbh->selectall_arrayref(qq{ SELECT locusId, sequence
+                                                  FROM Locus JOIN Scaffold USING (scaffoldId)
+                                                  JOIN AASeq USING (locusId, version)
+                                                  WHERE taxonomyId = ? AND isActive=1 AND priority=1 AND type=1; },
+                                              { Slice => {} }, $taxId);
+      my $desc = $mo_dbh->selectall_hashref(qq{ SELECT locusId, description
+                                                    FROM Locus JOIN Scaffold USING (scaffoldId)
+                                                    JOIN Description USING (locusId,version)
+                                                    WHERE taxonomyId = ? AND isActive=1 AND priority=1 AND Locus.type=1 },
+                                                "locusId", {}, $taxId);
+      my $sysNames = $mo_dbh->selectall_hashref(qq{ SELECT locusId, name
+                                                    FROM Locus JOIN Scaffold USING (scaffoldId)
+                                                    JOIN Synonym USING (locusId, version)
+                                                    WHERE taxonomyId = ? AND isActive=1 AND priority=1 AND Locus.type=1 AND Synonym.type = 1 },
+                                                "locusId", {}, $taxId);
+      my $tmpfile = "$basefile.tmp";
+      open(TMP, ">", $tmpfile) || die "Cannot write to $tmpfile";
+      foreach my $gene (@$genes) {
+        my $locusId = $gene->{locusId};
+        my $sysName = $sysNames->{$locusId}{name} || "";
+        my $desc = $desc->{$locusId}{description} || "";
+        print TMP ">$locusId $sysName $desc\n$gene->{sequence}\n";
+      }
+      close(TMP) || die "Error writing to $tmpfile";
+      rename($tmpfile, $cachedfile) || die "Rename $tmpfile to $cachedfile failed";
+    }
+    open($fh, "<", $cachedfile) || die "Cannot read $cachedfile";
   } elsif ($upfile) {
     my $up = $cgi->upload('file');
     die "Cannot upload $upfile" unless $up;
@@ -140,7 +190,6 @@ if (($upfile || $orgId) && $query) {
   close($fh) || die "Error reading genome file";
   die "Too many sequences: limit $maxseqs\n" if scalar(keys %seqs) > $maxseqs;
   die "No sequences in genome file\n" if scalar(keys %seqs) == 0;
-  autoflush STDOUT 1; # show preliminary results
   print p("Found", scalar(keys %seqs), "sequences in $upfile.\n") if $upfile;
 
   # Find relevant sequences in CuratedGene
@@ -241,6 +290,13 @@ if (($upfile || $orgId) && $query) {
       my $desc = join(" ", @words);
       $inputlink = a({ -href => "http://fit.genomics.lbl.gov/cgi-bin/singleFit.cgi?orgId=${orgId}&locusId=${locusId}" },
                      $sysName) . ": $desc";
+    } elsif ($mogenome) {
+      my @words = split / /, $input;
+      my $locusId = shift @words;
+      my $sysName = shift @words;
+      my $desc = join(" ", @words);
+      $inputlink = a({ -href => "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=$locusId"},
+                     $sysName || "VIMSS$locusId") . ": $desc";
     }
     my $pblink = a({ -href => "litSearch.cgi?query=>${input}%0A$seqs{$input}" }, "PaperBLAST");
     my $header = join(" ", $inputlink, small($pblink));
@@ -289,7 +345,7 @@ if (($upfile || $orgId) && $query) {
   my @genomeSelectors = ();
   if ($fbdbh) {
     my @orginfo = sort { $a->{genome} cmp $b->{genome} } values(%$orginfo);
-    my %orgLabels = ("" => "From Fitness Browser:");
+    my %orgLabels = ("" => "From the Fitness Browser:");
     my @orgOptions = ("");
     foreach my $hash (@orginfo) {
       my $orgId = $hash->{orgId};
@@ -298,6 +354,14 @@ if (($upfile || $orgId) && $query) {
     }
     push @genomeSelectors, p(popup_menu( -name => 'orgId', -values => \@orgOptions, -labels  => \%orgLabels,
                                        -default => ''));
+  }
+  if (keys(%moTax) > 0) {
+    my @tax = sort keys %moTax;
+    my %taxLabels = map { $_ => $_ } @tax;
+    $taxLabels{""} = "From MicrobesOnline:";
+    my @taxOptions = sort keys %taxLabels;
+    push @genomeSelectors, p(popup_menu( -name => 'mogenome', -values => \@taxOptions, -labels => \%taxLabels,
+                                         -default => ''));
   }
   push @genomeSelectors,
     p("or upload proteins in FASTA format", filefield(-name=>'file', -size=>50)),
