@@ -9,7 +9,9 @@
 #
 # Optional CGI garameters:
 # query -- what to search for
-# file -- an uploaded file with protein sequences in FASTA format
+# alternative ways to specify which genome to search in:
+#	file -- an uploaded file with protein sequences in FASTA format
+#	orgId -- an organism identifier in the fitness browser
 # Search -- set if the search button was pressed
 
 use strict;
@@ -43,6 +45,28 @@ die "No such file: $blastdb" unless -e $blastdb;
 my $cgi=CGI->new;
 my $upfile = $cgi->param('file');
 my $query = $cgi->param('query');
+my $orgId = $cgi->param('orgId');
+
+# A symbolic link to the Fitness Browser data directory is used (if it exists)
+# to allow quick access to fitness browser genomes.
+# That directory must include feba.db (sqlite3 database) and aaseqs (in fasta format)
+my $fbdata = "../fbrowse_data"; # path relative to the cgi directory
+my $fbdbh;
+my $orginfo;
+if (-e $fbdata) {
+  $fbdbh = DBI->connect("dbi:SQLite:dbname=$fbdata/feba.db","","",{ RaiseError => 1 }) || die $DBI::errstr;
+  die "Missing aaseqs file for fitness browser: $fbdata/aaseqs\n"
+    unless -e "$fbdata/aaseqs";
+  $orginfo = $fbdbh->selectall_hashref("SELECT * FROM Organism", "orgId");
+  foreach my $hash (values %$orginfo) {
+    $hash->{genome} = join(" ", $hash->{genus}, $hash->{species}, $hash->{strain});
+  }
+}
+
+my $tmpDir = "../tmp";
+my $procId = $$;
+my $timestamp = int (gettimeofday() * 1000);
+my $basefile = $tmpDir . "/" . $procId . $timestamp;
 
 # This should really be in pbutils
 my %sourceToURL = ( "SwissProt" => "http://www.uniprot.org/uniprot/",
@@ -63,12 +87,44 @@ print
              -title => $title),
   h2($title);
 
-if ($upfile && $query) {
+if (($upfile || $orgId) && $query) {
   # Sufficient information to execute a query
+  my $fh; # read the fasta file
+  if ($orgId) {
+    die "Invalid organism id $orgId\n" unless exists $orginfo->{$orgId};
+    print p("Loading the genome of $orginfo->{$orgId}{genome} from the",
+            a({-href => "http://fit.genomics.lbl.gov/cgi-bin/orgAll.cgi"}, "Fitness Browser"));
+    my $cachedfile = "$tmpDir/fbrowse_${orgId}.faa";
+    my $nWrite = 0;
+    if (! -e $cachedfile) {
+      my $tmpfile = "$basefile.tmp";
+      open(TMP, ">", $tmpfile) || die "Cannot write to $tmpfile";
+      my $genes = $fbdbh->selectall_hashref("SELECT * from Gene WHERE orgId = ?", "locusId", {}, $orgId);
+      open(my $aafh, "<", "$fbdata/aaseqs") || die "Cannot read $fbdata/aaeqs";
+      my $state = {};
+      while (my ($header, $sequence) = ReadFastaEntry($aafh,$state)) {
+        my ($org2, $locusId) = split /:/, $header;
+        die $header unless defined $locusId;
+        next unless $org2 eq $orgId;
+        my $gene = $genes->{$locusId}
+          || die "Unrecognized locusId $locusId";
+        print TMP ">$locusId $gene->{sysName} $gene->{desc}\n$sequence\n";
+        $nWrite++;
+      }
+      close($aafh) || die "Error reading $fbdata/aaseqs";
+      close(TMP) || die "Error writing to $tmpfile";
+      rename($tmpfile, $cachedfile) || die "Rename $tmpfile to $cachedfile failed";
+    }
+    open($fh, "<", $cachedfile) || die "Cannot read $cachedfile";
+  } elsif ($upfile) {
+    my $up = $cgi->upload('file');
+    die "Cannot upload $upfile" unless $up;
+    $fh = $up->handle;
+  } else {
+    die "Unreachable";
+  }
+
   # First validate the fasta input
-  my $up = $cgi->upload('file');
-  die "Cannot upload $upfile" unless $up;
-  my $fh = $up->handle;
   my %seqs = (); # header (with > removed) to sequence
   my %seqlen = ();
   my $state = {};
@@ -81,11 +137,11 @@ if ($upfile && $query) {
     $seqs{$header} = $sequence;
     $seqlen{$header} = length( $sequence );
   }
+  close($fh) || die "Error reading genome file";
   die "Too many sequences: limit $maxseqs\n" if scalar(keys %seqs) > $maxseqs;
-  die "No sequences in uploaded file\n" if scalar(keys %seqs) == 0;
-  print p("Found", scalar(keys %seqs), "sequences in $upfile.");
+  die "No sequences in genome file\n" if scalar(keys %seqs) == 0;
   autoflush STDOUT 1; # show preliminary results
-  print "\n";
+  print p("Found", scalar(keys %seqs), "sequences in $upfile.\n") if $upfile;
 
   # Find relevant sequences in CuratedGene
   my $maxhits = 1000;
@@ -104,14 +160,10 @@ if ($upfile && $query) {
   }
   print p("Found", scalar(@$chits), qq{curated entries in PaperBLAST's database that match '$query'.\n});
 
-  my $tmpDir = "../tmp";
-  my $procId = $$;
-  my $timestamp = int (gettimeofday() * 1000);
-  my $filename = $procId . $timestamp;
-  my $listFile = "$tmpDir/$filename.list";
-  my $chitsfaaFile = "$tmpDir/$filename.chits.faa";
-  my $genomefaaFile = "$tmpDir/$filename.genome.faa";
-  my $ublastFile = "$tmpDir/$filename.ublast";
+  my $listFile = "$basefile.list";
+  my $chitsfaaFile = "$basefile.chits.faa";
+  my $genomefaaFile = "$basefile.genome.faa";
+  my $ublastFile = "$basefile.ublast";
 
   # Make the input file for fastacmd
   my %idToChit = (); # sequence identifier to curated gene hit(s)
@@ -181,8 +233,18 @@ if ($upfile && $query) {
   }
   my @inputs = sort { $maxScore{$b} <=> $maxScore{$a} } (keys %maxScore);
   foreach my $input (@inputs) {
-    my $header = "Hits for " .
-      a({ -href => "litSearch.cgi?query=>${input}%0A$seqs{$input}", -title => "run PaperBLAST on $input" }, $input);
+    my $inputlink = $input;
+    if ($orgId) {
+      my @words = split / /, $input;
+      my $locusId = shift @words;
+      my $sysName = shift @words;
+      my $desc = join(" ", @words);
+      $inputlink = a({ -href => "http://fit.genomics.lbl.gov/cgi-bin/singleFit.cgi?orgId=${orgId}&locusId=${locusId}" },
+                     $sysName) . ": $desc";
+    }
+    my $pblink = a({ -href => "litSearch.cgi?query=>${input}%0A$seqs{$input}" }, "PaperBLAST");
+    my $header = join(" ", $inputlink, small($pblink));
+
     my @show = ();
     my $rows = $parsed{$input};
     foreach my $row (@$rows) {
@@ -224,14 +286,30 @@ if ($upfile && $query) {
     print p("Cannot search without an input genome.") unless $upfile;
     print p("Please enter a query.") unless $query;
   }
+  my @genomeSelectors = ();
+  if ($fbdbh) {
+    my @orginfo = sort { $a->{genome} cmp $b->{genome} } values(%$orginfo);
+    my %orgLabels = ("" => "From Fitness Browser:");
+    my @orgOptions = ("");
+    foreach my $hash (@orginfo) {
+      my $orgId = $hash->{orgId};
+      push @orgOptions, $orgId;
+      $orgLabels{$orgId} = $hash->{genome};
+    }
+    push @genomeSelectors, p(popup_menu( -name => 'orgId', -values => \@orgOptions, -labels  => \%orgLabels,
+                                       -default => ''));
+  }
+  push @genomeSelectors,
+    p("or upload proteins in FASTA format", filefield(-name=>'file', -size=>50)),
+    p({-style => "margin-left: 5em;" },"up to $maxseqsComma amino acid sequences or $maxMB MB");
   print
     p("Given a query term, find characterized proteins that are relevant and find their homologs in a genome."),
     start_form( -name => 'input', -method => 'POST', -action => 'genomeSearch.cgi'),
     p("1. Query:", textfield(-name => "query", -value => '', -size => 50, -maxlength => 200)),
     p({-style => "margin-left: 5em;" }, "use % as a wild card that matches any substring"),
-    p("2. Genome: upload proteins in FASTA format", filefield(-name=>'file', -size=>50)),
-    p({-style => "margin-left: 5em;" },"up to $maxseqsComma amino acid sequences or $maxMB MB"),
-    p(submit('Search')),
+    p("2. Select genome:"),
+    @genomeSelectors,
+    p(submit('Search'), reset()),
     end_form;
 }
 
