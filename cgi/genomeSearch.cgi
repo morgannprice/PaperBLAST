@@ -9,6 +9,7 @@
 #
 # Optional CGI garameters:
 # query -- what to search for
+# word -- if non-empty, report whole word matches only
 # alternative ways to specify which genome to search in:
 #	orgId -- an organism identifier in the fitness browser
 #	mogenome -- an genome name in MicrobesOnline
@@ -55,6 +56,7 @@ my $mogenome = $cgi->param('mogenome');
 my $uniprotname = $cgi->param('uniprotname');
 my $upfile = $cgi->param('file');
 my $query = $cgi->param('query');
+my $word = $cgi->param('word');
 
 # A symbolic link to the Fitness Browser data directory is used (if it exists)
 # to allow quick access to fitness browser genomes.
@@ -302,7 +304,22 @@ if ($hasGenome && $query) {
     print end_html;
     exit(0);
   }
-  print p("Found", scalar(@$chits), qq{curated entries in PaperBLAST's database that match '$query'.\n});
+  if ($word) {
+    # filter for whole-word hits
+    my $quoted = quotemeta($query); # this will quote % as well
+    $quoted =~ s/\\%/\\b.*\\b/g; # turn % into a separation of words; note quoting of \\ so that it appears in the new string
+
+    my @keep = grep { $_->{desc} =~ m/\b$quoted\b/i } @$chits;
+    if (@keep == 0) {
+      print p(qq{None of the curated entries in PaperBLAST's database match '$query' as complete words. Please try another query.});
+      print end_html;
+      exit(0);
+    }
+    $chits = \@keep;
+  }
+
+  my $wordstatement = $word ? " as complete word(s)" : "";
+  print p("Found", scalar(@$chits), qq{curated entries in PaperBLAST's database that match '$query'${wordstatement}.\n});
 
   my $listFile = "$basefile.list";
   my $chitsfaaFile = "$basefile.chits.faa";
@@ -519,6 +536,7 @@ END
     start_form( -autocomplete => 'off', -name => 'input', -method => 'POST', -action => 'genomeSearch.cgi'),
     p("1. Query:", textfield(-name => "query", -value => '', -size => 50, -maxlength => 200)),
     p({-style => "margin-left: 5em;" }, "use % as a wild card that matches any substring"),
+    p({-style => "margin-left: 5em;" }, checkbox(-name => "word", -checked => 0, -label => "Match whole words only?")),
     p("2. Select genome:"),
     @genomeSelectors,
     p(submit('Search'), reset()),
