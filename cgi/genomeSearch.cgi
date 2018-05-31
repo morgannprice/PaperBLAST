@@ -517,9 +517,10 @@ if ($hasGenome && $query) {
     push @genomeSelectors, p(popup_menu( -name => 'mogenome', -values => \@taxOptions, -labels => \%taxLabels,
                                          -default => ''));
   }
-  my $uniprot_default = $uniprotname ? qq{ value="$uniprotname" } : qq{ placeholder="Genome name (UniProt/UniParc)" };
+  my $uniprot_default = $uniprotname ? qq{ value="$uniprotname" } : qq{ placeholder="Genome name" };
   my $uniprot_selector = <<END
 <div class="autocomplete" style="width:100%;">
+From UniProt:<BR>
 <input id="uniprotname" type="text" name="uniprotname" $uniprot_default style="width:90%;" >
 </div>
 <SCRIPT>
@@ -529,11 +530,12 @@ END
 ;
   push @genomeSelectors,
     $uniprot_selector,
-    p("or upload proteins in FASTA format", filefield(-name=>'file', -size=>50)),
-    p({-style => "margin-left: 5em;" },"up to $maxseqsComma amino acid sequences or $maxMB MB");
-
+    p("Or upload proteins in FASTA format (up to $maxseqsComma amino acid sequences or $maxMB MB)",
+      br(),
+      filefield(-name=>'file', -size=>50));
   print
-    p("Given a query term, find characterized proteins that are relevant and find their homologs in a genome."),
+    p("Given a query term, find characterized proteins whose descriptions match the query. Then, search a genome for homologs of those proteins."),
+
     start_form( -autocomplete => 'off', -name => 'input', -method => 'POST', -action => 'genomeSearch.cgi'),
     p("1. Query:", textfield(-name => "query", -value => '', -size => 50, -maxlength => 200)),
     p({-style => "margin-left: 5em;" }, "use % as a wild card that matches any substring"),
@@ -541,8 +543,20 @@ END
     p("2. Select genome:"),
     @genomeSelectors,
     p(submit('Search'), reset()),
-    end_form;
+    end_form,
 }
+
+print <<END
+<P>
+<small>
+<center>by <A HREF="http://morgannprice.org/">Morgan Price</A>,
+<A HREF="http://genomics.lbl.gov/">Arkin group</A><BR>
+Lawrence Berkeley National Laboratory
+</center>
+</small>
+</P>
+END
+;
 
 print end_html;
 exit(0);
