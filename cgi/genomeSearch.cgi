@@ -36,6 +36,8 @@ my $maxseqs = $maxseqsK * 1000;
 my $maxseqsComma = "$maxseqsK,000";
 my $maxEval = 0.01;
 
+my $maxHitsEach = 3;
+
 my $base = "../data";
 my $sqldb = "$base/litsearch.db";
 my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
@@ -141,7 +143,22 @@ print
              -script => [{ -type => "text/javascript", -src => "../static/autocomplete_uniprot.js" }],
              -title => $title),
   h2($title);
-  autoflush STDOUT 1; # show preliminary results
+  autoflush STDOUT 1; # show preliminary resul
+print <<END
+<SCRIPT>
+function expander(o,n) {
+  var x = document.getElementsByClassName("collapse"+n);
+  console.log("Expander " + n + " count " + x.length);
+  var i;
+  for (i = 0; i < x.length; i++) {
+    x[i].style.display = "list-item";
+  }
+  o.parentElement.style.display = "none";
+}
+</SCRIPT>
+END
+;
+
 print "\n";
 
 my $hasGenome = ($mogenome || $orgId || $uniprotname || $upfile);
@@ -347,6 +364,7 @@ if ($hasGenome && $query) {
   # Parse the hits. Query is from the curated hits; subject is from the input genome; output
   # will be sorted by subject, with subjects sorted by their top hit (as %identity * %coverage)
   my %parsed = (); # input sequence to list of hits
+  my $nCollapseSet = 0;
   foreach my $uhit (@$uhits) {
     my ($query, $subject, $identity, $alen, $mm, $gap, $qbeg, $qend, $sbeg, $send, $eval, $bits) = @$uhit;
     $query =~ s/^lcl[|]//;
@@ -435,6 +453,20 @@ if ($hasGenome && $query) {
                      a({ -href => "showAlign.cgi?" . join("&", "def1=$input", "seq1=$seqs{$input}", "acc2=$row->{hit}"),
                          -title => "$row->{irange}/$seqlen{$input} versus $row->{hrange}/$clen" },
                        "($row->{identity}% identity, ${percentcov}% coverage)"));
+    }
+    if (@show > $maxHitsEach) {
+      my @first = ();
+      my @rest = @show;
+      while(@first < $maxHitsEach) {
+        push @first, (pop @rest);
+      }
+      @show = @first;
+      $nCollapseSet++;
+      push @show, li(a({ -href => "javascript:void(0);", -onclick => "expander(this,$nCollapseSet)" }, "More..."));
+      foreach my $show (@rest) {
+        $show =~ s/^<LI>/<LI class="collapse${nCollapseSet}" style="display: none;">/i;
+        push @show, $show;
+      }
     }
     print p({ -style => "margin-top: 1em; margin-bottom: 0em;" },
             $header, qq{<UL style="margin-top: 0em; margin-bottom: 0em;">}, @show, "</UL>")."\n";;
