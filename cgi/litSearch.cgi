@@ -19,7 +19,7 @@
 # If none of these is specified, shows the query box, an example link, and some documentation
 
 use strict;
-use CGI qw(:standard Vars);
+use CGI qw(:standard Vars start_ul);
 use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
 use Time::HiRes qw{gettimeofday};
 use DBI;
@@ -356,10 +356,15 @@ if (!defined $seq && ! $more_subjectId) {
           "which is actually the regulator",
           a({ -href => "litSearch.cgi?query=VIMSS$exampleId",
               -title => "Show PaperBLAST hits" }, i("ercA")) . "."),
-        p("Or see",
-          a({ -href => "http://papers.genomics.lbl.gov/vspdb",
-              -title => "Papers vs. PDB: Well-studied proteins that lack structural information" },
+        h3("Related Tools"),
+        start_ul(),
+        li(a({ -href => "genomeSearch.cgi",
+               -title => "Search a genome for proteins that are related to a query term" },
+           "Curated BLAST for Genomes")),
+        li(a({ -href => "http://papers.genomics.lbl.gov/vspdb",
+               -title => "Papers vs. PDB: Well-studied proteins that lack structural information" },
             "Papers vs. PDB")),
+        end_ul(),
         $documentation;
 } else {
     if ($more_subjectId) {
