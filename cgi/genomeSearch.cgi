@@ -537,10 +537,10 @@ END
     p("Given a query term, find characterized proteins whose descriptions match the query. Then, search a genome for homologs of those proteins."),
 
     start_form( -autocomplete => 'off', -name => 'input', -method => 'POST', -action => 'genomeSearch.cgi'),
-    p("1. Query:", textfield(-name => "query", -value => '', -size => 50, -maxlength => 200)),
+    p(b("1. Enter a query:"), textfield(-name => "query", -value => '', -size => 50, -maxlength => 200)),
     p({-style => "margin-left: 5em;" }, "use % as a wild card that matches any substring"),
     p({-style => "margin-left: 5em;" }, checkbox(-name => "word", -checked => 0, -label => "Match whole words only?")),
-    p("2. Select genome:"),
+    p(b("2. Select a genome:")),
     @genomeSelectors,
     p(submit('Search'), reset()),
     end_form,
