@@ -11,7 +11,8 @@
 # query -- what to search for
 # alternative ways to specify which genome to search in:
 #	orgId -- an organism identifier in the fitness browser
-#	mogenome -- an genone name in MicrobesOnline
+#	mogenome -- an genome name in MicrobesOnline
+#	uniprotname -- a uniprot proteome's name
 #	file -- an uploaded file with protein sequences in FASTA format
 #
 # Search -- set if the search button was pressed
@@ -21,6 +22,8 @@ use CGI qw(:standard Vars);
 use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
 use Time::HiRes qw{gettimeofday};
 use DBI;
+use LWP::Simple; # for get()
+use URI::Escape; # for uri_escape()
 use IO::Handle; # for autoflush
 use lib "../lib";
 use pbutils; # for ReadFastaEntry()
@@ -47,6 +50,7 @@ die "No such file: $blastdb" unless -e $blastdb;
 my $cgi=CGI->new;
 my $orgId = $cgi->param('orgId');
 my $mogenome = $cgi->param('mogenome');
+my $uniprotname = $cgi->param('uniprotname');
 my $upfile = $cgi->param('file');
 my $query = $cgi->param('query');
 
@@ -93,16 +97,55 @@ my %sourceToURL = ( "SwissProt" => "http://www.uniprot.org/uniprot/",
                     "CAZy" => "http://www.cazy.org/search?page=recherche&lang=en&tag=4&recherche="
                   );
 
+my $style = <<END
+.autocomplete {
+  /*the container must be positioned relative:*/
+  position: relative;
+  display: inline-block;
+}
+
+.autocomplete-items {
+  position: absolute;
+  border: 1px solid #d4d4d4;
+  border-bottom: none;
+  border-top: none;
+  z-index: 99;
+  /*position the autocomplete items to be the same width as the container:*/
+  top: 100%;
+  left: 0;
+  right: 0;
+}
+.autocomplete-items div {
+  padding: 10px;
+  cursor: pointer;
+  background-color: #fff;
+  border-bottom: 1px solid #d4d4d4;
+}
+.autocomplete-items div:hover {
+  /*when hovering an item:*/
+  background-color: #e9e9e9;
+}
+.autocomplete-active {
+  /*when navigating through the items using the arrow keys:*/
+  background-color: DodgerBlue !important;
+  color: #ffffff;
+}
+END
+;
+
 my $title = "Curated BLAST for Genomes";
 print
   header(-charset => 'utf-8'),
   start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
+             -style => { -code => $style },
+             -script => [{ -type => "text/javascript", -src => "../static/autocomplete_uniprot.js" }],
              -title => $title),
   h2($title);
   autoflush STDOUT 1; # show preliminary results
 print "\n";
 
-if (($mogenome || $orgId || $upfile) && $query) {
+my $hasGenome = ($mogenome || $orgId || $uniprotname || $upfile);
+if ($hasGenome && $query) {
   # Sufficient information to execute a query
   my $fh; # read the fasta file
   if ($orgId) {
@@ -163,6 +206,41 @@ if (($mogenome || $orgId || $upfile) && $query) {
         print TMP ">$locusId $sysName $desc\n$gene->{sequence}\n";
       }
       close(TMP) || die "Error writing to $tmpfile";
+      rename($tmpfile, $cachedfile) || die "Rename $tmpfile to $cachedfile failed";
+    }
+    open($fh, "<", $cachedfile) || die "Cannot read $cachedfile";
+  } elsif ($uniprotname) {
+    my $dbfile = "../static/uniprot_proteomes.db";
+    die "No such file: $dbfile\n" unless -e $dbfile;
+    my $dbh = DBI->connect("dbi:SQLite:dbname=$dbfile","","",{ RaiseError => 1 })
+      || die $DBI::errstr;
+    my $uniprotList = $dbh->selectcol_arrayref("SELECT upid FROM Proteome WHERE name = ?", {}, $uniprotname);
+    unless (scalar(@$uniprotList) == 1) {
+      print p("Proteome name $uniprotname is not valid.");
+      exit(0);
+    }
+    my ($upid) = @$uniprotList;
+    print p("Loading the proteome of $uniprotname from UniProt",
+            a({-href => "https://www.uniprot.org/proteomes/$upid"}, $upid)), "\n";
+    my $cachedfile = "$tmpDir/uniprot_${upid}.faa";
+    unless (-e $cachedfile) {
+      # First try getting from https://www.uniprot.org/uniprot/?query=proteome:UP000002886&format=fasta
+      # This is a bit slow, so I considered using links like
+      # ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/reference_proteomes/Archaea/UP000000242_399549.fasta.gz
+      # but those are also surprisingly slow, and would need to figure out which section to look in.
+      my $refURL = "https://www.uniprot.org/uniprot/?query=proteome:${upid}&format=fasta";
+      my $uniparcURL = "https://www.uniprot.org/uniparc/?query=proteome:${upid}&format=fasta";
+      my $faa = get($refURL);
+      $faa = get($uniparcURL) if $faa eq "";
+      if ($faa eq "") {
+        print p("Proteome $uniprotname seems to be empty, see",
+                a({href => $uniparcURL}, "here"));
+        exit(0);
+      }
+      my $tmpfile = "$basefile.tmp";
+      open($fh, ">", $tmpfile) || die "Cannot write $tmpfile";
+      print $fh $faa;
+      close($fh) || die "Error writing to $tmpfile";
       rename($tmpfile, $cachedfile) || die "Rename $tmpfile to $cachedfile failed";
     }
     open($fh, "<", $cachedfile) || die "Cannot read $cachedfile";
@@ -254,7 +332,17 @@ if (($mogenome || $orgId || $upfile) && $query) {
   }
   close(HITS) || die "Error reading $ublastFile";
   unlink($ublastFile);
-  print p("Found", scalar(@$uhits), "hits\n");
+
+  my $URLq = "genomeSearch.cgi";
+  if ($orgId) {
+    $URLq .= "?orgId=$orgId";
+  } elsif ($mogenome) {
+    $URLq .= "?mogenome=$mogenome";
+  } elsif ($uniprotname) {
+    $URLq .= "?uniprotname=" . uri_escape($uniprotname);
+  }
+  print p("Found", scalar(@$uhits), "hits, or try",
+          a({-href => $URLq}, "another query"))."\n";
 
   # Parse the hits. Query is from the curated hits; subject is from the input genome; output
   # will be sorted by subject, with subjects sorted by their top hit (as %identity * %coverage)
@@ -297,6 +385,22 @@ if (($mogenome || $orgId || $upfile) && $query) {
       my $desc = join(" ", @words);
       $inputlink = a({ -href => "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=$locusId"},
                      $sysName || "VIMSS$locusId") . ": $desc";
+    } elsif ($uniprotname) {
+      # either sp|accession|identifier description OS=organism GN=genenname (and other attributes)
+      # or tr|...
+      # or for non reference proteomes, a different format (do not try to modify)
+      if ($input =~ m/^[a-z][a-z][|]([A-Z90-9_]+)[|]([A-Z90-9_]+) (.*)$/) {
+        my ($acc, $id, $desc) = ($1,$2,$3);
+        my $gn = "";
+        if ($desc =~ m/^(.*) OS=(.*)/) {
+          $desc = $1;
+          my $rest = $2;
+          $gn = $1 if $rest =~ m/ GN=(\S+) /;
+        }
+        $inputlink = a({ -href => "http://www.uniprot.org/uniprot/" . $acc },
+                       $acc) . " $desc";
+        $inputlink .= " ($gn)" if $gn ne "";
+      }
     }
     my $pblink = a({ -href => "litSearch.cgi?query=>${input}%0A$seqs{$input}" }, "PaperBLAST");
     my $header = join(" ", $inputlink, small($pblink));
@@ -339,7 +443,7 @@ if (($mogenome || $orgId || $upfile) && $query) {
   # Show the query form.
   # Note that failed uploads reach here because CGI sets upfile to undef
   if ($cgi->param('Search')) {
-    print p("Cannot search without an input genome.") unless $upfile;
+    print p("Cannot search without an input genome.") if $query;
     print p("Please enter a query.") unless $query;
   }
   my @genomeSelectors = ();
@@ -363,12 +467,24 @@ if (($mogenome || $orgId || $upfile) && $query) {
     push @genomeSelectors, p(popup_menu( -name => 'mogenome', -values => \@taxOptions, -labels => \%taxLabels,
                                          -default => ''));
   }
+  my $uniprot_default = $uniprotname ? qq{ value="$uniprotname" } : qq{ placeholder="Genome name (UniProt/UniParc)" };
+  my $uniprot_selector = <<END
+<div class="autocomplete" style="width:100%;">
+<input id="uniprotname" type="text" name="uniprotname" $uniprot_default style="width:90%;" >
+</div>
+<SCRIPT>
+autocomplete(document.getElementById("uniprotname"));
+</SCRIPT>
+END
+;
   push @genomeSelectors,
+    $uniprot_selector,
     p("or upload proteins in FASTA format", filefield(-name=>'file', -size=>50)),
     p({-style => "margin-left: 5em;" },"up to $maxseqsComma amino acid sequences or $maxMB MB");
+
   print
     p("Given a query term, find characterized proteins that are relevant and find their homologs in a genome."),
-    start_form( -name => 'input', -method => 'POST', -action => 'genomeSearch.cgi'),
+    start_form( -autocomplete => 'off', -name => 'input', -method => 'POST', -action => 'genomeSearch.cgi'),
     p("1. Query:", textfield(-name => "query", -value => '', -size => 50, -maxlength => 200)),
     p({-style => "margin-left: 5em;" }, "use % as a wild card that matches any substring"),
     p("2. Select genome:"),
