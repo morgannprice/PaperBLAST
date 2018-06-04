@@ -829,7 +829,7 @@ sub RefSeqToQuery($) {
   return undef unless $short =~ m/_/;
   my $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.cgi?db=Protein&rettype=fasta&id=$short";
   my $results = get($url);
-  return $results if $results =~ m/^>/;
+  return $results if defined $results && $results =~ m/^>/;
   return undef;
 }
 
