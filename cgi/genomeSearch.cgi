@@ -97,7 +97,6 @@ my %sourceToURL = ( "SwissProt" => "http://www.uniprot.org/uniprot/",
                     "RefSeq" => "http://www.ncbi.nlm.nih.gov/protein/",
                     "metacyc" => "https://metacyc.org/gene?orgid=META&id=",
                     "ecocyc" => "https://ecocyc.org/gene?orgid=ECOLI&id=",
-                    "CharProtDB" => "",
                     "CAZy" => "http://www.cazy.org/search?page=recherche&lang=en&tag=4&recherche="
                   );
 
@@ -154,7 +153,7 @@ function expander(o,n) {
   console.log("Expander " + n + " count " + x.length);
   var i;
   for (i = 0; i < x.length; i++) {
-    x[i].style.display = "list-item";
+    x[i].style.display = "table-row";
   }
   o.parentElement.style.display = "none";
 }
@@ -438,11 +437,17 @@ if ($hasGenome && $query) {
         $inputlink .= " ($gn)" if $gn ne "";
       }
     }
-    my $pblink = a({ -href => "litSearch.cgi?query=>${input}%0A$seqs{$input}" }, "PaperBLAST");
-    my $header = join(" ", $inputlink, small($pblink));
+    my $pblink = a({ -href => "litSearch.cgi?query=>${input}%0A$seqs{$input}",
+                     -title => "Run PaperBLAST on this protein"},
+                   "PaperBLAST");
+    my @header = ($inputlink, small($pblink));
 
     my @show = ();
+    my $iRow = 0;
+    $nCollapseSet++;
+    my $indentStyle = "margin: 0em; margin-left: 3em;";
     foreach my $row (@{ $parsed{$input} }) {
+      $iRow++;
       my $chits = $row->{chits};
       my @descs = ();
       foreach my $chit (@$chits) {
@@ -455,6 +460,8 @@ if ($hasGenome && $query) {
           $URL = "http://fit.genomics.lbl.gov/cgi-bin/singleFit.cgi?orgId=$orgId&locusId=$locusId";
         }  elsif ($db eq "REBASE") {
           $URL = "http://rebase.neb.com/rebase/enz/${protId}.html";
+        } elsif ($db eq "CharProtDB") {
+          $URL = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/"; # the CharProtDB paper
         } else {
           die "No URL for $db" unless exists $sourceToURL{ $db };
           $URL = $sourceToURL{$db} . $protId if $sourceToURL{$db};
@@ -462,31 +469,35 @@ if ($hasGenome && $query) {
         my $showId = $protId;
         $showId =~ s/^.*://;
         $showId = "VIMSS$showId" if $showId =~ m/^\d+/ && $db eq "reanno";
-        push @descs, a({-href => $URL, -title => "from $db"}, $showId) . ": " . $chit->{desc} . " from " . i($chit->{organism});
+        $showId = "$showId / $chit->{name}" if $chit->{name};
+        my @showOrgWords = split / /, $chit->{organism};
+        @showOrgWords = @showOrgWords[0..1] if @showOrgWords > 2;
+        push @descs, a({-href => $URL, -title => "from $db"}, $showId) . ": " . $chit->{desc}
+          . " " . small("from " . i(join(" ", @showOrgWords)));
       }
       my $percentcov = int($row->{coverage} * 100 + 0.5);
       my $clen = $chits->[0]{protein_length};
-      push @show, li(join("; ", @descs),
-                     a({ -href => "showAlign.cgi?" . join("&", "def1=$input", "seq1=$seqs{$input}", "acc2=$row->{hit}"),
-                         -title => "$row->{irange}/$seqlen{$input} versus $row->{hrange}/$clen" },
-                       "($row->{identity}% identity, ${percentcov}% coverage"));
-    }
-    if (@show > $maxHitsEach) {
-      my @first = ();
-      my @rest = @show;
-      while(@first < $maxHitsEach) {
-        push @first, (shift @rest);
+      my %trattr = ();
+      $trattr{"-bgcolor"} = $iRow % 2 ? "#F2F2F2" : "#FCF3CF";
+      if ($iRow > $maxHitsEach) {
+        $trattr{"-class"} = "collapse${nCollapseSet}";
+        $trattr{"-style"} = "display: none;"
       }
-      @show = @first;
-      $nCollapseSet++;
-      push @show, li(a({ -href => "javascript:void(0);", -onclick => "expander(this,$nCollapseSet)" }, "More..."));
-      foreach my $show (@rest) {
-        $show =~ s/^<LI>/<LI class="collapse${nCollapseSet}" style="display: none;">/i;
-        push @show, $show;
-      }
+      my $showIdentity = int($row->{identity} + 0.5);
+      push @show, Tr(\%trattr,
+                     td({-align => "left", -valign => "top"},
+                        p({-style => $indentStyle}, join("<BR>", @descs))),
+                     td({-align => "right", -valign => "top"},
+                        a({ -href => "showAlign.cgi?" . join("&", "def1=$input", "seq1=$seqs{$input}", "acc2=$row->{hit}"),
+                            -title => "$row->{irange}/$seqlen{$input} aligns to $row->{hrange}/$clen (${percentcov}% coverage) of characterized protein)" },
+                          small("${showIdentity}% id"))));
     }
-    print p({ -style => "margin-top: 1em; margin-bottom: 0em;" },
-            $header, qq{<UL style="margin-top: 0em; margin-bottom: 0em;">}, @show, "</UL>")."\n";;
+    push @show, Tr(td({ -colspan => 2 },
+                      p({-style => $indentStyle},
+                        a({ -href => "javascript:void(0);", -onclick => "expander(this,$nCollapseSet)" }, "More..."))))
+      if @show > $maxHitsEach;
+    unshift @show, Tr(td({-align => "left", -valign => "top"}, \@header));
+    print p(table({-cellspacing => 0, -cellpadding => 2, -width => "100%" }, @show)), "\n";
   }
 } else {
   # Show the query form.
