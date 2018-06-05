@@ -169,6 +169,14 @@ if ($hasGenome && $query) {
   my $fh; # read the fasta file
   my $genomeName;
   if ($orgId) {
+    if (!exists $orginfo->{$orgId}) {
+      print p("Sorry, organism nickname $orgId is not known. Try",
+              a({-href => "genomeSearch.cgi?query=$query"}, "selecting it from UniProt or uploading it"),
+              "instead."),
+            end_html;
+      exit(0);
+    }
+      
     die "Invalid organism id $orgId\n" unless exists $orginfo->{$orgId};
     $genomeName = $orginfo->{$orgId}{genome};
     print p("Loading the genome of $genomeName from the",
@@ -501,7 +509,8 @@ if ($hasGenome && $query) {
                       p({-style => $indentStyle},
                         a({ -href => "javascript:void(0);", -onclick => "expander(this,$nCollapseSet)" }, "More..."))))
       if @show > $maxHitsEach;
-    unshift @show, Tr(td({-align => "left", -valign => "top"}, \@header));
+    unshift @show, Tr(td({-align => "left", -valign => "top"}, $header[0]),
+                      td({-align => "right", -valign => "top"}, $header[1]));
     print p(table({-cellspacing => 0, -cellpadding => 2, -width => "100%" }, @show)), "\n";
   }
 } else {
