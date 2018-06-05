@@ -167,9 +167,11 @@ my $hasGenome = ($mogenome || $orgId || $uniprotname || $upfile);
 if ($hasGenome && $query) {
   # Sufficient information to execute a query
   my $fh; # read the fasta file
+  my $genomeName;
   if ($orgId) {
     die "Invalid organism id $orgId\n" unless exists $orginfo->{$orgId};
-    print p("Loading the genome of $orginfo->{$orgId}{genome} from the",
+    $genomeName = $orginfo->{$orgId}{genome};
+    print p("Loading the genome of $genomeName from the",
             a({-href => "http://fit.genomics.lbl.gov/cgi-bin/orgAll.cgi"}, "Fitness Browser"));
     my $cachedfile = "$tmpDir/fbrowse_${orgId}.faa";
     my $nWrite = 0;
@@ -196,6 +198,7 @@ if ($hasGenome && $query) {
   } elsif ($mogenome) {
     my $taxId = $moTax{$mogenome}
       || die "Invalid MicrobesOnline genome name $mogenome";
+    $genomeName = $mogenome;
     print p("Loading the genome of $mogenome from", a({-href => "http://www.microbesonline.org/" }, "MicrobesOnline")), "\n";
     my $cachedfile = "$tmpDir/mogenome_${taxId}.faa";
     if (! -e $cachedfile) {
@@ -229,6 +232,7 @@ if ($hasGenome && $query) {
     }
     open($fh, "<", $cachedfile) || die "Cannot read $cachedfile";
   } elsif ($uniprotname) {
+    $genomeName = $uniprotname;
     my $dbfile = "../static/uniprot_proteomes.db";
     die "No such file: $dbfile\n" unless -e $dbfile;
     my $dbh = DBI->connect("dbi:SQLite:dbname=$dbfile","","",{ RaiseError => 1 })
@@ -264,6 +268,7 @@ if ($hasGenome && $query) {
     }
     open($fh, "<", $cachedfile) || die "Cannot read $cachedfile";
   } elsif ($upfile) {
+    $genomeName = "uploaded file";
     my $up = $cgi->upload('file');
     die "Cannot upload $upfile" unless $up;
     $fh = $up->handle;
@@ -375,8 +380,6 @@ if ($hasGenome && $query) {
   } elsif ($uniprotname) {
     $URLq .= "?uniprotname=" . uri_escape($uniprotname);
   }
-  print p("Found", scalar(@$uhits), "hits, or try",
-          a({-href => $URLq}, "another query"))."\n";
 
   # Parse the hits. Query is from the curated hits; subject is from the input genome; output
   # will be sorted by subject, with subjects sorted by their top hit (as %identity * %coverage)
@@ -403,6 +406,8 @@ if ($hasGenome && $query) {
     $parsed{$input} = \@rows;
     $maxScore{$input} = $rows[0]{score};
   }
+  print p("Found", scalar(keys %parsed), "relevant proteins in $genomeName, or try",
+          a({-href => $URLq}, "another query"))."\n";
   my @inputs = sort { $maxScore{$b} <=> $maxScore{$a} } (keys %maxScore);
   foreach my $input (@inputs) {
     my $inputlink = $input;
