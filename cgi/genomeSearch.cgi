@@ -399,8 +399,8 @@ if ($hasGenome && $query) {
     push @{ $parsed{$subject} }, $row;
   }
   my %maxScore = ();
-  while (my ($input, $rows) = each %parsed) {
-    my @rows = sort { $b->{score} <=> $a->{score} } @$rows;
+  foreach my $input (keys %parsed) {
+    my @rows = sort { $b->{score} <=> $a->{score} } @{ $parsed{$input} };
     $parsed{$input} = \@rows;
     $maxScore{$input} = $rows[0]{score};
   }
@@ -442,8 +442,7 @@ if ($hasGenome && $query) {
     my $header = join(" ", $inputlink, small($pblink));
 
     my @show = ();
-    my $rows = $parsed{$input};
-    foreach my $row (@$rows) {
+    foreach my $row (@{ $parsed{$input} }) {
       my $chits = $row->{chits};
       my @descs = ();
       foreach my $chit (@$chits) {
@@ -470,13 +469,13 @@ if ($hasGenome && $query) {
       push @show, li(join("; ", @descs),
                      a({ -href => "showAlign.cgi?" . join("&", "def1=$input", "seq1=$seqs{$input}", "acc2=$row->{hit}"),
                          -title => "$row->{irange}/$seqlen{$input} versus $row->{hrange}/$clen" },
-                       "($row->{identity}% identity, ${percentcov}% coverage)"));
+                       "($row->{identity}% identity, ${percentcov}% coverage"));
     }
     if (@show > $maxHitsEach) {
       my @first = ();
       my @rest = @show;
       while(@first < $maxHitsEach) {
-        push @first, (pop @rest);
+        push @first, (shift @rest);
       }
       @show = @first;
       $nCollapseSet++;
