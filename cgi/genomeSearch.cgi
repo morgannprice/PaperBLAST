@@ -425,7 +425,7 @@ if ($hasGenome && $query) {
       my $sysName = shift @words;
       my $desc = join(" ", @words);
       $inputlink = a({ -href => "http://fit.genomics.lbl.gov/cgi-bin/singleFit.cgi?orgId=${orgId}&locusId=${locusId}" },
-                     $sysName) . ": $desc";
+                     $sysName || $locusId) . ": $desc";
     } elsif ($mogenome) {
       my @words = split / /, $input;
       my $locusId = shift @words;
@@ -507,7 +507,7 @@ if ($hasGenome && $query) {
     }
     push @show, Tr(td({ -colspan => 2 },
                       p({-style => $indentStyle},
-                        a({ -href => "javascript:void(0);", -onclick => "expander(this,$nCollapseSet)" }, "More..."))))
+                        a({ -href => "javascript:void(0);", -onclick => "expander(this,$nCollapseSet)" }, small("More...")))))
       if @show > $maxHitsEach;
     unshift @show, Tr(td({-align => "left", -valign => "top"}, $header[0]),
                       td({-align => "right", -valign => "top"}, $header[1]));
