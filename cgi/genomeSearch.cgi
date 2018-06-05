@@ -438,9 +438,9 @@ if ($hasGenome && $query) {
       }
     }
     my $pblink = a({ -href => "litSearch.cgi?query=>${input}%0A$seqs{$input}",
-                     -title => "Run PaperBLAST on this protein"},
+                     -title => "full PaperBLAST results for this protein"},
                    "PaperBLAST");
-    my @header = ($inputlink, small($pblink));
+    my @header = ($inputlink . "<BR>" . small("is similar to:"), small($pblink));
 
     my @show = ();
     my $iRow = 0;
@@ -489,7 +489,7 @@ if ($hasGenome && $query) {
                         p({-style => $indentStyle}, join("<BR>", @descs))),
                      td({-align => "right", -valign => "top"},
                         a({ -href => "showAlign.cgi?" . join("&", "def1=$input", "seq1=$seqs{$input}", "acc2=$row->{hit}"),
-                            -title => "$row->{irange}/$seqlen{$input} aligns to $row->{hrange}/$clen (${percentcov}% coverage) of characterized protein)" },
+                            -title => "$row->{irange}/$seqlen{$input} aligns to $row->{hrange}/$clen (${percentcov}% coverage) of characterized protein" },
                           small("${showIdentity}% id"))));
     }
     push @show, Tr(td({ -colspan => 2 },
