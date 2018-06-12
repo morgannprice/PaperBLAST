@@ -92,7 +92,7 @@ my $basefile = $tmpDir . "/" . $procId . $timestamp;
 # This should really be in pbutils
 my %sourceToURL = ( "SwissProt" => "http://www.uniprot.org/uniprot/",
                     "SwissProt/TReMBL" => "http://www.uniprot.org/uniprot/",
-                    "BRENDA" => "http://www.uniprot.org/uniprot/",
+                    "BRENDA" => "http://www.brenda-enzymes.org/sequences.php?AC=",
                     "MicrobesOnline" => "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=",
                     "RefSeq" => "http://www.ncbi.nlm.nih.gov/protein/",
                     "metacyc" => "https://metacyc.org/gene?orgid=META&id=",
@@ -168,20 +168,22 @@ if ($hasGenome && $query) {
   # Sufficient information to execute a query
   my $fh; # read the fasta file
   my $genomeName;
+  my $cachedfile = "$tmpDir/fbrowse_${orgId}.faa";
   if ($orgId) {
-    if (!exists $orginfo->{$orgId}) {
+    # Allow use of orgId that is not in the database if the cached file has already been set up.
+    # This is a way to support use of "local" genomes (although they are still not available
+    # in the selector).
+    if (!exists $orginfo->{$orgId} && ! -e $cachedfile) {
       print p("Sorry, organism nickname $orgId is not known. Try",
               a({-href => "genomeSearch.cgi?query=$query"}, "selecting it from UniProt or uploading it"),
               "instead."),
             end_html;
       exit(0);
     }
-      
-    die "Invalid organism id $orgId\n" unless exists $orginfo->{$orgId};
-    $genomeName = $orginfo->{$orgId}{genome};
+    $genomeName = exists $orginfo->{$orgId} ? $orginfo->{$orgId}{genome} : "local genome $orgId";
     print p("Loading the genome of $genomeName from the",
-            a({-href => "http://fit.genomics.lbl.gov/cgi-bin/orgAll.cgi"}, "Fitness Browser"));
-    my $cachedfile = "$tmpDir/fbrowse_${orgId}.faa";
+            a({-href => "http://fit.genomics.lbl.gov/cgi-bin/orgAll.cgi"}, "Fitness Browser"))
+      if exists $orginfo->{$orgId};
     my $nWrite = 0;
     if (! -e $cachedfile) {
       my $tmpfile = "$basefile.tmp";
@@ -424,8 +426,10 @@ if ($hasGenome && $query) {
       my $locusId = shift @words;
       my $sysName = shift @words;
       my $desc = join(" ", @words);
+      $inputlink = ($sysName || $locusId) . ": $desc";
       $inputlink = a({ -href => "http://fit.genomics.lbl.gov/cgi-bin/singleFit.cgi?orgId=${orgId}&locusId=${locusId}" },
-                     $sysName || $locusId) . ": $desc";
+                     $inputlink)
+        if exists $orginfo->{$orgId};
     } elsif ($mogenome) {
       my @words = split / /, $input;
       my $locusId = shift @words;
@@ -481,7 +485,10 @@ if ($hasGenome && $query) {
         }
         my $showId = $protId;
         $showId =~ s/^.*://;
+        $showId = $chit->{id2} if $db eq "reanno" && $chit->{id2};
         $showId = "VIMSS$showId" if $showId =~ m/^\d+/ && $db eq "reanno";
+        $showId = "$showId / $chit->{id2}" if $db eq "SwissProt" && $chit->{id2};
+        
         $showId = "$showId / $chit->{name}" if $chit->{name};
         my @showOrgWords = split / /, $chit->{organism};
         @showOrgWords = @showOrgWords[0..1] if @showOrgWords > 2;
