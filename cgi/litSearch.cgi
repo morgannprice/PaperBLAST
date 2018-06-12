@@ -509,6 +509,9 @@ if (!defined $seq && ! $more_subjectId) {
                     my $nSkip = 0; # number of duplicate snippets
                     foreach my $snippet (@$snippets) {
                         my $text = $snippet->{snippet};
+                        # In case of XML or HTML tags slipping into the snippet (which is rare)
+                        $text =~ s!<!&lt;!g;
+                        $text =~ s!/>!/&gt;!g;
                         my $term = $snippet->{queryTerm};
                         if (exists $paperSeen{$paperId}{$term}) {
                             $nSkip++;
