@@ -34,10 +34,26 @@ my $maxMB = 100;
 $CGI::POST_MAX = $maxMB*1024*1024;
 my $maxseqsK = 100;
 my $maxseqs = $maxseqsK * 1000;
+my $maxNtLen = 30 * 1000 * 1000;
 my $maxseqsComma = "$maxseqsK,000";
 my $maxEval = 0.01;
+my $maxHitsEach = 3; # additional hits are hidden until the expander is clicked
+my $nCollapseSet = 0; # keeping track fo which expander goes with what
 
-my $maxHitsEach = 3;
+my $minCodons = 30; # for reading frames
+
+# from a defline to a brief description and a link to the source
+sub ProteinLink($);
+sub SixFrameLink($);
+
+# Given a ublast file, a hash with the valid subject ids, and idToChit to describe the queries and their lengths,
+# returns a reference to a list of hashes. Each row includes
+# input (the subject), hit (the query), identity, coverage, score, irange and hrange (each as begin:end),
+# and chits (the chits object for this query)
+sub ParseUblast($$$);
+
+# given a sequence id, sequence, hits, and whether or not this is the 6-frame translation, print the hits
+sub PrintHits($$$$);
 
 my $base = "../data";
 my $sqldb = "$base/litsearch.db";
@@ -52,9 +68,9 @@ my $blastdb = "$base/uniq.faa";
 die "No such file: $blastdb" unless -e $blastdb;
 my $cgi=CGI->new;
 my $orgId = $cgi->param('orgId');
-my $mogenome = $cgi->param('mogenome');
-my $uniprotname = $cgi->param('uniprotname');
-my $upfile = $cgi->param('file');
+my $mogenome = $orgId ? undef : $cgi->param('mogenome');
+my $uniprotname = $orgId || $mogenome ? undef : $cgi->param('uniprotname');
+my $upfile = $orgId || $mogenome || $uniprotname ? undef : $cgi->param('file');
 my $query = $cgi->param('query');
 my $word = $cgi->param('word');
 
@@ -166,7 +182,8 @@ print "\n";
 my $hasGenome = ($mogenome || $orgId || $uniprotname || $upfile);
 if ($hasGenome && $query) {
   # Sufficient information to execute a query
-  my $fh; # read the fasta file
+  # First read the protein fasta
+  my $fh; # reads the fasta file
   my $genomeName;
   my $cachedfile = "$tmpDir/fbrowse_${orgId}.faa";
   if ($orgId) {
@@ -181,7 +198,7 @@ if ($hasGenome && $query) {
       exit(0);
     }
     $genomeName = exists $orginfo->{$orgId} ? $orginfo->{$orgId}{genome} : "local genome $orgId";
-    print p("Loading the genome of $genomeName from the",
+    print p("Loading the proteome of $genomeName from the",
             a({-href => "http://fit.genomics.lbl.gov/cgi-bin/orgAll.cgi"}, "Fitness Browser"))
       if exists $orginfo->{$orgId};
     my $nWrite = 0;
@@ -209,7 +226,7 @@ if ($hasGenome && $query) {
     my $taxId = $moTax{$mogenome}
       || die "Invalid MicrobesOnline genome name $mogenome";
     $genomeName = $mogenome;
-    print p("Loading the genome of $mogenome from", a({-href => "http://www.microbesonline.org/" }, "MicrobesOnline")), "\n";
+    print p("Loading the proteome of $mogenome from", a({-href => "http://www.microbesonline.org/" }, "MicrobesOnline")), "\n";
     my $cachedfile = "$tmpDir/mogenome_${taxId}.faa";
     if (! -e $cachedfile) {
       my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
@@ -286,9 +303,8 @@ if ($hasGenome && $query) {
     die "Unreachable";
   }
 
-  # First validate the fasta input
+  # Validate the fasta input
   my %seqs = (); # header (with > removed) to sequence
-  my %seqlen = ();
   my $state = {};
   while (my ($header, $sequence) = ReadFastaEntry($fh,$state)) {
     die "Duplicate sequence for $header\n" if exists $seqs{$header};
@@ -297,7 +313,6 @@ if ($hasGenome && $query) {
     $sequence =~ s/[*]//g;
     die "Invalid/empty sequence for $header\n" if $sequence eq "";
     $seqs{$header} = $sequence;
-    $seqlen{$header} = length( $sequence );
   }
   close($fh) || die "Error reading genome file";
   die "Too many sequences: limit $maxseqs\n" if scalar(keys %seqs) > $maxseqs;
@@ -370,16 +385,8 @@ if ($hasGenome && $query) {
   system("$usearch -ublast $chitsfaaFile -db $genomefaaFile -evalue $maxEval -blast6out $ublastFile >& /dev/null") == 0
            || die "usearch failed: $!";
   unlink($genomefaaFile);
-  unlink($chitsfaaFile);
 
-  my $uhits = [];
-  open(HITS, "<", $ublastFile) || die "Cannot read $ublastFile";
-  while(<HITS>) {
-    chomp;
-    my @F = split /\t/, $_;
-    push @$uhits, \@F;
-  }
-  close(HITS) || die "Error reading $ublastFile";
+  my $uhits = ParseUblast($ublastFile, \%seqs, \%idToChit);
   unlink($ublastFile);
 
   my $URLq = "genomeSearch.cgi";
@@ -391,24 +398,11 @@ if ($hasGenome && $query) {
     $URLq .= "?uniprotname=" . uri_escape($uniprotname);
   }
 
-  # Parse the hits. Query is from the curated hits; subject is from the input genome; output
-  # will be sorted by subject, with subjects sorted by their top hit (as %identity * %coverage)
   my %parsed = (); # input sequence to list of hits
-  my $nCollapseSet = 0;
-  foreach my $uhit (@$uhits) {
-    my ($query, $subject, $identity, $alen, $mm, $gap, $qbeg, $qend, $sbeg, $send, $eval, $bits) = @$uhit;
-    $query =~ s/^lcl[|]//;
-    $query =~ s/ unnamed protein product$//;
-    die "Unrecognized subject $subject" unless exists $seqs{$subject};
-    die "Unrecognized query $query" unless exists $idToChit{$query};
-    my $chits = $idToChit{$query};
-    my $clen = $chits->[0]{protein_length};
-    my $coverage = ($qend - $qbeg + 1) / $clen;
-    my $row = { input => $subject, hit => $query,
-                identity => $identity, coverage => $coverage, score => $coverage * $identity,
-                irange => "$sbeg:$send", hrange => "$qbeg:$qend",
-                chits => $chits };
-    push @{ $parsed{$subject} }, $row;
+  my %byCurated = (); # curated to list of hits
+  foreach my $row (@$uhits) {
+    push @{ $parsed{$row->{input}} }, $row;
+    push @{ $byCurated{$row->{hit}} }, $row;
   }
   my %maxScore = ();
   foreach my $input (keys %parsed) {
@@ -420,106 +414,133 @@ if ($hasGenome && $query) {
           a({-href => $URLq}, "another query"))."\n";
   my @inputs = sort { $maxScore{$b} <=> $maxScore{$a} } (keys %maxScore);
   foreach my $input (@inputs) {
-    my $inputlink = $input;
-    if ($orgId) {
-      my @words = split / /, $input;
-      my $locusId = shift @words;
-      my $sysName = shift @words;
-      my $desc = join(" ", @words);
-      $inputlink = ($sysName || $locusId) . ": $desc";
-      $inputlink = a({ -href => "http://fit.genomics.lbl.gov/cgi-bin/singleFit.cgi?orgId=${orgId}&locusId=${locusId}" },
-                     $inputlink)
-        if exists $orginfo->{$orgId};
-    } elsif ($mogenome) {
-      my @words = split / /, $input;
-      my $locusId = shift @words;
-      my $sysName = shift @words;
-      my $desc = join(" ", @words);
-      $inputlink = a({ -href => "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=$locusId"},
-                     $sysName || "VIMSS$locusId") . ": $desc";
-    } elsif ($uniprotname) {
-      # either sp|accession|identifier description OS=organism GN=genenname (and other attributes)
-      # or tr|...
-      # or for non reference proteomes, a different format (do not try to modify)
-      if ($input =~ m/^[a-z][a-z][|]([A-Z90-9_]+)[|]([A-Z90-9_]+) (.*)$/) {
-        my ($acc, $id, $desc) = ($1,$2,$3);
-        my $gn = "";
-        if ($desc =~ m/^(.*) OS=(.*)/) {
-          $desc = $1;
-          my $rest = $2;
-          $gn = $1 if $rest =~ m/ GN=(\S+) /;
-        }
-        $inputlink = a({ -href => "http://www.uniprot.org/uniprot/" . $acc },
-                       $acc) . " $desc";
-        $inputlink .= " ($gn)" if $gn ne "";
-      }
-    }
-    my $pblink = a({ -href => "litSearch.cgi?query=>${input}%0A$seqs{$input}",
-                     -title => "full PaperBLAST results for this protein"},
-                   "PaperBLAST");
-    my @header = ($inputlink . "<BR>" . small("is similar to:"), small($pblink));
-
-    my @show = ();
-    my $iRow = 0;
-    $nCollapseSet++;
-    my $indentStyle = "margin: 0em; margin-left: 3em;";
-    foreach my $row (@{ $parsed{$input} }) {
-      $iRow++;
-      my $chits = $row->{chits};
-      my @descs = ();
-      foreach my $chit (@$chits) {
-        # build a URL for this sequence, and, show an identifier
-        my $db = $chit->{db};
-        my $protId = $chit->{protId};
-        my $URL = "";
-        if ($db eq "reanno") {
-          my ($orgId, $locusId) = split /:/, $protId;
-          $URL = "http://fit.genomics.lbl.gov/cgi-bin/singleFit.cgi?orgId=$orgId&locusId=$locusId";
-        }  elsif ($db eq "REBASE") {
-          $URL = "http://rebase.neb.com/rebase/enz/${protId}.html";
-        } elsif ($db eq "CharProtDB") {
-          $URL = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/"; # the CharProtDB paper
-        } else {
-          die "No URL for $db" unless exists $sourceToURL{ $db };
-          $URL = $sourceToURL{$db} . $protId if $sourceToURL{$db};
-        }
-        my $showId = $protId;
-        $showId =~ s/^.*://;
-        $showId = $chit->{id2} if $db eq "reanno" && $chit->{id2};
-        $showId = "VIMSS$showId" if $showId =~ m/^\d+/ && $db eq "reanno";
-        $showId = "$showId / $chit->{id2}" if $db eq "SwissProt" && $chit->{id2};
-        
-        $showId = "$showId / $chit->{name}" if $chit->{name};
-        my @showOrgWords = split / /, $chit->{organism};
-        @showOrgWords = @showOrgWords[0..1] if @showOrgWords > 2;
-        push @descs, a({-href => $URL, -title => "from $db"}, $showId) . ": " . $chit->{desc}
-          . " " . small("from " . i(join(" ", @showOrgWords)));
-      }
-      my $percentcov = int($row->{coverage} * 100 + 0.5);
-      my $clen = $chits->[0]{protein_length};
-      my %trattr = ();
-      $trattr{"-bgcolor"} = $iRow % 2 ? "#F2F2F2" : "#FCF3CF";
-      if ($iRow > $maxHitsEach) {
-        $trattr{"-class"} = "collapse${nCollapseSet}";
-        $trattr{"-style"} = "display: none;"
-      }
-      my $showIdentity = int($row->{identity} + 0.5);
-      push @show, Tr(\%trattr,
-                     td({-align => "left", -valign => "top"},
-                        p({-style => $indentStyle}, join("<BR>", @descs))),
-                     td({-align => "right", -valign => "top"},
-                        a({ -href => "showAlign.cgi?" . join("&", "def1=$input", "seq1=$seqs{$input}", "acc2=$row->{hit}"),
-                            -title => "$row->{irange}/$seqlen{$input} aligns to $row->{hrange}/$clen (${percentcov}% coverage) of characterized protein" },
-                          small("${showIdentity}% id"))));
-    }
-    push @show, Tr(td({ -colspan => 2 },
-                      p({-style => $indentStyle},
-                        a({ -href => "javascript:void(0);", -onclick => "expander(this,$nCollapseSet)" }, small("More...")))))
-      if @show > $maxHitsEach;
-    unshift @show, Tr(td({-align => "left", -valign => "top"}, $header[0]),
-                      td({-align => "right", -valign => "top"}, $header[1]));
-    print p(table({-cellspacing => 0, -cellpadding => 2, -width => "100%" }, @show)), "\n";
+    &PrintHits($input, $seqs{$input}, $parsed{$input}, 0); # 0 for proteins
   }
+
+  # And search the six frame translation
+  my $ntfile; # genome sequence file (fasta nucleotide)
+  my $sc = []; # list of [scaffoldId, sequence], if ntfile does not already exist
+  if ($mogenome) {
+    my $taxId = $moTax{$mogenome}
+      || die "Invalid MicrobesOnline genome name $mogenome";
+    $genomeName = $mogenome;
+    print p("Loading the genome of $mogenome from", a({-href => "http://www.microbesonline.org/" }, "MicrobesOnline")), "\n";
+    $ntfile = "$tmpDir/mogenome_${taxId}.fna";
+    if (! -e $ntfile) {
+      my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
+        || die $DBI::errstr;
+      $sc = $mo_dbh->selectall_arrayref(qq{ SELECT scaffoldId, sequence
+                                               FROM Scaffold JOIN ScaffoldSeq USING (scaffoldId)
+                                               WHERE taxonomyId = ? AND isActive = 1 },
+                                           {}, $taxId);
+      die "Cannot fetch genome sequence for $taxId from MicrobesOnline\n"
+        unless @$sc > 0;
+    }
+  }
+
+  # create ntfile if necessary
+  if (@$sc > 0) {
+    my $totlen = 0;
+    foreach my $row (@$sc) {
+      $totlen += length($row->[1]);
+    }
+    if ($totlen > $maxNtLen) {
+      print p("Skipping the 6-frame translation because the genome is too large");
+    } else {
+      my $tmpfile = "$basefile.fna";
+      open(FNA, ">", $tmpfile) || die "Cannot write to $tmpfile";
+      foreach my $row (@$sc) {
+        my ($scaffoldId, $seq) = @$row;
+        print FNA ">${scaffoldId}\n$seq\n";
+      }
+      close(FNA) || die "Error writing to $tmpfile";
+      rename($tmpfile, $ntfile) || die "Rename $tmpfile to $ntfile failed";
+    }
+  }
+
+  # If we successfully created a genome file then
+  if (-e $ntfile) {
+    my $xfile = "$ntfile.aa6";
+    if (! -e $xfile) {
+      system("$usearch -fastx_findorfs $ntfile -aaout $xfile -orfstyle 7 -mincodons $minCodons >& /dev/null") == 0
+        || die "usearch findorfs failed: $!";
+    }
+    # And read the 6-frame translation
+    my %seqsx = ();
+    my $state = {};
+    open(my $fhx, "<", $xfile) || die "Cannot read $xfile";
+    while (my ($header, $sequence) = ReadFastaEntry($fhx,$state)) {
+      $seqsx{$header} = $sequence;
+    }
+    close($fhx) || die "Error reading $xfile";
+
+    print p("Running ublast against the 6-frame translation.",
+            "All reading frames of at least $minCodons codons are included."), "\n";
+    system("$usearch -ublast $chitsfaaFile -db $xfile -evalue $maxEval -blast6out $ublastFile >& /dev/null") == 0
+      || die "usearch failed: $!";
+
+    my $uhits = ParseUblast($ublastFile, \%seqsx, \%idToChit);
+    unlink($ublastFile);
+
+    my %maxCuratedScore = ();
+    while (my ($curated, $hits) = each %byCurated) {
+      my $maxscore = 0;
+      foreach my $hit (@$hits) {
+        $maxscore = $hit->{score} if $hit->{score} > $maxscore;
+      }
+      $maxCuratedScore{$curated} = $maxscore;
+    }
+    # Parse the 6-frame hits, ignoring any hits unless they are better than the best
+    # hit against the gene models
+    my %parsedx = (); # reading frame to list of hits
+    foreach my $row (@$uhits) {
+      push @{ $parsedx{$row->{input}} }, $row;
+    }
+    # filter each list -- unless a hit is noticeably better than the best hit to an annotated protein,
+    # it should be ignored. Also, if the best hit for a frame is masked in that way, mask all
+    # hits for that frame.
+    my $nWithHits = scalar(keys %parsedx);
+    foreach my $input (keys %parsedx) {
+      my @rows = sort { $b->{score} <=> $a->{score} } @{ $parsedx{$input} };
+      my @out = ();
+      foreach my $i (0..(scalar(@rows)-1)) {
+        my $row = $rows[$i];
+        my $query = $row->{hit};
+        if (!exists $maxCuratedScore{$query} || $row->{score} >= 1.1 * $maxCuratedScore{$query}) {
+          push @out, $row;
+        } else {
+          last if $i == 0; # best hit must be useful or else suppress the reading frame entirely
+        }
+      }
+      if (@out > 0) {
+        $parsedx{$input} = \@out;
+      } else {
+        delete $parsedx{$input};
+      }
+    }
+    my $nKept = scalar(keys %parsedx);
+    if ($nWithHits > 0) {
+      my @found = ("Found hits to $nWithHits reading frames.");
+      if ($nKept > 0) {
+        push @found,
+          qq{Except for $nKept reading frames, these were redundant with annotated proteins.
+             The remaining reading frames may be pseudogenes, omissions in the genome annotation,
+             or N-terminal extensions of annotated proteins.};
+      } else {
+        push @found, "These were all redundant with annotated proteins.";
+      }
+      print p(@found),"\n";
+    } else {
+      print p("Did not find any hits to reading frames.");
+    }
+    my @inputsX = sort { $parsedx{$b}[0]{score} <=> $parsedx{$a}[0]{score} } (keys %parsedx);
+    foreach my $input (@inputsX) {
+      &PrintHits($input, $seqsx{$input}, $parsedx{$input}, 1); # 1 for 6-frame translation
+    }
+  }
+  unlink($chitsfaaFile);
+
+
 } else {
   # Show the query form.
   # Note that failed uploads reach here because CGI sets upfile to undef
@@ -591,3 +612,155 @@ END
 
 print end_html;
 exit(0);
+
+sub PrintHits($$$$) {
+  my ($input, $seq, $hits, $sixframe) = @_;
+  my $inputlink = $sixframe ? SixFrameLink($input) : ProteinLink($input);
+  my $seqtype = $sixframe ? "reading frame" : "protein";
+  my $pblink = small(a({ -href => "litSearch.cgi?query=>${input}%0A${seq}",
+                         -title => "full PaperBLAST results for this $seqtype"},
+                       "PaperBLAST"));
+
+  my @show = ();
+  my $iRow = 0;
+  $nCollapseSet++;
+  my $indentStyle = "margin: 0em; margin-left: 3em;";
+  foreach my $row (@$hits) {
+    $iRow++;
+    my $chits = $row->{chits};
+    my @descs = ();
+    foreach my $chit (@$chits) {
+      # build a URL for this sequence, and, show an identifier
+      my $db = $chit->{db};
+      my $protId = $chit->{protId};
+      my $URL = "";
+      if ($db eq "reanno") {
+        my ($orgId, $locusId) = split /:/, $protId;
+        $URL = "http://fit.genomics.lbl.gov/cgi-bin/singleFit.cgi?orgId=$orgId&locusId=$locusId";
+      }  elsif ($db eq "REBASE") {
+        $URL = "http://rebase.neb.com/rebase/enz/${protId}.html";
+      } elsif ($db eq "CharProtDB") {
+        $URL = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/"; # the CharProtDB paper
+      } else {
+        die "No URL for $db" unless exists $sourceToURL{ $db };
+        $URL = $sourceToURL{$db} . $protId if $sourceToURL{$db};
+      }
+      my $showId = $protId;
+      $showId =~ s/^.*://;
+      $showId = $chit->{id2} if $db eq "reanno" && $chit->{id2};
+      $showId = "VIMSS$showId" if $showId =~ m/^\d+/ && $db eq "reanno";
+      $showId = "$showId / $chit->{id2}" if $db eq "SwissProt" && $chit->{id2};
+      
+      $showId = "$showId / $chit->{name}" if $chit->{name};
+      my @showOrgWords = split / /, $chit->{organism};
+      @showOrgWords = @showOrgWords[0..1] if @showOrgWords > 2;
+      push @descs, a({-href => $URL, -title => "from $db"}, $showId) . ": " . $chit->{desc}
+        . " " . small("from " . i(join(" ", @showOrgWords)));
+    }
+    my $percentcov = int($row->{coverage} * 100 + 0.5);
+    my $clen = $chits->[0]{protein_length};
+    my %trattr = ();
+    $trattr{"-bgcolor"} = $iRow % 2 ? "#F2F2F2" : "#FCF3CF";
+    if ($iRow > $maxHitsEach) {
+      $trattr{"-class"} = "collapse${nCollapseSet}";
+      $trattr{"-style"} = "display: none;"
+    }
+    my $showIdentity = int($row->{identity} + 0.5);
+    my $seqlen = length($seq);
+    push @show, Tr(\%trattr,
+                   td({-align => "left", -valign => "top"},
+                      p({-style => $indentStyle}, join("<BR>", @descs))),
+                   td({-align => "right", -valign => "top"},
+                      a({ -href => "showAlign.cgi?" . join("&", "def1=$input", "seq1=$seq", "acc2=$row->{hit}"),
+                          -title => "$row->{irange}/$seqlen aligns to $row->{hrange}/$clen (${percentcov}% coverage) of characterized protein" },
+                        small("${showIdentity}% id"))));
+  }
+  push @show, Tr(td({ -colspan => 2 },
+                    p({-style => $indentStyle},
+                      a({ -href => "javascript:void(0);", -onclick => "expander(this,$nCollapseSet)" }, small("More...")))))
+    if @show > $maxHitsEach;
+  unshift @show, Tr(td({-align => "left", -valign => "top"}, $inputlink . "<BR>" . small("is similar to:")),
+                    td({-align => "right", -valign => "top"}, $pblink));
+  print p(table({-cellspacing => 0, -cellpadding => 2, -width => "100%" }, @show)), "\n";
+}
+
+sub ProteinLink($) {
+    my ($input) = @_;
+    my $inputlink = $input;
+    if ($orgId) {
+      my @words = split / /, $input;
+      my $locusId = shift @words;
+      my $sysName = shift @words;
+      my $desc = join(" ", @words);
+      $inputlink = ($sysName || $locusId) . ": $desc";
+      $inputlink = a({ -href => "http://fit.genomics.lbl.gov/cgi-bin/singleFit.cgi?orgId=${orgId}&locusId=${locusId}" },
+                     $inputlink)
+        if exists $orginfo->{$orgId};
+    } elsif ($mogenome) {
+      my @words = split / /, $input;
+      my $locusId = shift @words;
+      my $sysName = shift @words;
+      my $desc = join(" ", @words);
+      $inputlink = a({ -href => "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=$locusId"},
+                     $sysName || "VIMSS$locusId") . ": $desc";
+    } elsif ($uniprotname) {
+      # either sp|accession|identifier description OS=organism GN=genename (and other attributes)
+      # or tr|...
+      # or for non reference proteomes, a different format (do not try to modify)
+      if ($input =~ m/^[a-z][a-z][|]([A-Z90-9_]+)[|]([A-Z90-9_]+) (.*)$/) {
+        my ($acc, $id, $desc) = ($1,$2,$3);
+        my $gn = "";
+        if ($desc =~ m/^(.*) OS=(.*)/) {
+          $desc = $1;
+          my $rest = $2;
+          $gn = $1 if $rest =~ m/ GN=(\S+) /;
+        }
+        $inputlink = a({ -href => "http://www.uniprot.org/uniprot/" . $acc },
+                       $acc) . " $desc";
+        $inputlink .= " ($gn)" if $gn ne "";
+      }
+    }
+    return $inputlink;
+}
+
+sub SixFrameLink($) {
+  my ($input) = @_;
+  $input =~ m/^(.*)[|]([-+]\d):(\d+)-(\d+)[(](\d+)[)]$/
+    || die "Cannot parse reading frame name $input";
+  my ($scaffoldId, $frame, $begin, $end, $sclen) = ($1,$2,$3,$4,$5);
+  die "Bad coordinates $begin:$end from reading frame name $input"
+    unless $begin <= $end && $begin >= 1 && $end <= $sclen;
+  ($begin,$end) = ($end,$begin) if $frame < 0;
+  my $show = "${begin}-${end} (frame $frame) on scaffold $scaffoldId";
+  if ($mogenome) {
+    my $URL = "http://www.microbesonline.org/cgi-bin/browser?"
+      . "mode=4;data=s${scaffoldId}:nReading Frame $frame:f${begin}t${end}:dFrom $begin to $end (frame $frame)";
+    $input = a({ -href => $URL, -title => "MicrobesOnline genome browser" }, $show);
+  }
+  return $input;
+}
+
+sub ParseUblast($$$) {
+  my ($file, $subjects, $idToChit) = @_;
+  open (my $fh, "<", $file) || die "Cannot read $file";
+  my @hits = ();
+  while(<$fh>) {
+    chomp;
+    my ($query, $subject, $identity, $alen, $mm, $gap, $qbeg, $qend, $sbeg, $send, $eval, $bits)
+      = split /\t/, $_;
+    $query =~ s/^lcl[|]//;
+    $query =~ s/ unnamed protein product$//;
+    die "Unrecognized subject $subject" unless exists $subjects->{$subject};
+    die "Unrecognized query $query" unless exists $idToChit->{$query};
+    my $chits = $idToChit->{$query};
+    my $clen = $chits->[0]{protein_length};
+    my $coverage = ($qend - $qbeg + 1) / $clen;
+    my $row = { input => $subject, hit => $query,
+                identity => $identity, coverage => $coverage, score => $coverage * $identity,
+                irange => "$sbeg:$send", hrange => "$qbeg:$qend",
+                chits => $chits };
+    push @hits, $row;
+  }
+  close($fh) || die "Error reading $file";
+  return \@hits;
+}
