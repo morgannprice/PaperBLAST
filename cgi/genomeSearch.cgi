@@ -420,7 +420,12 @@ if ($hasGenome && $query) {
   # And search the six frame translation
   my $ntfile; # genome sequence file (fasta nucleotide)
   my $sc = []; # list of [scaffoldId, sequence], if ntfile does not already exist
-  if ($mogenome) {
+  if ($orgId) {
+    $ntfile = "$tmpDir/fbrowse_${orgId}.fna";
+    $sc = $fbdbh->selectall_arrayref("SELECT scaffoldId, sequence FROM ScaffoldSeq WHERE orgId = ?",
+                                     {}, $orgId)
+      unless -e $ntfile;
+  } elsif ($mogenome) {
     my $taxId = $moTax{$mogenome}
       || die "Invalid MicrobesOnline genome name $mogenome";
     $genomeName = $mogenome;
@@ -524,7 +529,7 @@ if ($hasGenome && $query) {
       if ($nKept > 0) {
         push @found,
           qq{Except for $nKept reading frames, these were redundant with annotated proteins.
-             The remaining reading frames may be pseudogenes, omissions in the genome annotation,
+             These remaining reading frames may be pseudogenes, omissions in the genome annotation,
              or N-terminal extensions of annotated proteins.};
       } else {
         push @found, "These were all redundant with annotated proteins.";
@@ -671,9 +676,10 @@ sub PrintHits($$$$) {
                    td({-align => "left", -valign => "top"},
                       p({-style => $indentStyle}, join("<BR>", @descs))),
                    td({-align => "right", -valign => "top"},
-                      a({ -href => "showAlign.cgi?" . join("&", "def1=$input", "seq1=$seq", "acc2=$row->{hit}"),
-                          -title => "$row->{irange}/$seqlen aligns to $row->{hrange}/$clen (${percentcov}% coverage) of characterized protein" },
-                        small("${showIdentity}% id"))));
+                      small(a({ -href => "showAlign.cgi?" . join("&", "def1=$input", "seq1=$seq", "acc2=$row->{hit}"),
+                                -title => "$row->{irange}/$seqlen aligns to $row->{hrange}/$clen of characterized protein" },
+                              "${showIdentity}% id")
+                            . ",<BR>${percentcov}% cov")));
   }
   push @show, Tr(td({ -colspan => 2 },
                     p({-style => $indentStyle},
@@ -730,11 +736,19 @@ sub SixFrameLink($) {
   my ($scaffoldId, $frame, $begin, $end, $sclen) = ($1,$2,$3,$4,$5);
   die "Bad coordinates $begin:$end from reading frame name $input"
     unless $begin <= $end && $begin >= 1 && $end <= $sclen;
-  ($begin,$end) = ($end,$begin) if $frame < 0;
+  # beg2 and end2 have beg2 > end2 if on - strand
+  my ($beg2, $end2) = ($begin, $end);
+  ($beg2,$end2) = ($end2,$beg2) if $frame < 0;
   my $show = "${begin}-${end} (frame $frame) on scaffold $scaffoldId";
-  if ($mogenome) {
+  if ($orgId) {
+    my $objspec = join(":",
+                       "b", $begin, "e", $end, "n", uri_escape("frame $frame"),
+                       "s", $frame < 0 ? -1 : 1);
+    my $URL = "http://fit.genomics.lbl.gov/cgi-bin/genomeBrowse.cgi?orgId=$orgId&scaffoldId=$scaffoldId&object=$objspec";
+    $input = a({ -href => $URL, -title => "Fitness browser"}, $show);
+  } elsif ($mogenome) {
     my $URL = "http://www.microbesonline.org/cgi-bin/browser?"
-      . "mode=4;data=s${scaffoldId}:nReading Frame $frame:f${begin}t${end}:dFrom $begin to $end (frame $frame)";
+      . "mode=4;data=s${scaffoldId}:nReading Frame $frame:f${beg2}t${end2}:dFrom $beg2 to $end2 (frame $frame)";
     $input = a({ -href => $URL, -title => "MicrobesOnline genome browser" }, $show);
   }
   return $input;
