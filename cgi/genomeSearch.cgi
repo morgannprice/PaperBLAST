@@ -44,7 +44,7 @@ my $minCodons = 30; # for reading frames
 
 # from a defline to a brief description and a link to the source
 sub ProteinLink($);
-sub SixFrameLink($);
+sub SixFrameLink($$);
 
 # Given a ublast file, a hash with the valid subject ids, and idToChit to describe the queries and their lengths,
 # returns a reference to a list of hashes. Each row includes
@@ -651,7 +651,7 @@ exit(0);
 
 sub PrintHits($$$$) {
   my ($input, $seq, $hits, $sixframe) = @_;
-  my $inputlink = $sixframe ? SixFrameLink($input) : ProteinLink($input);
+  my $inputlink = $sixframe ? SixFrameLink($input, $hits) : ProteinLink($input);
   my $seqtype = $sixframe ? "reading frame" : "protein";
   my $pblink = small(a({ -href => "litSearch.cgi?query=>${input}%0A${seq}",
                          -title => "full PaperBLAST results for this $seqtype"},
@@ -760,8 +760,8 @@ sub ProteinLink($) {
     return $inputlink;
 }
 
-sub SixFrameLink($) {
-  my ($input) = @_;
+sub SixFrameLink($$) {
+  my ($input, $hits) = @_;
   $input =~ m/^(.*)[|]([-+]\d):(\d+)-(\d+)[(](\d+)[)]$/
     || die "Cannot parse reading frame name $input";
   my ($scaffoldId, $frame, $begin, $end, $sclen) = ($1,$2,$3,$4,$5);
@@ -771,15 +771,38 @@ sub SixFrameLink($) {
   my ($beg2, $end2) = ($begin, $end);
   ($beg2,$end2) = ($end2,$beg2) if $frame < 0;
   my $show = "${begin}-${end} (frame $frame) on scaffold $scaffoldId";
+
+  # If linking to a genome browser (either MicrobesOnline or the Fitness Browser), show
+  # two objects, one for the entire frame and one for the expanse that has hits.
+  my $minBeg = (sort {$a<=>$b} map { my ($b,$e) = split /:/, $_->{irange}; $b;  } @$hits)[0];
+  my $maxEnd = (sort {$b<=>$a} map { my ($b,$e) = split /:/, $_->{irange}; $e;  } @$hits)[0];
+  my $sign = $frame < 0 ? -1 : 1;
   if ($orgId) {
-    my $objspec = join(":",
-                       "b", $begin, "e", $end, "n", uri_escape("frame $frame"),
-                       "s", $frame < 0 ? -1 : 1);
-    my $URL = "http://fit.genomics.lbl.gov/cgi-bin/genomeBrowse.cgi?orgId=$orgId&scaffoldId=$scaffoldId&object=$objspec";
+    my $objspec1 = join(":",
+                       "b", $begin, "e", $end,
+                        "n", uri_escape("frame $frame"),
+                       "s", $sign);
+    my $objspec2 = join(":",
+                        "b", $sign > 0 ? $begin + ($minBeg-1) * 3 : $end - ($maxEnd-1) * 3,
+                        "e", $sign > 0 ? $begin + ($maxEnd-1) * 3 : $end - ($minBeg-1) * 3,
+                        "n", uri_escape("region with similarity"),
+                        "s", $sign);
+    my $URL = "http://fit.genomics.lbl.gov/cgi-bin/genomeBrowse.cgi?orgId=$orgId&scaffoldId=$scaffoldId&object=$objspec1&object=$objspec2";
     $input = a({ -href => $URL, -title => "Fitness browser"}, $show);
   } elsif ($mogenome) {
+    my $object1 = join(":",
+                       "f" . $beg2,
+                       "t" . $end2,
+                       "n" . uri_escape("Reading Frame $frame"),
+                       "d" . uri_escape("From $beg2 to $end2 (frame $frame)"));
+    # want begin > end if on - strand
+    my $object2 = join(":",
+                       "f" . ($sign > 0 ? $begin + ($minBeg-1) * 3 : $end - ($minBeg-1)*3),
+                       "t" . ($sign > 0 ? $begin + ($maxEnd-1) * 3 : $end - ($maxEnd-1)*3),
+                       "n" . uri_escape("region with similarity"),
+                       "d" . uri_escape("region with similarity ($minBeg/$maxEnd)"));
     my $URL = "http://www.microbesonline.org/cgi-bin/browser?"
-      . "mode=4;data=s${scaffoldId}:nReading Frame $frame:f${beg2}t${end2}:dFrom $beg2 to $end2 (frame $frame)";
+                       . "mode=4;data=s${scaffoldId}:$object1:$object2";
     $input = a({ -href => $URL, -title => "MicrobesOnline genome browser" }, $show);
   }
   return $input;
