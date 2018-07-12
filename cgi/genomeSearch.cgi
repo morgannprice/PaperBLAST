@@ -306,6 +306,8 @@ if ($hasGenome && $query) {
   # Validate the fasta input
   my %seqs = (); # header (with > removed) to sequence
   my $state = {};
+  my $totlen = 0;
+  my $nNucChar = 0;
   while (my ($header, $sequence) = ReadFastaEntry($fh,$state)) {
     die "Duplicate sequence for $header\n" if exists $seqs{$header};
     die ". found in sequence for $header\n" if $sequence =~ m/[.]/;
@@ -313,11 +315,32 @@ if ($hasGenome && $query) {
     $sequence =~ s/[*]//g;
     die "Invalid/empty sequence for $header\n" if $sequence eq "";
     $seqs{$header} = $sequence;
+    $totlen += length($sequence);
+    $nNucChar += ($sequence =~ tr/ACGTUN//);
   }
   close($fh) || die "Error reading genome file";
   die "Too many sequences: limit $maxseqs\n" if scalar(keys %seqs) > $maxseqs;
   die "No sequences in genome file\n" if scalar(keys %seqs) == 0;
+  if ($totlen >= $maxNtLen) {
+    print p(qq{Sorry, the input is too long. Please choose a different genome or proteome.});
+    print end_html;
+    exit(0);
+  }
+
   print p("Found", scalar(keys %seqs), "sequences in $upfile.\n") if $upfile;
+
+  my $isNuc = 0;
+  my $fracNuc = $nNucChar / $totlen;
+  if ($fracNuc >= 0.9) {
+    if ($upfile) {
+      $isNuc  = 1;
+    } else {
+      print p("The loaded sequence is", int(100*$fracNuc)."%", "nucleotide characters, but protein sequences were expected.",
+              "Please try a different genome.");
+      print end_html;
+      exit(0);
+    }
+  }
 
   # Find relevant sequences in CuratedGene
   my $maxhits = 1000;
@@ -353,7 +376,7 @@ if ($hasGenome && $query) {
 
   my $listFile = "$basefile.list";
   my $chitsfaaFile = "$basefile.chits.faa";
-  my $genomefaaFile = "$basefile.genome.faa";
+  my $genomefaaFile = "$basefile.genome.faa"; # this is actually nt sequence if $upfile and $isNuc
   my $ublastFile = "$basefile.ublast";
 
   # Make the input file for fastacmd
@@ -381,40 +404,43 @@ if ($hasGenome && $query) {
   }
   close(FAA) || die "Error writing to $genomefaaFile";
 
-  print p("Running ublast with E &le; $maxEval\n");
-  system("$usearch -ublast $chitsfaaFile -db $genomefaaFile -evalue $maxEval -blast6out $ublastFile >& /dev/null") == 0
-           || die "usearch failed: $!";
-  unlink($genomefaaFile);
-
-  my $uhits = ParseUblast($ublastFile, \%seqs, \%idToChit);
-  unlink($ublastFile);
-
-  my $URLq = "genomeSearch.cgi";
-  if ($orgId) {
-    $URLq .= "?orgId=$orgId";
-  } elsif ($mogenome) {
-    $URLq .= "?mogenome=$mogenome";
-  } elsif ($uniprotname) {
-    $URLq .= "?uniprotname=" . uri_escape($uniprotname);
-  }
-
   my %parsed = (); # input sequence to list of hits
   my %byCurated = (); # curated to list of hits
-  foreach my $row (@$uhits) {
-    push @{ $parsed{$row->{input}} }, $row;
-    push @{ $byCurated{$row->{hit}} }, $row;
-  }
   my %maxScore = ();
-  foreach my $input (keys %parsed) {
-    my @rows = sort { $b->{score} <=> $a->{score} } @{ $parsed{$input} };
-    $parsed{$input} = \@rows;
-    $maxScore{$input} = $rows[0]{score};
-  }
-  print p("Found", scalar(keys %parsed), "relevant proteins in $genomeName, or try",
-          a({-href => $URLq}, "another query"))."\n";
-  my @inputs = sort { $maxScore{$b} <=> $maxScore{$a} } (keys %maxScore);
-  foreach my $input (@inputs) {
-    &PrintHits($input, $seqs{$input}, $parsed{$input}, 0); # 0 for proteins
+
+  unless($isNuc) {
+    print p("Running ublast with E &le; $maxEval\n");
+    system("$usearch -ublast $chitsfaaFile -db $genomefaaFile -evalue $maxEval -blast6out $ublastFile >& /dev/null") == 0
+      || die "usearch failed: $!";
+    unlink($genomefaaFile);
+
+    my $uhits = ParseUblast($ublastFile, \%seqs, \%idToChit);
+    unlink($ublastFile);
+
+    my $URLq = "genomeSearch.cgi";
+    if ($orgId) {
+      $URLq .= "?orgId=$orgId";
+    } elsif ($mogenome) {
+      $URLq .= "?mogenome=$mogenome";
+    } elsif ($uniprotname) {
+      $URLq .= "?uniprotname=" . uri_escape($uniprotname);
+    }
+
+    foreach my $row (@$uhits) {
+      push @{ $parsed{$row->{input}} }, $row;
+      push @{ $byCurated{$row->{hit}} }, $row;
+    }
+    foreach my $input (keys %parsed) {
+      my @rows = sort { $b->{score} <=> $a->{score} } @{ $parsed{$input} };
+      $parsed{$input} = \@rows;
+      $maxScore{$input} = $rows[0]{score};
+    }
+    print p("Found", scalar(keys %parsed), "relevant proteins in $genomeName, or try",
+            a({-href => $URLq}, "another query"))."\n";
+    my @inputs = sort { $maxScore{$b} <=> $maxScore{$a} } (keys %maxScore);
+    foreach my $input (@inputs) {
+      &PrintHits($input, $seqs{$input}, $parsed{$input}, 0); # 0 for proteins
+    }
   }
 
   # And search the six frame translation
@@ -463,8 +489,10 @@ if ($hasGenome && $query) {
     }
   }
 
+  $ntfile = $genomefaaFile if $isNuc;
+
   # If we successfully created a genome file then
-  if (-e $ntfile) {
+  if (defined $ntfile && -e $ntfile) {
     my $xfile = "$ntfile.aa6";
     if (! -e $xfile) {
       system("$usearch -fastx_findorfs $ntfile -aaout $xfile -orfstyle 7 -mincodons $minCodons >& /dev/null") == 0
@@ -542,10 +570,13 @@ if ($hasGenome && $query) {
     foreach my $input (@inputsX) {
       &PrintHits($input, $seqsx{$input}, $parsedx{$input}, 1); # 1 for 6-frame translation
     }
+    if ($isNuc) {
+      # no caching of user input
+      unlink($ntfile); # also genomeFaaFile, but actually the nt input
+      unlink($xfile);
+    }
   }
   unlink($chitsfaaFile);
-
-
 } else {
   # Show the query form.
   # Note that failed uploads reach here because CGI sets upfile to undef
@@ -587,7 +618,7 @@ END
 ;
   push @genomeSelectors,
     $uniprot_selector,
-    p("Or upload proteins in FASTA format (up to $maxseqsComma amino acid sequences or $maxMB MB)",
+    p("Or upload amino acid or nucleotide sequences in FASTA format<BR>(up to $maxMB MB and up to $maxseqsComma sequences)",
       br(),
       filefield(-name=>'file', -size=>50));
   print
