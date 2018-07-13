@@ -5,7 +5,7 @@ use Getopt::Long;
 use IO::Handle; # for autoflush
 
 my $usage = <<END
-loadDuplicates.pl -dir dir
+derepSequences.pl -dir dir
 
 Given a directory that contains litsearch.faa and the sql database
 (litsearch.db), compute the dereplicated sequences (uniq.faa) and
@@ -32,8 +32,8 @@ my $usearch = "$Bin/usearch";
 die "No such executable: $usearch\n" unless -x $usearch;
 
 unlink("$dir/uc.derep");
-system($usearch, "-quiet", "-derep_fulllength", $faaIn, "-uc", "$dir/uc.derep", "-fastaout", $faaOut) == 0
-    || die "Error running usearch -derep_fulllength: $!";
+system($usearch, "-quiet", "-fastx_uniques", $faaIn, "-uc", "$dir/uc.derep", "-fastaout", $faaOut) == 0
+    || die "Error running usearch -fastx_uniques: $!";
 
 open(UC, "<", "$dir/uc.derep") || die "Cannot read $dir/uc.derep";
 open (OUT, ">", "$dir/SeqToDuplicate") || die "Cannot write to $dir/SeqToDuplicate";

@@ -12,8 +12,8 @@ on other Unix or MacOS as well. All of the code is written in perl.
 Please put the blast executables (formatdb,
 blastall, and fastacmd) in the bin/blast/ subdirectory.
 
-Please put the usearch executable in the bin/ subdirectory. I have only
-tested usearch version 8.0.
+Please put the usearch executable in the bin/ subdirectory. I am
+currently using usearch 10.0.
 
 The cgi/ subdirectory contains the common gateway interface script,
 litSearch.cgi, which is the interface for using PaperBLAST.
