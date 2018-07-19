@@ -78,7 +78,7 @@ If you want to run the CGI scripts, you will also need
 
 http://papers.genomics.lbl.gov/data/stats
 
-and you will need to format the BLAST database with
+Place all of these files in the data/ subdirectory of the mian PaperBLAST directory and format the BLAST database with
 
 	formatdb -p T -i uniq.faa
 
