@@ -61,7 +61,7 @@ showAlign.cgi) requires BioPerl. (See alnreport.pl) The page should
 work correctly without bioperl but would not report the conservation
 of functional residues.
 
-# Downloading the database
+# <a name="download"></a>Downloading the database
 
 The April 2017 version of the PaperBLAST database is avalable at
 
