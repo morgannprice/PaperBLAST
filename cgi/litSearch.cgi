@@ -142,11 +142,12 @@ description of the protein's function.  Many of these entries also
 link to articles in <A
 HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A>.
 
-<P>For more information see the <A title="PaperBLAST: Text Mining Papers for Information about Homologs" HREF="http://msystems.asm.org/content/2/4/e00039-17">PaperBLAST paper</A> (<i>mSystems</i> 2017) or the
-<A
-HREF="https://github.com/morgannprice/PaperBLAST">code</A>.
+<P>For more information see the
+<A title="PaperBLAST: Text Mining Papers for Information about Homologs" HREF="http://msystems.asm.org/content/2/4/e00039-17">PaperBLAST paper</A> (<i>mSystems</i> 2017)
+or the <A HREF="https://github.com/morgannprice/PaperBLAST">code</A>.
+You can download PaperBLAST's database <A HREF="https://github.com/morgannprice/PaperBLAST#download">here</A>.
 
-Also note some changes since the paper was written:
+<P>Changes since the paper was written:
 
 <UL>
 <LI>February 2018: the alignment page reports the conservation of the hit's functional sites (if available from from Swiss-Prot or UniProt)
