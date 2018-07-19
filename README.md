@@ -71,13 +71,16 @@ The current database is available as a FASTA file and a sqlite3
 relational database (which is large! 1.5 GB as of July 2017)
 
 http://papers.genomics.lbl.gov/data/uniq.faa
+
 http://papers.genomics.lbl.gov/data/litsearch.db
 
 If you want to run the CGI scripts, you will also need
 
 http://papers.genomics.lbl.gov/data/stats
 
-and you will need to format the BLAST database with formatdb -p T -i uniq.faa
+and you will need to format the BLAST database with
+
+	formatdb -p T -i uniq.faa
 
 # Building the Database
 
