@@ -38,11 +38,18 @@ my $nCPU = 4;
 my $base = "../data";
 my $blastdb = "$base/uniq.faa";
 my $sqldb = "$base/litsearch.db";
+my $fastacmd = "../bin/blast/fastacmd";
 die "No such executable: $blastall" unless -x $blastall;
+die "No such executable: $fastacmd" unless -x $fastacmd;
 die "No such file: $blastdb" unless -e $blastdb;
 die "No such file: $sqldb" unless -e $sqldb;
 
-# If a gene has more papers than this, there is a "more" lnik to show all the information
+# A symbolic link to the Fitness Browser data directory is used (if it exists)
+# to allow quick access to proteins from the fitness browser.
+# That directory must include feba.db (sqlite3 database) and aaseqs (in fasta format)
+my $fbdata = "../fbrowse_data"; # path relative to the cgi directory
+
+# If a gene has more papers than this, there is a "more" link to show all the information
 # for that gene on a separate page
 
 my $cgi=CGI->new;
@@ -254,22 +261,27 @@ if ($query ne "" && $query !~ m/\n/ && $query !~ m/ / && $query =~ m/[^A-Z*]/) {
 
   # Is it in the database?
   if (!defined $query) {
-    my $gene = $dbh->selectrow_hashref("SELECT * from Gene WHERE geneId = ?", {}, $short);
-    my $geneId;
-    if ($gene) {
-      $geneId = $gene->{geneId};
-    } else {
+    my ($gene, $geneId);
+    $gene = $dbh->selectrow_hashref("SELECT * from Gene WHERE geneId = ?", {}, $short);
+    $geneId = $gene->{geneId} if $gene;
+    if (! $gene) {
       $gene = $dbh->selectrow_hashref("SELECT * from CuratedGene WHERE db = 'SwissProt' AND protId = ?",
-                                      {}, $short);
+                                               {}, $short);
       $geneId = "SwissProt::".$short if $gene;
     }
+    if (! $gene && $short =~ m/^(.*)::(.*)$/) {
+      my ($db,$protId) = ($1,$2);
+      $gene = $dbh->selectrow_hashref("SELECT * from CuratedGene WHERE db = ? AND protId = ?",
+                                      {}, $db, $protId);
+      $geneId = "${db}::${protId}" if $gene;
+    }
+
     if (defined $geneId) {
       # look for the duplicate
       my $desc = $gene->{desc};
       my $org = $gene->{organism};
       my $dup = $dbh->selectrow_hashref("SELECT * from SeqToDuplicate WHERE duplicate_id = ?", {}, $geneId);
       my $seqId = $dup ? $dup->{sequence_id} : $geneId;
-      my $fastacmd = "../bin/blast/fastacmd";
       die "No such executable: $fastacmd" unless -x $fastacmd;
       # Note some genes are dropped from the database during construction so it
       # may fail to find it
@@ -282,7 +294,32 @@ if ($query ne "" && $query !~ m/\n/ && $query !~ m/ / && $query =~ m/[^A-Z*]/) {
           die "Invalid output from fastacmd" unless $line =~ m/^[A-Z*]+$/;
           $seq .= $line;
         }
+        close(SEQ) || die "Error reading $seqFile";
         $query = ">$geneId $desc ($org)\n$seq\n";
+      }
+    }
+  }
+
+  # is it a fitness browser locus tag?
+  if (!defined $query && $short =~ m/^[0-9a-zA-Z_]+$/ && -e $fbdata ) {
+    my $fbdbh = DBI->connect("dbi:SQLite:dbname=$fbdata/feba.db","","",{ RaiseError => 1 }) || die $DBI::errstr;
+    my $gene = $fbdbh->selectrow_hashref("SELECT * FROM Gene WHERE locusId = ? OR sysName = ? OR gene = ? LIMIT 1",
+                                         {}, $short, $short, $short);
+    if ($gene) {
+      my $seqId = $gene->{orgId} . ":" . $gene->{locusId};
+      die "Missing aaseqs file for fitness browser: $fbdata/aaseqs\n"
+        unless -e "$fbdata/aaseqs";
+      if (system($fastacmd, "-s", $seqId, "-o", $seqFile, "-d", "$fbdata/aaseqs") == 0) {
+        open(SEQ, "<", $seqFile) || die "Cannot read $seqFile";
+        my $seq = "";
+        while (my $line = <SEQ>) {
+          next if $line =~ m/^>/;
+          chomp $line;
+          die "Invalid output from fastacmd" unless $line =~ m/^[A-Z*]+$/;
+          $seq .= $line;
+        }
+        close(SEQ) || die "Error reading $seqFile";
+        $query = ">$seqId $gene->{desc}\n$seq\n";
       }
     }
   }
