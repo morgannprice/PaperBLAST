@@ -319,7 +319,12 @@ if ($query ne "" && $query !~ m/\n/ && $query !~ m/ / && $query =~ m/[^A-Z*]/) {
           $seq .= $line;
         }
         close(SEQ) || die "Error reading $seqFile";
-        $query = ">$seqId $gene->{desc}\n$seq\n";
+        my $showId = $gene->{sysName} || $gene->{locusId};
+        my $org = $fbdbh->selectrow_hashref("SELECT * FROM Organism WHERE orgId = ?",
+                                            {}, $gene->{orgId})
+          || die "No such organism in $fbdata/feba.db: $gene->{orgId}";
+        my $orgdesc = join(" ", $org->{genus}, $org->{species}, $org->{strain});
+        $query = ">$showId $gene->{gene} $gene->{desc} ($orgdesc)\n$seq\n";
       }
     }
   }
