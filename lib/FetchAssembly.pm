@@ -9,7 +9,7 @@ use Time::HiRes qw{gettimeofday};
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw(FetchAssemblyInfo FetchAssemblyFaa);
+@EXPORT = qw(FetchAssemblyInfo FetchAssemblyFaa FetchAssemblyFna);
 
 my $maxfetch = 20;
 sub GetMaxFetch() {
@@ -71,12 +71,20 @@ sub FetchAssemblyInfo($) {
   return @out;
 }
 
-# Given the assembly hash, fetch it, uncompress it, and write it to the given file
+# Given the assembly hash, fetch protein fasta, uncompress it, and write it to the given file
 # Writes to a temporary file to avoid overwriting by another process
 # Returns success or failure
 sub FetchAssemblyFaa($$) {
   my ($assembly, $outfile) = @_;
   return FetchAssemblyFileGz($assembly, "protein.faa", $outfile);
+}
+
+# Given the assembly hash, fetch protein fasta, uncompress it, and write it to the given file
+# Writes to a temporary file to avoid overwriting by another process
+# Returns success or failure
+sub FetchAssemblyFna($$) {
+  my ($assembly, $outfile) = @_;
+  return FetchAssemblyFileGz($assembly, "genomic.fna", $outfile);
 }
 
 sub FetchAssemblyFileGz($$$) {
