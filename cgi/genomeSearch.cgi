@@ -381,6 +381,17 @@ if ($hasGenome && $query) {
     die "Unreachable";
   }
 
+  my $URLnoq = "genomeSearch.cgi";
+  if ($orgId) {
+    $URLnoq .= "?orgId=$orgId";
+  } elsif ($mogenome) {
+    $URLnoq .= "?mogenome=" . uri_escape($mogenome);
+  } elsif ($uniprotname) {
+    $URLnoq .= "?uniprotname=" . uri_escape($uniprotname);
+  } elsif ($assembly) {
+    $URLnoq .= "?assemblyId=" . uri_escape($assembly->{id});
+  }
+
   # Validate the fasta input
   my %seqs = (); # header (with > removed) to sequence
   my $state = {};
@@ -431,7 +442,8 @@ if ($hasGenome && $query) {
     exit(0);
   }
   if (@$chits == 0) {
-    print p(qq{None of the curated entries in PaperBLAST's database match '$query'. Please try another query.});
+    print p(qq{None of the curated entries in PaperBLAST's database match '$query'. Please try},
+            a({ -href => $URLnoq }, "another query") . ".");
     print end_html;
     exit(0);
   }
@@ -442,7 +454,8 @@ if ($hasGenome && $query) {
 
     my @keep = grep { $_->{desc} =~ m/\b$quoted\b/i } @$chits;
     if (@keep == 0) {
-      print p(qq{None of the curated entries in PaperBLAST's database match '$query' as complete words. Please try another query.});
+      print p(qq{None of the curated entries in PaperBLAST's database match '$query' as complete words. Please try},
+              a({ -href => $URLnoq }, "another query") . ".");
       print end_html;
       exit(0);
     }
@@ -495,17 +508,6 @@ if ($hasGenome && $query) {
     my $uhits = ParseUblast($ublastFile, \%seqs, \%idToChit);
     unlink($ublastFile);
 
-    my $URLq = "genomeSearch.cgi";
-    if ($orgId) {
-      $URLq .= "?orgId=$orgId";
-    } elsif ($mogenome) {
-      $URLq .= "?mogenome=$mogenome";
-    } elsif ($uniprotname) {
-      $URLq .= "?uniprotname=" . uri_escape($uniprotname);
-    } elsif ($assembly) {
-      $URLq .= "?assemblyId=" . uri_escape($assembly->{id});
-    }
-
     foreach my $row (@$uhits) {
       push @{ $parsed{$row->{input}} }, $row;
       push @{ $byCurated{$row->{hit}} }, $row;
@@ -516,7 +518,7 @@ if ($hasGenome && $query) {
       $maxScore{$input} = $rows[0]{score};
     }
     print p("Found", scalar(keys %parsed), "relevant proteins in $genomeName, or try",
-            a({-href => $URLq}, "another query"))."\n";
+            a({-href => $URLnoq}, "another query"))."\n";
     my @inputs = sort { $maxScore{$b} <=> $maxScore{$a} } (keys %maxScore);
     foreach my $input (@inputs) {
       &PrintHits($input, $seqs{$input}, $parsed{$input}, 0); # 0 for proteins
@@ -807,7 +809,7 @@ sub PrintHits($$$$) {
       $showId = $chit->{id2} if $db eq "reanno" && $chit->{id2};
       $showId = "VIMSS$showId" if $showId =~ m/^\d+/ && $db eq "reanno";
       $showId = "$showId / $chit->{id2}" if $db eq "SwissProt" && $chit->{id2};
-      
+
       $showId = "$showId / $chit->{name}" if $chit->{name};
       $showId = $chit->{name} if $db eq "ecocyc" && $chit->{name};
       my @showOrgWords = split / /, $chit->{organism};
