@@ -549,6 +549,29 @@ if ($hasGenome && $query) {
       die "Cannot fetch genome sequence for $taxId from MicrobesOnline\n"
         unless @$sc > 0;
     }
+  } elsif ($assembly) {
+    $ntfile = "$tmpDir/refseq_" . $assembly->{id} . ".fna";
+    unless (-e $ntfile) {
+      print p("Fetching genome fasta file for $assembly->{id}"), "\n";
+      if (!FetchAssemblyFna($assembly, $ntfile)) {
+        print p("Sorry, failed to fetch the nucleotide fasta file for this assembly: $!");
+        exit(0);
+      }
+    }
+    # Check if the assembly is too large
+    my $ntsize = 0;
+    open(my $ntfh, "<", $ntfile) || die "Cannot read $ntfile";
+    my $state = {};
+    while (my ($header, $sequence) = ReadFastaEntry($ntfh,$state)) {
+      $ntsize += length($sequence);
+    }
+    close($ntfh) || die "Error reading $ntfile";
+    if ($ntsize > $maxNtLen) {
+      print
+        p("Skipping the 6-frame translation because the genome is too large"),
+        end_html;
+      exit(0);
+    }
   }
 
   # create ntfile if necessary
@@ -910,14 +933,16 @@ sub SixFrameLink($$) {
   my $minBeg = (sort {$a<=>$b} map { my ($b,$e) = split /:/, $_->{irange}; $b;  } @$hits)[0];
   my $maxEnd = (sort {$b<=>$a} map { my ($b,$e) = split /:/, $_->{irange}; $e;  } @$hits)[0];
   my $sign = $frame < 0 ? -1 : 1;
+  my $beginUse = $sign > 0 ? $begin + ($minBeg-1) * 3 : $end - ($maxEnd-1) * 3;
+  my $endUse = $sign > 0 ? $begin + ($maxEnd-1) * 3 : $end - ($minBeg-1) * 3;
   if ($orgId) {
     my $objspec1 = join(":",
                        "b", $begin, "e", $end,
                         "n", uri_escape("frame $frame"),
                        "s", $sign);
     my $objspec2 = join(":",
-                        "b", $sign > 0 ? $begin + ($minBeg-1) * 3 : $end - ($maxEnd-1) * 3,
-                        "e", $sign > 0 ? $begin + ($maxEnd-1) * 3 : $end - ($minBeg-1) * 3,
+                        "b", $beginUse,
+                        "e", $endUse,
                         "n", uri_escape("region with similarity"),
                         "s", $sign);
     my $URL = "http://fit.genomics.lbl.gov/cgi-bin/genomeBrowse.cgi?orgId=$orgId&scaffoldId=$scaffoldId&object=$objspec1&object=$objspec2";
@@ -930,13 +955,21 @@ sub SixFrameLink($$) {
                        "d" . uri_escape("From $beg2 to $end2 (frame $frame)"));
     # want begin > end if on - strand
     my $object2 = join(":",
-                       "f" . ($sign > 0 ? $begin + ($minBeg-1) * 3 : $end - ($minBeg-1)*3),
-                       "t" . ($sign > 0 ? $begin + ($maxEnd-1) * 3 : $end - ($maxEnd-1)*3),
+                       "f" . $beginUse,
+                       "t" . $endUse,
                        "n" . uri_escape("region with similarity"),
                        "d" . uri_escape("region with similarity ($minBeg/$maxEnd)"));
     my $URL = "http://www.microbesonline.org/cgi-bin/browser?"
                        . "mode=4;data=s${scaffoldId}:$object1:$object2";
     $input = a({ -href => $URL, -title => "MicrobesOnline genome browser" }, $show);
+  } elsif ($assembly) {
+    my $scaffold = $scaffoldId;
+    $scaffold =~ s/ .*$//;
+    $input = a({ -href => "https://www.ncbi.nlm.nih.gov/nuccore/$scaffold?report=graph"
+                 . "&from=$begin&to=$end"
+                 . "&mk=$beginUse:$endUse|hit_region|0000ff",
+                 -title => "NCBI's viewer" },
+               $show);
   }
   return $input;
 }
