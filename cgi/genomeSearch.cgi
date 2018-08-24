@@ -356,8 +356,9 @@ if ($hasGenome && $query) {
     $assembly = $hits[0];
     my $verb = defined $assemblyId ? "Searching within" : "Found";
     print p("$verb NCBI assembly",
-            a({-href => $assembly->{ftp}}, $assembly->{id}),
-            "for $assembly->{org}.");
+            a({-href => "https://www.ncbi.nlm.nih.gov/assembly/$assembly->{id}/"}, $assembly->{id}),
+            "for $assembly->{org}",
+           small("(" . a({ -href => $assembly->{ftp} }, "ftp") . ")"));
     unless ($assembly->{ftp}) {
       print p("Sorry, FTP site for this assembly (uid $assembly->{uid}) was not found\n");
       exit(0);
@@ -926,7 +927,7 @@ sub SixFrameLink($$) {
   # beg2 and end2 have beg2 > end2 if on - strand
   my ($beg2, $end2) = ($begin, $end);
   ($beg2,$end2) = ($end2,$beg2) if $frame < 0;
-  my $show = "${begin}-${end} (frame $frame) on scaffold $scaffoldId";
+  my $show = "${begin}-${end} (frame $frame) on " . ($assembly ? $scaffoldId : "scaffold $scaffoldId");
 
   # If linking to a genome browser (either MicrobesOnline or the Fitness Browser), show
   # two objects, one for the entire frame and one for the expanse that has hits.
