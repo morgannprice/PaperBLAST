@@ -967,7 +967,7 @@ sub SixFrameLink($$) {
     $scaffold =~ s/ .*$//;
     $input = a({ -href => "https://www.ncbi.nlm.nih.gov/nuccore/$scaffold?report=graph"
                  . "&from=$begin&to=$end"
-                 . "&mk=$beginUse:$endUse|hit_region|0000ff",
+                 . "&mk=$beginUse:$endUse|hit_region|00008f",
                  -title => "NCBI's viewer" },
                $show);
   }
