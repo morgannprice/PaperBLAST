@@ -56,8 +56,8 @@ sub FetchAssemblyInfo($) {
     }
     @part = $obj->findnodes("FtpPath_RefSeq");
     $out->{ftp} = $part[0]->textContent if @part;
-    if (!defined $out->{ftp}) {
-      @part = $obj->findnodes("FtpPath_Genbank");
+    if (!defined $out->{ftp} || $out->{ftp} eq "") {
+      @part = $obj->findnodes("FtpPath_GenBank");
       $out->{ftp} = $part[0]->textContent if @part;
     }
     push @out, $out;
