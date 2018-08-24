@@ -14,6 +14,7 @@
 #	orgId -- an organism identifier in the fitness browser
 #	mogenome -- an genome name in MicrobesOnline
 #	uniprotname -- a uniprot proteome's name
+#	refseqquery -- a query against NCBI assemblies that returns one hit
 #	file -- an uploaded file with protein sequences in FASTA format
 #
 # Search -- set if the search button was pressed
@@ -28,6 +29,7 @@ use URI::Escape; # for uri_escape()
 use IO::Handle; # for autoflush
 use lib "../lib";
 use pbutils; # for ReadFastaEntry()
+use FetchAssembly; # for FetchAssemblyInfo() etc.
 
 # maximum size of posted data, in bytes
 my $maxMB = 100;
@@ -66,13 +68,18 @@ my $fastacmd = "$blastdir/fastacmd";
 die "No such executable: $fastacmd" unless -x $fastacmd;
 my $blastdb = "$base/uniq.faa";
 die "No such file: $blastdb" unless -e $blastdb;
+
 my $cgi=CGI->new;
 my $orgId = $cgi->param('orgId');
 my $mogenome = $orgId ? undef : $cgi->param('mogenome');
 my $uniprotname = $orgId || $mogenome ? undef : $cgi->param('uniprotname');
-my $upfile = $orgId || $mogenome || $uniprotname ? undef : $cgi->param('file');
+my $refseqquery = $orgId || $mogenome || $uniprotname ? undef : $cgi->param('refseqquery');
+my $upfile = $orgId || $mogenome || $uniprotname || $refseqquery ? undef : $cgi->param('file');
 my $query = $cgi->param('query');
 my $word = $cgi->param('word');
+
+# This hash describes the refseq or NCBI assembly.
+my $assembly;
 
 # A symbolic link to the Fitness Browser data directory is used (if it exists)
 # to allow quick access to fitness browser genomes.
@@ -179,7 +186,7 @@ END
 
 print "\n";
 
-my $hasGenome = ($mogenome || $orgId || $uniprotname || $upfile);
+my $hasGenome = ($mogenome || $orgId || $uniprotname || $upfile || $refseqquery);
 if ($hasGenome && $query) {
   # Sufficient information to execute a query
   # First read the protein fasta
@@ -292,6 +299,32 @@ if ($hasGenome && $query) {
       print $fh $faa;
       close($fh) || die "Error writing to $tmpfile";
       rename($tmpfile, $cachedfile) || die "Rename $tmpfile to $cachedfile failed";
+    }
+    open($fh, "<", $cachedfile) || die "Cannot read $cachedfile";
+  } elsif ($refseqquery) {
+    my @hits = FetchAssemblyInfo($refseqquery);
+    if (@hits == 0) {
+      print p("Sorry, no matching assemblies for '" . $refseqquery . "'.",
+              "Please try another genome.");
+      exit(0);
+    } elsif (@hits > 1) {
+      print p("Sorry, more than one assembly matches '" . $refseqquery . "'.",
+              "Please try a more specific search, or see the",
+              a({ -href => "https://www.ncbi.nlm.nih.gov/assembly/?term=$refseqquery"}, "list"));
+      exit(0);
+    }
+    #else
+    $assembly = $hits[0];
+    print p("Found assembly",
+            a({-href => $assembly->{ftp}}, $assembly->{id}),
+            "for $assembly->{org}.");
+    $cachedfile = "$tmpDir/refseq_" . $assembly->{id} . ".faa";
+    unless (-e $cachedfile) {
+      print "<P>Fetching protein fasta file for $assembly->{id}\n";
+      if (!FetchAssemblyFaa($assembly, $cachedfile)) {
+        print p("Sorry, failed to fetch the protein fasta file for this assembly: $!");
+        exit(0);
+      }
     }
     open($fh, "<", $cachedfile) || die "Cannot read $cachedfile";
   } elsif ($upfile) {
@@ -605,6 +638,11 @@ if ($hasGenome && $query) {
     push @genomeSelectors, p(popup_menu( -name => 'mogenome', -values => \@taxOptions, -labels => \%taxLabels,
                                          -default => ''));
   }
+
+  push @genomeSelectors,
+    p("From RefSeq or NCBI assemblies:",
+      textfield(-name => "refseqquery", -value => '', -size => 50, -maxlength => 200));
+
   my $uniprot_default = $uniprotname ? qq{ value="$uniprotname" } : qq{ placeholder="Genome name" };
   my $uniprot_selector = <<END
 <div class="autocomplete" style="width:100%;">
