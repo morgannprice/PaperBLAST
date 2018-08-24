@@ -55,7 +55,10 @@ sub FetchAssemblyInfo($) {
     @part = $obj->findnodes("Biosource/InfraspeciesList/Infraspecie/Sub_value");
     foreach my $part (@part) {
       my $extra = $part->textContent;
-      $out->{org} .= " " . $extra if $extra ne "";
+      # Avoid adding the suffix if it is already there
+      # which happens for organisms with names like Genus sp. strain
+      $out->{org} .= " " . $extra
+        if $extra ne "" && $out->{org} !~ m/ $extra/;
     }
     @part = $obj->findnodes("FtpPath_RefSeq");
     $out->{ftp} = $part[0]->textContent if @part;
