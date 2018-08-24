@@ -56,6 +56,10 @@ From EcoCyc: ecoli.tar.gz (158 MB)
 	or you can download the tar ball manually into ecoli.tar.gz
 
 (All sizes for downloads are as of January 2017)
+
+You can set the environment variable PB_DOWNLOAD_PASS = 1 to avoid
+re-downloading files that already exist (as non-empty files) due to a
+previous partially- successful download.
 END
     ;
 
@@ -98,6 +102,8 @@ foreach my $step (keys %dosteps) {
 }
 
 print STDERR "Test mode\n" if defined $test;
+print STDERR "Not replacing already-existing non-empty files\n"
+  if $ENV{PB_DOWNLOAD_PASS};
 
 my $listfile = "$dir/listing.$$";
 
@@ -124,6 +130,7 @@ if (exists $dosteps{"ecocyc"}) {
 if (exists $dosteps{"oa"}) {
     print STDERR "Step oa\n";
     &mkdir_if_needed("$dir/oa");
+    unlink($listfile); # in case it exists -- wget will not overwrite if PB_DOWNLOAD_PASS is set
     &wget("http://europepmc.org/ftp/oa/", $listfile);
     my @files = &ftp_html_to_files($listfile);
     @files = grep m/[.]xml[.]gz$/, @files;
@@ -138,6 +145,7 @@ if (exists $dosteps{"oa"}) {
 if (exists $dosteps{"am"}) {
     print STDERR "Step am\n";
     &mkdir_if_needed("$dir/am");
+    unlink($listfile);
     &wget("http://europepmc.org/ftp/manuscripts/", $listfile);
     my @files = &ftp_html_to_files($listfile);
     @files = grep m/[.]xml[.]tar[.]gz$/, @files;
@@ -159,6 +167,7 @@ if (exists $dosteps{"pmclinks"}) {
 if (exists $dosteps{"refseq"}) {
     print STDERR "Step refseq\n";
     &mkdir_if_needed("$dir/refseq");
+    unlink($listfile);
     &wget("ftp://ftp.ncbi.nlm.nih.gov/refseq/release/complete/", $listfile);
     my @files = &ftp_html_to_files($listfile);
     @files = grep m/^complete.*gbff[.]gz$/, @files;
@@ -181,6 +190,7 @@ if (exists $dosteps{"pubmed"}) {
     &mkdir_if_needed("$dir/pubmed");
     foreach my $part (qw{baseline updatefiles}) {
         &mkdir_if_needed("$dir/pubmed/$part");
+        unlink($listfile);
         &wget("ftp://ftp.ncbi.nlm.nih.gov/pubmed/$part/", $listfile);
         my @files = &ftp_html_to_files($listfile);
         @files = grep m/[.]xml[.]gz$/, @files;
