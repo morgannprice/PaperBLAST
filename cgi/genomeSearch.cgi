@@ -312,7 +312,8 @@ if ($hasGenome && $query) {
     }
     if (@hits == 0) {
       print p("Sorry, no matching assemblies for '" . $refseqquery . "'.",
-              "Please try another genome.");
+              "Please try another",
+              a( {-href => "genomeSearch.cgi" }, "search") . ".");
       exit(0);
     } elsif (@hits > 1) {
       my $maxfetch = FetchAssembly::GetMaxFetch();
@@ -337,8 +338,18 @@ if ($hasGenome && $query) {
         hidden(-name => 'word', $word ? 1 : 0 ),
         p(join("\n", @radio)),
         p(submit('Search')),
-        end_form,
-        end_html;
+        end_form;
+      if (@hits >= $maxfetch && $refseqquery !~ m/refseq category/) {
+        my $URLbase = "genomeSearch.cgi?query=" . uri_escape($query) . "&word=" . ($word?1:0) . "&refseqquery=";
+        print p("Or limit search to",
+                a({ -href => $URLbase . uri_escape($refseqquery . qq{ AND "reference genome"[refseq category"]}) },
+                  "reference genomes"),
+                "or",
+                a({ -href => $URLbase . uri_escape($refseqquery . qq{ AND "representative genome"[refseq category"]}) },
+                  "representative genomes")
+                . ".");
+      }
+      print end_html;
       exit(0);
     }
     #else
@@ -491,6 +502,8 @@ if ($hasGenome && $query) {
       $URLq .= "?mogenome=$mogenome";
     } elsif ($uniprotname) {
       $URLq .= "?uniprotname=" . uri_escape($uniprotname);
+    } elsif ($assembly) {
+      $URLq .= "?assemblyId=" . uri_escape($assembly->{id});
     }
 
     foreach my $row (@$uhits) {
@@ -693,17 +706,53 @@ END
     p("Or upload amino acid or nucleotide sequences in FASTA format<BR>(up to $maxMB MB and up to $maxseqsComma sequences)",
       br(),
       filefield(-name=>'file', -size=>50));
+  my $prefix = $mogenome || $orgId || $uniprotname || $assemblyId ? "" : "1. ";
   print
     p("Given a query term, find characterized proteins whose descriptions match the query. Then, search a genome for homologs of those proteins."),
 
     start_form( -autocomplete => 'off', -name => 'input', -method => 'POST', -action => 'genomeSearch.cgi'),
-    p(b("1. Enter a query:"), textfield(-name => "query", -value => '', -size => 50, -maxlength => 200)),
+    p(b("${prefix}Enter a query:"), textfield(-name => "query", -value => '', -size => 50, -maxlength => 200)),
     p({-style => "margin-left: 5em;" }, "use % as a wild card that matches any substring"),
-    p({-style => "margin-left: 5em;" }, checkbox(-name => "word", -checked => 0, -label => "Match whole words only?")),
-    p(b("2. Select a genome:")),
-    @genomeSelectors,
+    p({-style => "margin-left: 5em;" }, checkbox(-name => "word", -checked => 0, -label => "Match whole words only?"));
+
+  my @selected = ();
+  if ($mogenome || $orgId || $uniprotname || $assemblyId) {
+    if ($mogenome && exists $moTax{$mogenome}) {
+      @selected = (a( { -href => "http://www.microbesonline.org/cgi-bin/genomeInfo.cgi?tId=$moTax{$mogenome}" },
+                      $mogenome),
+                   "from",
+                   a({-href => "http://www.microbesonline.org/"}, "MicrobesOnline"));
+      print hidden(-name => "mogenome", $mogenome);
+    } elsif ($orgId && exists $orginfo->{$orgId}) {
+      @selected = (a({ -href => "http://fit.genomics.lbl.gov/cgi-bin/org.cgi?orgId=$orgId"},
+                     $orginfo->{$orgId}{genome}),
+                   "from the",
+                   a({ -href => "http://fit.genomics.lbl.gov/"}, "Fitness Browser"));
+      print hidden(-name => "orgId", $orgId);
+    } elsif ($uniprotname) {
+      @selected = ($uniprotname, "from",
+                   a( { -href => "https://www.uniprot.org" }, "UniProt"));
+      print hidden(-name => "uniprotname", $uniprotname);
+    } elsif ($assemblyId) {
+      my @hits = FetchAssemblyInfo($assemblyId);
+      if (@hits > 0) {
+        my $o = $hits[0];
+        @selected = (a({ -href => "https://www.ncbi.nlm.nih.gov/assembly/$o->{id}" }, $o->{org}),
+                     "from",
+                     a({ -href => "https://www.ncbi.nlm.nih.gov/assembly/" }, "NCBI"));
+        print hidden(-name => "assemblyId", $assemblyId);
+      }
+    }
+    print p(b("Selected genome:"), @selected) if @selected > 0;
+    print p("or",
+            a({ -href => "genomeSearch.cgi" }, "select another genome"));
+  } else {
+    print p(b("2. Select a genome:")),
+            join("\n", @genomeSelectors);
+  }
+  print
     p(submit('Search'), reset()),
-    end_form,
+    end_form;
 }
 
 print <<END
@@ -760,6 +809,7 @@ sub PrintHits($$$$) {
       $showId = "$showId / $chit->{id2}" if $db eq "SwissProt" && $chit->{id2};
       
       $showId = "$showId / $chit->{name}" if $chit->{name};
+      $showId = $chit->{name} if $db eq "ecocyc" && $chit->{name};
       my @showOrgWords = split / /, $chit->{organism};
       @showOrgWords = @showOrgWords[0..1] if @showOrgWords > 2;
       push @descs, a({-href => $URL, -title => "from $db"}, $showId) . ": " . $chit->{desc}
