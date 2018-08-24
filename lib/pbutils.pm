@@ -18,15 +18,19 @@ sub read_list($) {
 
 # Retry wget calls to increase odds of success
 my $nFailures = 0;
-my $nFailMax = 5;
+my $nFailMax = 200;
 
 sub wget($$) {
     my ($url, $file) = @_;
-    while(system("wget", "-nv", "-O", $file, $url) != 0) {
-      $nFailures++;
-      die "Failed to load $url\n" if $nFailures >= $nFailMax;
-      print STDERR "Waiting and retrying\n";
-      sleep(1);
+    if ($ENV{PB_DOWNLOAD_PASS} && -s $file) {
+      print STDERR "Using existing non-empty file for $file\n";
+    } else {
+      while(system("wget", "-nv", "-O", $file, $url) != 0) {
+        $nFailures++;
+        die "Failed to load $url\n" if $nFailures >= $nFailMax;
+        print STDERR "Waiting and retrying\n";
+        sleep(2);
+      }
     }
 }
 
