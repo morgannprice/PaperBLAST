@@ -315,9 +315,13 @@ if ($hasGenome && $query) {
     }
     #else
     $assembly = $hits[0];
-    print p("Found assembly",
+    print p("Found NCBI assembly",
             a({-href => $assembly->{ftp}}, $assembly->{id}),
             "for $assembly->{org}.");
+    unless ($assembly->{ftp}) {
+      print p("Sorry, FTP site for this assembly (uid $assembly->{uid}) was not found\n");
+      exit(0);
+    }
     $cachedfile = "$tmpDir/refseq_" . $assembly->{id} . ".faa";
     unless (-e $cachedfile) {
       print "<P>Fetching protein fasta file for $assembly->{id}\n";
@@ -793,6 +797,14 @@ sub ProteinLink($) {
         $inputlink = a({ -href => "http://www.uniprot.org/uniprot/" . $acc },
                        $acc) . " $desc";
         $inputlink .= " ($gn)" if $gn ne "";
+      }
+    } elsif ($assembly) {
+      # remove trailing organism descriptor
+      $inputlink =~ s/\[[^\]]+\]$//;
+      # change the initial protein id into a link
+      if ($inputlink =~ m/^([A-Z0-9.]+) (.*)$/) {
+        my ($acc, $desc) = ($1,$2);
+        $inputlink = a({ -href => "https://www.ncbi.nlm.nih.gov/protein/$acc" }, $acc) . ": " . $desc;
       }
     }
     return $inputlink;
