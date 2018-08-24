@@ -12,6 +12,9 @@ our (@ISA,@EXPORT);
 @EXPORT = qw(FetchAssemblyInfo FetchAssemblyFaa);
 
 my $maxfetch = 20;
+sub GetMaxFetch() {
+  return $maxfetch;
+}
 
 # One argument: the query
 # Returns a list of results (up to maxfetch) as a hash; each "assembly" includes
