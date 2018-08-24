@@ -14,7 +14,8 @@
 #	orgId -- an organism identifier in the fitness browser
 #	mogenome -- an genome name in MicrobesOnline
 #	uniprotname -- a uniprot proteome's name
-#	refseqquery -- a query against NCBI assemblies that returns one hit
+#	refseqquery -- a query against NCBI assemblies
+#	assemblyId -- an assembly id
 #	file -- an uploaded file with protein sequences in FASTA format
 #
 # Search -- set if the search button was pressed
@@ -74,7 +75,8 @@ my $orgId = $cgi->param('orgId');
 my $mogenome = $orgId ? undef : $cgi->param('mogenome');
 my $uniprotname = $orgId || $mogenome ? undef : $cgi->param('uniprotname');
 my $refseqquery = $orgId || $mogenome || $uniprotname ? undef : $cgi->param('refseqquery');
-my $upfile = $orgId || $mogenome || $uniprotname || $refseqquery ? undef : $cgi->param('file');
+my $assemblyId = $cgi->param('assemblyId');
+my $upfile = $orgId || $mogenome || $uniprotname || $refseqquery || $assemblyId ? undef : $cgi->param('file');
 my $query = $cgi->param('query');
 my $word = $cgi->param('word');
 
@@ -186,7 +188,7 @@ END
 
 print "\n";
 
-my $hasGenome = ($mogenome || $orgId || $uniprotname || $upfile || $refseqquery);
+my $hasGenome = ($mogenome || $orgId || $uniprotname || $upfile || $refseqquery || $assemblyId);
 if ($hasGenome && $query) {
   # Sufficient information to execute a query
   # First read the protein fasta
@@ -301,27 +303,55 @@ if ($hasGenome && $query) {
       rename($tmpfile, $cachedfile) || die "Rename $tmpfile to $cachedfile failed";
     }
     open($fh, "<", $cachedfile) || die "Cannot read $cachedfile";
-  } elsif ($refseqquery) {
-    my @hits = FetchAssemblyInfo($refseqquery);
+  } elsif ($refseqquery || $assemblyId) {
+    my @hits;
+    if ($assemblyId) {
+      @hits = FetchAssemblyInfo($assemblyId);
+    } else {
+      @hits = FetchAssemblyInfo($refseqquery);
+    }
     if (@hits == 0) {
       print p("Sorry, no matching assemblies for '" . $refseqquery . "'.",
               "Please try another genome.");
       exit(0);
     } elsif (@hits > 1) {
-      print p("Sorry, more than one assembly matches '" . $refseqquery . "'.",
-              "Please try a more specific search, or see the",
-              a({ -href => "https://www.ncbi.nlm.nih.gov/assembly/?term=$refseqquery"}, "list"));
+      my $maxfetch = FetchAssembly::GetMaxFetch();
+      my @pieces = ("Select an assembly to search for '$query'.");
+      push @pieces, "(Showing only the top $maxfetch assemblies matching '${refseqquery}'.)"
+        if @hits >= $maxfetch;
+      print p(@pieces);
+      my @radio = ();
+      foreach my $o (@hits) {
+        my $checked = $o->{id} eq $hits[0]{id} ? "CHECKED" : "";
+        push @radio, join("",
+                          qq{<input type="radio" name="assemblyId" value="$o->{id}" $checked >},
+                          a({ -href => "https://www.ncbi.nlm.nih.gov/assembly/" . $o->{id} },
+                                     $o->{org}),
+                          " ",
+                           small("(" . $o->{id} . ")"),
+                          br());
+      }
+      print
+        start_form( -autocomplete => 'off', -name => 'select', '-method' => "GET", -action => 'genomeSearch.cgi'),
+        hidden(-name => 'query', $query),
+        hidden(-name => 'word', $word ? 1 : 0 ),
+        p(join("\n", @radio)),
+        p(submit('Search')),
+        end_form,
+        end_html;
       exit(0);
     }
     #else
     $assembly = $hits[0];
-    print p("Found NCBI assembly",
+    my $verb = defined $assemblyId ? "Searching within" : "Found";
+    print p("$verb NCBI assembly",
             a({-href => $assembly->{ftp}}, $assembly->{id}),
             "for $assembly->{org}.");
     unless ($assembly->{ftp}) {
       print p("Sorry, FTP site for this assembly (uid $assembly->{uid}) was not found\n");
       exit(0);
     }
+    $genomeName = $assembly->{org};
     $cachedfile = "$tmpDir/refseq_" . $assembly->{id} . ".faa";
     unless (-e $cachedfile) {
       print "<P>Fetching protein fasta file for $assembly->{id}\n";
@@ -802,8 +832,9 @@ sub ProteinLink($) {
       # remove trailing organism descriptor
       $inputlink =~ s/\[[^\]]+\]$//;
       # change the initial protein id into a link
-      if ($inputlink =~ m/^([A-Z0-9.]+) (.*)$/) {
+      if ($inputlink =~ m/^([A-Z0-9._]+) (.*)$/) {
         my ($acc, $desc) = ($1,$2);
+        $desc =~ s/^MULTISPECIES: *//;
         $inputlink = a({ -href => "https://www.ncbi.nlm.nih.gov/protein/$acc" }, $acc) . ": " . $desc;
       }
     }
