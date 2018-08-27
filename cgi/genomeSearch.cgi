@@ -82,6 +82,10 @@ my $word = $cgi->param('word');
 
 # This hash describes the refseq or NCBI assembly.
 my $assembly;
+# This hash describes the proteins in the assembly. Each object (a row from the feature table) may be indexed by
+# more than one accession.
+my %assemblyProt = ();
+my %assemblyOldLocusTag = (); # locus tag => old locus tag
 
 # A symbolic link to the Fitness Browser data directory is used (if it exists)
 # to allow quick access to fitness browser genomes.
@@ -368,11 +372,31 @@ if ($hasGenome && $query) {
     unless (-e $cachedfile) {
       print "<P>Fetching protein fasta file for $assembly->{id}\n";
       if (!FetchAssemblyFaa($assembly, $cachedfile)) {
-        print p("Sorry, failed to fetch the protein fasta file for this assembly: $!");
+        print p("Sorry, failed to fetch the protein fasta file for this assembly ($!). This assembly might not have any predicted proteins.");
         exit(0);
       }
     }
     open($fh, "<", $cachedfile) || die "Cannot read $cachedfile";
+
+    # And set up %assemblyProt
+    # Note that one protein accession could be linked to multiple genes
+    # In that case, I expect that only one gene will be shown; this is arguably a bug
+    my $featurefile = "$tmpDir/refseq_" . $assembly->{id} . ".features.tab";
+    &FetchAssemblyFeatureFile($assembly, $featurefile);
+    # Get a list of hashes
+    my $features = ParseAssemblyFeatureFile($featurefile);
+    foreach my $row (@$features) {
+      next unless $row->{class} eq "with_protein";
+      $assemblyProt{$row->{product_accession}} = $row;
+      $assemblyProt{$row->{"non-redundant_refseq"}} = $row;
+    }
+    foreach my $row (@$features) {
+      if ($row->{class} eq "protein_coding"
+          && $row->{locus_tag}
+          && $row->{attributes} =~ m/old_locus_tag=([A-Z0-9_]+)/) {
+        $assemblyOldLocusTag{$row->{locus_tag}} = $1;
+      }
+    }
   } elsif ($upfile) {
     $genomeName = "uploaded file";
     my $up = $cgi->upload('file');
@@ -911,7 +935,30 @@ sub ProteinLink($) {
       if ($inputlink =~ m/^([A-Z0-9._]+) (.*)$/) {
         my ($acc, $desc) = ($1,$2);
         $desc =~ s/^MULTISPECIES: *//;
-        $inputlink = a({ -href => "https://www.ncbi.nlm.nih.gov/protein/$acc" }, $acc) . ": " . $desc;
+        my @ids = ();
+        if (exists $assemblyProt{$acc}) {
+          my $g = $assemblyProt{$acc};
+          $desc = $g->{name} if $g->{name} ne "";
+          push @ids, $g->{symbol} if $g->{symbol};
+          if ($g->{locus_tag}) {
+            my $geneurl = undef;
+            my $title = undef;
+            if ($g->{GeneID}) {
+              $geneurl = "https://www.ncbi.nlm.nih.gov/gene/?term=" . $g->{GeneID};
+              $title = "NCBI Gene";
+            } elsif ($g->{genomic_accession} && $g->{start} && $g->{end}) {
+              my $center = int(($g->{start} + $g->{end})/2);
+              my ($left,$right) = ($center-5000,$center+5000);
+              # The NCBI sequence viewer is smart enough to clip to valid regions
+              $geneurl = "https://www.ncbi.nlm.nih.gov/nuccore/$g->{genomic_accession}/scaffold?report=graph&v=$left:$right";
+              $title = "Genome Browser";
+            }
+            push @ids, defined $geneurl ? a( { -href => $geneurl, -title => $title }, $g->{locus_tag}) : $g->{locus_tag};
+            push @ids, $assemblyOldLocusTag{$g->{locus_tag}} if exists $assemblyOldLocusTag{$g->{locus_tag}};
+          }
+        }
+        push @ids, a({ -href => "https://www.ncbi.nlm.nih.gov/protein/$acc", -title => "NCBI Protein" }, $acc);
+        $inputlink = join(" ", @ids) . ": " . $desc;
       }
     }
     return $inputlink;
