@@ -6,10 +6,11 @@ use strict;
 use LWP::Simple; # for get()
 use XML::LibXML;
 use Time::HiRes qw{gettimeofday};
+use pbutils;
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw(FetchAssemblyInfo FetchAssemblyFaa FetchAssemblyFna);
+@EXPORT = qw(FetchAssemblyInfo FetchAssemblyFaa FetchAssemblyFna FetchAssemblyFeatureFile ParseAssemblyFeatureFile);
 
 my $maxfetch = 20;
 sub GetMaxFetch() {
@@ -87,6 +88,14 @@ sub FetchAssemblyFna($$) {
   return FetchAssemblyFileGz($assembly, "genomic.fna", $outfile);
 }
 
+# Given the assembly hash, fetch the feature table, uncompress it, and write it to the given file
+# Writes to a temporary file to avoid overwriting by another process
+# Returns success or failure
+sub FetchAssemblyFeatureFile($$) {
+  my ($assembly, $outfile) = @_;
+  return FetchAssemblyFileGz($assembly, "feature_table.txt", $outfile);
+}
+
 sub FetchAssemblyFileGz($$$) {
   my ($assembly, $suffix, $outfile) = @_;
   my $procId = $$;
@@ -101,6 +110,13 @@ sub FetchAssemblyFileGz($$$) {
     || return 0;
   system("gunzip", $tmpfilegz) == 0 || return 0;
   return rename($tmpfile, $outfile) || return 0;
+}
+
+# From a file to a reference to a list of hashes
+sub ParseAssemblyFeatureFile($) {
+  my ($file) = @_;
+  my @rows = pbutils::ReadTable($file, ["# feature", "class", "start", "end", "strand", "product_accession", "non-redundant_refseq", "name", "symbol", "locus_tag", "attributes"]);
+  return \@rows;
 }
 
 1;
