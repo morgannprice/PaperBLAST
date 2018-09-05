@@ -70,12 +70,16 @@ END
                 my $authors = $result->{authorString} || "";
                 my $journal = $result->{journalTitle} || $result->{journalInfo}{journal}{title} || "";
                 my $year = $result->{pubYear} || "";
-                my $paperline = join("\t", $queryId, $queryTerm, $pmcId, $pmId, $doi,
+                # Occasional tab characters at beginning or end of these fields, or \n at end, so
+                my @out = ($queryId, $queryTerm, $pmcId, $pmId, $doi,
                                      $title, $authors, $journal, $year,
                                      $result->{isOpenAccess} =~ m/y/i ? 1 : 0);
-                # Occasional \n characters at end of title, so
-                $paperline =~ s/[\r\n]//g;
-                print PAPERS $paperline."\n";
+                foreach my $field (@out) {
+                  $field =~ s/[\r\n\t]/ /g;
+                  $field =~ s/^ +//;
+                  $field =~ s/ +$//;
+                }
+                print PAPERS join("\t", @out)."\n";
             }
         }
     }
