@@ -2,10 +2,12 @@
 package pbweb;
 use strict;
 use CGI qw(:standard Vars);
+use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
+use Time::HiRes qw{gettimeofday};
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw(UniqToGenes SubjectToGene GenesToHtml GetMotd);
+@EXPORT = qw(UniqToGenes SubjectToGene GenesToHtml GetMotd FetchFasta);
 
 # Returns a list of entries from SubjectToGene, 1 for each duplicate (if any),
 # sorted by priority
@@ -360,4 +362,33 @@ sub GetMotd {
   }
   $motd = p($motd) if $motd ne "";
   return $motd;
+}
+
+# Given an accession, from either uniq.faa *or* the duplicate_id field of SeqToDuplicate,
+# return its fasta sequence
+sub FetchFasta($$$) {
+    my ($dbh, $db, $acc) = @_;
+    my $tmpDir = "../tmp";
+    my $procId = $$;
+    my $timestamp = int (gettimeofday() * 1000);
+    my $prefix = "$tmpDir/$procId$timestamp";
+
+    # First, check if the sequence is a duplicate
+    my $uniqIds = $dbh->selectcol_arrayref("SELECT sequence_id FROM SeqToDuplicate WHERE duplicate_id = ?",
+                                           {}, $acc);
+    my $acc2 = $acc;
+    $acc2 = $uniqIds->[0] if @$uniqIds > 0;
+
+    die "Invalid def2 argument: $acc2" if $acc2 eq "" || $acc2 =~ m/\s/ || $acc2 =~ m/,/;
+    my $fastacmd = "../bin/blast/fastacmd";
+    die "No such executable: $fastacmd" unless -x $fastacmd;
+    system("$fastacmd","-s",$acc2,"-d",$db,"-o", "$prefix.fetch");
+    open(SEQ, "<", "$prefix.fetch") || die "Cannot read $prefix.fetch -- fastacmd failed?";
+    my @lines = <SEQ>;
+    close(SEQ) || die "Error reading $prefix.fetch";
+    unlink("$prefix.fetch");
+    (@lines > 0 && $lines[0] =~ m/^>/) || die "Unknown accession: $acc";
+    shift @lines;
+    @lines = map { chomp; $_; } @lines;
+    return join("", @lines);
 }
