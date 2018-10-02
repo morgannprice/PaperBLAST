@@ -16,6 +16,7 @@ my ($subjectId, $blfile) = @ARGV;
 
 my $str = Bio::AlignIO->new(-file => $blfile, -format => 'bl2seq');
 my $aln = $str->next_aln();
+exit(0) if !defined $aln; # no hits in input file
 $aln->num_sequences() == 2 || die "Do not have two esquences in $blfile";
 my $numpos = $aln->length();
 my $qseq = $aln->get_seq_by_pos(1); # 1st sequence in alignment (1-based!)
