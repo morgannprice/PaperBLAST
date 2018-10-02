@@ -5,7 +5,7 @@ use CGI qw(:standard Vars);
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw(UniqToGenes SubjectToGene GenesToHtml);
+@EXPORT = qw(UniqToGenes SubjectToGene GenesToHtml GetMotd);
 
 # Returns a list of entries from SubjectToGene, 1 for each duplicate (if any),
 # sorted by priority
@@ -348,4 +348,16 @@ sub loggerjs($$) {
   my ($type, $prot) = @_;
   my $string = $type . "::" . $prot;
   return qq{logger(this, '$string')};
+}
+
+sub GetMotd {
+  my $motd = "";
+  if (open(MOTD, "<", "../motd")) {
+    $motd = join("\n", <MOTD>);
+    close(MOTD);
+    $motd =~ s/\r//g;
+    $motd =~ s/\s+$//;
+  }
+  $motd = p($motd) if $motd ne "";
+  return $motd;
 }
