@@ -22,8 +22,7 @@ use Time::HiRes qw{gettimeofday};
 use DBI;
 use lib "../lib";
 use pbutils; # for ReadTable()
-
-sub fetch_fasta($$);
+use pbweb; # for FetchFasta()
 
 my $cgi=CGI->new;
 my $def1 = $cgi->param('def1') || "query";
@@ -45,8 +44,6 @@ print h2("Align $def1 vs. $def2"), "\n";
 my $tmpDir = "../tmp";
 my $bl2seq = "../bin/blast/bl2seq";
 die "No such executable: $bl2seq" unless -x $bl2seq;
-my $fastacmd = "../bin/blast/fastacmd";
-die "No such executable: $fastacmd" unless -x $fastacmd;
 
 my $procId = $$;
 my $timestamp = int (gettimeofday() * 1000);
@@ -60,7 +57,8 @@ if (!defined $seq2) {
     # Find it in the database using fastacmd
     my $db = "$base/uniq.faa";
     die "No such file: $db" unless -e $db;
-    $seq2 = fetch_fasta($acc2, $db) || die "Cannot fetch sequence for $def2";
+    $seq2 = FetchFasta($dbh, $db, $acc2)
+       || die "Cannot fetch sequence for $acc2";
 }
 $seq1 =~ m/^[A-Z*]+$/ || die "Invalid seq1";
 $seq1 =~ s/[*]//g;
@@ -238,17 +236,3 @@ if (defined $acc2) {
 }
 unlink("$prefix.bl2seq");
 
-sub fetch_fasta($$) {
-    my ($def, $db) = @_;
-    unlink("$prefix.fetch");
-    die "Invalid def2 argument: $def" if $def eq "" || $def =~ m/\s/ || $def =~ m/,/;
-    system("$fastacmd","-s",$def,"-d",$db,"-o", "$prefix.fetch");
-    open(SEQ, "<", "$prefix.fetch") || die "Cannot read $prefix.fetch -- fastacmd failed?";
-    my @lines = <SEQ>;
-    close(SEQ) || die "Error reading $prefix.fetch";
-    unlink("$prefix.fetch");
-    (@lines > 0 && $lines[0] =~ m/^>/) || die "Unknown def: $def";
-    shift @lines;
-    @lines = map { chomp; $_; } @lines;
-    return join("", @lines);
-}
