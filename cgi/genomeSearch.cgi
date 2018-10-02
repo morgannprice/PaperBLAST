@@ -7,7 +7,7 @@
 ## Authors: Morgan Price
 #######################################################
 #
-# Optional CGI garameters:
+# Optional CGI parameters:
 # query -- what to search for
 # word -- if non-empty, report whole word matches only
 # alternative ways to specify which genome to search in:
