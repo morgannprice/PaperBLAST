@@ -369,20 +369,11 @@ if ($query =~ m/[A-Za-z]/) {
     $def = length($seq) . " a.a." if $def eq "";
 }
 
-my $motd = "";
-if (open(MOTD, "<", "../motd")) {
-  $motd = join("\n", <MOTD>);
-  close(MOTD);
-  $motd =~ s/\r//g;
-  $motd =~ s/\s+$//;
-}
-$motd = p($motd) if $motd ne "";
-
 if (!defined $seq && ! $more_subjectId) {
     my $exampleId = "3615187";
     my $refseqId = "WP_012018426.1";
     print
-        $motd,
+        GetMotd(),
         start_form( -name => 'input', -method => 'GET', -action => 'litSearch.cgi'),
         p(br(),
           b("Enter a protein sequence in FASTA or Uniprot format,<BR>or an identifier from UniProt, RefSeq, or MicrobesOnline: "),
@@ -419,7 +410,7 @@ if (!defined $seq && ! $more_subjectId) {
       $initial .= "..." if $seqlen > 10;
       $initial = "$seqlen a.a., $initial" if $hasDef;
       print
-        $motd,
+        GetMotd(),
         h3("PaperBLAST Hits for $def ($initial)");
 
       my @nt = $seq =~ m/[ACGTUN]/g;
@@ -457,27 +448,26 @@ if (!defined $seq && ! $more_subjectId) {
     if ($nHits == 0) {
         print p("Sorry, no hits to proteins in the literature.");
     } else {
-        print p("Found $nHits similar proteins in the literature:"), "\n"
+      print p("Found $nHits similar proteins in the literature:"), "\n"
+        unless $more_subjectId;
+      my %seen_subject = ();
+      foreach my $row (@hits) {
+        my ($queryId,$subjectId,$percIdentity,$alnLength,$mmCnt,$gapCnt,
+            $queryStart,$queryEnd,$subjectStart,$subjectEnd,
+            $eVal,$bitscore) = @$row;
+        next if exists $seen_subject{$subjectId};
+        $seen_subject{$subjectId} = 1;
+        my @genes = &UniqToGenes($dbh, $subjectId);
+        # Ok if not using the uniq id in the link -- litSearch.cgi can disambiguate
+        my $coverage_html = "";
+        $coverage_html = &simstring(length($seq), $genes[0]{protein_length},
+                                    $queryStart, $queryEnd, $subjectStart, $subjectEnd,
+                                    $percIdentity,$eVal,$bitscore,
+                                    $def, $genes[0]{showName}, $seq, $subjectId)
           unless $more_subjectId;
-
-        my %seen_subject = ();
-        foreach my $row (@hits) {
-          my ($queryId,$subjectId,$percIdentity,$alnLength,$mmCnt,$gapCnt,
-              $queryStart,$queryEnd,$subjectStart,$subjectEnd,
-              $eVal,$bitscore) = @$row;
-            next if exists $seen_subject{$subjectId};
-            $seen_subject{$subjectId} = 1;
-            my @genes = &UniqToGenes($dbh, $subjectId);
-            my $coverage_html = "";
-            foreach my $gene (@genes) {
-              $coverage_html = &simstring(length($seq), $gene->{protein_length},
-                                          $queryStart, $queryEnd, $subjectStart, $subjectEnd,
-                                          $percIdentity,$eVal,$bitscore,
-                                          $def, $gene->{showName}, $seq, $subjectId)
-                if $gene->{subjectId} eq $genes[0]{subjectId} && ! $more_subjectId;
-            }
-          print GenesToHtml($dbh, $subjectId, \@genes, $coverage_html, $maxPapers);
-        }
+        print GenesToHtml($dbh, $subjectId, \@genes, $coverage_html, $maxPapers);
+        print "\n";
+      }
     }
 
     print qq{<script src="http://fit.genomics.lbl.gov/d3js/d3.min.js"></script>
