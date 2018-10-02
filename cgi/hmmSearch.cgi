@@ -31,20 +31,7 @@ my $sqldb = "$base/litsearch.db";
 die "No such file: $sqldb" unless -e $sqldb;
 my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
 
-my @hmmdir = ("../static/pfam", "../static/tigrfam");
-my $hmmfile;
-if ($hmmId && $hmmId =~ m/^[a-zA-Z0-9_.-]+$/) {
-  foreach my $hmmdir (@hmmdir) {
-    if (-e "$hmmdir/$hmmId.hmm") {
-      $hmmfile = "$hmmdir/$hmmId.hmm";
-      last;
-    }
-  }
-  if (!defined $hmmfile) {
-    my @glob = glob("../static/pfam/$hmmId.*.hmm");
-    $hmmfile = $glob[0] if @glob;
-  }
-}
+my $hmmfile = HmmToFile($hmmId);
 
 if (!defined $hmmfile) {
   # print a form
