@@ -2,10 +2,11 @@
 package pbutils;
 require Exporter;
 use strict;
+use File::stat;
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw(read_list wget ftp_html_to_files write_list mkdir_if_needed ReadFasta ParsePTools ReadFastaEntry ReadTable ReadColumnNames);
+@EXPORT = qw(read_list wget ftp_html_to_files write_list mkdir_if_needed ReadFasta ParsePTools ReadFastaEntry ReadTable ReadColumnNames NewerThan);
 
 sub read_list($) {
   my ($file) = @_;
@@ -222,6 +223,14 @@ sub ReadColumnNames($) {
     $line =~ s/[\r\n]+$//; # for DOS
     my @cols = split /\t/, $line;
     return @cols;
+}
+
+sub NewerThan($$) {
+    my ($file1, $file2) = @_;
+    die "Invalid arguments to NewerThan" unless defined $file1 && defined $file2;
+    die "No such file: $file2" unless -e $file2;
+    return 0 unless -e $file1;
+    return stat($file1)->mtime >= stat($file2)->mtime ? 1 : 0;
 }
 
 1;
