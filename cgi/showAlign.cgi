@@ -122,7 +122,7 @@ print
 
 $| = 1; # flush STDOUT
 
-if (defined $acc2) {
+if (defined $acc2 && ! i$out[0] =~ m/No hits/i) {
   # Make a feature report
   # First, find the UniProt identifier, if it is known
   my $uniprotId = undef;
