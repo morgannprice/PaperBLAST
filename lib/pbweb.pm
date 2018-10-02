@@ -7,7 +7,7 @@ use Time::HiRes qw{gettimeofday};
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw(UniqToGenes SubjectToGene GenesToHtml GetMotd FetchFasta);
+@EXPORT = qw(UniqToGenes SubjectToGene GenesToHtml GetMotd FetchFasta HmmToFile);
 
 # Returns a list of entries from SubjectToGene, 1 for each duplicate (if any),
 # sorted by priority
@@ -391,4 +391,17 @@ sub FetchFasta($$$) {
     shift @lines;
     @lines = map { chomp; $_; } @lines;
     return join("", @lines);
+}
+
+sub HmmToFile($) {
+  my ($hmmId) = @_;
+  if ($hmmId && $hmmId =~ m/^[a-zA-Z0-9_.-]+$/) {
+    my @hmmdir = ("../static/pfam", "../static/tigrfam");
+    foreach my $hmmdir (@hmmdir) {
+      return "$hmmdir/$hmmId.hmm" if -e "$hmmdir/$hmmId.hmm";
+    }
+  }
+  # if reached
+  my @glob = glob("../static/pfam/$hmmId.*.hmm");
+  return @glob > 0 ? $glob[0] : undef;
 }
