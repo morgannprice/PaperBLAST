@@ -1,5 +1,9 @@
 Requirements for setting up the web site:
 
+Various perl libraries: CGI, DBI, File::stat, HTTP::Request,
+IO::Handle, JSON, LWP::Simple, LWP::UserAgent, Time::HiRes,
+URI::Escape, XML::LibXML.
+
 bin/ cgi/ lib/ static/ should match the code repository
 
 The tmp/ subdirectory should be writable by the web server
