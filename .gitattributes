@@ -3,3 +3,4 @@ static/uniprot_proteomes.db binary
 data/* binary
 static/geneId_proteinId binary
 static/*.curated_parsed binary
+vspdb/unhit.tsv binary
