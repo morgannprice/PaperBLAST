@@ -1,14 +1,28 @@
 Requirements for setting up the web site:
 
-bin/ cgi/ lib/ static/ to match the code repository
+bin/ cgi/ lib/ static/ should match the code repository
 
-A tmp/ subdirectory that is writable by the web server
+The tmp/ subdirectory should be writable by the web server
 
-Optionally, motd to show a "message of the day" at the top of the main page.
+The data/ subdirectory should contain the uniq.faa BLAST database, the
+litsearch.db sqlite3 database, and stats. These files are built by the
+PaperBLAST pipeline (and more specifically by the last step,
+run_final.pl) into work/data. They will need to be moved to where the
+CGI scripts can see them.
 
-For hmmSearch.cgi to work also requires
+Optionally, use motd to show a "message of the day" at the top of the
+main page and some other pages.
 
-static/pfam to contain PFam models, i.e. PF00001.21.hmm
 
-static/tigrfam to contain TIGRFam models, i.e. tigrfam/TIGR00001.hmm
+For hmmSearch.cgi to work also requires static/pfam and
+static/tigrfam:
 
+static/pfam should contain PFam models, i.e. PF00001.21.hmm
+(These can be built from Pfam-A.hmm by using hmmfetch.)
+
+static/tigrfam should contain TIGRFam models,
+i.e. tigrfam/TIGR00001.hmm
+
+
+For vspdb.cgi to work also requires vspdb/unhit.tsv (which does not
+have a clean pipeline yet, but is available in the code repository)
