@@ -154,9 +154,7 @@ foreach my $uniqId (@uniq_sorted) {
     last;
     next;
   }
-  my $bits = $hits{$uniqId}{score};
   my $alns = $hits{$uniqId}{hits};
-  my @coverage = "$bits bits";
   # minFrom and maxTo are in the hit protein's coordinates
   my $seqlen = $genes[0]{protein_length};
   my $minFrom = $seqlen;
@@ -172,20 +170,16 @@ foreach my $uniqId (@uniq_sorted) {
   }
   my $seqCover2 = ($maxTo-$minFrom+1) / $seqlen;
   $seqCover = $seqCover2 if $seqCover2 < $seqCover;
-  my $name0 = $genes[0]{showName};
-  my $newline = "%0A";
-  # Hmm, no sequences in the database, maybe too slow, or maybe add a redirect
-  #push @coverage, a({ -href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=>${name0}$newline$seq",
-  # -title => "compare to the Conserved Domains Database"},
-  # "CDD");
   my $alnstring = scalar(@$alns) == 1 ? "Aligns from $minFrom:$maxTo/$seqlen"
     :  scalar(@$alns) . " alignments in $minFrom:$maxTo/$seqlen";
-  my $coverage_html = br() . i($alnstring,
-                               "(" . sprintf("%.1f%%", $seqCover*100) . "),",
-                               scalar(@$alns) == 1 ? "covers" : "covering up to",
-                               sprintf("%.1f%%", $maxHMMCoverage*100.0),
-                               "of $hmmId,",
-                               "$bits bits");
+  my $coverage_html = br()
+    . join(" ",
+           a({ -href => "hmmAlign.cgi?hmmId=$hmmId&acc=$uniqId" }, $alnstring),
+           "(" . sprintf("%.1f%%", $seqCover*100) . "),",
+           scalar(@$alns) == 1 ? "covers" : "covering up to",
+           sprintf("%.1f%%", $maxHMMCoverage*100.0),
+           "of $hmmId,",
+           $hits{$uniqId}{score}, "bits");
   print GenesToHtml($dbh, $uniqId, \@genes, $coverage_html, $maxPapers);
   print "\n";
 }
