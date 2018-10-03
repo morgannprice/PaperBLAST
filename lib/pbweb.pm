@@ -365,7 +365,7 @@ sub GetMotd {
 }
 
 # Given an accession, from either uniq.faa *or* the duplicate_id field of SeqToDuplicate,
-# return its fasta sequence
+# return its sequence
 sub FetchFasta($$$) {
     my ($dbh, $db, $acc) = @_;
     my $tmpDir = "../tmp";
