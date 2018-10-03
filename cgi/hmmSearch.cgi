@@ -50,7 +50,7 @@ if (!defined $hmmfile) {
                -title => "ribosomal protein L35 from TIGRFam"},
               "TIGR00001"),
             a({-href => "hmmSearch.cgi?hmmId=PF05853",
-               -title => "&beta;-keto acid cleavage enzyme family from Pfam"},
+               -title => "beta-keto acid cleavage enzyme family from Pfam"},
               "PF05853"))),
     p("HMM Accession:", textfield(-name => "hmmId", -value => '', -size => 12)),
     p(checkbox(-name => 'curated', -checked => 0, -label => "Show hits to curated sequences only")),
