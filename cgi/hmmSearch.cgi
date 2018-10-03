@@ -81,7 +81,7 @@ unless (-e $resultsFile
   die "No such executable: $hmmsearch" unless -x $hmmsearch;
   my $tmpResultsFile = "$resultsFile.$$.tmp";
   print p("Running HMMer for $hmmId") . "\n";
-  system("$hmmsearch --cut_tc -o /dev/null --domtblout $tmpResultsFile $hmmfile $blastdb") == 0
+  system($hmmsearch, "--cut_tc", "-o", "/dev/null", "--domtblout", $tmpResultsFile, $hmmfile, $blastdb) == 0
     || die "Error running hmmsearch: $!";
   rename($tmpResultsFile, $resultsFile)
     || die "Error renaming to $resultsFile";
