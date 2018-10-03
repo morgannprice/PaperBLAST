@@ -118,7 +118,7 @@ if (keys %hits > 0) {
   $URL = "https://pfam.xfam.org/family/$hmmId" if $hmmId =~ m/^PF\d+$/;
   my $acc = $first->{hmmAcc};
   $acc = a({ -href => $URL }, $acc) if defined $URL;
-  my @parts = ($acc, "hits", scalar(keys %hits), "sequences in PaperBLAST's database.");
+  my @parts = ($acc, "hits", scalar(keys %hits), "sequences in PaperBLAST's database above the trusted cutoff.");
   if ($curatedOnly) {
     push @parts, "Showing hits to curated sequences only.",
       "Or see",
