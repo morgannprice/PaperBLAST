@@ -1,0 +1,14 @@
+Requirements for setting up the web site:
+
+bin/ cgi/ lib/ static/ to match the code repository
+
+A tmp/ subdirectory that is writable by the web server
+
+Optionally, motd to show a "message of the day" at the top of the main page.
+
+For hmmSearch.cgi to work also requires
+
+static/pfam to contain PFam models, i.e. PF00001.21.hmm
+
+static/tigrfam to contain TIGRFam models, i.e. tigrfam/TIGR00001.hmm
+
