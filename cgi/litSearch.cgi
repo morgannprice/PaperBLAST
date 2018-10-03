@@ -398,6 +398,8 @@ if (!defined $seq && ! $more_subjectId) {
         li(a({ -href => "http://papers.genomics.lbl.gov/vspdb",
                -title => "Papers vs. PDB: Well-studied proteins that lack structural information" },
             "Papers vs. PDB")),
+        li(a({ -href => "hmmSearch.cgi", -title => "Literature for all proteins that match an HMM" },
+             "Family Search vs. Papers")),
         end_ul(),
         $documentation;
 } else {
