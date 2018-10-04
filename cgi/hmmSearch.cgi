@@ -80,7 +80,7 @@ if ($up) {
 }
 
 my $hmmfile = HmmToFile($hmmId);
-my $isUploaded = $hmmId =~ m/^hex[.]/;
+my $isUploaded = defined $hmmfile && $hmmId =~ m/^hex[.]/;
 
 if (!defined $hmmfile) {
   # print a form
