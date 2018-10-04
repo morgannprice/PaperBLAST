@@ -397,6 +397,7 @@ sub FetchFasta($$$) {
 
 sub HmmToFile($) {
   my ($hmmId) = @_;
+  return undef unless $hmmId;
   if ($hmmId && $hmmId =~ m/^[a-zA-Z0-9_.-]+$/) {
     my @hmmdir = ("../static/pfam", "../static/tigrfam", "../tmp");
     foreach my $hmmdir (@hmmdir) {
