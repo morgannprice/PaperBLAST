@@ -88,6 +88,7 @@ if (!defined $hmmfile) {
     header(-charset => 'utf-8'),
     start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
                -title => $title),
+    TopDivHtml(),
     h2($title);
   print p("Did not find an HMM matching $hmmId") if $hmmId;
   print
@@ -127,7 +128,7 @@ my $title = "Family Search for $showId";
     header(-charset => 'utf-8'),
     start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
                -title => $title),
-    qq{<SCRIPT src="../static/pb.js"></SCRIPT>\n},
+    TopDivHtml(),
     h2($title),
     GetMotd();
 autoflush STDOUT 1; # show preliminary results

@@ -3,6 +3,8 @@ use strict;
 use CGI qw(:standard Vars start_ul);
 use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
 use IO::Handle; # for autoflush
+use lib "../lib";
+use pbweb;
 
 # CGI filtering arguments, all optional:
 # org -- i.e. "Homo sapiens"
@@ -32,6 +34,7 @@ print
   header(-charset => 'utf-8'),
   start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
              -title => $title),
+  TopDivHtml(),
   h2("Papers vs. PDB: Well-studied proteins that lack structural information"),
   p(a({-href => "vspdb.cgi"}, "Papers vs. PDB"),
     "shows proteins that are",
