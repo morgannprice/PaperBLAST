@@ -177,7 +177,7 @@ if (keys %hits > 0) {
   my $URL = undef;
   $URL = "http://tigrfams.jcvi.org/cgi-bin/HmmReportPage.cgi?acc=$hmmId" if $hmmId =~ m/^TIGR\d+$/;
   $URL = "https://pfam.xfam.org/family/$hmmId" if $hmmId =~ m/^PF\d+$/;
-  my $acc = $first->{hmmAcc};
+  my $acc = escapeHTML($first->{hmmAcc});
   $acc = a({ -href => $URL }, $acc) if defined $URL;
   $acc = "Uploaded HMM " . $acc if $hmmId =~ m/^hex[.]/;
   my @parts = (a({ -href => $hmmfile }, $acc),
