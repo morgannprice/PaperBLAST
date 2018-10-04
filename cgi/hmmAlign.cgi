@@ -39,6 +39,7 @@ print
     header(-charset => 'utf-8'),
     start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
                -title => $title),
+    TopDivHtml(),
     h2($title);
 
 my $db = "$base/uniq.faa";
