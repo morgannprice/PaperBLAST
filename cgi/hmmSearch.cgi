@@ -10,6 +10,7 @@
 # Optional CGI parameters:
 # hmmId -- what hmm to search for
 # curated -- show curated hits only
+# hmmfile -- an uploaded HMM
 
 use strict;
 use CGI qw(:standard Vars);
@@ -19,6 +20,10 @@ use IO::Handle; # for autoflush
 use lib "../lib";
 use pbutils;
 use pbweb;
+use Digest::MD5;
+
+my $maxMB = 10; # maximum size of uploaded HMM
+$CGI::POST_MAX = $maxMB*1024*1024;
 
 my $cgi = CGI->new;
 my $hmmId = $cgi->param('hmmId');
@@ -30,6 +35,49 @@ my $tmpDir = "../tmp";
 my $sqldb = "$base/litsearch.db";
 die "No such file: $sqldb" unless -e $sqldb;
 my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
+
+my $up = $cgi->upload('hmmfile');
+if ($up) {
+  # Check the uploaded file, save it, set up an MD5-based hmmId, and redirect
+  my $fh = $up->handle;
+  my @lines = <$fh>;
+  my @errors = ();
+  push @errors, "Uploaded file does not start with HMMER3"
+    unless ($lines[0] =~ m/^HMMER3/i);
+  push @errors, "Uploaded file does not end with a // line"
+    unless ($lines[-1] =~ m!^//\r?\n?!);
+  my @endlines = grep m!^//!, @lines;
+  push @errors, "Uploaded file has more than one record-ending // line"
+    unless @endlines == 1;
+  my @namelines = grep m/^NAME /, @lines;
+  push @errors, "Uploaded file has no NAME field"
+    unless @namelines > 0;
+  push @errors, "Uploaded file has more than one NAME"
+    unless @namelines <= 1;
+  my $name = $namelines[0];
+  chomp $name;
+  $name =~ s/^NAME +//;
+  if (@errors > 0) {
+    print header,
+      start_html(-title => "HMM Upload failed"),
+      h2("Not a valid HMM file"),
+      p(join(". ", @errors)),
+      a({ -href => "hmmSearch.cgi"}, "Try another search"),
+      end_html;
+    exit(0);
+  }
+
+  my $hex = Digest::MD5::md5_hex(@lines);
+  my $hmmId = "hex.$hex";
+  my $file = "../tmp/$hmmId.hmm";
+  unless (-e $file) {
+    open(my $sfh, ">", $file) || die "Cannot write to $file";
+    print $sfh @lines;
+    close($sfh) || die "Error writing to $file";
+  }
+  print $cgi->redirect("hmmSearch.cgi?hmmId=$hmmId");
+  exit(0);
+}
 
 my $hmmfile = HmmToFile($hmmId);
 
@@ -56,12 +104,25 @@ if (!defined $hmmfile) {
     p(checkbox(-name => 'curated', -checked => 0, -label => "Show hits to curated sequences only")),
     p(submit('Search')),
     end_form,
+    start_form(-name => 'upload', -method => 'POST', -action => 'hmmSearch.cgi'),
+    p("Or upload an HMM:",
+      filefield(-name => 'hmmfile', -size => 50),
+      submit('Go')),
+    end_form,
     a({-href => "litSearch.cgi"}, "Or search by sequence"),
     end_html;
   exit(0);
 }
 # else have $hmmfile
-my $title = "Family Search for $hmmId";
+my $showId = $hmmId;
+if ($hmmId =~ m/^hex[.]/) {
+  $showId = `egrep '^NAME' $hmmfile`;
+  $showId =~ s/[\r\n].*//;
+  $showId =~ s/^NAME +//;
+  $showId = "uploaded HMM " . escapeHTML($showId);
+}
+
+my $title = "Family Search for $showId";
   print
     header(-charset => 'utf-8'),
     start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
@@ -80,7 +141,7 @@ unless (-e $resultsFile
   my $hmmsearch = "../bin/hmmsearch";
   die "No such executable: $hmmsearch" unless -x $hmmsearch;
   my $tmpResultsFile = "$resultsFile.$$.tmp";
-  print p("Running HMMer for $hmmId") . "\n";
+  print p("Running HMMer for $showId") . "\n";
   system($hmmsearch, "--cut_tc", "-o", "/dev/null", "--domtblout", $tmpResultsFile, $hmmfile, $blastdb) == 0
     || die "Error running hmmsearch: $!";
   rename($tmpResultsFile, $resultsFile)
@@ -118,7 +179,10 @@ if (keys %hits > 0) {
   $URL = "https://pfam.xfam.org/family/$hmmId" if $hmmId =~ m/^PF\d+$/;
   my $acc = $first->{hmmAcc};
   $acc = a({ -href => $URL }, $acc) if defined $URL;
-  my @parts = ($acc, "hits", scalar(keys %hits), "sequences in PaperBLAST's database above the trusted cutoff.");
+  $acc = "Uploaded HMM " . $acc if $hmmId =~ m/^hex[.]/;
+  my @parts = (a({ -href => $hmmfile }, $acc),
+               "hits",
+               scalar(keys %hits), "sequences in PaperBLAST's database above the trusted cutoff.");
   if ($curatedOnly) {
     push @parts, "Showing hits to curated sequences only.",
       "Or see",
@@ -131,8 +195,10 @@ if (keys %hits > 0) {
   push @parts, "or try", a({-href => "hmmSearch.cgi"}, "another family.");
   print p(@parts);
 } else {
-  print p("Sorry, no hits for $hmmId. Try",
-          a({-href => "hmmmSearch.cgi"}, "another family."));
+  print p("Sorry, no hits for", a({ -href => $hmmfile }, $showId) . ".",
+          "Try",
+          a({-href => "hmmSearch.cgi"},
+            "another family."));
 }
 print "\n";
 
