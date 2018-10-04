@@ -1,8 +1,10 @@
 Requirements for setting up the web site:
 
 Various perl libraries: CGI, DBI, File::stat, HTTP::Request,
-IO::Handle, JSON, LWP::Simple, LWP::UserAgent, Time::HiRes,
-URI::Escape, XML::LibXML.
+IO::Handle, JSON, LWP::Simple, LWP::UserAgent, Digest::MD5,
+Time::HiRes, URI::Escape, XML::LibXML
+
+sqlite3 must be installed
 
 bin/ cgi/ lib/ static/ should match the code repository
 
@@ -14,9 +16,12 @@ PaperBLAST pipeline (and more specifically by the last step,
 run_final.pl) into work/data. They will need to be moved to where the
 CGI scripts can see them.
 
-Optionally, use motd to show a "message of the day" at the top of the
-main page and some other pages.
+The bin/blast directory should contain various BLAST executables
+(including fastacmd, bl2seq, and blastall).
 
+For genomeSearch.cgi to work also requires a usearch executable to be
+in bin/usearch.  Version 10.0 (32-bit) has been tested; later versions
+will probably work as well.
 
 For hmmSearch.cgi to work also requires static/pfam and
 static/tigrfam:
@@ -27,6 +32,8 @@ static/pfam should contain PFam models, i.e. PF00001.21.hmm
 static/tigrfam should contain TIGRFam models,
 i.e. tigrfam/TIGR00001.hmm
 
-
 For vspdb.cgi to work also requires vspdb/unhit.tsv (which does not
 have a clean pipeline yet, but is available in the code repository)
+
+Optionally, use motd to show a "message of the day" at the top of the
+main page and some other pages.
