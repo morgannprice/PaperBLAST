@@ -83,7 +83,7 @@ foreach my $line (@lines) {
 }
 
 
-print pre(join("",@out));
+print pre(escapeHTML(join("",@out)));
 my $newline = "%0A";
 my $CDDURL = "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=>${acc}$newline$protseq";
 print p("Or compare $acc to",
