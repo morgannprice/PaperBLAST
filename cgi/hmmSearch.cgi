@@ -80,6 +80,7 @@ if ($up) {
 }
 
 my $hmmfile = HmmToFile($hmmId);
+my $isUploaded = $hmmId =~ m/^hex[.]/;
 
 if (!defined $hmmfile) {
   # print a form
@@ -115,22 +116,21 @@ if (!defined $hmmfile) {
   exit(0);
 }
 # else have $hmmfile
-my $showId = $hmmId;
-if ($hmmId =~ m/^hex[.]/) {
-  $showId = `egrep '^NAME' $hmmfile`;
-  $showId =~ s/[\r\n].*//;
-  $showId =~ s/^NAME +//;
-  $showId = "uploaded HMM " . escapeHTML($showId);
-}
 
+my $hmmName = `egrep '^NAME' $hmmfile`;
+$hmmName =~ s/[\r\n].*//;
+$hmmName =~ s/^NAME +//;
+my $showId = $isUploaded ? "uploaded HMM " . escapeHTML($hmmName) : $hmmId;
 my $title = "Family Search for $showId";
-  print
-    header(-charset => 'utf-8'),
-    start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
-               -title => $title),
-    TopDivHtml(),
-    h2($title),
-    GetMotd();
+$title .= " (" . escapeHTML($hmmName) . ")" unless $isUploaded || $hmmName eq $hmmId;
+
+print
+  header(-charset => 'utf-8'),
+  start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
+             -title => $title),
+  TopDivHtml(),
+  h2($title),
+  GetMotd();
 autoflush STDOUT 1; # show preliminary results
 print "\n";
 
@@ -234,16 +234,15 @@ foreach my $uniqId (@uniq_sorted) {
   }
   my $seqCover2 = ($maxTo-$minFrom+1) / $seqlen;
   $seqCover = $seqCover2 if $seqCover2 < $seqCover;
-  my $alnstring = scalar(@$alns) == 1 ? "Aligns from $minFrom:$maxTo/$seqlen"
-    :  scalar(@$alns) . " alignments in $minFrom:$maxTo/$seqlen";
-  my $coverage_html = br()
-    . join(" ",
-           a({ -href => "hmmAlign.cgi?hmmId=$hmmId&acc=$uniqId" }, $alnstring),
-           "(" . sprintf("%.1f%%", $seqCover*100) . "),",
-           scalar(@$alns) == 1 ? "covers" : "covering up to",
-           sprintf("%.1f%%", $maxHMMCoverage*100.0),
-           "of $hmmId,",
-           $hits{$uniqId}{score}, "bits");
+  my $alnstring = scalar(@$alns) == 1 ? "Aligns to $minFrom:$maxTo / $seqlen"
+    :  scalar(@$alns) . " alignments in $minFrom:$maxTo / $seqlen";
+  my $coverage_html = span( { -style => "font-family: sans-serif; font-size: smaller;" },
+                            a({ -href => "hmmAlign.cgi?hmmId=$hmmId&acc=$uniqId" }, $alnstring),
+                            "(" . sprintf("%.1f%%", $seqCover*100) . "),",
+                            scalar(@$alns) == 1 ? "covers" : "covering up to",
+                            sprintf("%.1f%%", $maxHMMCoverage*100.0),
+                            "of $showId,",
+                            $hits{$uniqId}{score}, "bits" );
   print GenesToHtml($dbh, $uniqId, \@genes, $coverage_html, $maxPapers);
   print "\n";
 }

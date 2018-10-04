@@ -176,7 +176,8 @@ sub GenesToHtml($$$$$) {
                        -onmousedown => loggerjs("curated", $gene->{showName}) },
                      $gene->{showName}),
                    ($gene->{curated} ? b($gene->{desc}) : $gene->{desc}) . $fromText);
-    push @pieces, $coverage_html if $gene == $genes->[0];
+    # Formerly showed the coverage on the 1st line, but decided this was a bit wierd
+    #push @pieces, $coverage_html if $gene == $genes->[0];
     # The alignment to show is always the one reported, not necessarily the one for this gene
     # (They are all identical, but only $subjectId is guaranteed to be in the blast database
     # and to be a valid argument for showAlign.cgi)
@@ -341,6 +342,7 @@ sub GenesToHtml($$$$$) {
   my $content = join($li_with_style, @content);
   $content = join("", $ul_with_style, $li_with_style, $content, "</UL>")
     if $content;
+  push @headers, $coverage_html;
   return p({-style => "margin-top: 1em; margin-bottom: 0em;"},
            join("<BR>", @headers) . $content) . "\n";
 }

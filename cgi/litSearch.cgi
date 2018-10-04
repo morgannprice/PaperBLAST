@@ -509,11 +509,10 @@ sub simstring($$$$$$$$$$$$$) {
     my $cov = ($queryEnd-$queryStart+1) / ($qLen > $sLen ? $qLen : $sLen);
     my $percentCov = sprintf("%.0f", 100 * $cov);
     my $title ="$queryStart:$queryEnd/$qLen of query is similar to $subjectStart:$subjectEnd/$sLen of hit (E = $eVal, $bitscore bits)";
-    return "(" .
-        a({ -title => $title,
-            -href => "showAlign.cgi?def1=$def1&def2=$def2&seq1=$seq1&acc2=$acc2" },
-          "$percIdentity% identity, $percentCov% coverage")
-        . ")";
+    return a({ -title => $title,
+               -href => "showAlign.cgi?def1=$def1&def2=$def2&seq1=$seq1&acc2=$acc2",
+               -style => "font-family: sans-serif; font-size: smaller;" },
+             "$percIdentity% identity, $percentCov% coverage");
 }
 
 # Given a locus tag or VIMSSnnnn query, get it in FASTA format

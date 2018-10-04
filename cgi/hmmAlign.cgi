@@ -33,8 +33,16 @@ my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || 
 
 my $hmmfile = HmmToFile($hmmId);
 die "No hmm file for $hmmId" unless defined $hmmfile;
+my $isUploaded = $hmmId =~ m/^hex[.]/;
 
-my $title = "Align $acc to $hmmId";
+my $hmmName = `egrep '^NAME' $hmmfile`;
+$hmmName =~ s/[\r\n].*//;
+$hmmName =~ s/^NAME +//;
+
+my $showId = $isUploaded ? "uploaded HMM " . escapeHTML($hmmName) : $hmmId;
+my $title = "Align $acc to $showId";
+$title .= " (" . escapeHTML($hmmName) . ")" unless $isUploaded || $hmmName eq $hmmId;
+
 print
     header(-charset => 'utf-8'),
     start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
