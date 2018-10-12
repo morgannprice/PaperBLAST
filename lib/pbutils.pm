@@ -148,10 +148,14 @@ sub ParsePTools {
 #   my $state = {};
 #   while(my ($header,$sequence) = ReadFastaEntry($fh,$state)) { ... }
 # (header will have the ">" removed)
+#
+# If using $return_error, then on an error it sets $state->{error} and returns 0
+
 sub ReadFastaEntry {
-  my ($fh, $state) = @_;
+  my ($fh, $state, $return_error) = @_;
   die unless ref $state;
   return () if exists $state->{DONE}; # end state
+  return () if exists $state->{error};
   # initialization
   if (!defined $state->{header}) {
     $state->{header} = "";
@@ -163,15 +167,26 @@ sub ReadFastaEntry {
       my $old_header = $state->{"header"};
       my $old_sequence = $state->{"sequence"};
       $state->{"header"} = $1;
-      die "Empty header in $line" if $state->{header} eq "";
+      if ($state->{header} eq "") {
+        $state->{error} = "Empty header in $line";
+        return () if $return_error;
+        die $state->{error};
+      }
       $state->{"sequence"} = "";
       return ($old_header, $old_sequence) if $old_header ne "";
     } else {
-      die "Unexpected sequence with no header" if $state->{"header"} eq "";
-      $line =~ s/ //g;
+      if ($state->{"header"} eq "") {
+        $state->{error} = "Unexpected sequence with no header" ;
+        return () if $return_error;
+        die $state->{error};
+      }
       $line = uc($line);
       # allow - or . as used in alignments and * as used for stop codons
-      die "Invalid sequence line $line" unless $line =~ m/^[A-Z*.-]*$/;
+      unless ($line =~ m/^[A-Z*.-]*$/) {
+        $state->{error} = "Invalid sequence line $line";
+        return () if $return_error;
+        die $state->{error};
+      }
       $state->{sequence} .= $line;
     }
   }
