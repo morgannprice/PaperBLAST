@@ -8,17 +8,16 @@
 #######################################################
 #
 # Optional CGI parameters:
-# query -- what to search for
+# query -- what term to search for
 # word -- if non-empty, report whole word matches only
-# alternative ways to specify which genome to search in:
-#	orgId -- an organism identifier in the fitness browser
-#	mogenome -- an genome name in MicrobesOnline
-#	uniprotname -- a uniprot proteome's name
-#	refseqquery -- a query against NCBI assemblies
-#	assemblyId -- an assembly id
-#	file -- an uploaded file with protein sequences in FASTA format
+# gdb -- one of the genome sources supported by FetchAssembly:
+#	"NCBI", "IMG", "UniProt", "MicrobesOnline", "FitnessBrowser"
+# gid -- which organism or assembly in that database
+# gquery -- terms for searching for a genome
+# file -- an uploaded file with protein sequences in FASTA format
 #
-# Search -- set if the search button was pressed
+# doupload -- set to show the upload page
+# Search -- set if the search button was pressed [used to handle failed uploads]
 
 use strict;
 use CGI qw(:standard Vars);
@@ -33,6 +32,15 @@ use pbutils; # for ReadFastaEntry()
 use FetchAssembly; # for FetchAssemblyInfo() etc.
 use pbweb; # for TopDivHtml
 
+sub start_page($);
+sub GetMatchingAssemblies($$);
+sub CacheAssembly($$$);
+
+# page must be started already; reports any number of errors or warning
+sub fail;
+sub warning;
+sub finish;
+
 # maximum size of posted data, in bytes
 my $maxMB = 100;
 $CGI::POST_MAX = $maxMB*1024*1024;
@@ -40,9 +48,9 @@ my $maxseqsK = 100;
 my $maxseqs = $maxseqsK * 1000;
 my $maxNtLen = 30 * 1000 * 1000;
 my $maxseqsComma = "$maxseqsK,000";
-my $maxEval = 0.01;
+my $maxEvalue = 0.01;
 my $maxHitsEach = 3; # additional hits are hidden until the expander is clicked
-my $nCollapseSet = 0; # keeping track fo which expander goes with what
+my $nCollapseSet = 0; # keeping track of which expander goes with what
 
 my $minCodons = 30; # for reading frames
 
@@ -72,54 +80,112 @@ my $blastdb = "$base/uniq.faa";
 die "No such file: $blastdb" unless -e $blastdb;
 
 my $cgi=CGI->new;
-my $orgId = $cgi->param('orgId');
-my $mogenome = $orgId ? undef : $cgi->param('mogenome');
-my $uniprotname = $orgId || $mogenome ? undef : $cgi->param('uniprotname');
-my $refseqquery = $orgId || $mogenome || $uniprotname ? undef : $cgi->param('refseqquery');
-my $assemblyId = $cgi->param('assemblyId');
-my $upfile = $orgId || $mogenome || $uniprotname || $refseqquery || $assemblyId ? undef : $cgi->param('file');
+
+my $gdb = $cgi->param('gdb');
+my $gid = $cgi->param('gid');
+my $gquery = $cgi->param('gquery');
+
+my $upfile = $gid ? undef : $cgi->param('file');
 my $query = $cgi->param('query');
 my $word = $cgi->param('word');
 
-# This hash describes the refseq or NCBI assembly.
-my $assembly;
-# This hash describes the proteins in the assembly. Each object (a row from the feature table) may be indexed by
-# more than one accession.
-my %assemblyProt = ();
-my %assemblyOldLocusTag = (); # locus tag => old locus tag
+my @gdbs = ("NCBI", "IMG", "UniProt", "MicrobesOnline", "FitnessBrowser");
+my %gdb_labels1 = ("NCBI" => "NCBI assemblies",
+                   "UniProt" => "UniProt proteomes",
+                   "IMG" => "JGI/IMG genomes", "FitnessBrowser" => "Fitness Browser genomes");
+my %gdb_labels = map { $_ => exists $gdb_labels1{$_} ? $gdb_labels1{$_} : "$_ genomes"} @gdbs;
+die "Unknown genome database: $gdb\n"
+  if $gdb && !exists $gdb_labels{$gdb};
+
+&start_page("Curated BLAST for Genomes");
 
 # A symbolic link to the Fitness Browser data directory is used (if it exists)
-# to allow quick access to fitness browser genomes.
+# to allow access to fitness browser genomes.
 # That directory must include feba.db (sqlite3 database) and aaseqs (in fasta format)
 my $fbdata = "../fbrowse_data"; # path relative to the cgi directory
-my $fbdbh;
-my $orginfo;
-if (-e $fbdata) {
-  $fbdbh = DBI->connect("dbi:SQLite:dbname=$fbdata/feba.db","","",{ RaiseError => 1 }) || die $DBI::errstr;
-  die "Missing aaseqs file for fitness browser: $fbdata/aaseqs\n"
-    unless -e "$fbdata/aaseqs";
-  $orginfo = $fbdbh->selectall_hashref("SELECT * FROM Organism", "orgId");
-  foreach my $hash (values %$orginfo) {
-    $hash->{genome} = join(" ", $hash->{genus}, $hash->{species}, $hash->{strain});
-  }
-}
-
-# The MicrobesOnline taxonomy table (must include the taxonomyId and name fields)
-# This file is optional. If it exists, uses MicrobesOnline's public mysql server
-# to fetch genomes for a taxonomyId
-my $mofile = "../static/Taxonomy.mo";
-my %moTax = (); # name to taxonomyId
-if (-e $mofile) {
-  my @tax = &ReadTable($mofile, ["taxonomyId","name"]);
-  %moTax = map { $_->{name} => $_->{taxonomyId} } @tax;
-}
+fail("Cannot access Fitness Browser database")
+  if $gid && $gid eq "FitnessBrowser" && ! -e $fbdata;
 
 my $tmpDir = "../tmp";
 my $procId = $$;
 my $timestamp = int (gettimeofday() * 1000);
 my $basefile = $tmpDir . "/" . $procId . $timestamp;
 
-# This should really be in pbutils
+my $assembly; # the fetched (and cached) assembly
+my $genomeName;
+my $fh_up;
+
+if ($gdb && $gquery) {
+  print p("Searching", $gdb_labels{$gdb}, "for", "'" . $gquery . "'"), "\n";
+  my @rows = GetMatchingAssemblies($gdb, $gquery);
+  if (@rows > 0) {
+    print p("Found",scalar(@rows),"assemblies"), "\n";
+    print start_form,
+      hidden(-name => 'gdb', -value => $gdb, -override => 1);
+    foreach my $row (@rows) {
+      my $checked = @rows == 1 ? "CHECKED" : "";
+      print qq{<INPUT type="radio" NAME="gid" VALUE="$row->{gid}" $checked />},
+        a({ -href => $row->{URL} }, $row->{genomeName} ),
+        br();
+    }
+    print p("Enter a search term:",
+            textfield(-name => 'query', -value => '', -size => 50, -maxlength => 200)),
+          p(submit('Search selected genome')),
+          end_form;;
+  } else {
+    print p("Sorry, no matching genomes were found.");
+  }
+  print p("Try", a({ -href => "genomeSearch.cgi?gdb=$gdb" }, "another query"));
+  finish();
+} elsif ($gdb && $gid && $query) {
+  $assembly = CacheAssembly($gdb, $gid, "../tmp")
+    || fail("Cannot fetch assembly $gid from database $gdb");
+  $genomeName = $assembly->{genomeName};
+  print p("Searching in", a({-href => $assembly->{URL} }, $genomeName)), "\n";
+} elsif ($upfile && $query) {
+  $genomeName = "uploaded file";
+  $fh_up = $upfile->handle;
+  die unless $fh_up;
+} elsif ($cgi->param('doupload') || $cgi->param('uploading')) {
+  warning("Please choose a FASTA file to analyze")
+    if $cgi->param('uploading') && ! $upfile;
+  warning("Please enter a query")
+    if $cgi->param('uploading') && ! $query;
+  print
+    start_form( -autocomplete => 'on', -name => 'upload', -method => 'POST', -action => 'genomeSearch.cgi'),
+      p("1. Upload amino acid or nucleotide sequences in FASTA format",
+        br(),
+        "(up to $maxMB MB and up to $maxseqsComma sequences)"),
+      filefield(-name=>'file', -size=>50),
+      query_fields(2),
+      p(submit(-name => 'uploading', -value => 'Search')),
+      end_form,
+      p("Or", a({ -href => "genomeSearch.cgi"}, "search"), "for a genome");
+  finish();
+} else {
+  warning("Please enter an organism name")
+    if $cgi->param('findgenome');
+  print
+    p("Given a query term and a genome, find characterized proteins whose descriptions match the query,",
+      "and then search the genome for homologs of those proteins."),
+    start_form( -autocomplete => 'on', -name => 'input', -method => 'GET', -action => 'genomeSearch.cgi'),
+    p("Genome database to search:", 
+      popup_menu(-name => 'gdb', -values => \@gdbs, -labels => \%gdb_labels, -default => $gdbs[0])),
+    p(textfield(-name => 'gquery', -value => '', -size => 50, -maxlength => 200)),
+    p(submit(-name => "findgenome", -value => 'Find Genome')),
+    end_form,
+    p(br(),
+      "Or",
+      a({-href => "genomeSearch.cgi?doupload=1"}, "upload"),
+      "a genome or proteome in fasta format");
+  # Check $cgi->param('Search') in case of failed uploads ??
+  finish();
+}
+
+fail("No genome fetched") unless defined $genomeName;
+die "No query\n" unless $query;
+
+# This should really be in pbweb
 my %sourceToURL = ( "SwissProt" => "http://www.uniprot.org/uniprot/",
                     "SwissProt/TReMBL" => "http://www.uniprot.org/uniprot/",
                     "BRENDA" => "http://www.brenda-enzymes.org/sequences.php?AC=",
@@ -130,696 +196,280 @@ my %sourceToURL = ( "SwissProt" => "http://www.uniprot.org/uniprot/",
                     "CAZy" => "http://www.cazy.org/search?page=recherche&lang=en&tag=4&recherche="
                   );
 
-my $style = <<END
-.autocomplete {
-  /*the container must be positioned relative:*/
-  position: relative;
-  display: inline-block;
+my %seqs = (); # The main sequence set
+my $isNuc; # Is the main sequence set protein?
+
+my $faaFile;
+my $faaFileDesc;
+my $fh;
+if ($assembly) {
+  $faaFile = $assembly->{faafile} || die "No faa file";
+  $faaFileDesc = "protein fasta file for $genomeName";
+  open($fh, "<", $faaFile) || die "Cannot read $faaFile\n";
+} else {
+  $fh = $fh_up;
+  $faaFileDesc = "uploaded file";
 }
 
-.autocomplete-items {
-  position: absolute;
-  border: 1px solid #d4d4d4;
-  border-bottom: none;
-  border-top: none;
-  z-index: 99;
-  /*position the autocomplete items to be the same width as the container:*/
-  top: 100%;
-  left: 0;
-  right: 0;
+my %seqs = ();
+my $state = {};
+my $totlen = 0;
+my $nNucChar = 0;
+while (my ($header, $sequence) = ReadFastaEntry($fh,$state,"return_error")) {
+  fail("Duplicate sequence for $header in $faaFileDesc") if exists $seqs{$header};
+  fail(". found in sequence for $header in $faaFileDesc") if $sequence =~ m/[.]/;
+  fail("- found in sequence for $header in $faaFileDesc") if $sequence =~ m/-/;
+  $sequence =~ s/[*]//g;
+  fail("Invalid/empty sequence for $header in $faaFileDesc") if $sequence eq "";
+  $seqs{$header} = $sequence;
+  $totlen += length($sequence);
+  $nNucChar += ($sequence =~ tr/ACGTUN//);
 }
-.autocomplete-items div {
-  padding: 10px;
-  cursor: pointer;
-  background-color: #fff;
-  border-bottom: 1px solid #d4d4d4;
+close($fh) || fail("Error reading $faaFileDesc");
+if (exists $state->{error}) {
+  warning("Invalid fasta upload");
+  warning($state->{error});
+  print p("Please try", a({-href => "genomeSearch.cgi?doupload=1"}, "another upload"));
+  finish();
 }
-.autocomplete-items div:hover {
-  /*when hovering an item:*/
-  background-color: #e9e9e9;
+
+fail("Too many sequences in $faaFileDesc. The limit is $maxseqs")
+  if scalar(keys %seqs) > $maxseqs;
+fail("No sequences in $faaFileDesc") if scalar(keys %seqs) == 0;
+fail("Sorry, $faaFileDesc is too long. Please choose a different genome or proteome. The limit is 30 MB")
+    if ($totlen >= $maxNtLen);
+my $fracNuc = $nNucChar / $totlen;
+$isNuc = $fracNuc >= 0.9;
+if ($assembly && $isNuc) {
+  warning("$faaFileDesc seems to contain nucleotide sequences instead!");
+  $isNuc = 0;
 }
-.autocomplete-active {
-  /*when navigating through the items using the arrow keys:*/
-  background-color: DodgerBlue !important;
-  color: #ffffff;
+
+print p("Found", scalar(keys %seqs),
+        $isNuc ? "nucleotide" : "protein",
+        "sequences in $upfile")."\n"
+  if $upfile;
+
+# Find relevant sequences in CuratedGene
+my $maxhits = 1000;
+my $limit = $maxhits + 1;
+my $chits = $dbh->selectall_arrayref("SELECT * FROM CuratedGene WHERE desc LIKE ? LIMIT $limit",
+                                     { Slice => {} }, "%" . $query . "%");
+my $URLnoq = $upfile ? "genomeSearch.cgi?doupload=1" : "genomeSearch.cgi?gdb=$gdb&gid=" . uri_escape($gid);
+if (@$chits > $maxhits) {
+  print p(qq{Sorry, too many curated entries match the query '$query'. Please try},
+          a({ -href => $URLnoq }, "another query").".");
+  print end_html;
+  exit(0);
 }
-END
-;
-
-my $title = "Curated BLAST for Genomes";
-print
-  header(-charset => 'utf-8'),
-  start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
-             -style => { -code => $style },
-             -script => [{ -type => "text/javascript", -src => "../static/autocomplete_uniprot.js" }],
-             -title => $title),
-  TopDivHtml(),
-  h2($title);
-  autoflush STDOUT 1; # show preliminary resul
-print <<END
-<SCRIPT>
-function expander(o,n) {
-  var x = document.getElementsByClassName("collapse"+n);
-  console.log("Expander " + n + " count " + x.length);
-  var i;
-  for (i = 0; i < x.length; i++) {
-    x[i].style.display = "table-row";
-  }
-  o.parentElement.style.display = "none";
+if (@$chits == 0) {
+  print p(qq{None of the curated entries in PaperBLAST's database match '$query'. Please try},
+          a({ -href => $URLnoq }, "another query") . ".");
+  print end_html;
+  exit(0);
 }
-</SCRIPT>
-END
-;
+if ($word) {
+  # filter for whole-word hits
+  my $quoted = quotemeta($query); # this will quote % as well
+  $quoted =~ s/\\%/\\b.*\\b/g; # turn % into a separation of words; note quoting of \\ so that it appears in the new string
 
-print "\n";
-
-my $hasGenome = ($mogenome || $orgId || $uniprotname || $upfile || $refseqquery || $assemblyId);
-if ($hasGenome && $query) {
-  # Sufficient information to execute a query
-  # First read the protein fasta
-  my $fh; # reads the fasta file
-  my $genomeName;
-  my $cachedfile = "$tmpDir/fbrowse_${orgId}.faa";
-  if ($orgId) {
-    # Allow use of orgId that is not in the database if the cached file has already been set up.
-    # This is a way to support use of "local" genomes (although they are still not available
-    # in the selector).
-    if (!exists $orginfo->{$orgId} && ! -e $cachedfile) {
-      print p("Sorry, organism nickname $orgId is not known. Try",
-              a({-href => "genomeSearch.cgi?query=$query"}, "selecting it from UniProt or uploading it"),
-              "instead."),
-            end_html;
-      exit(0);
-    }
-    $genomeName = exists $orginfo->{$orgId} ? $orginfo->{$orgId}{genome} : "local genome $orgId";
-    print p("Loading the proteome of $genomeName from the",
-            a({-href => "http://fit.genomics.lbl.gov/cgi-bin/orgAll.cgi"}, "Fitness Browser"))
-      if exists $orginfo->{$orgId};
-    my $nWrite = 0;
-    if (! -e $cachedfile) {
-      my $tmpfile = "$basefile.tmp";
-      open(TMP, ">", $tmpfile) || die "Cannot write to $tmpfile";
-      my $genes = $fbdbh->selectall_hashref("SELECT * from Gene WHERE orgId = ?", "locusId", {}, $orgId);
-      open(my $aafh, "<", "$fbdata/aaseqs") || die "Cannot read $fbdata/aaeqs";
-      my $state = {};
-      while (my ($header, $sequence) = ReadFastaEntry($aafh,$state)) {
-        my ($org2, $locusId) = split /:/, $header;
-        die $header unless defined $locusId;
-        next unless $org2 eq $orgId;
-        my $gene = $genes->{$locusId}
-          || die "Unrecognized locusId $locusId";
-        print TMP ">$locusId $gene->{sysName} $gene->{desc}\n$sequence\n";
-        $nWrite++;
-      }
-      close($aafh) || die "Error reading $fbdata/aaseqs";
-      close(TMP) || die "Error writing to $tmpfile";
-      rename($tmpfile, $cachedfile) || die "Rename $tmpfile to $cachedfile failed";
-    }
-    open($fh, "<", $cachedfile) || die "Cannot read $cachedfile";
-  } elsif ($mogenome) {
-    my $taxId = $moTax{$mogenome}
-      || die "Invalid MicrobesOnline genome name $mogenome";
-    $genomeName = $mogenome;
-    print p("Loading the proteome of $mogenome from", a({-href => "http://www.microbesonline.org/" }, "MicrobesOnline")), "\n";
-    my $cachedfile = "$tmpDir/mogenome_${taxId}.faa";
-    if (! -e $cachedfile) {
-      my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
-        || die $DBI::errstr;
-      my $genes = $mo_dbh->selectall_arrayref(qq{ SELECT locusId, sequence
-                                                  FROM Locus JOIN Scaffold USING (scaffoldId)
-                                                  JOIN AASeq USING (locusId, version)
-                                                  WHERE taxonomyId = ? AND isActive=1 AND priority=1 AND type=1; },
-                                              { Slice => {} }, $taxId);
-      my $desc = $mo_dbh->selectall_hashref(qq{ SELECT locusId, description
-                                                    FROM Locus JOIN Scaffold USING (scaffoldId)
-                                                    JOIN Description USING (locusId,version)
-                                                    WHERE taxonomyId = ? AND isActive=1 AND priority=1 AND Locus.type=1 },
-                                                "locusId", {}, $taxId);
-      my $sysNames = $mo_dbh->selectall_hashref(qq{ SELECT locusId, name
-                                                    FROM Locus JOIN Scaffold USING (scaffoldId)
-                                                    JOIN Synonym USING (locusId, version)
-                                                    WHERE taxonomyId = ? AND isActive=1 AND priority=1 AND Locus.type=1 AND Synonym.type = 1 },
-                                                "locusId", {}, $taxId);
-      my $tmpfile = "$basefile.tmp";
-      open(TMP, ">", $tmpfile) || die "Cannot write to $tmpfile";
-      foreach my $gene (@$genes) {
-        my $locusId = $gene->{locusId};
-        my $sysName = $sysNames->{$locusId}{name} || "";
-        my $desc = $desc->{$locusId}{description} || "";
-        print TMP ">$locusId $sysName $desc\n$gene->{sequence}\n";
-      }
-      close(TMP) || die "Error writing to $tmpfile";
-      rename($tmpfile, $cachedfile) || die "Rename $tmpfile to $cachedfile failed";
-    }
-    open($fh, "<", $cachedfile) || die "Cannot read $cachedfile";
-  } elsif ($uniprotname) {
-    $genomeName = $uniprotname;
-    my $dbfile = "../static/uniprot_proteomes.db";
-    die "No such file: $dbfile\n" unless -e $dbfile;
-    my $dbh = DBI->connect("dbi:SQLite:dbname=$dbfile","","",{ RaiseError => 1 })
-      || die $DBI::errstr;
-    my $uniprotList = $dbh->selectcol_arrayref("SELECT upid FROM Proteome WHERE name = ?", {}, $uniprotname);
-    unless (scalar(@$uniprotList) == 1) {
-      print p("Proteome name $uniprotname is not valid.");
-      exit(0);
-    }
-    my ($upid) = @$uniprotList;
-    print p("Loading the proteome of $uniprotname from UniProt",
-            a({-href => "https://www.uniprot.org/proteomes/$upid"}, $upid)), "\n";
-    my $cachedfile = "$tmpDir/uniprot_${upid}.faa";
-    unless (-e $cachedfile) {
-      # First try getting from https://www.uniprot.org/uniprot/?query=proteome:UP000002886&format=fasta
-      # This is a bit slow, so I considered using links like
-      # ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/reference_proteomes/Archaea/UP000000242_399549.fasta.gz
-      # but those are also surprisingly slow, and would need to figure out which section to look in.
-      my $refURL = "https://www.uniprot.org/uniprot/?query=proteome:${upid}&format=fasta";
-      my $uniparcURL = "https://www.uniprot.org/uniparc/?query=proteome:${upid}&format=fasta";
-      my $faa = get($refURL);
-      $faa = get($uniparcURL) if $faa eq "";
-      if ($faa eq "") {
-        print p("Proteome $uniprotname seems to be empty, see",
-                a({href => $uniparcURL}, "here"));
-        exit(0);
-      }
-      my $tmpfile = "$basefile.tmp";
-      open($fh, ">", $tmpfile) || die "Cannot write $tmpfile";
-      print $fh $faa;
-      close($fh) || die "Error writing to $tmpfile";
-      rename($tmpfile, $cachedfile) || die "Rename $tmpfile to $cachedfile failed";
-    }
-    open($fh, "<", $cachedfile) || die "Cannot read $cachedfile";
-  } elsif ($refseqquery || $assemblyId) {
-    my @hits;
-    if ($assemblyId) {
-      @hits = FetchAssemblyInfo($assemblyId);
-    } else {
-      @hits = FetchAssemblyInfo($refseqquery);
-    }
-    if (@hits == 0) {
-      print p("Sorry, no matching assemblies for '" . $refseqquery . "'.",
-              "Please try another",
-              a( {-href => "genomeSearch.cgi" }, "search") . ".");
-      exit(0);
-    } elsif (@hits > 1) {
-      my $maxfetch = FetchAssembly::GetMaxFetch();
-      my @pieces = ("Select an assembly to search for '$query'.");
-      push @pieces, "(Showing only the top $maxfetch assemblies matching '${refseqquery}'.)"
-        if @hits >= $maxfetch;
-      print p(@pieces);
-      my @radio = ();
-      foreach my $o (@hits) {
-        my $checked = $o->{id} eq $hits[0]{id} ? "CHECKED" : "";
-        push @radio, join("",
-                          qq{<input type="radio" name="assemblyId" value="$o->{id}" $checked >},
-                          a({ -href => "https://www.ncbi.nlm.nih.gov/assembly/" . $o->{id} },
-                                     $o->{org}),
-                          " ",
-                           small("(" . $o->{id} . ")"),
-                          br());
-      }
-      print
-        start_form( -autocomplete => 'off', -name => 'select', '-method' => "GET", -action => 'genomeSearch.cgi'),
-        hidden(-name => 'query', $query),
-        hidden(-name => 'word', $word ? 1 : 0 ),
-        p(join("\n", @radio)),
-        p(submit('Search')),
-        end_form;
-      if (@hits >= $maxfetch && $refseqquery !~ m/refseq category/) {
-        my $URLbase = "genomeSearch.cgi?query=" . uri_escape($query) . "&word=" . ($word?1:0) . "&refseqquery=";
-        print p("Or limit search to",
-                a({ -href => $URLbase . uri_escape($refseqquery . qq{ AND "reference genome"[refseq category"]}) },
-                  "reference genomes"),
-                "or",
-                a({ -href => $URLbase . uri_escape($refseqquery . qq{ AND "representative genome"[refseq category"]}) },
-                  "representative genomes")
-                . ".");
-      }
-      print end_html;
-      exit(0);
-    }
-    #else
-    $assembly = $hits[0];
-    my $verb = defined $assemblyId ? "Searching within" : "Found";
-    print p("$verb NCBI assembly",
-            a({-href => "https://www.ncbi.nlm.nih.gov/assembly/$assembly->{id}/"}, $assembly->{id}),
-            "for $assembly->{org}",
-           small("(" . a({ -href => $assembly->{ftp} }, "ftp") . ")"));
-    unless ($assembly->{ftp}) {
-      print p("Sorry, FTP site for this assembly (uid $assembly->{uid}) was not found\n");
-      exit(0);
-    }
-    $genomeName = $assembly->{org};
-    $cachedfile = "$tmpDir/refseq_" . $assembly->{id} . ".faa";
-    unless (-e $cachedfile) {
-      print "<P>Fetching protein fasta file for $assembly->{id}\n";
-      if (!FetchAssemblyFaa($assembly, $cachedfile)) {
-        print p("Sorry, failed to fetch the protein fasta file for this assembly ($!). This assembly might not have any predicted proteins.");
-        exit(0);
-      }
-    }
-    open($fh, "<", $cachedfile) || die "Cannot read $cachedfile";
-
-    # And set up %assemblyProt
-    # Note that one protein accession could be linked to multiple genes
-    # In that case, I expect that only one gene will be shown; this is arguably a bug
-    my $featurefile = "$tmpDir/refseq_" . $assembly->{id} . ".features.tab";
-    &FetchAssemblyFeatureFile($assembly, $featurefile);
-    # Get a list of hashes
-    my $features = ParseAssemblyFeatureFile($featurefile);
-    foreach my $row (@$features) {
-      next unless $row->{class} eq "with_protein";
-      $assemblyProt{$row->{product_accession}} = $row;
-      $assemblyProt{$row->{"non-redundant_refseq"}} = $row;
-    }
-    foreach my $row (@$features) {
-      if ($row->{class} eq "protein_coding"
-          && $row->{locus_tag}
-          && $row->{attributes} =~ m/old_locus_tag=([A-Z0-9_]+)/) {
-        $assemblyOldLocusTag{$row->{locus_tag}} = $1;
-      }
-    }
-  } elsif ($upfile) {
-    $genomeName = "uploaded file";
-    my $up = $cgi->upload('file');
-    die "Cannot upload $upfile" unless $up;
-    $fh = $up->handle;
-  } else {
-    die "Unreachable";
-  }
-
-  my $URLnoq = "genomeSearch.cgi";
-  if ($orgId) {
-    $URLnoq .= "?orgId=$orgId";
-  } elsif ($mogenome) {
-    $URLnoq .= "?mogenome=" . uri_escape($mogenome);
-  } elsif ($uniprotname) {
-    $URLnoq .= "?uniprotname=" . uri_escape($uniprotname);
-  } elsif ($assembly) {
-    $URLnoq .= "?assemblyId=" . uri_escape($assembly->{id});
-  }
-
-  # Validate the fasta input
-  my %seqs = (); # header (with > removed) to sequence
-  my $state = {};
-  my $totlen = 0;
-  my $nNucChar = 0;
-  while (my ($header, $sequence) = ReadFastaEntry($fh,$state)) {
-    die "Duplicate sequence for $header\n" if exists $seqs{$header};
-    die ". found in sequence for $header\n" if $sequence =~ m/[.]/;
-    die "- found in sequence for $header\n" if $sequence =~ m/-/;
-    $sequence =~ s/[*]//g;
-    die "Invalid/empty sequence for $header\n" if $sequence eq "";
-    $seqs{$header} = $sequence;
-    $totlen += length($sequence);
-    $nNucChar += ($sequence =~ tr/ACGTUN//);
-  }
-  close($fh) || die "Error reading genome file";
-  die "Too many sequences: limit $maxseqs\n" if scalar(keys %seqs) > $maxseqs;
-  die "No sequences in genome file\n" if scalar(keys %seqs) == 0;
-  if ($totlen >= $maxNtLen) {
-    print p(qq{Sorry, the input is too long. Please choose a different genome or proteome.});
-    print end_html;
-    exit(0);
-  }
-
-  print p("Found", scalar(keys %seqs), "sequences in $upfile.\n") if $upfile;
-
-  my $isNuc = 0;
-  my $fracNuc = $nNucChar / $totlen;
-  if ($fracNuc >= 0.9) {
-    if ($upfile) {
-      $isNuc  = 1;
-    } else {
-      print p("The loaded sequence is", int(100*$fracNuc)."%", "nucleotide characters, but protein sequences were expected.",
-              "Please try a different genome.");
-      print end_html;
-      exit(0);
-    }
-  }
-
-  # Find relevant sequences in CuratedGene
-  my $maxhits = 1000;
-  my $limit = $maxhits + 1;
-  my $chits = $dbh->selectall_arrayref("SELECT * FROM CuratedGene WHERE desc LIKE ? LIMIT $limit",
-                                       { Slice => {} }, "%" . $query . "%");
-  if (@$chits > $maxhits) {
-    print p(qq{Sorry, too many curated entries match the query '$query'. Please choose a more specific query.});
-    print end_html;
-    exit(0);
-  }
-  if (@$chits == 0) {
-    print p(qq{None of the curated entries in PaperBLAST's database match '$query'. Please try},
+  my @keep = grep { $_->{desc} =~ m/\b$quoted\b/i } @$chits;
+  if (@keep == 0) {
+    print p(qq{None of the curated entries in PaperBLAST's database match '$query' as complete words. Please try},
             a({ -href => $URLnoq }, "another query") . ".");
     print end_html;
     exit(0);
   }
-  if ($word) {
-    # filter for whole-word hits
-    my $quoted = quotemeta($query); # this will quote % as well
-    $quoted =~ s/\\%/\\b.*\\b/g; # turn % into a separation of words; note quoting of \\ so that it appears in the new string
+  $chits = \@keep;
+}
 
-    my @keep = grep { $_->{desc} =~ m/\b$quoted\b/i } @$chits;
-    if (@keep == 0) {
-      print p(qq{None of the curated entries in PaperBLAST's database match '$query' as complete words. Please try},
-              a({ -href => $URLnoq }, "another query") . ".");
-      print end_html;
-      exit(0);
-    }
-    $chits = \@keep;
-  }
+my $wordstatement = $word ? " as complete word(s)" : "";
+print p("Found", scalar(@$chits), qq{curated entries in PaperBLAST's database that match '$query'${wordstatement}.\n});
 
-  my $wordstatement = $word ? " as complete word(s)" : "";
-  print p("Found", scalar(@$chits), qq{curated entries in PaperBLAST's database that match '$query'${wordstatement}.\n});
+my $listFile = "$basefile.list";
+my $chitsfaaFile = "$basefile.chits.faa";
+my $seqFile = "$basefile.seq";
+my $ublastFile = "$basefile.ublast";
 
-  my $listFile = "$basefile.list";
-  my $chitsfaaFile = "$basefile.chits.faa";
-  my $genomefaaFile = "$basefile.genome.faa"; # this is actually nt sequence if $upfile and $isNuc
-  my $ublastFile = "$basefile.ublast";
+# Make the input file for fastacmd
+my %idToChit = (); # sequence identifier to curated gene hit(s)
+foreach my $hit (@$chits) {
+  my $seqid = $hit->{db} . "::" . $hit->{protId};
+  my $uniqRef = $dbh->selectcol_arrayref("SELECT sequence_id FROM SeqToDuplicate WHERE duplicate_id = ?",
+                                         {}, $seqid);
+  $seqid = $uniqRef->[0] if scalar(@$uniqRef) > 0;
+  push @{ $idToChit{$seqid} }, $hit;
+}
+print p("These curated entries have", scalar(keys %idToChit), "distinct sequences.\n");
+open(LIST, ">", $listFile) || die "Cannot write to $listFile";
+foreach my $id (sort keys %idToChit) {
+  print LIST "$id\n";
+}
+close(LIST) || die "Error writing to $listFile";
+system("$fastacmd -i $listFile -d $blastdb -p T > $chitsfaaFile") == 0
+  || die "fastacmd failed: $!";
+unlink($listFile);
 
-  # Make the input file for fastacmd
-  my %idToChit = (); # sequence identifier to curated gene hit(s)
-  foreach my $hit (@$chits) {
-    my $seqid = $hit->{db} . "::" . $hit->{protId};
-    my $uniqRef = $dbh->selectcol_arrayref("SELECT sequence_id FROM SeqToDuplicate WHERE duplicate_id = ?",
-                                           {}, $seqid);
-    $seqid = $uniqRef->[0] if scalar(@$uniqRef) > 0;
-    push @{ $idToChit{$seqid} }, $hit;
-  }
-  print p("These curated entries have", scalar(keys %idToChit), "distinct sequences.\n");
-  open(LIST, ">", $listFile) || die "Cannot write to $listFile";
-  foreach my $id (sort keys %idToChit) {
-    print LIST "$id\n";
-  }
-  close(LIST) || die "Error writing to $listFile";
-  system("$fastacmd -i $listFile -d $blastdb -p T > $chitsfaaFile") == 0
-    || die "fastacmd failed: $!";
-  unlink($listFile);
+my %byCurated = (); # curated to list of hits; used to save the maximum score below
 
-  open(FAA, ">", $genomefaaFile) || die "Cannot write to $genomefaaFile";
+unless($isNuc) {
+  open(FAA, ">", $seqFile) || die "Cannot write to $seqFile";
   while (my ($header, $seq) = each %seqs) {
     print FAA ">$header\n$seq\n";
   }
-  close(FAA) || die "Error writing to $genomefaaFile";
+  close(FAA) || die "Error writing to $seqFile";
 
   my %parsed = (); # input sequence to list of hits
-  my %byCurated = (); # curated to list of hits
-  my %maxScore = ();
 
-  unless($isNuc) {
-    print p("Running ublast with E &le; $maxEval\n");
-    system("$usearch -ublast $chitsfaaFile -db $genomefaaFile -evalue $maxEval -blast6out $ublastFile >& /dev/null") == 0
-      || die "usearch failed: $!";
-    unlink($genomefaaFile);
+  print p("Running ublast with E &le; $maxEvalue\n");
+  system("$usearch -ublast $chitsfaaFile -db $seqFile -evalue $maxEvalue -blast6out $ublastFile >& /dev/null") == 0
+    || die "usearch failed: $!";
+  unlink($seqFile);
+  my $uhits = ParseUblast($ublastFile, \%seqs, \%idToChit);
+  unlink($ublastFile);
+  my %maxScore = (); # maximum score for each curated sequence
 
-    my $uhits = ParseUblast($ublastFile, \%seqs, \%idToChit);
-    unlink($ublastFile);
-
-    foreach my $row (@$uhits) {
-      push @{ $parsed{$row->{input}} }, $row;
-      push @{ $byCurated{$row->{hit}} }, $row;
-    }
-    foreach my $input (keys %parsed) {
-      my @rows = sort { $b->{score} <=> $a->{score} } @{ $parsed{$input} };
-      $parsed{$input} = \@rows;
-      $maxScore{$input} = $rows[0]{score};
-    }
-    print p("Found", scalar(keys %parsed), "relevant proteins in $genomeName, or try",
-            a({-href => $URLnoq}, "another query"))."\n";
-    my @inputs = sort { $maxScore{$b} <=> $maxScore{$a} } (keys %maxScore);
-    foreach my $input (@inputs) {
-      &PrintHits($input, $seqs{$input}, $parsed{$input}, 0); # 0 for proteins
-    }
+  foreach my $row (@$uhits) {
+    push @{ $parsed{$row->{input}} }, $row;
+    push @{ $byCurated{$row->{hit}} }, $row;
   }
-
-  # And search the six frame translation
-  my $ntfile; # genome sequence file (fasta nucleotide)
-  my $sc = []; # list of [scaffoldId, sequence], if ntfile does not already exist
-  if ($orgId) {
-    $ntfile = "$tmpDir/fbrowse_${orgId}.fna";
-    $sc = $fbdbh->selectall_arrayref("SELECT scaffoldId, sequence FROM ScaffoldSeq WHERE orgId = ?",
-                                     {}, $orgId)
-      unless -e $ntfile;
-  } elsif ($mogenome) {
-    my $taxId = $moTax{$mogenome}
-      || die "Invalid MicrobesOnline genome name $mogenome";
-    $genomeName = $mogenome;
-    print p("Loading the genome of $mogenome from", a({-href => "http://www.microbesonline.org/" }, "MicrobesOnline")), "\n";
-    $ntfile = "$tmpDir/mogenome_${taxId}.fna";
-    if (! -e $ntfile) {
-      my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
-        || die $DBI::errstr;
-      $sc = $mo_dbh->selectall_arrayref(qq{ SELECT scaffoldId, sequence
-                                               FROM Scaffold JOIN ScaffoldSeq USING (scaffoldId)
-                                               WHERE taxonomyId = ? AND isActive = 1 },
-                                           {}, $taxId);
-      die "Cannot fetch genome sequence for $taxId from MicrobesOnline\n"
-        unless @$sc > 0;
-    }
-  } elsif ($assembly) {
-    $ntfile = "$tmpDir/refseq_" . $assembly->{id} . ".fna";
-    unless (-e $ntfile) {
-      print p("Fetching genome fasta file for $assembly->{id}"), "\n";
-      if (!FetchAssemblyFna($assembly, $ntfile)) {
-        print p("Sorry, failed to fetch the nucleotide fasta file for this assembly: $!");
-        exit(0);
-      }
-    }
-    # Check if the assembly is too large
-    my $ntsize = 0;
-    open(my $ntfh, "<", $ntfile) || die "Cannot read $ntfile";
-    my $state = {};
-    while (my ($header, $sequence) = ReadFastaEntry($ntfh,$state)) {
-      $ntsize += length($sequence);
-    }
-    close($ntfh) || die "Error reading $ntfile";
-    if ($ntsize > $maxNtLen) {
-      print
-        p("Skipping the 6-frame translation because the genome is too large"),
-        end_html;
-      exit(0);
-    }
+  foreach my $input (keys %parsed) {
+    my @rows = sort { $b->{score} <=> $a->{score} } @{ $parsed{$input} };
+    $parsed{$input} = \@rows;
+    $maxScore{$input} = $rows[0]{score};
   }
-
-  # create ntfile if necessary
-  if (@$sc > 0) {
-    my $totlen = 0;
-    foreach my $row (@$sc) {
-      $totlen += length($row->[1]);
-    }
-    if ($totlen > $maxNtLen) {
-      print p("Skipping the 6-frame translation because the genome is too large");
-    } else {
-      my $tmpfile = "$basefile.fna";
-      open(FNA, ">", $tmpfile) || die "Cannot write to $tmpfile";
-      foreach my $row (@$sc) {
-        my ($scaffoldId, $seq) = @$row;
-        print FNA ">${scaffoldId}\n$seq\n";
-      }
-      close(FNA) || die "Error writing to $tmpfile";
-      rename($tmpfile, $ntfile) || die "Rename $tmpfile to $ntfile failed";
-    }
+  print p("Found", scalar(keys %parsed), "relevant proteins in $genomeName, or try",
+          a({-href => $URLnoq}, "another query"))."\n";
+  my @inputs = sort { $maxScore{$b} <=> $maxScore{$a} } (keys %maxScore);
+  foreach my $input (@inputs) {
+    &PrintHits($input, $seqs{$input}, $parsed{$input}, 0); # 0 for proteins
   }
-
-  $ntfile = $genomefaaFile if $isNuc;
-
-  # If we successfully created a genome file then
-  if (defined $ntfile && -e $ntfile) {
-    my $xfile = "$ntfile.aa6";
-    if (! -e $xfile) {
-      system("$usearch -fastx_findorfs $ntfile -aaout $xfile -orfstyle 7 -mincodons $minCodons >& /dev/null") == 0
-        || die "usearch findorfs failed: $!";
-    }
-    # And read the 6-frame translation
-    my %seqsx = ();
-    my $state = {};
-    open(my $fhx, "<", $xfile) || die "Cannot read $xfile";
-    while (my ($header, $sequence) = ReadFastaEntry($fhx,$state)) {
-      $seqsx{$header} = $sequence;
-    }
-    close($fhx) || die "Error reading $xfile";
-
-    print p("Running ublast against the 6-frame translation.",
-            "All reading frames of at least $minCodons codons are included."), "\n";
-    system("$usearch -ublast $chitsfaaFile -db $xfile -evalue $maxEval -blast6out $ublastFile >& /dev/null") == 0
-      || die "usearch failed: $!";
-
-    my $uhits = ParseUblast($ublastFile, \%seqsx, \%idToChit);
-    unlink($ublastFile);
-
-    my %maxCuratedScore = ();
-    while (my ($curated, $hits) = each %byCurated) {
-      my $maxscore = 0;
-      foreach my $hit (@$hits) {
-        $maxscore = $hit->{score} if $hit->{score} > $maxscore;
-      }
-      $maxCuratedScore{$curated} = $maxscore;
-    }
-    # Parse the 6-frame hits, ignoring any hits unless they are better than the best
-    # hit against the gene models
-    my %parsedx = (); # reading frame to list of hits
-    foreach my $row (@$uhits) {
-      push @{ $parsedx{$row->{input}} }, $row;
-    }
-    # filter each list -- unless a hit is noticeably better than the best hit to an annotated protein,
-    # it should be ignored. Also, if the best hit for a frame is masked in that way, mask all
-    # hits for that frame.
-    my $nWithHits = scalar(keys %parsedx);
-    foreach my $input (keys %parsedx) {
-      my @rows = sort { $b->{score} <=> $a->{score} } @{ $parsedx{$input} };
-      my @out = ();
-      foreach my $i (0..(scalar(@rows)-1)) {
-        my $row = $rows[$i];
-        my $query = $row->{hit};
-        if (!exists $maxCuratedScore{$query} || $row->{score} >= 1.1 * $maxCuratedScore{$query}) {
-          push @out, $row;
-        } else {
-          last if $i == 0; # best hit must be useful or else suppress the reading frame entirely
-        }
-      }
-      if (@out > 0) {
-        $parsedx{$input} = \@out;
-      } else {
-        delete $parsedx{$input};
-      }
-    }
-    my $nKept = scalar(keys %parsedx);
-    if ($nWithHits > 0) {
-      my @found = ("Found hits to $nWithHits reading frames.");
-      if ($nKept > 0) {
-        push @found,
-          qq{Except for $nKept reading frames, these were redundant with annotated proteins.
-             These remaining reading frames may be pseudogenes, omissions in the genome annotation,
-             or N-terminal extensions of annotated proteins.};
-      } else {
-        push @found, "These were all redundant with annotated proteins.";
-      }
-      print p(@found),"\n";
-    } else {
-      print p("Did not find any hits to reading frames.");
-    }
-    my @inputsX = sort { $parsedx{$b}[0]{score} <=> $parsedx{$a}[0]{score} } (keys %parsedx);
-    foreach my $input (@inputsX) {
-      &PrintHits($input, $seqsx{$input}, $parsedx{$input}, 1); # 1 for 6-frame translation
-    }
-    if ($isNuc) {
-      # no caching of user input
-      unlink($ntfile); # also genomeFaaFile, but actually the nt input
-      unlink($xfile);
-    }
-  }
-  unlink($chitsfaaFile);
-} else {
-  # Show the query form.
-  # Note that failed uploads reach here because CGI sets upfile to undef
-  if ($cgi->param('Search')) {
-    print p("Cannot search without an input genome.") if $query;
-    print p("Please enter a query.") unless $query;
-  }
-  my @genomeSelectors = ();
-  if ($fbdbh) {
-    my @orginfo = sort { $a->{genome} cmp $b->{genome} } values(%$orginfo);
-    my %orgLabels = ("" => "From the Fitness Browser:");
-    my @orgOptions = ("");
-    foreach my $hash (@orginfo) {
-      my $orgId = $hash->{orgId};
-      push @orgOptions, $orgId;
-      $orgLabels{$orgId} = $hash->{genome};
-    }
-    push @genomeSelectors, p(popup_menu( -name => 'orgId', -values => \@orgOptions, -labels  => \%orgLabels,
-                                       -default => ''));
-  }
-  if (keys(%moTax) > 0) {
-    my @tax = sort keys %moTax;
-    my %taxLabels = map { $_ => $_ } @tax;
-    $taxLabels{""} = "From MicrobesOnline:";
-    my @taxOptions = sort keys %taxLabels;
-    push @genomeSelectors, p(popup_menu( -name => 'mogenome', -values => \@taxOptions, -labels => \%taxLabels,
-                                         -default => ''));
-  }
-
-  push @genomeSelectors,
-    p("From RefSeq or NCBI assemblies:",
-      textfield(-name => "refseqquery", -value => '', -size => 50, -maxlength => 200));
-
-  my $uniprot_default = $uniprotname ? qq{ value="$uniprotname" } : qq{ placeholder="Genome name" };
-  my $uniprot_selector = <<END
-<div class="autocomplete" style="width:100%;">
-From UniProt:<BR>
-<input id="uniprotname" type="text" name="uniprotname" $uniprot_default style="width:90%;" >
-</div>
-<SCRIPT>
-autocomplete(document.getElementById("uniprotname"));
-</SCRIPT>
-END
-;
-  push @genomeSelectors,
-    $uniprot_selector,
-    p("Or upload amino acid or nucleotide sequences in FASTA format<BR>(up to $maxMB MB and up to $maxseqsComma sequences)",
-      br(),
-      filefield(-name=>'file', -size=>50));
-  my $prefix = $mogenome || $orgId || $uniprotname || $assemblyId ? "" : "1. ";
-  print
-    p("Given a query term, find characterized proteins whose descriptions match the query. Then, search a genome for homologs of those proteins."),
-
-    start_form( -autocomplete => 'off', -name => 'input', -method => 'POST', -action => 'genomeSearch.cgi'),
-    p(b("${prefix}Enter a query:"), textfield(-name => "query", -value => '', -size => 50, -maxlength => 200)),
-    p({-style => "margin-left: 5em;" }, "use % as a wild card that matches any substring"),
-    p({-style => "margin-left: 5em;" }, checkbox(-name => "word", -checked => 0, -label => "Match whole words only?"));
-
-  my @selected = ();
-  if ($mogenome || $orgId || $uniprotname || $assemblyId) {
-    if ($mogenome && exists $moTax{$mogenome}) {
-      @selected = (a( { -href => "http://www.microbesonline.org/cgi-bin/genomeInfo.cgi?tId=$moTax{$mogenome}" },
-                      $mogenome),
-                   "from",
-                   a({-href => "http://www.microbesonline.org/"}, "MicrobesOnline"));
-      print hidden(-name => "mogenome", $mogenome);
-    } elsif ($orgId && exists $orginfo->{$orgId}) {
-      @selected = (a({ -href => "http://fit.genomics.lbl.gov/cgi-bin/org.cgi?orgId=$orgId"},
-                     $orginfo->{$orgId}{genome}),
-                   "from the",
-                   a({ -href => "http://fit.genomics.lbl.gov/"}, "Fitness Browser"));
-      print hidden(-name => "orgId", $orgId);
-    } elsif ($uniprotname) {
-      @selected = ($uniprotname, "from",
-                   a( { -href => "https://www.uniprot.org" }, "UniProt"));
-      print hidden(-name => "uniprotname", $uniprotname);
-    } elsif ($assemblyId) {
-      my @hits = FetchAssemblyInfo($assemblyId);
-      if (@hits > 0) {
-        my $o = $hits[0];
-        @selected = (a({ -href => "https://www.ncbi.nlm.nih.gov/assembly/$o->{id}" }, $o->{org}),
-                     "from",
-                     a({ -href => "https://www.ncbi.nlm.nih.gov/assembly/" }, "NCBI"));
-        print hidden(-name => "assemblyId", $assemblyId);
-      }
-    }
-    print p(b("Selected genome:"), @selected) if @selected > 0;
-    print p("or",
-            a({ -href => "genomeSearch.cgi" }, "select another genome"));
-  } else {
-    print p(b("2. Select a genome:")),
-            join("\n", @genomeSelectors);
-  }
-  print
-    p(submit('Search'), reset()),
-    end_form;
 }
 
-print <<END
-<P>
-<small>
-<center>by <A HREF="http://morgannprice.org/">Morgan Price</A>,
-<A HREF="http://genomics.lbl.gov/">Arkin group</A><BR>
-Lawrence Berkeley National Laboratory
-</center>
-</small>
-</P>
-END
-;
+# And search the six frame translation
+my $ntfile; # genome sequence file (fasta nucleotide)
+if ($assembly) {
+  $ntfile = $assembly->{ntFile};
+  finish() unless $ntfile;
+  if ($ntfile) {
+    open(my $fh, "<", $ntfile) || die "Cannot read $ntfile";
+    my $state = {};
+    my %ntlen = ();
+    while (my ($header, $sequence) = ReadFastaEntry($fh,$state)) {
+      fail("Duplicate sequence for $header in nucleotide sequence of $genomeName")
+        if exists $ntlen{$header};
+      $ntlen{$header} = length($sequence);
+    }
+    close($fh) || die "Error reading $ntfile";
+    if (scalar(keys %ntlen) > $maxseqs) {
+      print p("Not searching the 6-frame translation because this genome has too many scaffolds");
+      finish();
+    }
+    my $tot = 0;
+    foreach my $value (values %ntlen) { $tot += $value; }
+    if ($tot > $maxNtLen) {
+      print p("Not searching the 6-frame translation because this genome is too large");
+      finish();
+    }
+  }
+} else { # uploaded
+  if ($isNuc) {
+    $ntfile = $seqFile;
+    open(FNA, ">", $seqFile) || die "Cannot write to $seqFile";
+    while (my ($header, $seq) = each %seqs) {
+      print FNA ">$header\n$seq\n";
+    }
+    close(FNA) || die "Error writing to $seqFile";
+  } else {
+    # Do not search the 6-frame translation if uploaded a.a. sequences
+    finish();
+  }
+}
 
-print end_html;
-exit(0);
+my $xfile = "$ntfile.aa6";
+if (! -e $xfile) {
+  system("$usearch -fastx_findorfs $ntfile -aaout $xfile -orfstyle 7 -mincodons $minCodons >& /dev/null") == 0
+    || die "usearch findorfs failed: $!";
+}
+unlink($seqFile) if $upfile;
+
+# And read the 6-frame translation
+my %seqsx = ();
+my $state = {};
+open(my $fhx, "<", $xfile) || die "Cannot read $xfile";
+while (my ($header, $sequence) = ReadFastaEntry($fhx,$state)) {
+  $seqsx{$header} = $sequence;
+}
+close($fhx) || die "Error reading $xfile";
+
+print p("Running ublast against the 6-frame translation.",
+        "All reading frames of at least $minCodons codons are included."), "\n";
+system("$usearch -ublast $chitsfaaFile -db $xfile -evalue $maxEvalue -blast6out $ublastFile >& /dev/null") == 0
+  || die "usearch failed: $!";
+
+my $uhits = ParseUblast($ublastFile, \%seqsx, \%idToChit);
+unlink($ublastFile);
+unlink($xfile) if $upfile;
+
+my %maxCuratedScore = ();
+while (my ($curated, $hits) = each %byCurated) {
+  my $maxscore = 0;
+  foreach my $hit (@$hits) {
+    $maxscore = $hit->{score} if $hit->{score} > $maxscore;
+  }
+  $maxCuratedScore{$curated} = $maxscore;
+}
+# Parse the 6-frame hits, ignoring any hits unless they are better than the best
+# hit against the gene models
+my %parsedx = (); # reading frame to list of hits
+foreach my $row (@$uhits) {
+  push @{ $parsedx{$row->{input}} }, $row;
+}
+# filter each list -- unless a hit is noticeably better than the best hit to an annotated protein,
+# it should be ignored. Also, if the best hit for a frame is masked in that way, mask all
+# hits for that frame.
+my $nWithHits = scalar(keys %parsedx);
+foreach my $input (keys %parsedx) {
+  my @rows = sort { $b->{score} <=> $a->{score} } @{ $parsedx{$input} };
+  my @out = ();
+  foreach my $i (0..(scalar(@rows)-1)) {
+    my $row = $rows[$i];
+    my $query = $row->{hit};
+    if (!exists $maxCuratedScore{$query} || $row->{score} >= 1.1 * $maxCuratedScore{$query}) {
+      push @out, $row;
+    } else {
+      last if $i == 0; # best hit must be useful or else suppress the reading frame entirely
+    }
+  }
+  if (@out > 0) {
+    $parsedx{$input} = \@out;
+  } else {
+    delete $parsedx{$input};
+  }
+}
+my $nKept = scalar(keys %parsedx);
+if ($nWithHits > 0) {
+  my @found = ("Found hits to $nWithHits reading frames.");
+  if ($nKept > 0) {
+    push @found,
+      qq{Except for $nKept reading frames, these were redundant with annotated proteins.
+             These remaining reading frames may be pseudogenes, omissions in the genome annotation,
+             or N-terminal extensions of annotated proteins.};
+  } elsif (! $upfile) {
+    push @found, "These were all redundant with annotated proteins.";
+  }
+  print p(@found);
+} else {
+  print p("Did not find any hits to reading frames.");
+}
+print p("Or try", a({-href => $URLnoq}, "another query"))."\n"
+  if $upfile && $isNuc;
+my @inputsX = sort { $parsedx{$b}[0]{score} <=> $parsedx{$a}[0]{score} } (keys %parsedx);
+foreach my $input (@inputsX) {
+  &PrintHits($input, $seqsx{$input}, $parsedx{$input}, 1); # 1 for 6-frame translation
+}
+unlink($chitsfaaFile);
+finish();
 
 sub PrintHits($$$$) {
   my ($input, $seq, $hits, $sixframe) = @_;
@@ -896,24 +546,26 @@ sub PrintHits($$$$) {
 
 sub ProteinLink($) {
     my ($input) = @_;
+    return $input if !defined $gdb;
     my $inputlink = $input;
-    if ($orgId) {
+    if ($gdb eq "FitnessBrowser") {
+      my $orginfo = {}; #XXX
       my @words = split / /, $input;
       my $locusId = shift @words;
       my $sysName = shift @words;
       my $desc = join(" ", @words);
       $inputlink = ($sysName || $locusId) . ": $desc";
-      $inputlink = a({ -href => "http://fit.genomics.lbl.gov/cgi-bin/singleFit.cgi?orgId=${orgId}&locusId=${locusId}" },
+      $inputlink = a({ -href => "http://fit.genomics.lbl.gov/cgi-bin/singleFit.cgi?gid=${gid}&locusId=${locusId}" },
                      $inputlink)
-        if exists $orginfo->{$orgId};
-    } elsif ($mogenome) {
+        if exists $orginfo->{$gid};
+    } elsif ($gdb eq "Microbesonline") {
       my @words = split / /, $input;
       my $locusId = shift @words;
       my $sysName = shift @words;
       my $desc = join(" ", @words);
       $inputlink = a({ -href => "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=$locusId"},
                      $sysName || "VIMSS$locusId") . ": $desc";
-    } elsif ($uniprotname) {
+    } elsif ($gdb eq "UniProt") {
       # either sp|accession|identifier description OS=organism GN=genename (and other attributes)
       # or tr|...
       # or for non reference proteomes, a different format (do not try to modify)
@@ -929,7 +581,7 @@ sub ProteinLink($) {
                        $acc) . " $desc";
         $inputlink .= " ($gn)" if $gn ne "";
       }
-    } elsif ($assembly) {
+    } elsif ($gdb eq "NCBI") {
       # remove trailing organism descriptor
       $inputlink =~ s/\[[^\]]+\]$//;
       # change the initial protein id into a link
@@ -937,6 +589,8 @@ sub ProteinLink($) {
         my ($acc, $desc) = ($1,$2);
         $desc =~ s/^MULTISPECIES: *//;
         my @ids = ();
+        my %assemblyProt = (); #XXX
+        my %assemblyOldLocusTag = (); #XXX
         if (exists $assemblyProt{$acc}) {
           my $g = $assemblyProt{$acc};
           $desc = $g->{name} if $g->{name} ne "";
@@ -984,7 +638,7 @@ sub SixFrameLink($$) {
   my $sign = $frame < 0 ? -1 : 1;
   my $beginUse = $sign > 0 ? $begin + ($minBeg-1) * 3 : $end - ($maxEnd-1) * 3;
   my $endUse = $sign > 0 ? $begin + ($maxEnd-1) * 3 : $end - ($minBeg-1) * 3;
-  if ($orgId) {
+  if ($gdb && $gdb eq "FitnessBrowser") {
     my $objspec1 = join(":",
                        "b", $begin, "e", $end,
                         "n", uri_escape("frame $frame"),
@@ -994,9 +648,9 @@ sub SixFrameLink($$) {
                         "e", $endUse,
                         "n", uri_escape("region with similarity"),
                         "s", $sign);
-    my $URL = "http://fit.genomics.lbl.gov/cgi-bin/genomeBrowse.cgi?orgId=$orgId&scaffoldId=$scaffoldId&object=$objspec1&object=$objspec2";
+    my $URL = "http://fit.genomics.lbl.gov/cgi-bin/genomeBrowse.cgi?orgId=$gid&scaffoldId=$scaffoldId&object=$objspec1&object=$objspec2";
     $input = a({ -href => $URL, -title => "Fitness browser"}, $show);
-  } elsif ($mogenome) {
+  } elsif ($gdb && $gdb eq "MicrobesOnline") {
     my $object1 = join(":",
                        "f" . $beg2,
                        "t" . $end2,
@@ -1011,7 +665,7 @@ sub SixFrameLink($$) {
     my $URL = "http://www.microbesonline.org/cgi-bin/browser?"
                        . "mode=4;data=s${scaffoldId}:$object1:$object2";
     $input = a({ -href => $URL, -title => "MicrobesOnline genome browser" }, $show);
-  } elsif ($assembly) {
+  } elsif ($gdb && $gdb eq "NCBI") {
     my $scaffold = $scaffoldId;
     $scaffold =~ s/ .*$//;
     $input = a({ -href => "https://www.ncbi.nlm.nih.gov/nuccore/$scaffold?report=graph"
@@ -1046,4 +700,171 @@ sub ParseUblast($$$) {
   }
   close($fh) || die "Error reading $file";
   return \@hits;
+}
+
+sub start_page($) {
+  my ($title) = @_;
+#XXX move to pbwb
+my $style = <<END
+.autocomplete {
+  /*the container must be positioned relative:*/
+  position: relative;
+  display: inline-block;
+}
+
+.autocomplete-items {
+  position: absolute;
+  border: 1px solid #d4d4d4;
+  border-bottom: none;
+  border-top: none;
+  z-index: 99;
+  /*position the autocomplete items to be the same width as the container:*/
+  top: 100%;
+  left: 0;
+  right: 0;
+}
+.autocomplete-items div {
+  padding: 10px;
+  cursor: pointer;
+  background-color: #fff;
+  border-bottom: 1px solid #d4d4d4;
+}
+.autocomplete-items div:hover {
+  /*when hovering an item:*/
+  background-color: #e9e9e9;
+}
+.autocomplete-active {
+  /*when navigating through the items using the arrow keys:*/
+  background-color: DodgerBlue !important;
+  color: #ffffff;
+}
+END
+;
+
+print
+  header(-charset => 'utf-8'),
+  start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
+             -style => { -code => $style },
+             -script => [{ -type => "text/javascript", -src => "../static/autocomplete_uniprot.js" }],
+             -title => $title),
+  TopDivHtml(),
+  h2($title);
+  autoflush STDOUT 1; # show preliminary results
+  # Autoexpander script
+  print <<END
+<SCRIPT>
+function expander(o,n) {
+  var x = document.getElementsByClassName("collapse"+n);
+  console.log("Expander " + n + " count " + x.length);
+  var i;
+  for (i = 0; i < x.length; i++) {
+    x[i].style.display = "table-row";
+  }
+  o.parentElement.style.display = "none";
+}
+</SCRIPT>
+END
+    ;
+  print "\n";
+}
+
+sub warning {
+  print p({ -style => "color: red;" }, @_), "\n";
+}
+
+sub fail {
+  warning(@_);
+  finish();
+}
+
+sub finish {
+print <<END
+<P>
+<small>
+<center>by <A HREF="http://morgannprice.org/">Morgan Price</A>,
+<A HREF="http://genomics.lbl.gov/">Arkin group</A><BR>
+Lawrence Berkeley National Laboratory
+</center>
+</small>
+</P>
+END
+;
+print end_html;
+exit(0);
+}
+
+# Fetch matching genomes, and return list of hashes
+# Each hash includes gid, genomeName, and URL
+sub GetMatchingAssemblies($$) {
+  my ($gdb,$gquery) = @_;
+  return unless $gdb && $gquery;
+  if ($gdb eq "NCBI") {
+    my @hits = FetchNCBIInfo($gquery);
+    foreach my $hit (@hits) {
+      $hit->{gid} = $hit->{id};
+      $hit->{genomeName} = $hit->{org};
+      $hit->{URL} = "https://www.ncbi.nlm.nih.gov/assembly/" . $hit->{id};
+    }
+    return @hits;
+  }
+  # else
+  fail("Database $gdb is not supported");
+}
+
+sub query_fields($) {
+  my $prefix = "";
+  $prefix = "2. " if @_;
+  return join("\n",
+              p("${prefix}Enter a search term:",
+                textfield(-name => 'query', -value => '', -size => 50, -maxlength => 200)),
+              p({-style => "margin-left: 5em;" },
+                checkbox(-name => "word", -checked => 0, -label => "Match whole words only?"))
+             );
+}
+
+sub CacheAssembly($$$) {
+  my ($gdb, $gid, $dir) = @_;
+  return undef unless $gdb && $gid;
+  die "Not a directory: $dir\n" unless -d $dir;
+  if ($gdb eq "NCBI") {
+    my @hits = FetchNCBIInfo($gid);
+    fail("Do not recognize NCBI assembly $gid")
+      unless @hits;
+    my $assembly = $hits[0];
+    # note redundancy with code above
+    $assembly->{gid} = $assembly->{id};
+    $assembly->{genomeName} = $assembly->{org};
+    $assembly->{URL} = "https://www.ncbi.nlm.nih.gov/assembly/" . $assembly->{id};
+    my $faafile = "$dir/refseq_" . $assembly->{gid} . ".faa";
+    my $ntfile = "$dir/refseq_" . $assembly->{gid} . ".fna";
+    my $featurefile = "$tmpDir/refseq_" . $assembly->{id} . ".features.tab";
+    unless (-e $faafile) {
+      print "<P>Fetching protein fasta file for $assembly->{gid}\n";
+      fail("Sorry, failed to fetch the protein fasta file for this assembly ($!). This assembly might not have any predicted proteins.")
+        unless FetchNCBIFaa($assembly, $faafile);
+      fail("Sorry, failed to fetch the nucleotide assembly for this assembly: $!")
+        unless FetchNCBIFna($assembly, $ntfile);
+      fail("Sorry, failed to fetch the feature file for this assembly: $!")
+        unless &FetchNCBIFeatureFile($assembly, $featurefile);
+    }
+    my $features = ParseNCBIFeatureFile($featurefile);
+    $assembly->{prot} = {};
+    foreach my $row (@$features) {
+      next unless $row->{class} eq "with_protein";
+      $assembly->{prot}{$row->{product_accession}} = $row;
+      $assembly->{prot}{$row->{"non-redundant_refseq"}} = $row;
+    }
+    foreach my $row (@$features) {
+      if ($row->{class} eq "protein_coding"
+          && $row->{locus_tag}
+          && $row->{attributes} =~ m/old_locus_tag=([A-Z0-9_]+)/) {
+        $assembly->{oldlocustag}{$row->{locus_tag}} = $1;
+      }
+    }
+    $assembly->{faafile} = $faafile;
+    $assembly->{ntfile} = $ntfile;
+    return $assembly;
+  }
+  # else
+  fail("Database $gdb is not supported");
 }

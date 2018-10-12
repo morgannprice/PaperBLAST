@@ -1,4 +1,4 @@
-# Fetch information about assemblies from NCBI
+# Fetch information about assemblies from NCBI, JGI, UniProt, MicrobesOnline, Fitness
 
 package FetchAssembly;
 require Exporter;
@@ -13,19 +13,19 @@ use HTTP::Cookies;
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw(FetchAssemblyInfo FetchAssemblyFaa FetchAssemblyFna FetchAssemblyFeatureFile ParseAssemblyFeatureFile
+@EXPORT = qw(FetchNCBIInfo FetchNCBIFaa FetchNCBIFna FetchNCBIFeatureFile ParseNCBIFeatureFile
              SearchJGI CreateJGICookie FetchJGI);
 
-my $maxfetch = 20;
-sub GetMaxFetch() {
-  return $maxfetch;
+my $maxfetchNCBI = 20;
+sub GetMaxFetchNCBI() {
+  return $maxfetchNCBI;
 }
 
 # One argument: the query
-# Returns a list of results (up to maxfetch) as a hash; each "assembly" includes
+# Returns a list of results (up to maxfetchNCBI) as a hash; each "assembly" includes
 # uid (the assembly uid), id (an identifier like GCF_000195755.1), ftp (the URL for the ftp site),
-# and organism
-sub FetchAssemblyInfo($) {
+# and org
+sub FetchNCBIInfo($) {
   my ($query) = @_;
   # First run the query using esearch
   my $URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=assembly&term=" . $query;
@@ -37,7 +37,7 @@ sub FetchAssemblyInfo($) {
   return () if @ids == 0;
 
   # Now fetch metadata for these ids. Limit to 20.
-  @ids = $ids[0..($maxfetch-1)] if scalar(@ids) > $maxfetch;
+  @ids = $ids[0..($maxfetchNCBI-1)] if scalar(@ids) > $maxfetchNCBI;
   my $idspec= join(",",@ids);
   $URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=assembly&id=$idspec";
   $string = get($URL);
@@ -79,28 +79,28 @@ sub FetchAssemblyInfo($) {
 # Given the assembly hash, fetch protein fasta, uncompress it, and write it to the given file
 # Writes to a temporary file to avoid overwriting by another process
 # Returns success or failure
-sub FetchAssemblyFaa($$) {
+sub FetchNCBIFaa($$) {
   my ($assembly, $outfile) = @_;
-  return FetchAssemblyFileGz($assembly, "protein.faa", $outfile);
+  return FetchNCBIFileGz($assembly, "protein.faa", $outfile);
 }
 
 # Given the assembly hash, fetch protein fasta, uncompress it, and write it to the given file
 # Writes to a temporary file to avoid overwriting by another process
 # Returns success or failure
-sub FetchAssemblyFna($$) {
+sub FetchNCBIFna($$) {
   my ($assembly, $outfile) = @_;
-  return FetchAssemblyFileGz($assembly, "genomic.fna", $outfile);
+  return FetchNCBIFileGz($assembly, "genomic.fna", $outfile);
 }
 
 # Given the assembly hash, fetch the feature table, uncompress it, and write it to the given file
 # Writes to a temporary file to avoid overwriting by another process
 # Returns success or failure
-sub FetchAssemblyFeatureFile($$) {
+sub FetchNCBIFeatureFile($$) {
   my ($assembly, $outfile) = @_;
-  return FetchAssemblyFileGz($assembly, "feature_table.txt", $outfile);
+  return FetchNCBIFileGz($assembly, "feature_table.txt", $outfile);
 }
 
-sub FetchAssemblyFileGz($$$) {
+sub FetchNCBIFileGz($$$) {
   my ($assembly, $suffix, $outfile) = @_;
   my $procId = $$;
   my $timestamp = int (gettimeofday() * 1000);
@@ -117,7 +117,7 @@ sub FetchAssemblyFileGz($$$) {
 }
 
 # From a file to a reference to a list of hashes
-sub ParseAssemblyFeatureFile($) {
+sub ParseNCBIFeatureFile($) {
   my ($file) = @_;
   my @rows = pbutils::ReadTable($file, ["# feature", "class", "start", "end", "strand", "product_accession", "non-redundant_refseq", "name", "symbol", "locus_tag", "attributes"]);
   return \@rows;
