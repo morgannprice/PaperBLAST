@@ -120,18 +120,18 @@ if ($gdb && $gquery) {
   my @rows = GetMatchingAssemblies($gdb, $gquery);
   if (@rows > 0) {
     print p("Found",scalar(@rows),"assemblies"), "\n";
-    print start_form,
+    print start_form(-method => 'get', -action => 'genomeSearch.cgi'),
       hidden(-name => 'gdb', -value => $gdb, -override => 1);
     foreach my $row (@rows) {
       my $checked = @rows == 1 ? "CHECKED" : "";
       print qq{<INPUT type="radio" NAME="gid" VALUE="$row->{gid}" $checked />},
         a({ -href => $row->{URL} }, $row->{genomeName} ),
-        br();
+        " ", small("(" . $row->{gid} . ")"), br();
     }
     print p("Enter a search term:",
             textfield(-name => 'query', -value => '', -size => 50, -maxlength => 200)),
-          p(submit('Search selected genome')),
-          end_form;;
+          p(submit(-name => 'Search', -value => 'Search selected genome')),
+          end_form;
   } else {
     print p("Sorry, no matching genomes were found.");
   }
@@ -141,7 +141,28 @@ if ($gdb && $gquery) {
   $assembly = CacheAssembly($gdb, $gid, "../tmp")
     || fail("Cannot fetch assembly $gid from database $gdb");
   $genomeName = $assembly->{genomeName};
-  print p("Searching in", a({-href => $assembly->{URL} }, $genomeName)), "\n";
+  print p("Searching in", a({-href => $assembly->{URL} }, $genomeName),
+         small("(" . $assembly->{gid} . ")")),
+         "\n";
+} elsif ($gdb && $gid) {
+  # assembly chosen but no query was entered
+  $assembly = CacheAssembly($gdb, $gid, "../tmp")
+    || fail("Cannot fetch assembly $gid from database $gdb");
+  warning("Please enter a search term");
+  print start_form(-method => 'get', -action => 'genomeSearch.cgi'),
+    hidden(-name => 'gid', -value => $gid, -override => 1),
+    hidden(-name => 'gdb', -value => $gdb, -override => 1),
+    p("Search in",
+      a({ -href => $assembly->{URL} }, $assembly->{genomeName}),
+      small("(" . $assembly->{gid} . ")"),
+      "from",  $gdb_labels{$gdb},
+      "or try",
+      a({ -href => "genomeSearch.cgi" }, "another query")),
+    p("Enter a search term:",
+      textfield(-name => 'query', -value => '', -size => 50, -maxlength => 200)),
+    p(submit(-name => 'Search', -value => 'Search selected genome')),
+    end_form;
+  finish();
 } elsif ($upfile && $query) {
   $genomeName = "uploaded file";
   $fh_up = $upfile->handle;
@@ -178,23 +199,12 @@ if ($gdb && $gquery) {
       "Or",
       a({-href => "genomeSearch.cgi?doupload=1"}, "upload"),
       "a genome or proteome in fasta format");
-  # Check $cgi->param('Search') in case of failed uploads ??
   finish();
 }
 
+# Do the actual query -- first, validate the input
 fail("No genome fetched") unless defined $genomeName;
 die "No query\n" unless $query;
-
-# This should really be in pbweb
-my %sourceToURL = ( "SwissProt" => "http://www.uniprot.org/uniprot/",
-                    "SwissProt/TReMBL" => "http://www.uniprot.org/uniprot/",
-                    "BRENDA" => "http://www.brenda-enzymes.org/sequences.php?AC=",
-                    "MicrobesOnline" => "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=",
-                    "RefSeq" => "http://www.ncbi.nlm.nih.gov/protein/",
-                    "metacyc" => "https://metacyc.org/gene?orgid=META&id=",
-                    "ecocyc" => "https://ecocyc.org/gene?orgid=ECOLI&id=",
-                    "CAZy" => "http://www.cazy.org/search?page=recherche&lang=en&tag=4&recherche="
-                  );
 
 my %seqs = (); # The main sequence set
 my $isNuc; # Is the main sequence set protein?
@@ -265,8 +275,7 @@ if (@$chits > $maxhits) {
 if (@$chits == 0) {
   print p(qq{None of the curated entries in PaperBLAST's database match '$query'. Please try},
           a({ -href => $URLnoq }, "another query") . ".");
-  print end_html;
-  exit(0);
+  finish();
 }
 if ($word) {
   # filter for whole-word hits
@@ -277,8 +286,7 @@ if ($word) {
   if (@keep == 0) {
     print p(qq{None of the curated entries in PaperBLAST's database match '$query' as complete words. Please try},
             a({ -href => $URLnoq }, "another query") . ".");
-    print end_html;
-    exit(0);
+    finish();
   }
   $chits = \@keep;
 }
@@ -291,7 +299,7 @@ my $chitsfaaFile = "$basefile.chits.faa";
 my $seqFile = "$basefile.seq";
 my $ublastFile = "$basefile.ublast";
 
-# Make the input file for fastacmd
+# Fetch the curated sequences that match
 my %idToChit = (); # sequence identifier to curated gene hit(s)
 foreach my $hit (@$chits) {
   my $seqid = $hit->{db} . "::" . $hit->{protId};
@@ -312,6 +320,7 @@ unlink($listFile);
 
 my %byCurated = (); # curated to list of hits; used to save the maximum score below
 
+# Run ublast against the protein sequences
 unless($isNuc) {
   open(FAA, ">", $seqFile) || die "Cannot write to $seqFile";
   while (my ($header, $seq) = each %seqs) {
@@ -346,11 +355,11 @@ unless($isNuc) {
   }
 }
 
-# And search the six frame translation
+# Search the six frame translation
 my $ntfile; # genome sequence file (fasta nucleotide)
 if ($assembly) {
-  $ntfile = $assembly->{ntFile};
-  finish() unless $ntfile;
+  $ntfile = $assembly->{ntfile};
+  fail("Skipping 6-frame search -- no nucleotide sequences") unless $ntfile;
   if ($ntfile) {
     open(my $fh, "<", $ntfile) || die "Cannot read $ntfile";
     my $state = {};
@@ -471,6 +480,7 @@ foreach my $input (@inputsX) {
 unlink($chitsfaaFile);
 finish();
 
+
 sub PrintHits($$$$) {
   my ($input, $seq, $hits, $sixframe) = @_;
   my $inputlink = $sixframe ? SixFrameLink($input, $hits) : ProteinLink($input);
@@ -478,6 +488,17 @@ sub PrintHits($$$$) {
   my $pblink = small(a({ -href => "litSearch.cgi?query=>${input}%0A${seq}",
                          -title => "full PaperBLAST results for this $seqtype"},
                        "PaperBLAST"));
+
+  # This should really be in pbweb
+  my %sourceToURL = ( "SwissProt" => "http://www.uniprot.org/uniprot/",
+                      "SwissProt/TReMBL" => "http://www.uniprot.org/uniprot/",
+                      "BRENDA" => "http://www.brenda-enzymes.org/sequences.php?AC=",
+                      "MicrobesOnline" => "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=",
+                      "RefSeq" => "http://www.ncbi.nlm.nih.gov/protein/",
+                      "metacyc" => "https://metacyc.org/gene?orgid=META&id=",
+                      "ecocyc" => "https://ecocyc.org/gene?orgid=ECOLI&id=",
+                      "CAZy" => "http://www.cazy.org/search?page=recherche&lang=en&tag=4&recherche="
+                    );
 
   my @show = ();
   my $iRow = 0;
@@ -589,10 +610,8 @@ sub ProteinLink($) {
         my ($acc, $desc) = ($1,$2);
         $desc =~ s/^MULTISPECIES: *//;
         my @ids = ();
-        my %assemblyProt = (); #XXX
-        my %assemblyOldLocusTag = (); #XXX
-        if (exists $assemblyProt{$acc}) {
-          my $g = $assemblyProt{$acc};
+        if (exists $assembly->{prot}{$acc}) {
+          my $g = $assembly->{prot}{$acc};
           $desc = $g->{name} if $g->{name} ne "";
           push @ids, $g->{symbol} if $g->{symbol};
           if ($g->{locus_tag}) {
@@ -609,7 +628,7 @@ sub ProteinLink($) {
               $title = "Genome Browser";
             }
             push @ids, defined $geneurl ? a( { -href => $geneurl, -title => $title }, $g->{locus_tag}) : $g->{locus_tag};
-            push @ids, $assemblyOldLocusTag{$g->{locus_tag}} if exists $assemblyOldLocusTag{$g->{locus_tag}};
+            push @ids, $assembly->{oldid}{$g->{locus_tag}} if exists $assembly->{oldid}{$g->{locus_tag}};
           }
         }
         push @ids, a({ -href => "https://www.ncbi.nlm.nih.gov/protein/$acc", -title => "NCBI Protein" }, $acc);
@@ -849,6 +868,7 @@ sub CacheAssembly($$$) {
     }
     my $features = ParseNCBIFeatureFile($featurefile);
     $assembly->{prot} = {};
+    $assembly->{oldid} = {};
     foreach my $row (@$features) {
       next unless $row->{class} eq "with_protein";
       $assembly->{prot}{$row->{product_accession}} = $row;
@@ -858,11 +878,12 @@ sub CacheAssembly($$$) {
       if ($row->{class} eq "protein_coding"
           && $row->{locus_tag}
           && $row->{attributes} =~ m/old_locus_tag=([A-Z0-9_]+)/) {
-        $assembly->{oldlocustag}{$row->{locus_tag}} = $1;
+        $assembly->{oldid}{$row->{locus_tag}} = $1;
       }
     }
     $assembly->{faafile} = $faafile;
     $assembly->{ntfile} = $ntfile;
+    $assembly->{gdb} = $gdb;
     return $assembly;
   }
   # else
