@@ -271,8 +271,7 @@ sub FetchJGI($$$$) {
     }
   }
   return "No IMG URL" unless defined $tar_url;
-  my $tar_url = "https://genome.jgi.doe.gov" . $tar_url;
-  my $tmp_tar = "$dir.$$.tar.gz";
+  $tar_url = "https://genome.jgi.doe.gov" . $tar_url;
   my $tmp_tar = "$dir.$$.tar";
   open($in, "-|", "curl", "--silent", $tar_url, "-b", $cookiefile)
     || die "Cannot run curl on $tar_url";
