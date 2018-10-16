@@ -34,8 +34,10 @@ use FetchAssembly; # for FetchAssemblyInfo() etc.
 use pbweb; # for TopDivHtml
 
 sub start_page($);
+sub FitnessBrowserDbh($);
 sub GetMatchingAssemblies($$);
 sub CacheAssembly($$$);
+sub query_fields_html($);
 
 # page must be started already; reports any number of errors or warning
 sub fail;
@@ -98,14 +100,12 @@ my %gdb_labels = map { $_ => exists $gdb_labels1{$_} ? $gdb_labels1{$_} : "$_ ge
 die "Unknown genome database: $gdb\n"
   if $gdb && !exists $gdb_labels{$gdb};
 
-&start_page("Curated BLAST for Genomes");
-
 # A symbolic link to the Fitness Browser data directory is used (if it exists)
 # to allow access to fitness browser genomes.
 # That directory must include feba.db (sqlite3 database) and aaseqs (in fasta format)
 my $fbdata = "../fbrowse_data"; # path relative to the cgi directory
-fail("Cannot access Fitness Browser database")
-  if $gid && $gid eq "FitnessBrowser" && ! -e $fbdata;
+
+&start_page("Curated BLAST for Genomes");
 
 my $tmpDir = "../tmp";
 my $procId = $$;
@@ -136,7 +136,7 @@ if ($gdb && $gquery) {
   } else {
     print p("Sorry, no matching genomes were found.");
   }
-  print p("Try", a({ -href => "genomeSearch.cgi?gdb=$gdb" }, "another query"));
+  print p("Try", a({ -href => "genomeSearch.cgi?gdb=$gdb" }, "another genome"));
   finish();
 } elsif ($gdb && $gid && $query) {
   $assembly = CacheAssembly($gdb, $gid, "../tmp")
@@ -159,7 +159,7 @@ if ($gdb && $gquery) {
       small("(" . $assembly->{gid} . ")"),
       "from",  $gdb_labels{$gdb},
       "or try",
-      a({ -href => "genomeSearch.cgi" }, "another query")),
+      a({ -href => "genomeSearch.cgi" }, "another genome")),
     p("Enter a search term:",
       textfield(-name => 'query', -value => '', -size => 50, -maxlength => 200)),
     p(submit(-name => 'Search', -value => 'Search selected genome')),
@@ -180,7 +180,7 @@ if ($gdb && $gquery) {
         br(),
         "(up to $maxMB MB and up to $maxseqsComma sequences)"),
       filefield(-name=>'file', -size=>50),
-      query_fields(2),
+      query_fields_html(2),
       p(submit(-name => 'uploading', -value => 'Search')),
       end_form,
       p("Or", a({ -href => "genomeSearch.cgi"}, "search"), "for a genome");
@@ -208,7 +208,6 @@ if ($gdb && $gquery) {
 fail("No genome fetched") unless defined $genomeName;
 die "No query\n" unless $query;
 
-my %seqs = (); # The main sequence set
 my $isNuc; # Is the main sequence set protein?
 
 my $faaFile;
@@ -223,7 +222,7 @@ if ($assembly) {
   $faaFileDesc = "uploaded file";
 }
 
-my %seqs = ();
+my %seqs = (); # The main sequence set
 my $state = {};
 my $totlen = 0;
 my $nNucChar = 0;
@@ -358,12 +357,12 @@ unless($isNuc) {
 }
 
 # Search the six frame translation
-my $ntfile; # genome sequence file (fasta nucleotide)
+my $fnafile; # genome sequence file (fasta nucleotide)
 if ($assembly) {
-  $ntfile = $assembly->{ntfile};
-  fail("Skipping 6-frame search -- no nucleotide sequences") unless $ntfile;
-  if ($ntfile) {
-    open(my $fh, "<", $ntfile) || die "Cannot read $ntfile";
+  $fnafile = $assembly->{fnafile};
+  fail("Skipping 6-frame search -- no nucleotide sequences") unless $fnafile;
+  if ($fnafile) {
+    open(my $fh, "<", $fnafile) || die "Cannot read $fnafile";
     my $state = {};
     my %ntlen = ();
     while (my ($header, $sequence) = ReadFastaEntry($fh,$state)) {
@@ -371,7 +370,7 @@ if ($assembly) {
         if exists $ntlen{$header};
       $ntlen{$header} = length($sequence);
     }
-    close($fh) || die "Error reading $ntfile";
+    close($fh) || die "Error reading $fnafile";
     if (scalar(keys %ntlen) > $maxseqs) {
       print p("Not searching the 6-frame translation because this genome has too many scaffolds");
       finish();
@@ -385,7 +384,7 @@ if ($assembly) {
   }
 } else { # uploaded
   if ($isNuc) {
-    $ntfile = $seqFile;
+    $fnafile = $seqFile;
     open(FNA, ">", $seqFile) || die "Cannot write to $seqFile";
     while (my ($header, $seq) = each %seqs) {
       print FNA ">$header\n$seq\n";
@@ -397,16 +396,16 @@ if ($assembly) {
   }
 }
 
-my $xfile = "$ntfile.aa6";
+my $xfile = "$fnafile.aa6";
 if (! -e $xfile) {
-  system("$usearch -fastx_findorfs $ntfile -aaout $xfile -orfstyle 7 -mincodons $minCodons >& /dev/null") == 0
+  system("$usearch -fastx_findorfs $fnafile -aaout $xfile -orfstyle 7 -mincodons $minCodons >& /dev/null") == 0
     || die "usearch findorfs failed: $!";
 }
 unlink($seqFile) if $upfile;
 
 # And read the 6-frame translation
 my %seqsx = ();
-my $state = {};
+$state = {};
 open(my $fhx, "<", $xfile) || die "Cannot read $xfile";
 while (my ($header, $sequence) = ReadFastaEntry($fhx,$state)) {
   $seqsx{$header} = $sequence;
@@ -572,15 +571,13 @@ sub ProteinLink($) {
     return $input if !defined $gdb;
     my $inputlink = $input;
     if ($gdb eq "FitnessBrowser") {
-      my $orginfo = {}; #XXX
       my @words = split / /, $input;
       my $locusId = shift @words;
       my $sysName = shift @words;
       my $desc = join(" ", @words);
       $inputlink = ($sysName || $locusId) . ": $desc";
-      $inputlink = a({ -href => "http://fit.genomics.lbl.gov/cgi-bin/singleFit.cgi?gid=${gid}&locusId=${locusId}" },
-                     $inputlink)
-        if exists $orginfo->{$gid};
+      $inputlink = a({ -href => "http://fit.genomics.lbl.gov/cgi-bin/singleFit.cgi?orgId=${gid}&locusId=${locusId}" },
+                     $inputlink);
     } elsif ($gdb eq "Microbesonline") {
       my @words = split / /, $input;
       my $locusId = shift @words;
@@ -836,24 +833,41 @@ sub GetMatchingAssemblies($$) {
     }
     return @hits;
   } elsif ($gdb eq "MicrobesOnline") {
-      my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
-        || fail("Cannot connect to MicrobesOnline:", $DBI::errstr);
-      my $hits = $mo_dbh->selectall_arrayref("SELECT taxonomyId, shortName FROM Taxonomy
+    my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
+      || fail("Cannot connect to MicrobesOnline:", $DBI::errstr);
+    my $hits = $mo_dbh->selectall_arrayref("SELECT taxonomyId, shortName FROM Taxonomy
                                               WHERE shortName LIKE ? ORDER BY shortName LIMIT 100",
-                                             { Slice => {} }, $gquery."%");
-      foreach my $hit (@$hits) {
-        $hit->{gdb} = $gdb;
-        $hit->{gid} = $hit->{taxonomyId};
-        $hit->{genomeName} = $hit->{shortName};
-        $hit->{URL} = "http://www.microbesonline.org/cgi-bin/genomeInfo.cgi?tId=511145";
-      }
-      return @$hits;
+                                           { Slice => {} }, $gquery."%");
+    foreach my $hit (@$hits) {
+      $hit->{gdb} = $gdb;
+      $hit->{gid} = $hit->{taxonomyId};
+      $hit->{genomeName} = $hit->{shortName};
+      $hit->{URL} = "http://www.microbesonline.org/cgi-bin/genomeInfo.cgi?tId=511145";
+    }
+    return @$hits;
+  } elsif ($gdb eq "FitnessBrowser") {
+    my $fbdbh = &FitnessBrowserDbh($fbdata);
+    my $orginfo = $fbdbh->selectall_hashref("SELECT * FROM Organism", "orgId");
+    my @hits = ();
+    foreach my $hash (values %$orginfo) {
+      $hash->{genomeName} = join(" ", $hash->{genus}, $hash->{species}, $hash->{strain});
+      $hash->{gdb} = $gdb;
+      $hash->{gid} = $hash->{orgId};
+      $hash->{URL} = "http://fit.genomics.lbl.gov/cgi-bin/org.cgi?orgId=" . $hash->{orgId};
+      my $lcg = lc($hash->{genomeName});
+      push @hits, $hash
+        if substr($lcg, 0, length($gquery)) eq lc($gquery)
+          || index($lcg, " " . lc($gquery)) >= 0
+          || index($lcg, "-" . lc($gquery)) >= 0;
+    }
+    @hits = sort { $a->{genomeName} cmp $b->{genomeName} } @hits;
+    return @hits;
   }
   # else
   fail("Database $gdb is not supported");
 }
 
-sub query_fields($) {
+sub query_fields_html($) {
   my $prefix = "";
   $prefix = "2. " if @_;
   return join("\n",
@@ -878,14 +892,14 @@ sub CacheAssembly($$$) {
     $assembly->{genomeName} = $assembly->{org};
     $assembly->{URL} = "https://www.ncbi.nlm.nih.gov/assembly/" . $assembly->{id};
     my $faafile = "$dir/refseq_" . $assembly->{gid} . ".faa";
-    my $ntfile = "$dir/refseq_" . $assembly->{gid} . ".fna";
+    my $fnafile = "$dir/refseq_" . $assembly->{gid} . ".fna";
     my $featurefile = "$tmpDir/refseq_" . $assembly->{id} . ".features.tab";
     unless (-e $faafile) {
       print "<P>Fetching protein fasta file for $assembly->{gid}\n";
       fail("Sorry, failed to fetch the protein fasta file for this assembly ($!). This assembly might not have any predicted proteins.")
         unless FetchNCBIFaa($assembly, $faafile);
       fail("Sorry, failed to fetch the nucleotide assembly for this assembly: $!")
-        unless FetchNCBIFna($assembly, $ntfile);
+        unless FetchNCBIFna($assembly, $fnafile);
       fail("Sorry, failed to fetch the feature file for this assembly: $!")
         unless &FetchNCBIFeatureFile($assembly, $featurefile);
     }
@@ -905,7 +919,7 @@ sub CacheAssembly($$$) {
       }
     }
     $assembly->{faafile} = $faafile;
-    $assembly->{ntfile} = $ntfile;
+    $assembly->{fnafile} = $fnafile;
     $assembly->{gdb} = $gdb;
     return $assembly;
   } elsif ($gdb eq "MicrobesOnline") {
@@ -920,7 +934,7 @@ sub CacheAssembly($$$) {
                      genomeName => $genomeName,
                      URL => "http://www.microbesonline.org/cgi-bin/genomeInfo.cgi?tId=$taxId",
                      faafile => "$dir/mogenome_${taxId}.faa",
-                     ntfile => "$dir/mogenome_${taxId}.fna" };
+                     fnafile => "$dir/mogenome_${taxId}.fna" };
     unless (-e $assembly->{faafile}) {
       print p("Loading the proteome of $genomeName from", a({-href => "http://www.microbesonline.org/" }, "MicrobesOnline")), "\n";
       my $desc = $mo_dbh->selectall_hashref(qq{ SELECT locusId, description
@@ -951,7 +965,7 @@ sub CacheAssembly($$$) {
       rename($tmpfile, $assembly->{faafile})
         || fail("Rename $tmpfile to $assembly->{faafile} failed");
     }
-    unless (-e $assembly->{ntfile}) {
+    unless (-e $assembly->{fnafile}) {
       print p("Loading the genome of $genomeName from", a({-href => "http://www.microbesonline.org/" }, "MicrobesOnline")), "\n";
       my $sc = $mo_dbh->selectall_arrayref(qq{ SELECT scaffoldId, sequence
                                                FROM Scaffold JOIN ScaffoldSeq USING (scaffoldId)
@@ -970,7 +984,60 @@ sub CacheAssembly($$$) {
         || fail("Rename $tmpfile to $assembly->{fnafile} failed");
     }
     return $assembly;
+  } elsif ($gdb eq "FitnessBrowser") {
+    my $dbh = &FitnessBrowserDbh($fbdata);
+    my $assembly = $dbh->selectrow_hashref("SELECT * FROM Organism WHERE orgId = ?",
+                                         {}, $gid);
+    fail("Genome $gid in the Fitness Browser is not known")
+      unless defined $assembly->{orgId};
+    $assembly->{gdb} = $gdb;
+    $assembly->{gid} = $gid;
+    $assembly->{faafile} = "$dir/fbrowse_${gid}.faa";
+    $assembly->{fnafile} = "$dir/fbrowse_${gid}.fna";
+    $assembly->{genomeName} = join(" ", $assembly->{genus}, $assembly->{species}, $assembly->{strain});
+    unless (-e $assembly->{faafile}) {
+      my $tmpfile = $assembly->{faafile} . ".$$.tmp";
+      open(my $fh, ">", $tmpfile) || fail("Cannot write to $tmpfile");
+      my $genes = $dbh->selectall_hashref("SELECT * from Gene WHERE orgId = ?", "locusId", {}, $gid);
+      open(my $aafh, "<", "$fbdata/aaseqs") || die "Cannot read $fbdata/aaeqs";
+      my $state = {};
+      while (my ($header, $sequence) = ReadFastaEntry($aafh,$state)) {
+        my ($org2, $locusId) = split /:/, $header;
+        die $header unless defined $locusId;
+        next unless $org2 eq $gid;
+        my $gene = $genes->{$locusId}
+          || die "Unrecognized locusId $locusId";
+        print $fh ">$locusId $gene->{sysName} $gene->{desc}\n$sequence\n";
+      }
+      close($aafh) || die "Error reading $fbdata/aaseqs";
+      rename($tmpfile, $assembly->{faafile}) || die "Rename $tmpfile to $assembly->{faafile} failed";
+    }
+    unless (-e $assembly->{fnafile}) {
+      my $tmpfile = $assembly->{fnafile} . ".$$.tmp";
+      open(my $fh, ">", $tmpfile) || fail("Cannot write to $tmpfile");
+      my $sc = $dbh->selectall_arrayref("SELECT scaffoldId, sequence FROM ScaffoldSeq
+                                           WHERE orgId = ?",
+                                          {}, $gid);
+      foreach my $row (@$sc) {
+        my ($scaffoldId,$sequence) = @$row;
+        print $fh ">${scaffoldId}\n${sequence}\n";
+      }
+      close($fh) || fail("Error writing to $tmpfile");
+      rename($tmpfile, $assembly->{fnafile}) || die "Rename $tmpfile to $assembly->{fnafile} failed";
+    }
+    return $assembly;
   }
   # else
   fail("Database $gdb is not supported");
+}
+
+my $fbdbh; # set just once
+sub FitnessBrowserDbh($) {
+  my ($db) = @_;
+  die "Fitness Browser database not specified" unless defined $db;
+  return $fbdbh if $fbdbh;
+  fail("Fitness Browser database $db is missing") unless -e $db;
+  $fbdbh = DBI->connect("dbi:SQLite:dbname=$fbdata/feba.db","","",{ RaiseError => 1 })
+    || fail("Cannot connect to Fitness Browser database: " . $DBI::errstr);
+  return $fbdbh;
 }
