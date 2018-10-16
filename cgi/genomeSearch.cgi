@@ -17,7 +17,8 @@
 # file -- an uploaded file with protein sequences in FASTA format
 #
 # doupload -- set to show the upload page
-# Search -- set if the search button was pressed [used to handle failed uploads]
+# Search -- set if the search button was pressed
+#	[used to handle failed uploads or if no query was entered]
 
 use strict;
 use CGI qw(:standard Vars);
@@ -148,7 +149,8 @@ if ($gdb && $gquery) {
   # assembly chosen but no query was entered
   $assembly = CacheAssembly($gdb, $gid, "../tmp")
     || fail("Cannot fetch assembly $gid from database $gdb");
-  warning("Please enter a search term");
+  warning("Please enter a search term")
+    if $cgi->param('Search');
   print start_form(-method => 'get', -action => 'genomeSearch.cgi'),
     hidden(-name => 'gid', -value => $gid, -override => 1),
     hidden(-name => 'gdb', -value => $gdb, -override => 1),
@@ -634,6 +636,13 @@ sub ProteinLink($) {
         push @ids, a({ -href => "https://www.ncbi.nlm.nih.gov/protein/$acc", -title => "NCBI Protein" }, $acc);
         $inputlink = join(" ", @ids) . ": " . $desc;
       }
+    } elsif ($gdb eq "MicrobesOnline") {
+      my @words = split / /, $input;
+      my $locusId = shift @words;
+      my $sysName = shift @words;
+      my $desc = join(" ", @words);
+      $inputlink = a({ -href => "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=$locusId"},
+                     $sysName || "VIMSS$locusId") . ": $desc";
     }
     return $inputlink;
 }
@@ -820,11 +829,25 @@ sub GetMatchingAssemblies($$) {
   if ($gdb eq "NCBI") {
     my @hits = FetchNCBIInfo($gquery);
     foreach my $hit (@hits) {
+      $hit->{gdb} = $gdb;
       $hit->{gid} = $hit->{id};
       $hit->{genomeName} = $hit->{org};
       $hit->{URL} = "https://www.ncbi.nlm.nih.gov/assembly/" . $hit->{id};
     }
     return @hits;
+  } elsif ($gdb eq "MicrobesOnline") {
+      my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
+        || fail("Cannot connect to MicrobesOnline:", $DBI::errstr);
+      my $hits = $mo_dbh->selectall_arrayref("SELECT taxonomyId, shortName FROM Taxonomy
+                                              WHERE shortName LIKE ? ORDER BY shortName LIMIT 100",
+                                             { Slice => {} }, $gquery."%");
+      foreach my $hit (@$hits) {
+        $hit->{gdb} = $gdb;
+        $hit->{gid} = $hit->{taxonomyId};
+        $hit->{genomeName} = $hit->{shortName};
+        $hit->{URL} = "http://www.microbesonline.org/cgi-bin/genomeInfo.cgi?tId=511145";
+      }
+      return @$hits;
   }
   # else
   fail("Database $gdb is not supported");
@@ -884,6 +907,68 @@ sub CacheAssembly($$$) {
     $assembly->{faafile} = $faafile;
     $assembly->{ntfile} = $ntfile;
     $assembly->{gdb} = $gdb;
+    return $assembly;
+  } elsif ($gdb eq "MicrobesOnline") {
+    my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
+      || fail("Cannot connect to MicrobesOnline:", $DBI::errstr);
+    my $taxId = $gid;
+    my ($genomeName) = $mo_dbh->selectrow_array(qq{ SELECT shortName FROM Taxonomy WHERE taxonomyId = ? },
+                                                 {}, $taxId);
+    fail("Unknown taxonomy $taxId") unless defined $genomeName;
+    my $assembly = { gdb => $gdb,
+                     gid => $gid,
+                     genomeName => $genomeName,
+                     URL => "http://www.microbesonline.org/cgi-bin/genomeInfo.cgi?tId=$taxId",
+                     faafile => "$dir/mogenome_${taxId}.faa",
+                     ntfile => "$dir/mogenome_${taxId}.fna" };
+    unless (-e $assembly->{faafile}) {
+      print p("Loading the proteome of $genomeName from", a({-href => "http://www.microbesonline.org/" }, "MicrobesOnline")), "\n";
+      my $desc = $mo_dbh->selectall_hashref(qq{ SELECT locusId, description
+                                                    FROM Locus JOIN Scaffold USING (scaffoldId)
+                                                    JOIN Description USING (locusId,version)
+                                                    WHERE taxonomyId = ? AND isActive=1 AND priority=1 AND Locus.type=1 },
+                                            "locusId", {}, $taxId);
+      my $sysNames = $mo_dbh->selectall_hashref(qq{ SELECT locusId, name
+                                                    FROM Locus JOIN Scaffold USING (scaffoldId)
+                                                    JOIN Synonym USING (locusId, version)
+                                                    WHERE taxonomyId = ? AND isActive=1 AND priority=1
+                                                          AND Locus.type=1 AND Synonym.type = 1 },
+                                                "locusId", {}, $taxId);
+      my $genes = $mo_dbh->selectall_arrayref(qq{ SELECT locusId, sequence
+                                                  FROM Locus JOIN Scaffold USING (scaffoldId)
+                                                  JOIN AASeq USING (locusId, version)
+                                                  WHERE taxonomyId = ? AND isActive=1 AND priority=1 AND type=1; },
+                                              { Slice => {} }, $taxId);
+      my $tmpfile = $assembly->{faafile} . ".$$.tmp";
+      open(my $fh, ">", $tmpfile) || fail("Cannot write to $tmpfile");
+      foreach my $gene (@$genes) {
+        my $locusId = $gene->{locusId};
+        my $sysName = $sysNames->{$locusId}{name} || "";
+        my $desc = $desc->{$locusId}{description} || "";
+        print $fh ">$locusId $sysName $desc\n$gene->{sequence}\n";
+      }
+      close($fh) || fail("Error writing to $tmpfile");
+      rename($tmpfile, $assembly->{faafile})
+        || fail("Rename $tmpfile to $assembly->{faafile} failed");
+    }
+    unless (-e $assembly->{ntfile}) {
+      print p("Loading the genome of $genomeName from", a({-href => "http://www.microbesonline.org/" }, "MicrobesOnline")), "\n";
+      my $sc = $mo_dbh->selectall_arrayref(qq{ SELECT scaffoldId, sequence
+                                               FROM Scaffold JOIN ScaffoldSeq USING (scaffoldId)
+                                               WHERE taxonomyId = ? AND isActive = 1 },
+                                           {}, $taxId);
+      fail("Cannot fetch genome sequence for $taxId from MicrobesOnline")
+        unless @$sc > 0;
+      my $tmpfile = $assembly->{fnafile} . ".$$.tmp";
+      open(my $fh, ">", $tmpfile) || fail("Cannot write to $tmpfile");
+      foreach my $row (@$sc) {
+        my ($scaffoldId, $seq) = @$row;
+        print $fh ">${scaffoldId}\n$seq\n";
+      }
+      close($fh) || fail("Error writing to $tmpfile");
+      rename($tmpfile, $assembly->{fnafile})
+        || fail("Rename $tmpfile to $assembly->{fnafile} failed");
+    }
     return $assembly;
   }
   # else
