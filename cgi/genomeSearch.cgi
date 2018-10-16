@@ -359,28 +359,27 @@ unless($isNuc) {
 # Search the six frame translation
 my $fnafile; # genome sequence file (fasta nucleotide)
 if ($assembly) {
+  finish() if !exists $assembly->{fnafile}; # i.e. for UniProt proteomes
   $fnafile = $assembly->{fnafile};
   fail("Skipping 6-frame search -- no nucleotide sequences") unless $fnafile;
-  if ($fnafile) {
-    open(my $fh, "<", $fnafile) || die "Cannot read $fnafile";
-    my $state = {};
-    my %ntlen = ();
-    while (my ($header, $sequence) = ReadFastaEntry($fh,$state)) {
-      fail("Duplicate sequence for $header in nucleotide sequence of $genomeName")
-        if exists $ntlen{$header};
-      $ntlen{$header} = length($sequence);
-    }
-    close($fh) || die "Error reading $fnafile";
-    if (scalar(keys %ntlen) > $maxseqs) {
-      print p("Not searching the 6-frame translation because this genome has too many scaffolds");
-      finish();
-    }
-    my $tot = 0;
-    foreach my $value (values %ntlen) { $tot += $value; }
-    if ($tot > $maxNtLen) {
-      print p("Not searching the 6-frame translation because this genome is too large");
-      finish();
-    }
+  open(my $fh, "<", $fnafile) || die "Cannot read $fnafile";
+  my $state = {};
+  my %ntlen = ();
+  while (my ($header, $sequence) = ReadFastaEntry($fh,$state)) {
+    fail("Duplicate sequence for $header in nucleotide sequence of $genomeName")
+      if exists $ntlen{$header};
+    $ntlen{$header} = length($sequence);
+  }
+  close($fh) || die "Error reading $fnafile";
+  if (scalar(keys %ntlen) > $maxseqs) {
+    print p("Not searching the 6-frame translation because this genome has too many scaffolds");
+    finish();
+  }
+  my $tot = 0;
+  foreach my $value (values %ntlen) { $tot += $value; }
+  if ($tot > $maxNtLen) {
+    print p("Not searching the 6-frame translation because this genome is too large");
+    finish();
   }
 } else { # uploaded
   if ($isNuc) {
@@ -862,6 +861,8 @@ sub GetMatchingAssemblies($$) {
     }
     @hits = sort { $a->{genomeName} cmp $b->{genomeName} } @hits;
     return @hits;
+  } elsif ($gdb eq "UniProt") {
+    return SearchUniProtProteomes($gquery);
   }
   # else
   fail("Database $gdb is not supported");
@@ -1024,6 +1025,30 @@ sub CacheAssembly($$$) {
       }
       close($fh) || fail("Error writing to $tmpfile");
       rename($tmpfile, $assembly->{fnafile}) || die "Rename $tmpfile to $assembly->{fnafile} failed";
+    }
+    return $assembly;
+  } elsif ($gdb eq "UniProt") {
+    my $assembly = UniProtProteomeInfo($gid);
+    $assembly->{faafile} = "$dir/uniprot_${gid}.faa";
+    unless (-e $assembly->{faafile}) {
+      # First try getting from https://www.uniprot.org/uniprot/?query=proteome:UP000002886&format=fasta
+      # This is a bit slow, so I considered using links like
+      # ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/reference_proteomes/Archaea/UP000000242_399549.fasta.gz
+      # but those are also surprisingly slow, and would need to figure out which section to look in.
+      print p("Loading proteome",
+              a({-href => "https://www.uniprot.org/proteomes/$gid"}, $gid),
+              "from UniProt"), "\n";
+      my $refURL = "https://www.uniprot.org/uniprot/?query=proteome:${gid}&format=fasta";
+      my $uniparcURL = "https://www.uniprot.org/uniparc/?query=proteome:${gid}&format=fasta";
+      my $faa = get($refURL);
+      $faa = get($uniparcURL) unless $faa;
+      fail("Proteome $gid seems to be empty, see", a({href => $uniparcURL}, "here"))
+        unless $faa;
+      my $tmpfile = $assembly->{faafile} . ".$$.tmp";
+      open(my $fh, ">", $tmpfile) || fail("Cannot write to $tmpfile");
+      print $fh $faa;
+      close($fh) || die "Error writing to $tmpfile";
+      rename($tmpfile, $assembly->{faafile}) || die "Rename $tmpfile to $assembly->{faafile} failed";
     }
     return $assembly;
   }

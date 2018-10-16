@@ -10,11 +10,12 @@ use Time::HiRes qw{gettimeofday};
 use pbutils;
 use URI::Escape;
 use HTTP::Cookies;
+use JSON;
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
 @EXPORT = qw(FetchNCBIInfo FetchNCBIFaa FetchNCBIFna FetchNCBIFeatureFile ParseNCBIFeatureFile
-             SearchJGI CreateJGICookie FetchJGI);
+             SearchJGI CreateJGICookie FetchJGI SearchUniProtProteomes UniProtProteomeInfo);
 
 my $maxfetchNCBI = 20;
 sub GetMaxFetchNCBI() {
@@ -324,6 +325,46 @@ sub ExplodeJGI($$) {
   print $out join("\n", $prefix, $name, $portalid)."\n";
   close($out) || die "Error writing to $dir/fields";
   return 1;
+}
+
+sub SearchUniProtProteomes {
+  my ($query, $limit) = @_;
+  return () unless $query;
+  $limit = 100 unless defined $limit;
+  # Search proteome name, not keywords
+  my $URL = "https://www.ebi.ac.uk/proteins/api/proteomes?name=${query}&format=json&size=${limit}";
+  my $string = get($URL);
+  die "No response from $URL" unless $string;
+  my $json = from_json($string);
+  die "Not a JSON response from $URL" unless $json;
+  die "Not a list from $URL" unless ref($json) eq "ARRAY";
+  my @hits = @$json;
+  foreach my $hit (@hits) {
+    die "No upid in element from $URL" unless $hit->{upid};
+    $hit->{gdb} = "UniProt";
+    $hit->{gid} = $hit->{upid};
+    $hit->{genomeName} = $hit->{name};
+    $hit->{URL} = "https://www.uniprot.org/proteomes/" . $hit->{upid};
+  }
+  return @hits;
+}
+
+sub UniProtProteomeInfo {
+  my ($gid) = @_;
+  die unless $gid;
+  my $URL = "https://www.ebi.ac.uk/proteins/api/proteomes?upid=${gid}&format=json";
+  my $string = get($URL);
+  die "No response from $URL" unless $string;
+  my $json = from_json($string);
+  die "Not a JSON response from $URL" unless $json;
+  die "Not a list from $URL" unless ref($json) eq "ARRAY";
+  my ($assembly) = @$json;
+  die "No upid in element from $URL" unless $assembly->{upid};
+  $assembly->{gdb} = "UniProt";
+  $assembly->{gid} = $gid;
+  $assembly->{genomeName} = $assembly->{name};
+  $assembly->{URL} = "https://www.uniprot.org/proteomes/" . $assembly->{upid};
+  return $assembly;
 }
 
 1;
