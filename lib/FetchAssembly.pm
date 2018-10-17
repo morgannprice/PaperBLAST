@@ -167,7 +167,7 @@ sub parse_comma_delimited_line($) {
 # and portalId
 sub SearchJGI($) {
   my ($query) = @_;
-  return [] unless defined $query && $query ne "";
+  return "", [] unless defined $query && $query ne "";
   $query = uri_escape($query);
   my $hostspec = "https://genome.jgi.doe.gov";
   my $URL = join("&", "$hostspec/portal/ext-api/search-service/export?core=genome",
@@ -214,8 +214,13 @@ sub SearchJGI($) {
       }
       # Compute the portal.id field
       if (exists $row->{"Portal ID"} && $row->{"Portal ID"} =~ m/"/) {
-        $row->{portalId} =~ m/,"([0-9A-Z_]+)[)]$/
+        $row->{"Portal ID"} =~ m/,"([0-9A-Za-z_]+)"[)]$/
           || return "Cannot find the portal id in " . $row->{"Portal ID"};
+        $row->{portalId} = $1;
+        $row->{genomeName} = $row->{"Project Name"};
+        $row->{URL} = "http://genome.jgi.doe.gov/" . $row->{portalId};
+        $row->{gdb} = "IMG";
+        $row->{gid} = $row->{portalId};
         push @out, $row;
       }
     }
@@ -229,15 +234,15 @@ sub CreateJGICookie($$$) {
   my $tmpfile = "$cookiefile.$$.tmp";
   unlink($tmpfile); # in case it exists
   my $URL = "https://signon-old.jgi.doe.gov/signon/create";
-  print join("\t", "XXX", $username, $passwd)."\n";
   my @cmd = ("curl", "--silent", $URL,
               "--data-urlencode", "login=$username",
               "--data-urlencode", "password=$passwd",
               "-c", $tmpfile);
-  print STDERR join("\t", "Command", @cmd)."\n";
   open(my $fh, "-|", @cmd)
-    || die "Cannot run curl to $URL";
-  my @lines = <$fh>;
+    || return "Cannot run curl to $URL";
+  while(<$fh>) {
+    ;
+  }
   close($fh) || die "Error running curl for $URL";
   die "Cookie file not created" unless -e $tmpfile;
   rename($tmpfile, $cookiefile) || die "renaming cookie file failed";
@@ -245,7 +250,7 @@ sub CreateJGICookie($$$) {
 }
 
 # Given a portal id and a genome name, fetch the IMG content into a new directory
-# Returns an error message, or ""
+# Returns an error message or ""
 # Creates an additional file "fields" that contains
 # filename prefix (IMG genome id), genome name, and portal prefix
 sub FetchJGI($$$$) {
@@ -253,6 +258,7 @@ sub FetchJGI($$$$) {
   return "Directory $dir already exists" if -e $dir;
   my $down_url = "https://genome.jgi.doe.gov/portal/ext-api/downloads/get-directory?organism=$portalid";
   my $in; # for reading in from various pipes
+
   open($in, "-|", "curl", "--silent", $down_url, "-b", $cookiefile)
     || die "Cannot run curl on $down_url";
   my @lines = <$in>;
@@ -262,17 +268,20 @@ sub FetchJGI($$$$) {
     unless $sxml;
   my @obj = $sxml->findnodes(q{//folder[@name='IMG Data']/file});
   return "No IMG data" unless @obj;
-  # The url attribute is what I want
+  # The url attribute is what I want, and it should have a filename that indicates it is the tarball
   my $tar_url = undef;
-  my $obj = $obj[0];
-  foreach my $attr ($obj->attributes) {
-    if ($attr->nodeName eq "url") {
-      $tar_url = $attr->nodeValue;
-      last;
+  foreach my $obj (@obj) {
+    foreach my $attr ($obj->attributes) {
+      if ($attr->nodeName eq "url" && $attr->nodeValue =~ m/[.]tar[.]gz$/) {
+        $tar_url = $attr->nodeValue;
+        last;
+      }
     }
+    last if defined $tar_url;
   }
-  return "No IMG URL" unless defined $tar_url;
+  return "No IMG URL for a tar.gz file" unless defined $tar_url;
   $tar_url = "https://genome.jgi.doe.gov" . $tar_url;
+
   my $tmp_tar = "$dir.$$.tar";
   open($in, "-|", "curl", "--silent", $tar_url, "-b", $cookiefile)
     || die "Cannot run curl on $tar_url";

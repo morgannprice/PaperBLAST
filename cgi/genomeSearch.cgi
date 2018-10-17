@@ -863,6 +863,10 @@ sub GetMatchingAssemblies($$) {
     return @hits;
   } elsif ($gdb eq "UniProt") {
     return SearchUniProtProteomes($gquery);
+  } elsif ($gdb eq "IMG") {
+    my ($imgerr, $hits) = SearchJGI($gquery);
+    fail("Error searching JGI/IMG: $imgerr") if $imgerr;
+    return @$hits;
   }
   # else
   fail("Database $gdb is not supported");
@@ -1051,8 +1055,54 @@ sub CacheAssembly($$$) {
       rename($tmpfile, $assembly->{faafile}) || die "Rename $tmpfile to $assembly->{faafile} failed";
     }
     return $assembly;
+  } elsif ($gdb eq "IMG") {
+    my $privdir = "../private";
+    fail("Invalid project identifier $gid")
+      unless $gid =~ m/^[a-zA-Z0-9_]+$/;
+    my $subdir = "$dir/$gid";
+    unless (-d $subdir) {
+      # Query again to find out what the genome is
+      my ($err, $hits) = SearchJGI($gid);
+      my @hits = grep { $_->{portalId} eq $gid} @$hits;
+      fail("Identifier $gid not known in JGI portal") unless @hits > 0;
+      my $genomeName = $hits[0]{genomeName};
+      print p("Fetching",
+              a({ -href => $hits[0]{URL} }, $genomeName),
+              "from the JGI portal"), "\n";
+      die "No such directory: $privdir" unless -d $privdir;
+      open(my $fh_info, "<", "$privdir/.JGI.info")
+        || die "Error creating JGI cookie";
+      my $uname = <$fh_info>; chomp $uname;
+      my $pwd = <$fh_info>; chomp $pwd;
+      close($fh_info) || die "Error creating JGI cookie";
+      my $cfile = "$privdir/JGI.$$.cookie";
+      my $err = CreateJGICookie($uname, $pwd, $cfile);
+      fail("Error creating JGI cookie: $err") if $err;
+      $err = FetchJGI($gid, $hits[0]{genomeName}, $cfile, $subdir);
+      fail($err) if $err;
+      unlink($cfile);
+    }
+    my ($imgId, $genomeName, $fnafile, $faafile);
+    my $imgId;
+    open (my $fhfields, "<", "$subdir/fields")
+      || fail("Cannot read $subdir/fields");
+    my $portalId2;
+    ($imgId, $genomeName, $portalId2) = <$fhfields>;
+    close($fhfields) || fail("Error reading $subdir/fields");
+    chomp $imgId;
+    chomp $genomeName;
+    chomp $portalId2;
+    fail("Invalid $subdir/fields file") unless defined $portalId2 && $portalId2 eq $gid;
+    $faafile = "$subdir/$imgId.genes.faa";
+    $fnafile = "$subdir/$imgId.fna";
+    fail("No such file: $faafile") unless -e $faafile;
+    fail("No such file: $fnafile") unless -e $fnafile;
+    my $assembly = { gdb => $gdb, gid => $gid, portalId => $gid, genomeName => $genomeName,
+                     imgId => $imgId,
+                     URL => "http://img.jgi.doe.gov/genome.php?id=" . $imgId,
+                     fnafile => $fnafile, faafile => $faafile };
+    return $assembly;
   }
-  # else
   fail("Database $gdb is not supported");
 }
 
