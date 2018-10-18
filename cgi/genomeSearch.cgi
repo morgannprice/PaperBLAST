@@ -131,7 +131,7 @@ if ($gdb && $gquery) {
     }
     print p("Enter a search term:",
             textfield(-name => 'query', -value => '', -size => 50, -maxlength => 200)),
-          p(submit(-name => 'Search', -value => 'Search selected genome')),
+          p(submit(-name => 'Search', -value => 'Search in selected genome')),
           end_form;
   } else {
     print p("Sorry, no matching genomes were found.");
@@ -142,9 +142,12 @@ if ($gdb && $gquery) {
   $assembly = CacheAssembly($gdb, $gid, "../tmp")
     || fail("Cannot fetch assembly $gid from database $gdb");
   $genomeName = $assembly->{genomeName};
+  my $link2 = $assembly->{gid};
+  $link2 = a({ -href => $assembly->{URL2} }, $link2) if exists $assembly->{URL2};
   print p("Searching in", a({-href => $assembly->{URL} }, $genomeName),
-         small("(" . $assembly->{gid} . ")")),
+         small("(" . $link2 . ")")),
          "\n";
+  # Finish searching down below
 } elsif ($gdb && $gid) {
   # assembly chosen but no query was entered
   $assembly = CacheAssembly($gdb, $gid, "../tmp")
@@ -162,7 +165,7 @@ if ($gdb && $gquery) {
       a({ -href => "genomeSearch.cgi" }, "another genome")),
     p("Enter a search term:",
       textfield(-name => 'query', -value => '', -size => 50, -maxlength => 200)),
-    p(submit(-name => 'Search', -value => 'Search selected genome')),
+    p(submit(-name => 'Search', -value => 'Search in selected genome')),
     end_form;
   finish();
 } elsif ($upfile && $query) {
@@ -639,6 +642,17 @@ sub ProteinLink($) {
       my $desc = join(" ", @words);
       $inputlink = a({ -href => "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=$locusId"},
                      $sysName || "VIMSS$locusId") . ": $desc";
+    } elsif ($gdb eq "IMG") {
+      my @words = split / /, $input;
+      if (@words > 2 && $words[0] =~ m/^\d+$/ && $words[1] =~ m/^[A-Za-z][0-9a-zA-Z_]+$/ && $words[1] =~ m/[0-9_]/) {
+        # The first word is the IMG gene # and the second word is a locus tag
+        my $locusId = shift @words;
+        my $sysName = shift @words;
+        my $desc = join(" ", @words);
+        $desc =~ s/ \[.*\]$//; # remove organism description at end
+        $inputlink = a({ -href => "https://img.jgi.doe.gov/cgi-bin/mer/main.cgi?section=GeneDetail&page=geneDetail&gene_oid="
+                         . $locusId }, $sysName) . ": $desc";
+      }
     }
     return $inputlink;
 }
@@ -653,6 +667,7 @@ sub SixFrameLink($$) {
   # beg2 and end2 have beg2 > end2 if on - strand
   my ($beg2, $end2) = ($begin, $end);
   ($beg2,$end2) = ($end2,$beg2) if $frame < 0;
+  $scaffoldId =~ s/ .*$// if $gdb && $gdb eq "IMG"; # remove extra fields from scaffold name
   my $show = "${begin}-${end} (frame $frame) on " . ($assembly ? $scaffoldId : "scaffold $scaffoldId");
 
   # If linking to a genome browser (either MicrobesOnline or the Fitness Browser), show
@@ -697,6 +712,10 @@ sub SixFrameLink($$) {
                  . "&mk=$beginUse:$endUse|hit_region|00008f",
                  -title => "NCBI's viewer" },
                $show);
+  } elsif ($gdb && $gdb eq "IMG") {
+    # Do not have the scaffold object id so cannot link to something like
+    # https://img.jgi.doe.gov/cgi-bin/mer/main.cgi?section=ScaffoldGraph&page=scaffoldGraph&scaffold_oid=637000443&start_coord=4000&end_coord=29000
+    $input = $show;
   }
   return $input;
 }
@@ -896,6 +915,7 @@ sub CacheAssembly($$$) {
     $assembly->{gid} = $assembly->{id};
     $assembly->{genomeName} = $assembly->{org};
     $assembly->{URL} = "https://www.ncbi.nlm.nih.gov/assembly/" . $assembly->{id};
+
     my $faafile = "$dir/refseq_" . $assembly->{gid} . ".faa";
     my $fnafile = "$dir/refseq_" . $assembly->{gid} . ".fna";
     my $featurefile = "$tmpDir/refseq_" . $assembly->{id} . ".features.tab";
@@ -1100,6 +1120,7 @@ sub CacheAssembly($$$) {
     my $assembly = { gdb => $gdb, gid => $gid, portalId => $gid, genomeName => $genomeName,
                      imgId => $imgId,
                      URL => "http://img.jgi.doe.gov/genome.php?id=" . $imgId,
+                     URL2 => "http://genome.jgi.doe.gov/" . $gid,
                      fnafile => $fnafile, faafile => $faafile };
     return $assembly;
   }
