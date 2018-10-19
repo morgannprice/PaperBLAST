@@ -33,7 +33,7 @@ use FetchAssembly; # for GetMatchingAssemblies(), CacheAssembly(), warning(), fa
 use pbweb; # for TopDivHtml
 
 sub start_page($);
-sub query_fields_html($);
+sub query_fields_html;
 
 sub finish;
 
@@ -125,10 +125,9 @@ if ($gdb && $gquery) {
         a({ -href => $row->{URL} }, $row->{genomeName} ),
         " ", small("(" . $row->{gid} . ")"), br();
     }
-    print p("Enter a search term:",
-            textfield(-name => 'query', -value => '', -size => 50, -maxlength => 200)),
-          p(submit(-name => 'Search', -value => 'Search in selected genome')),
-          end_form;
+    print query_fields_html(),
+      p(submit(-name => 'Search', -value => 'Search in selected genome')),
+      end_form;
   } else {
     print p("Sorry, no matching genomes were found.");
   }
@@ -159,8 +158,7 @@ if ($gdb && $gquery) {
       "from",  $gdb_labels{$gdb},
       "or try",
       a({ -href => "genomeSearch.cgi" }, "another genome")),
-    p("Enter a search term:",
-      textfield(-name => 'query', -value => '', -size => 50, -maxlength => 200)),
+    query_fields_html(),
     p(submit(-name => 'Search', -value => 'Search in selected genome')),
     end_form;
   finish();
@@ -823,13 +821,13 @@ print end_html;
 exit(0);
 }
 
-sub query_fields_html($) {
-  my $prefix = "";
-  $prefix = "2. " if @_;
+sub query_fields_html {
+  my ($prefix) = @_;
+  $prefix = defined $prefix ? "$prefix. " : "";
   return join("\n",
               p("${prefix}Enter a search term:",
                 textfield(-name => 'query', -value => '', -size => 50, -maxlength => 200)),
-              p({-style => "margin-left: 5em;" },
-                checkbox(-name => "word", -checked => 0, -label => "Match whole words only?"))
+              p({-style => "margin-left: 3em;" },
+                checkbox(-name => "word", -label => "Match whole words only?"))
              );
 }
