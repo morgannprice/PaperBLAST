@@ -30,7 +30,7 @@ use IO::Handle; # for autoflush
 use lib "../lib";
 use pbutils; # for ReadFastaEntry()
 use FetchAssembly; # for GetMatchingAssemblies(), CacheAssembly(), warning(), fail(), etc.
-use pbweb; # for TopDivHtml
+use pbweb qw{TopDivHtml loggerjs};
 
 sub start_page($);
 sub query_fields_html;
@@ -531,7 +531,8 @@ sub PrintHits($$$$) {
       $showId = $chit->{name} if $db eq "ecocyc" && $chit->{name};
       my @showOrgWords = split / /, $chit->{organism};
       @showOrgWords = @showOrgWords[0..1] if @showOrgWords > 2;
-      push @descs, a({-href => $URL, -title => "from $db"}, $showId) . ": " . $chit->{desc}
+      push @descs, a({-href => $URL, -title => "from $db", -onmousedown => loggerjs("curated", $showId) },
+                     $showId) . ": " . $chit->{desc}
         . " " . small("from " . i(join(" ", @showOrgWords)));
     }
     my $percentcov = int($row->{coverage} * 100 + 0.5);
