@@ -7,7 +7,7 @@ use Time::HiRes qw{gettimeofday};
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw(UniqToGenes SubjectToGene GenesToHtml GetMotd FetchFasta HmmToFile TopDivHtml);
+@EXPORT = qw(UniqToGenes SubjectToGene GenesToHtml GetMotd FetchFasta HmmToFile TopDivHtml loggerjs);
 
 # Returns a list of entries from SubjectToGene, 1 for each duplicate (if any),
 # sorted by priority
