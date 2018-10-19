@@ -474,12 +474,18 @@ sub CacheAssembly($$$) {
     my $faafile = "$dir/refseq_" . $assembly->{gid} . ".faa";
     my $fnafile = "$dir/refseq_" . $assembly->{gid} . ".fna";
     my $featurefile = "$dir/refseq_" . $assembly->{id} . ".features.tab";
+    unless (-e $faafile && -e $fnafile && -e $featurefile) {
+      print "<P>Fetching assembly $assembly->{gid}\n";
+    }
     unless (-e $faafile) {
-      print "<P>Fetching protein fasta file for $assembly->{gid}\n";
       fail("Sorry, failed to fetch the protein fasta file for this assembly ($!). This assembly might not have any predicted proteins.")
         unless FetchNCBIFaa($assembly, $faafile);
+    }
+    unless (-e $fnafile) {
       fail("Sorry, failed to fetch the nucleotide assembly for this assembly: $!")
         unless FetchNCBIFna($assembly, $fnafile);
+    }
+    unless (-e $featurefile) {
       fail("Sorry, failed to fetch the feature file for this assembly: $!")
         unless &FetchNCBIFeatureFile($assembly, $featurefile);
     }
