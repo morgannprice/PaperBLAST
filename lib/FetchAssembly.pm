@@ -34,10 +34,8 @@ sub warning {
   print p({ -style => "color: red;" }, @_), "\n";
 }
 
-my $maxfetchNCBI = 20;
-sub GetMaxFetchNCBI() {
-  return $maxfetchNCBI;
-}
+# Note -- arguably should be using an API key for NCBI
+my $maxfetchNCBI = 50;
 
 # One argument: the query
 # Returns a list of results (up to maxfetchNCBI) as a hash; each "assembly" includes
@@ -46,7 +44,7 @@ sub GetMaxFetchNCBI() {
 sub FetchNCBIInfo($) {
   my ($query) = @_;
   # First run the query using esearch
-  my $URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=assembly&term=" . $query;
+  my $URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=assembly&retmax=${maxfetchNCBI}&term=" . $query;
   my $string = get($URL);
   my $fxml = XML::LibXML->load_xml(string => $string, recover => 1);
   my @idnodes = $fxml->findnodes("//IdList/Id");
