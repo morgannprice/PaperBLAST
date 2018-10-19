@@ -3,7 +3,7 @@
 package FetchAssembly;
 require Exporter;
 use strict;
-use LWP::Simple; # for get()
+use LWP::Simple qw{get}; # for get()
 use LWP::UserAgent;
 use XML::LibXML;
 use Time::HiRes qw{gettimeofday};
@@ -11,11 +11,28 @@ use pbutils;
 use URI::Escape;
 use HTTP::Cookies;
 use JSON;
+use CGI qw{end_html a p};
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw(FetchNCBIInfo FetchNCBIFaa FetchNCBIFna FetchNCBIFeatureFile ParseNCBIFeatureFile
-             SearchJGI CreateJGICookie FetchJGI SearchUniProtProteomes UniProtProteomeInfo);
+@EXPORT = qw(GetMatchingAssemblies CacheAssembly
+             warning fail
+             SetPrivDir GetPrivDir
+             GetFitnessBrowserPath SetFitnessBrowserPath FitnessBrowserDbh
+             FetchNCBIInfo FetchNCBIFaa FetchNCBIFna FetchNCBIFeatureFile ParseNCBIFeatureFile
+             SearchJGI CreateJGICookie FetchJGI SearchUniProtProteomes UniProtProteomeInfo
+);
+
+# page must be started already; reports any number of errors or warning
+sub fail {
+  warning(@_);
+  print CGI::end_html;
+  exit(0);
+}
+
+sub warning {
+  print p({ -style => "color: red;" }, @_), "\n";
+}
 
 my $maxfetchNCBI = 20;
 sub GetMaxFetchNCBI() {
@@ -375,6 +392,322 @@ sub UniProtProteomeInfo {
   $assembly->{URL} = "https://www.uniprot.org/proteomes/" . $assembly->{upid};
   return $assembly;
 }
+
+# Fetch matching genomes, and return list of hashes
+# Each hash includes gid, genomeName, and URL
+sub GetMatchingAssemblies($$) {
+  my ($gdb,$gquery) = @_;
+  return unless $gdb && $gquery;
+  if ($gdb eq "NCBI") {
+    my @hits = FetchNCBIInfo($gquery);
+    foreach my $hit (@hits) {
+      $hit->{gdb} = $gdb;
+      $hit->{gid} = $hit->{id};
+      $hit->{genomeName} = $hit->{org};
+      $hit->{URL} = "https://www.ncbi.nlm.nih.gov/assembly/" . $hit->{id};
+    }
+    return @hits;
+  } elsif ($gdb eq "MicrobesOnline") {
+    my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
+      || fail("Cannot connect to MicrobesOnline:", $DBI::errstr);
+    my $hits = $mo_dbh->selectall_arrayref("SELECT taxonomyId, shortName FROM Taxonomy
+                                              WHERE shortName LIKE ? ORDER BY shortName LIMIT 100",
+                                           { Slice => {} }, $gquery."%");
+    foreach my $hit (@$hits) {
+      $hit->{gdb} = $gdb;
+      $hit->{gid} = $hit->{taxonomyId};
+      $hit->{genomeName} = $hit->{shortName};
+      $hit->{URL} = "http://www.microbesonline.org/cgi-bin/genomeInfo.cgi?tId=511145";
+    }
+    return @$hits;
+  } elsif ($gdb eq "FitnessBrowser") {
+    my $fbdbh = &FitnessBrowserDbh();
+    my $orginfo = $fbdbh->selectall_hashref("SELECT * FROM Organism", "orgId");
+    my @hits = ();
+    foreach my $hash (values %$orginfo) {
+      $hash->{genomeName} = join(" ", $hash->{genus}, $hash->{species}, $hash->{strain});
+      $hash->{gdb} = $gdb;
+      $hash->{gid} = $hash->{orgId};
+      $hash->{URL} = "http://fit.genomics.lbl.gov/cgi-bin/org.cgi?orgId=" . $hash->{orgId};
+      my $lcg = lc($hash->{genomeName});
+      push @hits, $hash
+        if substr($lcg, 0, length($gquery)) eq lc($gquery)
+          || index($lcg, " " . lc($gquery)) >= 0
+          || index($lcg, "-" . lc($gquery)) >= 0;
+    }
+    @hits = sort { $a->{genomeName} cmp $b->{genomeName} } @hits;
+    return @hits;
+  } elsif ($gdb eq "UniProt") {
+    return SearchUniProtProteomes($gquery);
+  } elsif ($gdb eq "IMG") {
+    my ($imgerr, $hits) = SearchJGI($gquery);
+    fail("Error searching JGI/IMG: $imgerr") if $imgerr;
+    return @$hits;
+  }
+  # else
+  fail("Database $gdb is not supported");
+}
+
+my $saved_privdir = "";
+sub SetPrivDir($) {
+  my ($dir) = @_;
+  fail("Not a directory: $dir") unless -d $dir;
+  $saved_privdir = $dir;
+}
+
+sub GetPrivDir() {
+  return $saved_privdir;
+}
+
+sub CacheAssembly($$$) {
+  my ($gdb, $gid, $dir) = @_;
+  return undef unless $gdb && $gid;
+  die "Not a directory: $dir\n" unless -d $dir;
+  if ($gdb eq "NCBI") {
+    my @hits = FetchNCBIInfo($gid);
+    fail("Do not recognize NCBI assembly $gid")
+      unless @hits;
+    my $assembly = $hits[0];
+    # note redundancy with code above
+    $assembly->{gid} = $assembly->{id};
+    $assembly->{genomeName} = $assembly->{org};
+    $assembly->{URL} = "https://www.ncbi.nlm.nih.gov/assembly/" . $assembly->{id};
+
+    my $faafile = "$dir/refseq_" . $assembly->{gid} . ".faa";
+    my $fnafile = "$dir/refseq_" . $assembly->{gid} . ".fna";
+    my $featurefile = "$dir/refseq_" . $assembly->{id} . ".features.tab";
+    unless (-e $faafile) {
+      print "<P>Fetching protein fasta file for $assembly->{gid}\n";
+      fail("Sorry, failed to fetch the protein fasta file for this assembly ($!). This assembly might not have any predicted proteins.")
+        unless FetchNCBIFaa($assembly, $faafile);
+      fail("Sorry, failed to fetch the nucleotide assembly for this assembly: $!")
+        unless FetchNCBIFna($assembly, $fnafile);
+      fail("Sorry, failed to fetch the feature file for this assembly: $!")
+        unless &FetchNCBIFeatureFile($assembly, $featurefile);
+    }
+    my $features = ParseNCBIFeatureFile($featurefile);
+    $assembly->{prot} = {};
+    $assembly->{oldid} = {};
+    foreach my $row (@$features) {
+      next unless $row->{class} eq "with_protein";
+      $assembly->{prot}{$row->{product_accession}} = $row;
+      $assembly->{prot}{$row->{"non-redundant_refseq"}} = $row;
+    }
+    foreach my $row (@$features) {
+      if ($row->{class} eq "protein_coding"
+          && $row->{locus_tag}
+          && $row->{attributes} =~ m/old_locus_tag=([A-Za-z0-9_]+)/) {
+        $assembly->{oldid}{$row->{locus_tag}} = $1;
+      }
+    }
+    $assembly->{faafile} = $faafile;
+    $assembly->{fnafile} = $fnafile;
+    $assembly->{gdb} = $gdb;
+    return $assembly;
+  } elsif ($gdb eq "MicrobesOnline") {
+    my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
+      || fail("Cannot connect to MicrobesOnline:", $DBI::errstr);
+    my $taxId = $gid;
+    my ($genomeName) = $mo_dbh->selectrow_array(qq{ SELECT shortName FROM Taxonomy WHERE taxonomyId = ? },
+                                                 {}, $taxId);
+    fail("Unknown taxonomy $taxId") unless defined $genomeName;
+    my $assembly = { gdb => $gdb,
+                     gid => $gid,
+                     genomeName => $genomeName,
+                     URL => "http://www.microbesonline.org/cgi-bin/genomeInfo.cgi?tId=$taxId",
+                     faafile => "$dir/mogenome_${taxId}.faa",
+                     fnafile => "$dir/mogenome_${taxId}.fna" };
+    unless (-e $assembly->{faafile}) {
+      print p("Loading the proteome of $genomeName from", a({-href => "http://www.microbesonline.org/" }, "MicrobesOnline")), "\n";
+      my $desc = $mo_dbh->selectall_hashref(qq{ SELECT locusId, description
+                                                    FROM Locus JOIN Scaffold USING (scaffoldId)
+                                                    JOIN Description USING (locusId,version)
+                                                    WHERE taxonomyId = ? AND isActive=1 AND priority=1 AND Locus.type=1 },
+                                            "locusId", {}, $taxId);
+      my $sysNames = $mo_dbh->selectall_hashref(qq{ SELECT locusId, name
+                                                    FROM Locus JOIN Scaffold USING (scaffoldId)
+                                                    JOIN Synonym USING (locusId, version)
+                                                    WHERE taxonomyId = ? AND isActive=1 AND priority=1
+                                                          AND Locus.type=1 AND Synonym.type = 1 },
+                                                "locusId", {}, $taxId);
+      my $genes = $mo_dbh->selectall_arrayref(qq{ SELECT locusId, sequence
+                                                  FROM Locus JOIN Scaffold USING (scaffoldId)
+                                                  JOIN AASeq USING (locusId, version)
+                                                  WHERE taxonomyId = ? AND isActive=1 AND priority=1 AND type=1; },
+                                              { Slice => {} }, $taxId);
+      my $tmpfile = $assembly->{faafile} . ".$$.tmp";
+      open(my $fh, ">", $tmpfile) || fail("Cannot write to $tmpfile");
+      foreach my $gene (@$genes) {
+        my $locusId = $gene->{locusId};
+        my $sysName = $sysNames->{$locusId}{name} || "";
+        my $desc = $desc->{$locusId}{description} || "";
+        print $fh ">$locusId $sysName $desc\n$gene->{sequence}\n";
+      }
+      close($fh) || fail("Error writing to $tmpfile");
+      rename($tmpfile, $assembly->{faafile})
+        || fail("Rename $tmpfile to $assembly->{faafile} failed");
+    }
+    unless (-e $assembly->{fnafile}) {
+      print p("Loading the genome of $genomeName from", a({-href => "http://www.microbesonline.org/" }, "MicrobesOnline")), "\n";
+      my $sc = $mo_dbh->selectall_arrayref(qq{ SELECT scaffoldId, sequence
+                                               FROM Scaffold JOIN ScaffoldSeq USING (scaffoldId)
+                                               WHERE taxonomyId = ? AND isActive = 1 },
+                                           {}, $taxId);
+      fail("Cannot fetch genome sequence for $taxId from MicrobesOnline")
+        unless @$sc > 0;
+      my $tmpfile = $assembly->{fnafile} . ".$$.tmp";
+      open(my $fh, ">", $tmpfile) || fail("Cannot write to $tmpfile");
+      foreach my $row (@$sc) {
+        my ($scaffoldId, $seq) = @$row;
+        print $fh ">${scaffoldId}\n$seq\n";
+      }
+      close($fh) || fail("Error writing to $tmpfile");
+      rename($tmpfile, $assembly->{fnafile})
+        || fail("Rename $tmpfile to $assembly->{fnafile} failed");
+    }
+    return $assembly;
+  } elsif ($gdb eq "FitnessBrowser") {
+    my $dbh = &FitnessBrowserDbh();
+    my $assembly = $dbh->selectrow_hashref("SELECT * FROM Organism WHERE orgId = ?",
+                                         {}, $gid);
+    fail("Genome $gid in the Fitness Browser is not known")
+      unless defined $assembly->{orgId};
+    $assembly->{gdb} = $gdb;
+    $assembly->{gid} = $gid;
+    $assembly->{faafile} = "$dir/fbrowse_${gid}.faa";
+    $assembly->{fnafile} = "$dir/fbrowse_${gid}.fna";
+    $assembly->{genomeName} = join(" ", $assembly->{genus}, $assembly->{species}, $assembly->{strain});
+    unless (-e $assembly->{faafile}) {
+      my $tmpfile = $assembly->{faafile} . ".$$.tmp";
+      open(my $fh, ">", $tmpfile) || fail("Cannot write to $tmpfile");
+      my $genes = $dbh->selectall_hashref("SELECT * from Gene WHERE orgId = ?", "locusId", {}, $gid);
+      my $aaseqsFile = GetFitnessBrowserPath() . "/aaseqs";
+      open(my $aafh, "<", "$aaseqsFile") || die "Cannot read $aaseqsFile";
+      my $state = {};
+      while (my ($header, $sequence) = ReadFastaEntry($aafh,$state)) {
+        my ($org2, $locusId) = split /:/, $header;
+        die $header unless defined $locusId;
+        next unless $org2 eq $gid;
+        my $gene = $genes->{$locusId}
+          || die "Unrecognized locusId $locusId";
+        print $fh ">$locusId $gene->{sysName} $gene->{desc}\n$sequence\n";
+      }
+      close($aafh) || die "Error reading $aaseqsFile";
+      rename($tmpfile, $assembly->{faafile}) || die "Rename $tmpfile to $assembly->{faafile} failed";
+    }
+    unless (-e $assembly->{fnafile}) {
+      my $tmpfile = $assembly->{fnafile} . ".$$.tmp";
+      open(my $fh, ">", $tmpfile) || fail("Cannot write to $tmpfile");
+      my $sc = $dbh->selectall_arrayref("SELECT scaffoldId, sequence FROM ScaffoldSeq
+                                           WHERE orgId = ?",
+                                          {}, $gid);
+      foreach my $row (@$sc) {
+        my ($scaffoldId,$sequence) = @$row;
+        print $fh ">${scaffoldId}\n${sequence}\n";
+      }
+      close($fh) || fail("Error writing to $tmpfile");
+      rename($tmpfile, $assembly->{fnafile}) || die "Rename $tmpfile to $assembly->{fnafile} failed";
+    }
+    return $assembly;
+  } elsif ($gdb eq "UniProt") {
+    my $assembly = UniProtProteomeInfo($gid);
+    $assembly->{faafile} = "$dir/uniprot_${gid}.faa";
+    unless (-e $assembly->{faafile}) {
+      # First try getting from https://www.uniprot.org/uniprot/?query=proteome:UP000002886&format=fasta
+      # This is a bit slow, so I considered using links like
+      # ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/reference_proteomes/Archaea/UP000000242_399549.fasta.gz
+      # but those are also surprisingly slow, and would need to figure out which section to look in.
+      print p("Loading proteome",
+              a({-href => "https://www.uniprot.org/proteomes/$gid"}, $gid),
+              "from UniProt"), "\n";
+      my $refURL = "https://www.uniprot.org/uniprot/?query=proteome:${gid}&format=fasta";
+      my $uniparcURL = "https://www.uniprot.org/uniparc/?query=proteome:${gid}&format=fasta";
+      my $faa = get($refURL);
+      $faa = get($uniparcURL) unless $faa;
+      fail("Proteome $gid seems to be empty, see", a({href => $uniparcURL}, "here"))
+        unless $faa;
+      my $tmpfile = $assembly->{faafile} . ".$$.tmp";
+      open(my $fh, ">", $tmpfile) || fail("Cannot write to $tmpfile");
+      print $fh $faa;
+      close($fh) || die "Error writing to $tmpfile";
+      rename($tmpfile, $assembly->{faafile}) || die "Rename $tmpfile to $assembly->{faafile} failed";
+    }
+    return $assembly;
+  } elsif ($gdb eq "IMG") {
+    my $privdir = GetPrivDir();
+    fail("PrivDir not set") unless $privdir;
+    fail("Invalid project identifier $gid")
+      unless $gid =~ m/^[a-zA-Z0-9_]+$/;
+    my $subdir = "$dir/$gid";
+    unless (-d $subdir) {
+      # Query again to find out what the genome is
+      my ($err, $hits) = SearchJGI($gid);
+      my @hits = grep { $_->{portalId} eq $gid} @$hits;
+      fail("Identifier $gid not known in JGI portal") unless @hits > 0;
+      my $genomeName = $hits[0]{genomeName};
+      print p("Fetching",
+              a({ -href => $hits[0]{URL} }, $genomeName),
+              "from the JGI portal"), "\n";
+      die "No information in PrivDir" unless -e "$privdir/.JGI.info";
+      open(my $fh_info, "<", "$privdir/.JGI.info")
+        || die "Error creating JGI cookie";
+      my $uname = <$fh_info>; chomp $uname;
+      my $pwd = <$fh_info>; chomp $pwd;
+      close($fh_info) || die "Error creating JGI cookie";
+      my $cfile = "$privdir/JGI.$$.cookie";
+      $err = CreateJGICookie($uname, $pwd, $cfile);
+      fail("Error creating JGI cookie: $err") if $err;
+      $err = FetchJGI($gid, $hits[0]{genomeName}, $cfile, $subdir);
+      fail($err) if $err;
+      unlink($cfile);
+    }
+    my ($imgId, $genomeName, $fnafile, $faafile);
+    open (my $fhfields, "<", "$subdir/fields")
+      || fail("Cannot read $subdir/fields");
+    my $portalId2;
+    ($imgId, $genomeName, $portalId2) = <$fhfields>;
+    close($fhfields) || fail("Error reading $subdir/fields");
+    chomp $imgId;
+    chomp $genomeName;
+    chomp $portalId2;
+    fail("Invalid $subdir/fields file") unless defined $portalId2 && $portalId2 eq $gid;
+    $faafile = "$subdir/$imgId.genes.faa";
+    $fnafile = "$subdir/$imgId.fna";
+    fail("No such file: $faafile") unless -e $faafile;
+    fail("No such file: $fnafile") unless -e $fnafile;
+    my $assembly = { gdb => $gdb, gid => $gid, portalId => $gid, genomeName => $genomeName,
+                     imgId => $imgId,
+                     URL => "http://img.jgi.doe.gov/genome.php?id=" . $imgId,
+                     URL2 => "http://genome.jgi.doe.gov/" . $gid,
+                     fnafile => $fnafile, faafile => $faafile };
+    return $assembly;
+  }
+  fail("Database $gdb is not supported");
+}
+
+my $fbdb_path = "";
+sub SetFitnessBrowserPath($) {
+  my ($path) = @_;
+  fail("No such directory: $path") unless -d $path;
+  $fbdb_path = $path;
+}
+
+sub GetFitnessBrowserPath() {
+  return $fbdb_path;
+}
+
+my $fbdbh; # set just once
+sub FitnessBrowserDbh() {
+  return $fbdbh if $fbdbh;
+  my $path = GetFitnessBrowserPath();
+  fail("Fitness Browser path is not set") unless $path;
+  my $dbfile = "$path/feba.db";
+  fail("Fitness Browser database $dbfile is missing") unless -e $dbfile;
+  $fbdbh = DBI->connect("dbi:SQLite:dbname=$dbfile","","",{ RaiseError => 1 })
+    || fail("Cannot connect to Fitness Browser database: " . $DBI::errstr);
+  return $fbdbh;
+}
+
 
 1;
 
