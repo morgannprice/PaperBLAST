@@ -115,8 +115,16 @@ my $fh_up;
 if ($gdb && $gquery) {
   print p("Searching", $gdb_labels{$gdb}, "for", "'" . $gquery . "'"), "\n";
   my @rows = GetMatchingAssemblies($gdb, $gquery);
+  my $limit = GetMaxNAssemblies();
   if (@rows > 0) {
-    print p("Found",scalar(@rows),"assemblies"), "\n";
+    if (@rows == 1) {
+      print p("Found 1 assembly:");
+    } elsif (@rows < $limit) {
+      print p("Found",scalar(@rows),"assemblies:");
+    } else {
+      print p("The first", scalar(@rows), "matching assemblies:");
+    }
+    print "\n";
     print start_form(-method => 'get', -action => 'genomeSearch.cgi'),
       hidden(-name => 'gdb', -value => $gdb, -override => 1);
     foreach my $row (@rows) {
