@@ -233,7 +233,7 @@ sub SearchJGI($) {
       foreach my $i (0..(scalar(@header)-1)) {
         $row->{ $header[$i] } = defined $pieces->[$i] ? $pieces->[$i] : "";
       }
-      next unless exists $row->{"IMG Portal"};
+      next unless $row->{"IMG Portal"};
       # Compute the portal.id field
       if (exists $row->{"Portal ID"} && $row->{"Portal ID"} =~ m/"/) {
         $row->{"Portal ID"} =~ m/,"([0-9A-Za-z_]+)"[)]$/
@@ -290,7 +290,7 @@ sub FetchJGI($$$$) {
   return "Cannot parse file listing for $down_url"
     unless $sxml;
   my @obj = $sxml->findnodes(q{//folder[@name='IMG Data']/file});
-  return "No IMG data" unless @obj;
+  return "Sorry, there is no IMG data for this assembly." unless @obj;
   # The url attribute is what I want, and it should have a filename that indicates it is the tarball
   my $tar_url = undef;
   foreach my $obj (@obj) {
@@ -302,7 +302,7 @@ sub FetchJGI($$$$) {
     }
     last if defined $tar_url;
   }
-  return "No IMG URL for a tar.gz file" unless defined $tar_url;
+  return "Sorry, there is no IMG tarball for this assembly" unless defined $tar_url;
   $tar_url = "https://genome.jgi.doe.gov" . $tar_url;
 
   my $tmp_tar = "$dir.$$.tar";
@@ -312,7 +312,7 @@ sub FetchJGI($$$$) {
   while(my $line = <$in>) {
     print $tarfh $line;
   }
-  close($in) || return "Error reading from $tar_url";
+  close($in) || return "Error reading from IMG tarball $tar_url";
   close($tarfh) || die "Error writing to $tmp_tar.gz";
   my $tmpdir = "$dir.$$";
   die "temporary directory $tmpdir already exists" if -e $tmpdir;
@@ -321,7 +321,7 @@ sub FetchJGI($$$$) {
     unlink("$tmp_tar.gz");
     unlink($tmp_tar);
     system("rm", "-Rf", $tmpdir);
-    return "Invalid tar.gz file from $tar_url";
+    return "Invalid IMG tar.gz file from $tar_url";
   }
   unlink($tmp_tar);
   rename($tmpdir, $dir) || die "Error renaming to $tmpdir to $dir";
