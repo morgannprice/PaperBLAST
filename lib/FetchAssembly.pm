@@ -330,7 +330,7 @@ sub ExplodeJGI($$) {
   return 0 unless close($in);
   return 0 unless @files; # empty tarball
 
-  # Check that all files are in the same subdirectory
+  # Check that all files are in a subdirectory
   foreach my $file (@files) {
     chomp $file;
     $file =~ m!^[^/]+/[^/]+$!
@@ -340,6 +340,10 @@ sub ExplodeJGI($$) {
   $prefix =~ s!/.*!!;
   mkdir($dir) || die "Cannot create directory $dir";
   # explode and check that prefix.genes.faa and prefix.fna both exist
+  # Note that strip-components will ignore the 1st subdirectory indicator,
+  # and above we checked that there are no other subdirectories,
+  # and modern tar will not write to / or .. anyway.
+  # -C means chdir to $dir before writing.
   return 0
     unless system("tar", "-xf", $tar, "--strip-components=1", "-C", $dir) == 0
       && -e "$dir/$prefix.fna"
