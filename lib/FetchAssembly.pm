@@ -21,6 +21,7 @@ our (@ISA,@EXPORT);
              GetFitnessBrowserPath SetFitnessBrowserPath FitnessBrowserDbh
              FetchNCBIInfo FetchNCBIFaa FetchNCBIFna FetchNCBIFeatureFile ParseNCBIFeatureFile
              SearchJGI CreateJGICookie FetchJGI SearchUniProtProteomes UniProtProteomeInfo
+             GetMaxNAssemblies
 );
 
 # page must be started already; reports any number of errors or warning
@@ -34,17 +35,20 @@ sub warning {
   print p({ -style => "color: red;" }, @_), "\n";
 }
 
-# Note -- arguably should be using an API key for NCBI
-my $maxfetchNCBI = 50;
+my $maxAssemblyList = 100;
+sub GetMaxNAssemblies() {
+  return $maxAssemblyList;
+}
 
+# Note -- arguably should be using an API key for NCBI
 # One argument: the query
-# Returns a list of results (up to maxfetchNCBI) as a hash; each "assembly" includes
+# Returns a list of results (up to maxAssemblyList) as a hash; each "assembly" includes
 # uid (the assembly uid), id (an identifier like GCF_000195755.1), ftp (the URL for the ftp site),
 # and org
 sub FetchNCBIInfo($) {
   my ($query) = @_;
   # First run the query using esearch
-  my $URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=assembly&retmax=${maxfetchNCBI}&term=" . $query;
+  my $URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=assembly&retmax=${maxAssemblyList}&term=" . $query;
   my $string = get($URL);
   my $fxml = XML::LibXML->load_xml(string => $string, recover => 1);
   my @idnodes = $fxml->findnodes("//IdList/Id");
@@ -52,8 +56,8 @@ sub FetchNCBIInfo($) {
   @ids = grep { defined && $_ ne "" } @ids;
   return () if @ids == 0;
 
-  # Now fetch metadata for these ids. Limit to 20.
-  @ids = $ids[0..($maxfetchNCBI-1)] if scalar(@ids) > $maxfetchNCBI;
+  # Now fetch metadata for these ids.
+  @ids = $ids[0..($maxAssemblyList-1)] if scalar(@ids) > $maxAssemblyList;
   my $idspec= join(",",@ids);
   $URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=assembly&id=$idspec";
   $string = get($URL);
@@ -185,6 +189,8 @@ sub SearchJGI($) {
   return "", [] unless defined $query && $query ne "";
   $query = uri_escape($query);
   my $hostspec = "https://genome.jgi.doe.gov";
+  # Do not know how to search for genomes in IMG only; so,
+  # search for 3* too many.
   my $URL = join("&", "$hostspec/portal/ext-api/search-service/export?core=genome",
                  "query=$query",
                  "searchIn=JGI%20Projects",
@@ -206,7 +212,7 @@ sub SearchJGI($) {
                  "productCategory=--any--",
                  "selectedRecords=",
                  "start=0",
-                 "rows=100");
+                 "rows=" . (3 * $maxAssemblyList));
   my $ua = LWP::UserAgent->new( ssl_opts => { SSL_verify_mode => 'SSL_VERIFY_NONE' } );
   my $response = $ua->get($URL);
   return "Error contacting $hostspec" unless $response->is_success;
@@ -227,6 +233,7 @@ sub SearchJGI($) {
       foreach my $i (0..(scalar(@header)-1)) {
         $row->{ $header[$i] } = defined $pieces->[$i] ? $pieces->[$i] : "";
       }
+      next unless exists $row->{"IMG Portal"};
       # Compute the portal.id field
       if (exists $row->{"Portal ID"} && $row->{"Portal ID"} =~ m/"/) {
         $row->{"Portal ID"} =~ m/,"([0-9A-Za-z_]+)"[)]$/
@@ -238,6 +245,7 @@ sub SearchJGI($) {
         $row->{gid} = $row->{portalId};
         push @out, $row;
       }
+      last if @out >= $maxAssemblyList;
     }
   }
   return "", \@out;
@@ -356,11 +364,10 @@ sub ExplodeJGI($$) {
 }
 
 sub SearchUniProtProteomes {
-  my ($query, $limit) = @_;
+  my ($query) = @_;
   return () unless $query;
-  $limit = 100 unless defined $limit;
   # Search proteome name, not keywords
-  my $URL = "https://www.ebi.ac.uk/proteins/api/proteomes?name=${query}&format=json&size=${limit}";
+  my $URL = "https://www.ebi.ac.uk/proteins/api/proteomes?name=${query}&format=json&size=${maxAssemblyList}";
   my $string = get($URL);
   die "No response from $URL" unless $string;
   my $json = from_json($string);
@@ -413,8 +420,8 @@ sub GetMatchingAssemblies($$) {
     my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
       || fail("Cannot connect to MicrobesOnline:", $DBI::errstr);
     my $hits = $mo_dbh->selectall_arrayref("SELECT taxonomyId, shortName FROM Taxonomy
-                                              WHERE shortName LIKE ? ORDER BY shortName LIMIT 100",
-                                           { Slice => {} }, $gquery."%");
+                                              WHERE shortName LIKE ? OR shortName LIKE ? ORDER BY shortName LIMIT $maxAssemblyList",
+                                           { Slice => {} }, $gquery."%", "% ${gquery}");
     foreach my $hit (@$hits) {
       $hit->{gdb} = $gdb;
       $hit->{gid} = $hit->{taxonomyId};
@@ -436,6 +443,7 @@ sub GetMatchingAssemblies($$) {
         if substr($lcg, 0, length($gquery)) eq lc($gquery)
           || index($lcg, " " . lc($gquery)) >= 0
           || index($lcg, "-" . lc($gquery)) >= 0;
+      last if @hits >= $maxAssemblyList;
     }
     @hits = sort { $a->{genomeName} cmp $b->{genomeName} } @hits;
     return @hits;
