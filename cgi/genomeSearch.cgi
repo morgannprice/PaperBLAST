@@ -193,7 +193,9 @@ if ($gdb && $gquery) {
     if $cgi->param('findgenome');
   print
     p("Given a query term and a genome, find characterized proteins whose descriptions match the query,",
-      "and then search the genome for homologs of those proteins."),
+      "and then search the genome for homologs of those proteins",
+      "(" . a({ -href => "genomeSearch.cgi?gdb=FitnessBrowser&gid=PS&query=perchlorate"},
+              "example") . ")."),
     start_form( -autocomplete => 'on', -name => 'input', -method => 'GET', -action => 'genomeSearch.cgi'),
     p("Genome database to search:", 
       popup_menu(-name => 'gdb', -values => \@gdbs, -labels => \%gdb_labels, -default => $gdbs[0])),
@@ -283,7 +285,7 @@ if ($word) {
   $chits = CuratedWordMatch($chits, $query);
   if (@$chits == 0) {
     print p(qq{None of the curated entries in PaperBLAST's database match '$query' as complete words. Please try},
-            a({ -href => $URLnoq }, "another query") . "."); # XXX URLnoq
+            a({ -href => $URLnoq }, "another query") . ".");
     finish_page();
   }
 }
@@ -730,3 +732,13 @@ sub ParseUblast($$$) {
   return \@hits;
 }
 
+sub query_fields_html {
+  my ($prefix) = @_;
+  $prefix = defined $prefix ? "$prefix. " : "";
+  return join("\n",
+              p("${prefix}Enter a search term:",
+                textfield(-name => 'query', -value => '', -size => 50, -maxlength => 200)),
+              p({-style => "margin-left: 3em;" },
+                checkbox(-name => "word", -label => "Match whole words only?"))
+             );
+}
