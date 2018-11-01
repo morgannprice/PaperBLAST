@@ -7,7 +7,8 @@ use Time::HiRes qw{gettimeofday};
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw(UniqToGenes SubjectToGene GenesToHtml GetMotd FetchFasta HmmToFile loggerjs start_page finish_page);
+@EXPORT = qw(UniqToGenes SubjectToGene AddCuratedInfo GenesToHtml
+             GetMotd FetchFasta HmmToFile loggerjs start_page finish_page);
 
 # Returns a list of entries from SubjectToGene, 1 for each duplicate (if any),
 # sorted by priority
@@ -23,6 +24,90 @@ sub UniqToGenes($$) {
   return @genes;
 }
 
+# Given a row form the CuratedGene table, add fields for
+# subjectId, source, curated, curateId, priority, URL, and showName,
+# and clean up the comment field for presentation
+sub AddCuratedInfo($) {
+  my ($gene) = @_;
+  my $db = $gene->{db};
+  my $protId = $gene->{protId};
+  die unless $db && $protId;
+  $gene->{subjectId} = join("::", $db, $protId);
+  $gene->{source} = $db;
+  $gene->{curated} = 1;
+  $gene->{curatedId} = $protId;
+
+  if ($db eq "CAZy") {
+    $gene->{source} = "CAZy via dbCAN";
+    $gene->{URL} = "http://www.cazy.org/search?page=recherche&lang=en&recherche=$protId&tag=4";
+    $gene->{priority} = 4;
+  } elsif ($db eq "CharProtDB") {
+    $gene->{priority} = 4;
+    # their site is not useful, so just link to the paper
+    $gene->{URL} = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/";
+    if ($gene->{comment}) {
+      # label the comment as being from CharProtDB, as otherwise it is a bit mysterious.
+      # And remove the Alias or Aliaess part.
+      $gene->{comment} =~ s/Aliase?s?: [^ ;]+;? ?//;
+      $gene->{comment} = i("CharProtDB") . " " . $gene->{comment};
+    }
+  } elsif ($db eq "SwissProt") {
+    $gene->{URL} = "http://www.uniprot.org/uniprot/$protId";
+    $gene->{priority} = 2;
+    # and clean up the comments
+    my @comments = split /_:::_/, $gene->{comment};
+    @comments = map { s/[;. ]+$//; $_; } @comments;
+    @comments = grep m/^SUBUNIT|FUNCTION|COFACTOR|CATALYTIC|ENZYME|DISRUPTION/, @comments;
+    @comments = map {
+      my @words = split / /, $_;
+      my $cofactor = $words[0] eq "COFACTOR:";
+      $words[0] = b(lc($words[0]));
+      $words[1] = b(lc($words[1])) if @words > 1 && $words[1] =~ m/^[A-Z]+:$/;
+      my $out = join(" ", @words);
+      if ($cofactor) {
+        # Remove Evidence= and Xref= fields., as often found in the cofactor entry
+        $out =~ s/ Evidence=[^ ]*;?//g;
+        $out =~ s/ Xref=[^ ]+;?//g;
+        # Transform Name=x; to x;
+        $out =~ s/ Name=([^;]+);/ $1;/g;
+      }
+      $out;
+    } @comments;
+    my $comment = join("<BR>\n", @comments);
+    $comment =~ s!{ECO:[A-Za-z0-9_:,.| -]+}!!g;
+    $gene->{comment} = $comment;
+  } elsif ($db eq "ecocyc") {
+    $gene->{source} = "EcoCyc";
+    $gene->{URL} = "https://ecocyc.org/gene?orgid=ECOLI&id=$protId";
+    $gene->{priority} = 1;
+  } elsif ($db eq "metacyc") {
+    $gene->{source} = "MetaCyc";
+    $gene->{URL} = "https://metacyc.org/gene?orgid=META&id=$protId";
+    $gene->{priority} = 3;
+  } elsif ($db eq "reanno") {
+    $gene->{source} = "Fitness-based Reannotations";
+    $gene->{comment} = "Mutant Phenotype: " . $gene->{comment};
+    $gene->{priority} = 5;
+    my ($orgId, $locusId) = split /:/, $protId;
+    die "Invalid protId $protId" unless $locusId;
+    $gene->{URL} = "http://fit.genomics.lbl.gov/cgi-bin/singleFit.cgi?orgId=$orgId&locusId=$locusId";
+  } elsif ($db eq "REBASE") {
+    $gene->{priority} = 4;
+    $gene->{URL} = "http://rebase.neb.com/rebase/enz/$protId.html";
+  } elsif ($db eq "BRENDA") {
+    $gene->{priority} = 2.5; # just behind Swiss-Prot
+    $gene->{source} = "BRENDA";
+    $gene->{URL} = "http://www.brenda-enzymes.org/sequences.php?AC=" . $protId;
+  } else {
+    die "Unexpected curated database $db";
+  }
+  my @ids = ( $gene->{name}, $gene->{id2} );
+  push @ids, $protId if $db eq "SwissProt";
+  @ids = grep { $_ ne "" } @ids;
+  $gene->{showName} = join(" / ", @ids) || $protId;
+  $gene->{showName} = $protId if $db eq "REBASE";
+}
+
 # The returned entry will include:
 # showName, URL, priority (for choosing what to show first), subjectId, desc, organism, protein_length, source,
 # and other entries that depend on the type -- either papers for a list of GenePaper/PaperAccess items,
@@ -33,80 +118,7 @@ sub SubjectToGene($$) {
     my ($db, $protId) = split /::/, $subjectId;
     my $gene = $dbh->selectrow_hashref("SELECT * FROM CuratedGene WHERE db = ? AND protId = ?", {}, $db, $protId);
     die "Unrecognized subject $subjectId" unless defined $gene;
-    $gene->{subjectId} = $subjectId;
-    $gene->{source} = $db;
-    $gene->{curated} = 1;
-    $gene->{curatedId} = $protId;
-    if ($db eq "CAZy") {
-      $gene->{source} = "CAZy via dbCAN";
-      $gene->{URL} = "http://www.cazy.org/search?page=recherche&lang=en&recherche=$protId&tag=4";
-      $gene->{priority} = 4;
-    } elsif ($db eq "CharProtDB") {
-      $gene->{priority} = 4;
-      # their site is not useful, so just link to the paper
-      $gene->{URL} = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/";
-      if ($gene->{comment}) {
-        # label the comment as being from CharProtDB, as otherwise it is a bit mysterious.
-        # And remove the Alias or Aliaess part.
-        $gene->{comment} =~ s/Aliase?s?: [^ ;]+;? ?//;
-        $gene->{comment} = i("CharProtDB") . " " . $gene->{comment};
-      }
-    } elsif ($db eq "SwissProt") {
-      $gene->{URL} = "http://www.uniprot.org/uniprot/$protId";
-      $gene->{priority} = 2;
-      # and clean up the comments
-      my @comments = split /_:::_/, $gene->{comment};
-      @comments = map { s/[;. ]+$//; $_; } @comments;
-      @comments = grep m/^SUBUNIT|FUNCTION|COFACTOR|CATALYTIC|ENZYME|DISRUPTION/, @comments;
-      @comments = map {
-        my @words = split / /, $_;
-        my $cofactor = $words[0] eq "COFACTOR:";
-        $words[0] = b(lc($words[0]));
-        $words[1] = b(lc($words[1])) if @words > 1 && $words[1] =~ m/^[A-Z]+:$/;
-        my $out = join(" ", @words);
-        if ($cofactor) {
-          # Remove Evidence= and Xref= fields., as often found in the cofactor entry
-          $out =~ s/ Evidence=[^ ]*;?//g;
-          $out =~ s/ Xref=[^ ]+;?//g;
-          # Transform Name=x; to x;
-          $out =~ s/ Name=([^;]+);/ $1;/g;
-        }
-        $out;
-      } @comments;
-      my $comment = join("<BR>\n", @comments);
-      $comment =~ s!{ECO:[A-Za-z0-9_:,.| -]+}!!g;
-      $gene->{comment} = $comment;
-    } elsif ($db eq "ecocyc") {
-      $gene->{source} = "EcoCyc";
-      $gene->{URL} = "https://ecocyc.org/gene?orgid=ECOLI&id=$protId";
-      $gene->{priority} = 1;
-    } elsif ($db eq "metacyc") {
-      $gene->{source} = "MetaCyc";
-      $gene->{URL} = "https://metacyc.org/gene?orgid=META&id=$protId";
-      $gene->{priority} = 3;
-    } elsif ($db eq "reanno") {
-      $gene->{source} = "Fitness-based Reannotations";
-      $gene->{comment} = "Mutant Phenotype: " . $gene->{comment};
-      $gene->{priority} = 5;
-      my ($orgId, $locusId) = split /:/, $protId;
-      die "Invalid protId $protId" unless $locusId;
-      $gene->{URL} = "http://fit.genomics.lbl.gov/cgi-bin/singleFit.cgi?orgId=$orgId&locusId=$locusId";
-    } elsif ($db eq "REBASE") {
-      $gene->{priority} = 4;
-      $gene->{URL} = "http://rebase.neb.com/rebase/enz/$protId.html";
-    } elsif ($db eq "BRENDA") {
-      $gene->{priority} = 2.5; # just behind Swiss-Prot
-      $gene->{source} = "BRENDA";
-      $gene->{URL} = "http://www.brenda-enzymes.org/sequences.php?AC=" . $protId;
-    } else {
-      die "Unexpected database $db";
-    }
-
-    my @ids = ( $gene->{name}, $gene->{id2} );
-    push @ids, $protId if $db eq "SwissProt";
-    @ids = grep { $_ ne "" } @ids;
-    $gene->{showName} = join(" / ", @ids) || $protId;
-    $gene->{showName} = $protId if $db eq "REBASE";
+    AddCuratedInfo($gene);
     $gene->{pmIds} = $dbh->selectcol_arrayref("SELECT pmId FROM CuratedPaper WHERE db = ? AND protId = ?",
                                               {}, $db, $protId);
     return $gene;
