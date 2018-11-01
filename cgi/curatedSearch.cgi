@@ -62,7 +62,10 @@ if ($query) {
     }
   }
   my $wordstatement = $word ? " as complete word(s)" : "";
-  print p("Found", scalar(@$chits), qq{curated entries in PaperBLAST's database that match '$query'${wordstatement}.\n})
+  print p("Found", scalar(@$chits),
+          qq{curated entries in PaperBLAST's database that match '$query'${wordstatement}.},
+          "Try",
+          a({-href => "curatedSearch.cgi"}, "another search"))
     if $table_mode;
 
   my %idToChit = (); # sequence identifier to curated gene hit(s)
@@ -92,7 +95,7 @@ if ($query) {
     print p("These curated entries have", scalar(@uniqids), "distinct",
             a({-href => join("&", "curatedSearch.cgi?faa=1",
                              "query=" . uri_escape($query),
-                             "?word=" . ($word ? 1 : 0)) },
+                             "word=" . ($word ? 1 : 0)) },
               "sequences") . ".");
     my %uniqDesc = map { $_ => $idToChit{$_}[0]{desc} } @uniqids;
     my @sorted = sort { $uniqDesc{$a} cmp $uniqDesc{$b} } @uniqids;
