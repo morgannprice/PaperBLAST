@@ -224,20 +224,11 @@ corresponding Gene identifers.
 <P><A HREF="http://dx.doi.org/10.1101/072470">Deep annotation of protein function across diverse bacteria from mutant phenotypes.</A><BR>
 <small>M. N. Price et al (2016). bioRxiv, 10.1101/072470.</small>
 
-<center>by <A HREF="http://morgannprice.org/">Morgan Price</A>,
-<A HREF="http://genomics.lbl.gov/">Arkin group</A><BR>
-Lawrence Berkeley National Laboratory
-</center>
 END
     ;
 
 my $title = "PaperBLAST";
-# utf-8 because that is the encoding used by EuropePMC
-print
-    header(-charset => 'utf-8'),
-    start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
-               -title => $title),
-    TopDivHtml();
+start_page($title);
 
 my $procId = $$;
 my $timestamp = int (gettimeofday() * 1000);
@@ -401,6 +392,7 @@ if (!defined $seq && ! $more_subjectId) {
              "Family Search vs. Papers")),
         end_ul(),
         $documentation;
+    finish_page();
 } else {
     if ($more_subjectId) {
       print h3("Full List of Papers Linked to $more_subjectId");
@@ -488,8 +480,8 @@ if (!defined $seq && ! $more_subjectId) {
         p({-style => "font-family: monospace;"}, small(join(br(), ">$def", @pieces)));
     }
     print h3(a({-href => "litSearch.cgi"}, "New Search")),
-      $documentation,
-        end_html;
+      $documentation;
+    finish_page();
 }
 
 sub fail($) {

@@ -7,7 +7,7 @@ use Time::HiRes qw{gettimeofday};
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw(UniqToGenes SubjectToGene GenesToHtml GetMotd FetchFasta HmmToFile TopDivHtml loggerjs);
+@EXPORT = qw(UniqToGenes SubjectToGene GenesToHtml GetMotd FetchFasta HmmToFile loggerjs start_page finish_page);
 
 # Returns a list of entries from SubjectToGene, 1 for each duplicate (if any),
 # sorted by priority
@@ -422,4 +422,71 @@ PaperBLAST &ndash; <small>Find papers about a protein or its homologs</small>
 <SCRIPT src="../static/pb.js"></SCRIPT>
 END
 ;
+}
+
+sub start_page($) {
+  my ($title) = @_;
+  my $style = <<END
+.autocomplete {
+  /*the container must be positioned relative:*/
+  position: relative;
+  display: inline-block;
+}
+
+.autocomplete-items {
+  position: absolute;
+  border: 1px solid #d4d4d4;
+  border-bottom: none;
+  border-top: none;
+  z-index: 99;
+  /*position the autocomplete items to be the same width as the container:*/
+  top: 100%;
+  left: 0;
+  right: 0;
+}
+.autocomplete-items div {
+  padding: 10px;
+  cursor: pointer;
+  background-color: #fff;
+  border-bottom: 1px solid #d4d4d4;
+}
+.autocomplete-items div:hover {
+  /*when hovering an item:*/
+  background-color: #e9e9e9;
+}
+.autocomplete-active {
+  /*when navigating through the items using the arrow keys:*/
+  background-color: DodgerBlue !important;
+  color: #ffffff;
+}
+END
+;
+
+  # utf-8 because that is the encoding used by EuropePMC
+  print
+    header(-charset => 'utf-8'),
+    start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
+               -style => { -code => $style },
+             -script => [{ -type => "text/javascript", -src => "../static/autocomplete_uniprot.js" }],
+             -title => $title),
+    &TopDivHtml(),
+    h2($title),
+    "\n";
+}
+
+# This should be called only after start_page()
+sub finish_page() {
+  print <<END
+<P>
+<small>
+<center>by <A HREF="http://morgannprice.org/">Morgan Price</A>,
+<A HREF="http://genomics.lbl.gov/">Arkin group</A><BR>
+Lawrence Berkeley National Laboratory
+</center>
+</small>
+</P>
+END
+;
+  print end_html;
+  exit(0);
 }

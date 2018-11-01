@@ -62,9 +62,8 @@ if ($up) {
       start_html(-title => "HMM Upload failed"),
       h2("Not a valid HMM file"),
       p(join(". ", @errors)),
-      a({ -href => "hmmSearch.cgi"}, "Try another search"),
-      end_html;
-    exit(0);
+      a({ -href => "hmmSearch.cgi"}, "Try another search");
+    finish_page();
   }
 
   my $hex = Digest::MD5::md5_hex(@lines);
@@ -85,12 +84,7 @@ my $isUploaded = defined $hmmfile && $hmmId =~ m/^hex[.]/;
 if (!defined $hmmfile) {
   # print a form
   my $title = "Family Search (HMMer) vs. Papers";
-  print
-    header(-charset => 'utf-8'),
-    start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
-               -title => $title),
-    TopDivHtml(),
-    h2($title);
+  start_page($title);
   print p("Did not find an HMM matching $hmmId") if $hmmId;
   print
     GetMotd(),
@@ -111,9 +105,8 @@ if (!defined $hmmfile) {
       filefield(-name => 'hmmfile', -size => 50),
       submit('Go')),
     end_form,
-    a({-href => "litSearch.cgi"}, "Or search by sequence"),
-    end_html;
-  exit(0);
+    a({-href => "litSearch.cgi"}, "Or search by sequence");
+  finish_page();
 }
 # else have $hmmfile
 
@@ -124,13 +117,8 @@ my $showId = $isUploaded ? "uploaded HMM " . escapeHTML($hmmName) : $hmmId;
 my $title = "Family Search for $showId";
 $title .= " (" . escapeHTML($hmmName) . ")" unless $isUploaded || $hmmName eq $hmmId;
 
-print
-  header(-charset => 'utf-8'),
-  start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
-             -title => $title),
-  TopDivHtml(),
-  h2($title),
-  GetMotd();
+start_page($title);
+print GetMotd();
 autoflush STDOUT 1; # show preliminary results
 print "\n";
 
@@ -246,6 +234,4 @@ foreach my $uniqId (@uniq_sorted) {
   print GenesToHtml($dbh, $uniqId, \@genes, $coverage_html, $maxPapers);
   print "\n";
 }
-
-print end_html;
-
+finish_page();

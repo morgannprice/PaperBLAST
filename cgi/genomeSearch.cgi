@@ -1,6 +1,8 @@
 #!/usr/bin/perl -w
 #######################################################
-## genomeSearch.cgi
+## genomeSearch.cgi -- proteins in a genome that are
+##   similar to a curated protein whose description
+##   matches a text query
 ##
 ## Copyright (c) 2018 University of California
 ##
@@ -30,12 +32,9 @@ use IO::Handle; # for autoflush
 use lib "../lib";
 use pbutils; # for ReadFastaEntry(), Curated functions
 use FetchAssembly; # for GetMatchingAssemblies(), CacheAssembly(), warning(), fail(), etc.
-use pbweb qw{TopDivHtml loggerjs};
+use pbweb qw{start_page finish_page loggerjs};
 
-sub start_page($);
 sub query_fields_html;
-
-sub finish;
 
 # maximum size of posted data, in bytes
 my $maxMB = 100;
@@ -92,6 +91,7 @@ die "Unknown genome database: $gdb\n"
   if $gdb && !exists $gdb_labels{$gdb};
 
 &start_page("Curated BLAST for Genomes");
+autoflush STDOUT 1; # show preliminary results
 
 # A symbolic link to the Fitness Browser data directory is used (if it exists)
 # to allow access to fitness browser genomes.
@@ -138,7 +138,7 @@ if ($gdb && $gquery) {
     print p("Sorry, no matching genomes were found.");
   }
   print p("Try", a({ -href => "genomeSearch.cgi?gdb=$gdb" }, "another genome"));
-  finish();
+  finish_page();
 } elsif ($gdb && $gid && $query) {
   $assembly = CacheAssembly($gdb, $gid, "../tmp")
     || fail("Cannot fetch assembly $gid from database $gdb");
@@ -148,7 +148,7 @@ if ($gdb && $gquery) {
   print p("Searching in", a({-href => $assembly->{URL} }, $genomeName),
          small("(" . $link2 . ")")),
          "\n";
-  # Finish searching down below
+  # finish searching down below
 } elsif ($gdb && $gid) {
   # assembly chosen but no query was entered
   $assembly = CacheAssembly($gdb, $gid, "../tmp")
@@ -167,7 +167,7 @@ if ($gdb && $gquery) {
     query_fields_html(),
     p(submit(-name => 'Search', -value => 'Search in selected genome')),
     end_form;
-  finish();
+  finish_page();
 } elsif ($upfile && $query) {
   $genomeName = "uploaded file";
   $fh_up = $upfile->handle;
@@ -187,7 +187,7 @@ if ($gdb && $gquery) {
       p(submit(-name => 'uploading', -value => 'Search')),
       end_form,
       p("Or", a({ -href => "genomeSearch.cgi"}, "search"), "for a genome");
-  finish();
+  finish_page();
 } else {
   warning("Please enter an organism name")
     if $cgi->param('findgenome');
@@ -204,7 +204,7 @@ if ($gdb && $gquery) {
       "Or",
       a({-href => "genomeSearch.cgi?doupload=1"}, "upload"),
       "a genome or proteome in fasta format");
-  finish();
+  finish_page();
 }
 
 # Do the actual query -- first, validate the input
@@ -244,7 +244,7 @@ if (exists $state->{error}) {
   warning("Invalid fasta upload");
   warning($state->{error});
   print p("Please try", a({-href => "genomeSearch.cgi?doupload=1"}, "another upload"));
-  finish();
+  finish_page();
 }
 
 fail("Too many sequences in $faaFileDesc. The limit is $maxseqs")
@@ -271,12 +271,12 @@ my $chits = CuratedMatch($dbh, $query, $maxhits+1);
 if (@$chits > $maxhits) {
   print p(qq{Sorry, too many curated entries match the query '$query'. Please try},
           a({ -href => $URLnoq }, "another query").".");
-  finish();
+  finish_page();
 }
 if (@$chits == 0) {
   print p(qq{None of the curated entries in PaperBLAST's database match '$query'. Please try},
           a({ -href => $URLnoq }, "another query") . ".");
-  finish();
+  finish_page();
 }
 if ($word) {
   # filter for whole-word hits
@@ -284,7 +284,7 @@ if ($word) {
   if (@$chits == 0) {
     print p(qq{None of the curated entries in PaperBLAST's database match '$query' as complete words. Please try},
             a({ -href => $URLnoq }, "another query") . "."); # XXX URLnoq
-    finish();
+    finish_page();
   }
 }
 
@@ -346,7 +346,7 @@ unless($isNuc) {
 # Search the six frame translation
 my $fnafile; # genome sequence file (fasta nucleotide)
 if ($assembly) {
-  finish() if !exists $assembly->{fnafile}; # i.e. for UniProt proteomes
+  finish_page() if !exists $assembly->{fnafile}; # i.e. for UniProt proteomes
   $fnafile = $assembly->{fnafile};
   fail("Skipping 6-frame search -- no nucleotide sequences") unless $fnafile;
   open(my $fh, "<", $fnafile) || die "Cannot read $fnafile";
@@ -360,13 +360,13 @@ if ($assembly) {
   close($fh) || die "Error reading $fnafile";
   if (scalar(keys %ntlen) > $maxseqs) {
     print p("Not searching the 6-frame translation because this genome has too many scaffolds");
-    finish();
+    finish_page();
   }
   my $tot = 0;
   foreach my $value (values %ntlen) { $tot += $value; }
   if ($tot > $maxNtLen) {
     print p("Not searching the 6-frame translation because this genome is too large");
-    finish();
+    finish_page();
   }
 } else { # uploaded
   if ($isNuc) {
@@ -378,7 +378,7 @@ if ($assembly) {
     close(FNA) || die "Error writing to $seqFile";
   } else {
     # Do not search the 6-frame translation if uploaded a.a. sequences
-    finish();
+    finish_page();
   }
 }
 
@@ -465,7 +465,7 @@ foreach my $input (@inputsX) {
   &PrintHits($input, $seqsx{$input}, $parsedx{$input}, 1); # 1 for 6-frame translation
 }
 unlink($chitsfaaFile);
-finish();
+finish_page();
 
 
 sub PrintHits($$$$) {
@@ -730,95 +730,3 @@ sub ParseUblast($$$) {
   return \@hits;
 }
 
-sub start_page($) {
-  my ($title) = @_;
-#XXX move to pbwb
-my $style = <<END
-.autocomplete {
-  /*the container must be positioned relative:*/
-  position: relative;
-  display: inline-block;
-}
-
-.autocomplete-items {
-  position: absolute;
-  border: 1px solid #d4d4d4;
-  border-bottom: none;
-  border-top: none;
-  z-index: 99;
-  /*position the autocomplete items to be the same width as the container:*/
-  top: 100%;
-  left: 0;
-  right: 0;
-}
-.autocomplete-items div {
-  padding: 10px;
-  cursor: pointer;
-  background-color: #fff;
-  border-bottom: 1px solid #d4d4d4;
-}
-.autocomplete-items div:hover {
-  /*when hovering an item:*/
-  background-color: #e9e9e9;
-}
-.autocomplete-active {
-  /*when navigating through the items using the arrow keys:*/
-  background-color: DodgerBlue !important;
-  color: #ffffff;
-}
-END
-;
-
-print
-  header(-charset => 'utf-8'),
-  start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
-             -style => { -code => $style },
-             -script => [{ -type => "text/javascript", -src => "../static/autocomplete_uniprot.js" }],
-             -title => $title),
-  TopDivHtml(),
-  h2($title);
-  autoflush STDOUT 1; # show preliminary results
-  # Autoexpander script
-  print <<END
-<SCRIPT>
-function expander(o,n) {
-  var x = document.getElementsByClassName("collapse"+n);
-  console.log("Expander " + n + " count " + x.length);
-  var i;
-  for (i = 0; i < x.length; i++) {
-    x[i].style.display = "table-row";
-  }
-  o.parentElement.style.display = "none";
-}
-</SCRIPT>
-END
-    ;
-  print "\n";
-}
-
-sub finish {
-print <<END
-<P>
-<small>
-<center>by <A HREF="http://morgannprice.org/">Morgan Price</A>,
-<A HREF="http://genomics.lbl.gov/">Arkin group</A><BR>
-Lawrence Berkeley National Laboratory
-</center>
-</small>
-</P>
-END
-;
-print end_html;
-exit(0);
-}
-
-sub query_fields_html {
-  my ($prefix) = @_;
-  $prefix = defined $prefix ? "$prefix. " : "";
-  return join("\n",
-              p("${prefix}Enter a search term:",
-                textfield(-name => 'query', -value => '', -size => 50, -maxlength => 200)),
-              p({-style => "margin-left: 3em;" },
-                checkbox(-name => "word", -label => "Match whole words only?"))
-             );
-}
