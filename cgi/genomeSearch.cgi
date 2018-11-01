@@ -32,7 +32,7 @@ use IO::Handle; # for autoflush
 use lib "../lib";
 use pbutils; # for ReadFastaEntry(), Curated functions
 use FetchAssembly; # for GetMatchingAssemblies(), CacheAssembly(), warning(), fail(), etc.
-use pbweb qw{start_page finish_page loggerjs};
+use pbweb;
 
 sub query_fields_html;
 
@@ -478,17 +478,6 @@ sub PrintHits($$$$) {
                          -title => "full PaperBLAST results for this $seqtype"},
                        "PaperBLAST"));
 
-  # This should really be in pbweb
-  my %sourceToURL = ( "SwissProt" => "http://www.uniprot.org/uniprot/",
-                      "SwissProt/TReMBL" => "http://www.uniprot.org/uniprot/",
-                      "BRENDA" => "http://www.brenda-enzymes.org/sequences.php?AC=",
-                      "MicrobesOnline" => "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=",
-                      "RefSeq" => "http://www.ncbi.nlm.nih.gov/protein/",
-                      "metacyc" => "https://metacyc.org/gene?orgid=META&id=",
-                      "ecocyc" => "https://ecocyc.org/gene?orgid=ECOLI&id=",
-                      "CAZy" => "http://www.cazy.org/search?page=recherche&lang=en&tag=4&recherche="
-                    );
-
   my @show = ();
   my $iRow = 0;
   $nCollapseSet++;
@@ -498,33 +487,12 @@ sub PrintHits($$$$) {
     my $chits = $row->{chits};
     my @descs = ();
     foreach my $chit (@$chits) {
-      # build a URL for this sequence, and, show an identifier
-      my $db = $chit->{db};
-      my $protId = $chit->{protId};
-      my $URL = "";
-      if ($db eq "reanno") {
-        my ($orgId, $locusId) = split /:/, $protId;
-        $URL = "http://fit.genomics.lbl.gov/cgi-bin/singleFit.cgi?orgId=$orgId&locusId=$locusId";
-      }  elsif ($db eq "REBASE") {
-        $URL = "http://rebase.neb.com/rebase/enz/${protId}.html";
-      } elsif ($db eq "CharProtDB") {
-        $URL = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/"; # the CharProtDB paper
-      } else {
-        die "No URL for $db" unless exists $sourceToURL{ $db };
-        $URL = $sourceToURL{$db} . $protId if $sourceToURL{$db};
-      }
-      my $showId = $protId;
-      $showId =~ s/^.*://;
-      $showId = $chit->{id2} if $db eq "reanno" && $chit->{id2};
-      $showId = "VIMSS$showId" if $showId =~ m/^\d+/ && $db eq "reanno";
-      $showId = "$showId / $chit->{id2}" if $db eq "SwissProt" && $chit->{id2};
-
-      $showId = "$showId / $chit->{name}" if $chit->{name};
-      $showId = $chit->{name} if $db eq "ecocyc" && $chit->{name};
+      AddCuratedInfo($chit); # for the URL and showName fields
       my @showOrgWords = split / /, $chit->{organism};
       @showOrgWords = @showOrgWords[0..1] if @showOrgWords > 2;
-      push @descs, a({-href => $URL, -title => "from $db", -onmousedown => loggerjs("curated", $showId) },
-                     $showId) . ": " . $chit->{desc}
+      push @descs, a({-href => $chit->{URL}, -title => "from " . $chit->{db},
+                      -onmousedown => loggerjs("curated", $chit->{subjectId}) },
+                     $chit->{showName}) . ": " . $chit->{desc}
         . " " . small("from " . i(join(" ", @showOrgWords)));
     }
     my $percentcov = int($row->{coverage} * 100 + 0.5);
