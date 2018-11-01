@@ -85,10 +85,23 @@ if ($query) {
     # Should improve this to show deflines!
 
     open(my $fh, "<", $tmpfile) || die "Cannot read $tmpfile";
-    while(my $line = <$fh>) {
-      print $line;
+    my $state = {};
+    while (my ($header, $sequence) = ReadFastaEntry($fh, $state)) {
+      $header =~ m/^lcl[|](\S+) /
+        || die "Cannot parse fasta header $header";
+      my $uniqid = $1;
+      die "Unexpected fasta identifier $uniqid from $header"
+        unless exists $idToChit{$uniqid};
+      my @ids = ();
+      my @descs = ();
+      foreach my $chit (@{ $idToChit{$uniqid}}) {
+        push @ids, $chit->{db} . "::" . $chit->{protId};
+        push @descs, $chit->{desc};
+      }
+      print ">" . join(" ", @ids) . " " . join(";; ", @descs) . "\n" . $sequence . "\n";
     }
     close($fh) || die "Error reading $tmpfile";
+    unlink($tmpfile);
     exit(0);
   } else {
     # table_mode
