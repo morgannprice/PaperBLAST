@@ -277,6 +277,7 @@ sub FetchSeqs($$$$) {
   my $fastacmd = "$blastdir/fastacmd";
   die "No such executable: $fastacmd" unless -x $fastacmd;
   my $tmpdir = $ENV{TMP} || "/tmp";
+  die "Not a directory: $tmpdir" unless -d $tmpdir;
   my $listFile = "$tmpdir/list.$$.in";
   open(my $fh, ">", $listFile) || die "Cannot write to $listFile";
   foreach my $uniqid (@$uniqids) {
