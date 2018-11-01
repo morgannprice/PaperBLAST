@@ -28,7 +28,7 @@ use DBI;
 use URI::Escape; # for uri_escape()
 use IO::Handle; # for autoflush
 use lib "../lib";
-use pbutils; # for ReadFastaEntry()
+use pbutils; # for ReadFastaEntry(), Curated functions
 use FetchAssembly; # for GetMatchingAssemblies(), CacheAssembly(), warning(), fail(), etc.
 use pbweb qw{TopDivHtml loggerjs};
 
@@ -70,8 +70,6 @@ my $usearch = "../bin/usearch";
 die "No such executable: $usearch" unless -x $usearch;
 my $blastdir = "../bin/blast";
 die "No such directory: $blastdir" unless -d $blastdir;
-my $fastacmd = "$blastdir/fastacmd";
-die "No such executable: $fastacmd" unless -x $fastacmd;
 my $blastdb = "$base/uniq.faa";
 die "No such file: $blastdb" unless -e $blastdb;
 
@@ -267,16 +265,13 @@ print p("Found", scalar(keys %seqs),
   if $upfile;
 
 # Find relevant sequences in CuratedGene
-my $maxhits = 1000;
-my $limit = $maxhits + 1;
-my $chits = $dbh->selectall_arrayref("SELECT * FROM CuratedGene WHERE desc LIKE ? LIMIT $limit",
-                                     { Slice => {} }, "%" . $query . "%");
 my $URLnoq = $upfile ? "genomeSearch.cgi?doupload=1" : "genomeSearch.cgi?gdb=$gdb&gid=" . uri_escape($gid);
+my $maxhits = 1000;
+my $chits = CuratedMatch($dbh, $query, $maxhits+1);
 if (@$chits > $maxhits) {
   print p(qq{Sorry, too many curated entries match the query '$query'. Please try},
           a({ -href => $URLnoq }, "another query").".");
-  print end_html;
-  exit(0);
+  finish();
 }
 if (@$chits == 0) {
   print p(qq{None of the curated entries in PaperBLAST's database match '$query'. Please try},
@@ -285,22 +280,17 @@ if (@$chits == 0) {
 }
 if ($word) {
   # filter for whole-word hits
-  my $quoted = quotemeta($query); # this will quote % as well
-  $quoted =~ s/\\%/\\b.*\\b/g; # turn % into a separation of words; note quoting of \\ so that it appears in the new string
-
-  my @keep = grep { $_->{desc} =~ m/\b$quoted\b/i } @$chits;
-  if (@keep == 0) {
+  $chits = CuratedWordMatch($chits, $query);
+  if (@$chits == 0) {
     print p(qq{None of the curated entries in PaperBLAST's database match '$query' as complete words. Please try},
-            a({ -href => $URLnoq }, "another query") . ".");
+            a({ -href => $URLnoq }, "another query") . "."); # XXX URLnoq
     finish();
   }
-  $chits = \@keep;
 }
 
 my $wordstatement = $word ? " as complete word(s)" : "";
 print p("Found", scalar(@$chits), qq{curated entries in PaperBLAST's database that match '$query'${wordstatement}.\n});
 
-my $listFile = "$basefile.list";
 my $chitsfaaFile = "$basefile.chits.faa";
 my $seqFile = "$basefile.seq";
 my $ublastFile = "$basefile.ublast";
@@ -309,20 +299,12 @@ my $ublastFile = "$basefile.ublast";
 my %idToChit = (); # sequence identifier to curated gene hit(s)
 foreach my $hit (@$chits) {
   my $seqid = $hit->{db} . "::" . $hit->{protId};
-  my $uniqRef = $dbh->selectcol_arrayref("SELECT sequence_id FROM SeqToDuplicate WHERE duplicate_id = ?",
-                                         {}, $seqid);
-  $seqid = $uniqRef->[0] if scalar(@$uniqRef) > 0;
-  push @{ $idToChit{$seqid} }, $hit;
+  my $uniqid = IdToUniqId($dbh, $seqid);
+  push @{ $idToChit{$uniqid} }, $hit;
 }
-print p("These curated entries have", scalar(keys %idToChit), "distinct sequences.\n");
-open(LIST, ">", $listFile) || die "Cannot write to $listFile";
-foreach my $id (sort keys %idToChit) {
-  print LIST "$id\n";
-}
-close(LIST) || die "Error writing to $listFile";
-system("$fastacmd -i $listFile -d $blastdb -p T > $chitsfaaFile") == 0
-  || die "fastacmd failed: $!";
-unlink($listFile);
+my @uniqids = sort keys %idToChit;
+print p("These curated entries have", scalar(@uniqids), "distinct sequences.\n");
+FetchSeqs($blastdir, $blastdb, \@uniqids, $chitsfaaFile);
 
 my %byCurated = (); # curated to list of hits; used to save the maximum score below
 
