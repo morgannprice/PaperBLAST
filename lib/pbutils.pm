@@ -6,7 +6,7 @@ use File::stat;
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw(read_list wget ftp_html_to_files write_list mkdir_if_needed ReadFasta ParsePTools ReadFastaEntry ReadTable ReadColumnNames NewerThan);
+@EXPORT = qw(read_list wget ftp_html_to_files write_list mkdir_if_needed ReadFasta ParsePTools ReadFastaEntry ReadTable ReadColumnNames NewerThan CuratedMatch CuratedWordMatch IdToUniqId FetchSeqs);
 
 sub read_list($) {
   my ($file) = @_;
@@ -246,6 +246,46 @@ sub NewerThan($$) {
     die "No such file: $file2" unless -e $file2;
     return 0 unless -e $file1;
     return stat($file1)->mtime >= stat($file2)->mtime ? 1 : 0;
+}
+
+# Returns reference to a list of rows from CuratedGene
+sub CuratedMatch($$$) {
+  my ($dbh, $query, $limit) = @_;
+  return $dbh->selectall_arrayref("SELECT * FROM CuratedGene WHERE desc LIKE ? LIMIT ?",
+                                     { Slice => {} }, "%" . $query . "%", $limit);
+}
+
+sub CuratedWordMatch($$) {
+  my ($chits, $query) = @_;
+  my $quoted = quotemeta($query); # this will quote % as well
+  $quoted =~ s/\\%/\\b.*\\b/g; # turn % into a separation of words; note quoting of \\ so that it appears in the new string
+  my @keep = grep { $_->{desc} =~ m/\b$quoted\b/i } @$chits;
+  return \@keep;
+}
+
+# Replace a sequence id with its uniq id, if it is a known duplicate in the SeqToDuplicate table
+sub IdToUniqId($$) {
+  my ($dbh, $seqid) = @_;
+  my $uniqRef = $dbh->selectcol_arrayref("SELECT sequence_id FROM SeqToDuplicate WHERE duplicate_id = ? LIMIT 1",
+                                         {}, $seqid);
+  return $uniqRef->[0] if @$uniqRef;
+  return $seqid;
+}
+
+sub FetchSeqs($$$$) {
+  my ($blastdir, $blastdb, $uniqids, $outfile) = @_;
+  my $fastacmd = "$blastdir/fastacmd";
+  die "No such executable: $fastacmd" unless -x $fastacmd;
+  my $tmpdir = $ENV{TMP} || "/tmp";
+  my $listFile = "$tmpdir/list.$$.in";
+  open(my $fh, ">", $listFile) || die "Cannot write to $listFile";
+  foreach my $uniqid (@$uniqids) {
+    print $fh "$uniqid\n";
+  }
+  close($fh) || die "Error writing to $listFile";
+  system("$fastacmd -i $listFile -d $blastdb -p T > $outfile") == 0
+    || die "fastacmd failed: $!";
+  unlink($listFile);
 }
 
 1;
