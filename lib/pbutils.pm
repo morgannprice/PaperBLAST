@@ -274,6 +274,12 @@ sub IdToUniqId($$) {
 
 sub FetchSeqs($$$$) {
   my ($blastdir, $blastdb, $uniqids, $outfile) = @_;
+  if (@$uniqids==0) {
+    # fastacmd fails if given an empty list
+    open(my $fh, ">", $outfile) || die "Cannot write to $outfile";
+    close($fh) || die "Error writing to $outfile";
+    return;
+  }
   my $fastacmd = "$blastdir/fastacmd";
   die "No such executable: $fastacmd" unless -x $fastacmd;
   my $tmpdir = $ENV{TMP} || "/tmp";
