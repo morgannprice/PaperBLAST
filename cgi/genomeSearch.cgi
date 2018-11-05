@@ -291,7 +291,11 @@ if ($word) {
 }
 
 my $wordstatement = $word ? " as complete word(s)" : "";
-print p("Found", scalar(@$chits), qq{curated entries in PaperBLAST's database that match '$query'${wordstatement}.\n});
+my $csURL = "curatedSearch.cgi?query=" . uri_escape($query)
+  . "&word=", ($word ? 1 : 0);
+print p("Found",
+        a({ -href => $csURL }, scalar(@$chits), "curated entries"),
+        qq{in PaperBLAST's database that match '$query'${wordstatement}.\n});
 
 my $chitsfaaFile = "$basefile.chits.faa";
 my $seqFile = "$basefile.seq";
@@ -305,7 +309,9 @@ foreach my $hit (@$chits) {
   push @{ $idToChit{$uniqid} }, $hit;
 }
 my @uniqids = sort keys %idToChit;
-print p("These curated entries have", scalar(@uniqids), "distinct sequences.\n");
+print p("These curated entries have", scalar(@uniqids), "distinct",
+        a({ -href => $csURL . "&faa=1" }, "sequences") . "."),
+  "\n";
 FetchSeqs($blastdir, $blastdb, \@uniqids, $chitsfaaFile);
 
 my %byCurated = (); # curated to list of hits; used to save the maximum score below
