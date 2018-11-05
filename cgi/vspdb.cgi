@@ -30,12 +30,8 @@ my @orgChoices2 = @orgChoices; unshift @orgChoices2, "";
 my $labelYesNo = {0=>"no",1=>"yes"};
 
 my $title = "Papers vs. PDB";
+start_page("Papers vs. PDB: Well-studied proteins that lack structural information");
 print
-  header(-charset => 'utf-8'),
-  start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
-             -title => $title),
-  TopDivHtml(),
-  h2("Papers vs. PDB: Well-studied proteins that lack structural information"),
   p(a({-href => "vspdb.cgi"}, "Papers vs. PDB"),
     "shows proteins that are",
     a({-href => "litSearch.cgi", -title => "PaperBLAST"}, "mentioned in at least 10 papers"),
