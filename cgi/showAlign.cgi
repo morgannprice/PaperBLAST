@@ -33,13 +33,7 @@ my $sqldb = "$base/litsearch.db";
 my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
 
 my $title = "Align $def1 vs. $def2";
-print
-  header(-charset => 'utf-8'),
-  start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
-             -title => $title),
-  TopDivHtml();
-
-print h2("Align $def1 vs. $def2"), "\n";
+start_page($title);
 
 my $tmpDir = "../tmp";
 my $bl2seq = "../bin/blast/bl2seq";
