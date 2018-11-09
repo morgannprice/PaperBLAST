@@ -292,7 +292,7 @@ if ($word) {
 
 my $wordstatement = $word ? " as complete word(s)" : "";
 my $csURL = "curatedSearch.cgi?query=" . uri_escape($query)
-  . "&word=", ($word ? 1 : 0);
+  . "&word=" . ($word ? 1 : 0);
 print p("Found",
         a({ -href => $csURL }, scalar(@$chits), "curated entries"),
         qq{in PaperBLAST's database that match '$query'${wordstatement}.\n});
