@@ -42,13 +42,7 @@ $hmmName =~ s/^NAME +//;
 my $showId = $isUploaded ? "uploaded HMM " . escapeHTML($hmmName) : $hmmId;
 my $title = "Align $acc to $showId";
 $title .= " (" . escapeHTML($hmmName) . ")" unless $isUploaded || $hmmName eq $hmmId;
-
-print
-    header(-charset => 'utf-8'),
-    start_html(-head => Link({-rel => "shortcut icon", -href => "../static/favicon.ico"}),
-               -title => $title),
-    TopDivHtml(),
-    h2($title);
+start_page($title);
 
 my $db = "$base/uniq.faa";
 die "No such file: $db" unless -e $db;
