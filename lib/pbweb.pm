@@ -24,7 +24,7 @@ sub UniqToGenes($$) {
   return @genes;
 }
 
-# Given a row form the CuratedGene table, add fields for
+# Given a row from the CuratedGene table, add fields for
 # subjectId, source, curated, curateId, priority, URL, and showName,
 # and clean up the comment field for presentation
 sub AddCuratedInfo($) {
