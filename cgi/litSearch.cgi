@@ -390,6 +390,11 @@ if (!defined $seq && ! $more_subjectId) {
             "Papers vs. PDB")),
         li(a({ -href => "hmmSearch.cgi", -title => "Literature for all proteins that match an HMM" },
              "Family Search vs. Papers")),
+        li("Papers vs. PDB",
+           start_ul(),
+           li(a({-href => "http://papers.genomics.lbl.gov/vspfam/dufs.html"}, "DUFs with characterized representatives")),
+           li(a({-href => "http://papers.genomics.lbl.gov/vspfam/nopfam.html"}, "Characterized proteins not in PFam")),
+           end_ul()),
         end_ul(),
         $documentation;
     finish_page();
