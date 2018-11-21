@@ -14,6 +14,7 @@
 # Optional CGI garameters:
 # def1 -- name of 1st sequence
 # def2 -- name of 2nd sequence
+# debug
 
 use strict;
 use CGI qw(:standard Vars);
@@ -27,6 +28,7 @@ use pbweb; # for FetchFasta()
 my $cgi=CGI->new;
 my $def1 = $cgi->param('def1') || "query";
 my $def2 = $cgi->param('def2') || "subject";
+my $debug = $cgi->param('debug');
 
 my $base = "../data";
 my $sqldb = "$base/litsearch.db";
@@ -81,6 +83,7 @@ open(FAA2, ">", "$prefix.faa2");
 print FAA2 ">$def2\n$seq2\n";
 close(FAA2) || die "Error writing to $prefix.faa2";
 
+print p("Running $bl2seq with prefix $prefix") if $debug;
 system($bl2seq,
        "-p", "blastp",
        "-e", 0.01,
@@ -116,7 +119,9 @@ print
 
 $| = 1; # flush STDOUT
 
-if (defined $acc2 && ! $out[0] =~ m/No hits/i) {
+print p("acc2 = $acc2; out[0] = $out[0]")."\n" if $debug && defined $acc2;
+if (defined $acc2 && $out[0] !~ m/No hits/i) {
+  print p("Looking for uniprot id for $acc2")."\n" if $debug;
   # Make a feature report
   # First, find the UniProt identifier, if it is known
   my $uniprotId = undef;
@@ -146,6 +151,7 @@ if (defined $acc2 && ! $out[0] =~ m/No hits/i) {
       last if $uniprotId;
     }
   }
+  print p("uniprotId " . ($uniprotId || "undef")) if $debug;
   my %typeNames = ("ACT_SITE" => "Active site",
                    "BINDING" => "Binding site",
                    "CA_BIND" => "Calcium binding",
