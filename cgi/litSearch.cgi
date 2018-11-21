@@ -556,7 +556,7 @@ sub UniProtToQuery($) {
   # include=no -- no isoforms
   my $url = "http://www.uniprot.org/uniprot/?query=${short}&format=fasta&sort=score&include=no&limit=2";
   my $results = get($url);
-  if ($results =~ m/^>/) {
+  if (defined $results && $results =~ m/^>/) {
     # select the first hit only
     my @lines = split /\n/, $results;
     my @out = ();
