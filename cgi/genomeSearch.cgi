@@ -522,7 +522,7 @@ sub PrintHits($$$$) {
   }
   push @show, Tr(td({ -colspan => 2 },
                     p({-style => $indentStyle},
-                      a({ -href => "javascript:void(0);", -onclick => "expander(this,$nCollapseSet)" }, small("More...")))))
+                      a({ -href => "javascript:void(0);", -onclick => "tblexpander(this)" }, small("More...")))))
     if @show > $maxHitsEach;
   unshift @show, Tr(td({-align => "left", -valign => "top"}, $inputlink . "<BR>" . small("is similar to:")),
                     td({-align => "right", -valign => "top"}, $pblink));
