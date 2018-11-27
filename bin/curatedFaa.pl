@@ -8,25 +8,27 @@ use pbutils; # for ReadFastaEntry()
 use Getopt::Long;
 
 my $usage = <<END
-Usage: curatedFaa.pl -db litsearch.db -uniq uniq.faa -out curated.faa [ -filtered filtered ]
-  Filters out curated entries that are probably not actually characterized -- these are
-  written to the filtered file (if it is specified).
+Usage: curatedFaa.pl -db litsearch.db -uniq uniq.faa -out curated.faa
+Filters out curated entries that are probably not actually characterized.
+  -filtered filteredFile -- save the non-curated entries to filteredFile
+  -showdesc -- include definitions of the curated entries
 END
 ;
 
-my ($dbfile, $uniqfile, $outfile, $filterfile);
+my ($dbfile, $uniqfile, $outfile, $filterfile, $showdesc);
 die $usage
   unless GetOptions('db=s' => \$dbfile,
                     'uniq=s' => \$uniqfile,
                     'out=s' => \$outfile,
-                    'filter=s' => \$filterfile)
+                    'filter=s' => \$filterfile,
+                    'showdesc' => \$showdesc)
   && defined $dbfile && defined $uniqfile && defined $outfile
   && @ARGV ==0;
 die "No such file: $dbfile\n" unless -e $dbfile;
 die "No such file: $uniqfile\n" unless -e $uniqfile;
 my $dbh = DBI->connect("dbi:SQLite:dbname=$dbfile","","",{ RaiseError => 1 }) || die $DBI::errstr;
 
-my %curatedIds = ();
+my %curatedIds = (); # db::protId => desc
 my $genes = $dbh->selectall_arrayref("SELECT db,protId,desc FROM CuratedGene");
 my %filtered = (); # db => protId => 1
 foreach my $gene (@$genes) {
@@ -52,7 +54,7 @@ foreach my $gene (@$genes) {
       || ($desc =~ m/^probable/i && $db eq "CharProtDB")) {
     $filtered{$db}{$protId} = $desc;
   } else {
-    $curatedIds{$db . "::" . $protId} = 1;
+    $curatedIds{$db . "::" . $protId} = $desc;
   }
 }
 
@@ -73,7 +75,19 @@ open(my $fhOut, ">", $outfile) || die "Cannot write to $outfile";
 my $state = {};
 while (my ($uniqId,$sequence) = ReadFastaEntry($fhU, $state)) {
   if (exists $curatedIds{$uniqId} || exists $keepIds{$uniqId}) {
-    print $fhOut ">${uniqId}\n$sequence\n";
+    my $defline = ">${uniqId}";
+    if (defined $showdesc) {
+      my @ids = ();
+      push @ids, $uniqId if exists $curatedIds{$uniqId};
+      push @ids, @{ $keepIds{$uniqId} } if exists $keepIds{$uniqId};
+      foreach my $id (@ids) {
+        die unless exists $curatedIds{$id};
+        $defline .= " ";
+        $defline .= ";; " unless $id eq $ids[0];
+        $defline .= "$id $curatedIds{$id}";
+      }
+    }
+    print $fhOut "$defline\n$sequence\n";
     $written{$uniqId} = 1;
   }
 }
