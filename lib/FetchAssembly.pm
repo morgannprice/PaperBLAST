@@ -593,6 +593,7 @@ sub CacheAssembly($$$) {
     $assembly->{faafile} = "$dir/fbrowse_${gid}.faa";
     $assembly->{fnafile} = "$dir/fbrowse_${gid}.fna";
     $assembly->{genomeName} = join(" ", $assembly->{genus}, $assembly->{species}, $assembly->{strain});
+    $assembly->{URL} = "http://fit.genomics.lbl.gov/cgi-bin/org.cgi?orgId=$gid";
     unless (-e $assembly->{faafile}) {
       my $tmpfile = $assembly->{faafile} . ".$$.tmp";
       open(my $fh, ">", $tmpfile) || fail("Cannot write to $tmpfile");
