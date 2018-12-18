@@ -37,3 +37,10 @@ have a clean pipeline yet, but is available in the code repository)
 
 Optionally, use motd to show a "message of the day" at the top of the
 main page and some other pages.
+
+For fetching genomes from JGI's IMG (such as to search within them
+with Curated BLAST), it is necessary for private/.JGI.info to contain
+a valid IMG username and password (on the 1st two lines).  Make sure
+that the web server does not provide access to files in the private/
+directory.  If using apache, the private/.htaccess sile hould read
+"Deny to all").
