@@ -81,6 +81,8 @@ if ($up) {
 my $hmmfile = HmmToFile($hmmId);
 my $isUploaded = defined $hmmfile && $hmmId =~ m/^hex[.]/;
 
+die "Invalid hmm id" if defined $hmmId && $hmmId !~ m/^[a-zA-Z0-9._-]+$/;
+
 if (!defined $hmmfile) {
   # print a form
   my $title = "Family Search (HMMer) vs. Papers";
