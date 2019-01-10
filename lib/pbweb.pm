@@ -60,16 +60,27 @@ sub AddCuratedInfo($) {
     @comments = grep m/^SUBUNIT|FUNCTION|COFACTOR|CATALYTIC|ENZYME|DISRUPTION/, @comments;
     @comments = map {
       my @words = split / /, $_;
-      my $cofactor = $words[0] eq "COFACTOR:";
+      my $word1 = $words[0];
       $words[0] = b(lc($words[0]));
       $words[1] = b(lc($words[1])) if @words > 1 && $words[1] =~ m/^[A-Z]+:$/;
       my $out = join(" ", @words);
-      if ($cofactor) {
-        # Remove Evidence= and Xref= fields., as often found in the cofactor entry
-        $out =~ s/ Evidence=[^ ]*;?//g;
-        $out =~ s/ Xref=[^ ]+;?//g;
+      if ($word1 eq "COFACTOR:") {
+        # Remove Evidence= and Xref= fields, as often found in the cofactor entry
+        $out =~ s/ Evidence=[^;]*;?//g;
+        $out =~ s/ Xref=[^;]*;?//g;
         # Transform Name=x; to x;
-        $out =~ s/ Name=([^;]+);/ $1;/g;
+        $out =~ s/ Name=([^;]+);?/ $1/g;
+        # Transform Note=note. to <small>(note.)</small>
+        # require last char to be non-space to avoid " )" in output
+        $out =~ s!Note=(.*)[.]!<small>($1.)</small>!g;
+      } elsif ($word1 eq "CATALYTIC") {
+        # Convert Xref=Rhea:RHEA:nnnn to a link to the Rhea entry, if it exists
+        # Remove everthing else after the Reaction (i.e. EC: or ChEBI: entries)
+        my $rheaId = $1 if $out =~ m/Xref=Rhea:RHEA:(\d+)/;
+        $out =~ s/Reaction=([^;]+);.*$/$1/;
+        $out .= " " . small("("
+                      . a({ -href => "https://www.rhea-db.org/reaction?id=$rheaId" }, "RHEA:$rheaId")
+                      . ")") if defined $rheaId;
       }
       $out;
     } @comments;
