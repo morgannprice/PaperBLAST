@@ -7,14 +7,20 @@ use pbutils; # for ParsePTools, ReadFastaEntry
 my $usage = <<END
 Usage: parse_metacyc.pl [ -debug ] metacyc_data_directory uniprot_fasta trembl_fasta > metacyc.curated_parsed
 
-The data directory must contain proteins.dat, enzrxn.dat, and
-reactions.dat, all in attribute-value format.
+The data directory must contain proteins.dat, enzrxns.dat, and
+reactions.dat (in attribute-value format).
 
 The uniprot and trembl fasta filenames can be .gz files instead.
 
 The output file is in curated_parsed format, with fields metacyc,
 metacyc identifier, uniprot identifier, short name, description, organism,
 sequence, blank (comment), pubmed ids (comma separated).
+
+Limitations -- EC numbers are obtained for proteins that link to
+enzrxns.dat (via CATALYZES) and reactions.dat (via REACTION), or from
+proteins that belong to complexes that have CATALYZES attributes. But
+multi-level enzyme complexes (A is a COMPONENT-OF B which is a
+COMPONENT-OF C which has CATALYZES) are not handled.
 
 END
 ;
@@ -31,14 +37,14 @@ die "No such file: $faa2\n" unless -e $faa2;
 
 # A list of hashes, one per protein. Each entry has fields
 # UNIQUE-ID, ABBREV-NAME, COMMON-NAME, CATALYZES, UNIPROT, CITATIONS (as a list of pmIds),
-# and ultimately SEQUENCE
+# COMPONENT-OF, and ultimately SEQUENCE
 my @prot = ();
 
 # Find each protein that has a link to sequence (a uniprot id), links to paper(s),
 # and either a useful description ("COMMON-NAME") or a link to an enzymatic reaction
 # (where we can get a description).
 
-my %catalyzes = (); # object => list of reactions
+my %catalyzes = (); # unique-id => list of reactions
 
 my $pfile = "$metadir/proteins.dat";
 my $nProt = 0;
@@ -50,7 +56,7 @@ while (my $prot = ParsePTools($fhProt)) {
   # TAX-nnnn, where the number is an NCBI taxonomy id, but that is
   # ignored in favor of the OS field in the uniprot fasta file.
 
-  # Always store the catalyzes information
+  # Always store the catalyzes information (so that we have it for complexes)
   my @catalyzes = ();
   my $id = $prot->{"UNIQUE-ID"}[0]{"value"};
   die unless $id;
