@@ -14,15 +14,31 @@ local $/ = "\n//\n";
 while(<>) {
     my $text = $_;
     my $entry = SWISS::Entry->fromText($text);
-    my $desc = join ("; ", map { $_->text } $entry->DEs->elements);
+    my $DEs = $entry->DEs;
+    my @desc = map { $_->text } grep { $_->type ne "EC" } $DEs->elements;
+    # Add EC numbers
+    my @ec = map { $_->text } grep { $_->type eq "EC" } $DEs->elements;
+    foreach my $sublist ($DEs->Includes->elements) {
+      push @ec, map { $_->text } grep { $_->type eq "EC" } $sublist->elements;
+    }
+    foreach my $sublist ($DEs->Contains->elements) {
+      push @ec, map { $_->text } grep { $_->type eq "EC" } $sublist->elements;
+    }
+    # remove duplicates from @ec
+    my %ecSoFar = ();
+    @ec = grep { my $e = !exists $ecSoFar{$_}; $ecSoFar{$_} = 1; $e } @ec;
+    # the EC elements already include an "EC" prefix. Just add to the ; separated list
+    push @desc, @ec;
+    my $desc = join("; ", @desc);
+
     my $organisms = join ("; ", map { $_->text } $entry->OSs->elements);
     # Each comment is a CC object with fields topic and comment
     # References to pubmed normally show up as something like
     # {ECO:0000269|PubMed:16731932, ECO:0000269|PubMed:19861680}
     # However sometimes the evidence code is in the special blocks section?
-    # So instead do
     my @cc = map $_->toString(), $entry->CCs->elements;
     my @cc2 = map { s/^CC +//; s/\nCC +/ /g; s/\n+//g; s/^-!- *//; $_; } @cc;
+    @cc2 = grep !m/Copyrighted by/, @cc;
     my $cc = join("_:::_", @cc2);
     # which produces multiple fields like FUNCTION: ....
     # joined by the arbitrary _:::_ join.
