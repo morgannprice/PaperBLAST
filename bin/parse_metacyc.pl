@@ -147,6 +147,7 @@ while (my $react = ParsePTools($fhReact)) {
   # and so are not saved.
   # (Although RXN-16226 is given |EC-1.8.3.b| which is supposedly official.)
   # Some other reactions have partially specified EC numbers -- again, skip those.
+  # Minor bug: numbers like |EC-4.2.2.n1| are actually official and should be saved
   if ($EC =~ m/^EC-([0-9]+[.][0-9]+[.][0-9]+[.][0-9]+)$/) {
     die unless $id;
     $rxn_to_ec{$id} = $1;
