@@ -30,7 +30,7 @@ my @orgChoices2 = @orgChoices; unshift @orgChoices2, "";
 my $labelYesNo = {0=>"no",1=>"yes"};
 
 my $title = "Papers vs. PDB";
-start_page("Papers vs. PDB: Well-studied proteins that lack structural information");
+start_page('title' => "Papers vs. PDB: Well-studied proteins that lack structural information");
 print
   p(a({-href => "vspdb.cgi"}, "Papers vs. PDB"),
     "shows proteins that are",

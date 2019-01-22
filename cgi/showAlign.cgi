@@ -35,7 +35,7 @@ my $sqldb = "$base/litsearch.db";
 my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
 
 my $title = "Align $def1 vs. $def2";
-start_page($title);
+start_page('title' => $title);
 
 my $tmpDir = "../tmp";
 my $bl2seq = "../bin/blast/bl2seq";

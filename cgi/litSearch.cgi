@@ -228,7 +228,7 @@ END
     ;
 
 my $title = "PaperBLAST";
-start_page($title);
+start_page('title' => $title);
 
 my $procId = $$;
 my $timestamp = int (gettimeofday() * 1000);

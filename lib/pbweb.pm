@@ -432,16 +432,15 @@ sub HmmToFile($) {
   return @glob > 0 ? $glob[0] : undef;
 }
 
-sub TopDivHtml {
-  my $URL = "litSearch.cgi";
-  $URL = "http://papers.genomics.lbl.gov/" if ! -e $URL;
+sub TopDivHtml($$) {
+  my ($banner, $URL) = @_;
   return <<END
 <div style="background-color: #40C0CB; display: block; position: absolute; top: 0px; left: -1px;
   width: 100%; padding: 0.25em; z-index: 400;">
 <H2 style="margin: 0em;">
 <A HREF="$URL" style="color: gold; font-family: 'Montserrat', sans-serif; font-style:italic;
   text-shadow: 1px 1px 1px #000000; text-decoration: none;">
-PaperBLAST &ndash; <small>Find papers about a protein or its homologs</small>
+$banner
 </A></H2></div>
 <P style="margin: 0em;">&nbsp;</P>
 <SCRIPT src="../static/pb.js"></SCRIPT>
@@ -449,8 +448,15 @@ END
 ;
 }
 
-sub start_page($) {
-  my ($title) = @_;
+# Run with parameters like 'title' => 'Curated BLAST for Genomes'
+# Optional parameters:
+# 'banner' (defaults to the PaperBLAST banner; otherwise specify arbitrary html)
+# 'bannerURL' (the URL that the banner links to)
+sub start_page {
+  my %param = @_;
+  my $title = $param{title} || die "Must specify title";
+  my $banner = $param{banner} || "PaperBLAST &ndash; <small>Find papers about a protein or its homologs</small>";
+  my $bannerURL = $param{bannerURL} || "litSearch.cgi";
   my $style = <<END
 .autocomplete {
   /*the container must be positioned relative:*/
@@ -494,7 +500,7 @@ END
                -style => { -code => $style },
              -script => [{ -type => "text/javascript", -src => "../static/autocomplete_uniprot.js" }],
              -title => $title),
-    &TopDivHtml(),
+    &TopDivHtml($banner, $bannerURL),
     h2($title),
     "\n";
 }

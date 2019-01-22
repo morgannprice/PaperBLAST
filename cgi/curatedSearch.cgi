@@ -37,7 +37,9 @@ my $word = $cgi->param('word');
 my $faa_mode = $cgi->param('faa');
 my $table_mode = ! $faa_mode;
 
-&start_page("Search for Curated Proteins")
+&start_page('title' => "Search for Curated Proteins",
+            'banner' => "Curated BLAST for Genomes",
+            'bannerURL' => "genomeSearch.cgi")
   if $table_mode;
 
 if ($query) {
@@ -132,8 +134,8 @@ if ($query) {
   # show form
   print
     start_form(-method => 'get', -action => 'curatedSearch.cgi'),
-    p("Enter a search term:",
-      textfield(-name => 'query', -value => '', -size => 50, -maxlength => 200)),
+    p(small("Example:", a({ -href => "curatedSearch.cgi?query=perchlorate"}, "perchlorate"))),
+    p("Search for:", textfield(-name => 'query', -value => '', -size => 50, -maxlength => 200)),
     p({-style => "margin-left: 3em;" },
       checkbox(-name => "word", -label => "Match whole words only?")),
     p(submit(-name => 'Search')),

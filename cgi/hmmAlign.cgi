@@ -42,7 +42,7 @@ $hmmName =~ s/^NAME +//;
 my $showId = $isUploaded ? "uploaded HMM " . escapeHTML($hmmName) : $hmmId;
 my $title = "Align $acc to $showId";
 $title .= " (" . escapeHTML($hmmName) . ")" unless $isUploaded || $hmmName eq $hmmId;
-start_page($title);
+start_page('title' => $title);
 
 my $db = "$base/uniq.faa";
 die "No such file: $db" unless -e $db;

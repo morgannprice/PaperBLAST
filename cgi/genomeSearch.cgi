@@ -23,7 +23,7 @@
 #	[used to handle failed uploads or if no query was entered]
 
 use strict;
-use CGI qw(:standard Vars);
+use CGI qw(:standard Vars start_ul end_ul);
 use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
 use Time::HiRes qw{gettimeofday};
 use DBI;
@@ -90,7 +90,9 @@ my %gdb_labels = map { $_ => exists $gdb_labels1{$_} ? $gdb_labels1{$_} : "$_ ge
 die "Unknown genome database: $gdb\n"
   if $gdb && !exists $gdb_labels{$gdb};
 
-&start_page("Curated BLAST for Genomes");
+&start_page('title' => "Curated BLAST",
+           'banner' => "Curated BLAST for Genomes",
+           'bannerURL' => "genomeSearch.cgi");
 autoflush STDOUT 1; # show preliminary results
 
 # A symbolic link to the Fitness Browser data directory is used (if it exists)
@@ -205,7 +207,12 @@ if ($gdb && $gquery) {
     p(br(),
       "Or",
       a({-href => "genomeSearch.cgi?doupload=1"}, "upload"),
-      "a genome or proteome in fasta format");
+      "a genome or proteome in fasta format"),
+    h3("Related Tools"),
+    start_ul(),
+    li(a({ -href => "curatedSearch.cgi" }, "Search for curated proteins by keyword")),
+    li(a({ -href => "litSearch.cgi" }, "PaperBLAST: Find papers about a protein or its homologs")),
+    end_ul();
   finish_page();
 }
 

@@ -86,7 +86,7 @@ die "Invalid hmm id" if defined $hmmId && $hmmId !~ m/^[a-zA-Z0-9._-]+$/;
 if (!defined $hmmfile) {
   # print a form
   my $title = "Family Search (HMMer) vs. Papers";
-  start_page($title);
+  start_page('title' => $title);
   print p("Did not find an HMM matching $hmmId") if $hmmId;
   print
     GetMotd(),
@@ -119,7 +119,7 @@ my $showId = $isUploaded ? "uploaded HMM " . escapeHTML($hmmName) : $hmmId;
 my $title = "Family Search for $showId";
 $title .= " (" . escapeHTML($hmmName) . ")" unless $isUploaded || $hmmName eq $hmmId;
 
-start_page($title);
+start_page('title' => $title);
 print GetMotd();
 autoflush STDOUT 1; # show preliminary results
 print "\n";
