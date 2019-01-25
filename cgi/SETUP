@@ -44,3 +44,6 @@ a valid IMG username and password (on the 1st two lines).  Make sure
 that the web server does not provide access to files in the private/
 directory.  If using apache, the private/.htaccess sile hould read
 "Deny to all").
+
+Several of the fetching tools (as used within Curated BLAST) require
+LWP::Protocol::https.
