@@ -236,4 +236,10 @@ foreach my $uniqId (@uniq_sorted) {
   print GenesToHtml($dbh, $uniqId, \@genes, $coverage_html, $maxPapers);
   print "\n";
 }
+
+print p("Or search for genetic data about $hmmId in the",
+        a({ -href => "http://fit.genomics.lbl.gov/cgi-bin/myFitShow.cgi?gene=$hmmId" },
+          "Fitness Browser"))
+  if ! $up && $hmmId && $hmmId =~ m/^(PF|TIGR)\d+$/;
+
 finish_page();
