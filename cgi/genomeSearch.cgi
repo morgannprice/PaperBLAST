@@ -202,6 +202,7 @@ if ($gdb && $gquery) {
     p("Genome database to search:", 
       popup_menu(-name => 'gdb', -values => \@gdbs, -labels => \%gdb_labels, -default => $gdbs[0])),
     p(textfield(-name => 'gquery', -value => '', -size => 50, -maxlength => 200)),
+    p(small("Example:", a({-href => "genomeSearch.cgi?gdb=NCBI&gquery=Azospira"}, "Azospira"))),
     p(submit(-name => "findgenome", -value => 'Find Genome')),
     end_form,
     p(br(),
@@ -741,6 +742,8 @@ sub query_fields_html {
   return join("\n",
               p("${prefix}Enter a search term:",
                 textfield(-name => 'query', -value => '', -size => 50, -maxlength => 200)),
+              p({-style => "margin-left: 3em;" },
+                small("Examples:", i("perchlorate"), "or", i("1.2.1.88"))),
               p({-style => "margin-left: 3em;" },
                 checkbox(-name => "word", -label => "Match whole words only?"))
              );
