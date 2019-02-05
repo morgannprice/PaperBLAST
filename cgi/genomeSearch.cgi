@@ -117,14 +117,14 @@ if ($gdb && $gquery) {
   my @rows = GetMatchingAssemblies($gdb, $gquery);
   my $limit = GetMaxNAssemblies();
   if (@rows > 0) {
+    my $desc = "Found " . scalar(@rows) . " assemblies";
     if (@rows == 1) {
-      print p("Found 1 assembly:");
-    } elsif (@rows < $limit) {
-      print p("Found",scalar(@rows),"assemblies:");
-    } else {
-      print p("The first", scalar(@rows), "matching assemblies:");
+      $desc = "Found 1 assembly";
+    } elsif (@rows >= $limit) {
+      $desc = "Found the first " . scalar(@rows) . " matching assemblies";
     }
-    print "\n";
+    $desc .= ", please choose one" if @rows > 1;
+    print p($desc . ":"), "\n";
     print start_form(-method => 'get', -action => 'genomeSearch.cgi'),
       hidden(-name => 'gdb', -value => $gdb, -override => 1);
     foreach my $row (@rows) {
