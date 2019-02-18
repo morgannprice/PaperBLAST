@@ -40,7 +40,8 @@ $hmmName =~ s/[\r\n].*//;
 $hmmName =~ s/^NAME +//;
 
 my $showId = $isUploaded ? "uploaded HMM " . escapeHTML($hmmName) : $hmmId;
-my $title = "Align $acc to $showId";
+# Quote accession to avoid cross-site scripting attacks
+my $title = "Align " . escapeHTML($acc) . " to $showId";
 $title .= " (" . escapeHTML($hmmName) . ")" unless $isUploaded || $hmmName eq $hmmId;
 start_page('title' => $title);
 
