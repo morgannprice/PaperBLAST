@@ -250,7 +250,8 @@ sub csv_quote($);
         print STDERR "Warning: no description for curated protein $protId from $db\n";
       }
       print FAA ">$combid\n$seq\n";
-      print CGENE join("\t", $db, $protId, $id2, $name, $desc, $org, length($seq), &csv_quote($comment))."\n";
+      print CGENE join("\t", $db, $protId, $id2, $name, &csv_quote($desc),
+                       $org, length($seq), &csv_quote($comment))."\n";
       my @pmIds = split /,/, $pmIds;
       my %pmIds = (); # check for duplicates
       foreach my $pmId (@pmIds) {
