@@ -379,7 +379,8 @@ unless($isNuc) {
   foreach my $input (@inputs) {
     &PrintHits($input, $seqs{$input}, $parsed{$input}, 0); # 0 for proteins
   }
-  print p(small("The hits are sorted by %identity * %coverage (highest first)"));
+  print p(small("The hits are sorted by %identity * %coverage (highest first)"))
+    if @inputs > 0;
 }
 
 # Search the six frame translation
