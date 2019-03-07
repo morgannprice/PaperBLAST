@@ -194,6 +194,7 @@ if ($gdb && $gquery) {
   warning("Please enter an organism name")
     if $cgi->param('findgenome');
   print
+    GetMotd(),
     p("Given a genome and a query, find characterized proteins whose descriptions match the query,",
       "and then search the genome for homologs of those proteins",
       "(" . a({ -href => "genomeSearch.cgi?gdb=FitnessBrowser&gid=PS&query=perchlorate"},
