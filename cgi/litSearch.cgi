@@ -24,6 +24,7 @@ use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
 use Time::HiRes qw{gettimeofday};
 use DBI;
 use LWP::Simple qw{get};
+use HTML::Entities;
 use IO::Handle; # for autoflush
 use lib "../lib";
 use pbweb; # for SubjectToGene()
@@ -400,7 +401,7 @@ if (!defined $seq && ! $more_subjectId) {
     finish_page();
 } else {
     if ($more_subjectId) {
-      print h3("Full List of Papers Linked to $more_subjectId");
+      print h3("Full List of Papers Linked to", HTML::Entities::encode($more_subjectId));
     } else {
       die "No sequence to search" unless $seq;
       my $initial = substr($seq, 0, 10);
