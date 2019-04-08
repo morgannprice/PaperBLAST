@@ -11,6 +11,7 @@ use pbutils;
 use URI::Escape;
 use HTTP::Cookies;
 use JSON;
+use DBI;
 use CGI qw{end_html a p};
 
 our (@ISA,@EXPORT);
