@@ -41,6 +41,17 @@ sub GetMaxNAssemblies() {
   return $maxAssemblyList;
 }
 
+sub FetchWithRetry($$) {
+  my ($URL, $nRetry) = @_;
+  die if $nRetry < 0;
+  for (my $i = 0; $i <= $nRetry; $i++) {
+    my $out = get($URL);
+    return $out if $out;
+    sleep(1);
+  }
+  return undef;
+}
+
 # Note -- arguably should be using an API key for NCBI
 # One argument: the query
 # Returns a list of results (up to maxAssemblyList) as a hash; each "assembly" includes
@@ -50,7 +61,9 @@ sub FetchNCBIInfo($) {
   my ($query) = @_;
   # First run the query using esearch
   my $URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=assembly&retmax=${maxAssemblyList}&term=" . $query;
-  my $string = get($URL);
+  my $nRetry = 2;
+  my $string = FetchWithRetry($URL, $nRetry);
+  die "Failed to contact NCBI eutils at $URL\n" unless $string;
   my $fxml = XML::LibXML->load_xml(string => $string, recover => 1);
   my @idnodes = $fxml->findnodes("//IdList/Id");
   my @ids = map { $_->textContent } @idnodes;
@@ -61,7 +74,8 @@ sub FetchNCBIInfo($) {
   @ids = $ids[0..($maxAssemblyList-1)] if scalar(@ids) > $maxAssemblyList;
   my $idspec= join(",",@ids);
   $URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=assembly&id=$idspec";
-  $string = get($URL);
+  $string = FetchWithRetry($URL, $nRetry);
+  die "Failed to contact NCBI eutils at $URL\n" unless $string;
   my $sxml = XML::LibXML->load_xml(string => $string, recover => 1);
   my @obj = $sxml->findnodes("//DocumentSummary");
   die "Failed to fetch summaries for assembly ids using NCBI's eutils: @ids\n"
