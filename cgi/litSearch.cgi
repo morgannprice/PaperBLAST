@@ -158,6 +158,7 @@ You can download PaperBLAST's database <A HREF="https://github.com/morgannprice/
 <P>Changes since the paper was written:
 
 <UL>
+<LI>April 2019: EuropePMC now returns table entries in their search results. This has expanded PaperBLAST's database, but most of the new entries are of low relevance, and the resulting snippets are often just lists of locus tags with annotations.
 <LI>February 2018: the alignment page reports the conservation of the hit's functional sites (if available from from Swiss-Prot or UniProt)
 <LI>January 2018: incorporated BRENDA.
 <LI>December 2017: incorporated MetaCyc, CharProtDB, CAZy, REBASE, and the reannotations from the Fitness Browser.
