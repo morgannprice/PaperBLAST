@@ -647,7 +647,7 @@ sub ProteinLink($) {
         my $sysName = shift @words;
         my $desc = join(" ", @words);
         $desc =~ s/ \[.*\]$//; # remove organism description at end
-        $inputlink = a({ -href => "https://img.jgi.doe.gov/cgi-bin/mer/main.cgi?section=GeneDetail&page=geneDetail&gene_oid="
+        $inputlink = a({ -href => "https://img.jgi.doe.gov/cgi-bin/w/main.cgi?section=GeneDetail&page=geneDetail&gene_oid="
                          . $locusId }, $sysName) . ": $desc";
       }
     }
