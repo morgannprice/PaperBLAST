@@ -28,11 +28,11 @@ use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
 use Time::HiRes qw{gettimeofday};
 use DBI;
 use URI::Escape; # for uri_escape()
+use HTML::Entities;
 use IO::Handle; # for autoflush
 use lib "../lib";
 use pbutils; # for ReadFastaEntry(), Curated functions
 use FetchAssembly; # for GetMatchingAssemblies(), CacheAssembly(), warning(), fail(), etc.
-use HTML::Entities;
 use pbweb;
 
 sub query_fields_html;
@@ -229,8 +229,9 @@ if ($gdb && $gquery) {
       "and the",
       a({-href => "http://fit.genomics.lbl.gov/",
         -title => "Reannotations from genome-wide fitness data"}, "Fitness Browser").".",
-      "For details see our",
-      a({ -href => "http://biorxiv.org/cgi/content/short/533430v1" }, "preprint"),
+      "For details see the",
+      a({ -href => "https://msystems.asm.org/content/4/2/e00072-19.full",
+          -title => "Curated BLAST for Genomes, mSystems 2019"}, "paper from 2019"),
       "or the",
       a({ -href => "https://github.com/morgannprice/PaperBLAST"}, "code")."."),
     h3("Related Tools"),
