@@ -22,6 +22,7 @@ use lib "../lib";
 use pbutils; # for ReadFastaEntry(), Curated search functions
 use pbweb qw{start_page finish_page loggerjs AddCuratedInfo};
 use URI::Escape;
+use HTML::Entities;
 
 my $base = "../data";
 my $sqldb = "$base/litsearch.db";
@@ -45,13 +46,14 @@ my $table_mode = ! $faa_mode;
 if ($query) {
   my $maxhits = 1000;
   my $chits = CuratedMatch($dbh, $query, $maxhits+1);
+  my $quotedquery = HTML::Entities::encode($query);
   if ($table_mode && @$chits > $maxhits) {
-    print p(qq{Sorry, too many curated entries match the query '$query'. Please try},
+    print p(qq{Sorry, too many curated entries match the query '$quotedquery'. Please try},
             a({ -href => "curatedSearch.cgi" }, "another query").".");
     finish_page();
   }
   if ($table_mode && @$chits == 0) {
-    print p(qq{None of the curated entries in PaperBLAST's database match '$query'. Please try},
+    print p(qq{None of the curated entries in PaperBLAST's database match '$quotedquery'. Please try},
             a({ -href => "curatedSearch.cgi" }, "another query") . ".");
     finish_page();
   }

@@ -32,6 +32,7 @@ use IO::Handle; # for autoflush
 use lib "../lib";
 use pbutils; # for ReadFastaEntry(), Curated functions
 use FetchAssembly; # for GetMatchingAssemblies(), CacheAssembly(), warning(), fail(), etc.
+use HTML::Entities;
 use pbweb;
 
 sub query_fields_html;
@@ -301,13 +302,14 @@ print p("Found", scalar(keys %seqs),
 my $URLnoq = $upfile ? "genomeSearch.cgi?doupload=1" : "genomeSearch.cgi?gdb=$gdb&gid=" . uri_escape($gid);
 my $maxhits = 1000;
 my $chits = CuratedMatch($dbh, $query, $maxhits+1);
+my $quotedquery = HTML::Entities::encode($query);
 if (@$chits > $maxhits) {
-  print p(qq{Sorry, too many curated entries match the query '$query'. Please try},
+  print p(qq{Sorry, too many curated entries match the query '$quotedquery'. Please try},
           a({ -href => $URLnoq }, "another query").".");
   finish_page();
 }
 if (@$chits == 0) {
-  print p(qq{None of the curated entries in PaperBLAST's database match '$query'. Please try},
+  print p(qq{None of the curated entries in PaperBLAST's database match '$quotedquery'. Please try},
           a({ -href => $URLnoq }, "another query") . ".");
   finish_page();
 }
@@ -315,18 +317,18 @@ if ($word) {
   # filter for whole-word hits
   $chits = CuratedWordMatch($chits, $query);
   if (@$chits == 0) {
-    print p(qq{None of the curated entries in PaperBLAST's database match '$query' as complete words. Please try},
+    print p(qq{None of the curated entries in PaperBLAST's database match '$quotedquery' as complete words. Please try},
             a({ -href => $URLnoq }, "another query") . ".");
     finish_page();
   }
 }
 
 my $wordstatement = $word ? " as complete word(s)" : "";
-my $csURL = "curatedSearch.cgi?query=" . uri_escape($query)
+my $csURL = "curatedSearch.cgi?query=$quotedquery"
   . "&word=" . ($word ? 1 : 0);
 print p("Found",
         a({ -href => $csURL }, scalar(@$chits), "curated entries"),
-        qq{in PaperBLAST's database that match '$query'${wordstatement}.\n});
+        qq{in PaperBLAST's database that match '$quotedquery'${wordstatement}.\n});
 
 my $chitsfaaFile = "$basefile.chits.faa";
 my $seqFile = "$basefile.seq";
