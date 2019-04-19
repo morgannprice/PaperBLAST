@@ -255,7 +255,7 @@ sub SearchJGI($) {
           || return "Cannot find the portal id in " . $row->{"Portal ID"};
         $row->{portalId} = $1;
         $row->{genomeName} = $row->{"Project Name"};
-        $row->{URL} = "http://genome.jgi.doe.gov/" . $row->{portalId};
+        $row->{URL} = "http://genome.jgi.doe.gov/portal/" . $row->{portalId};
         $row->{gdb} = "IMG";
         $row->{gid} = $row->{portalId};
         push @out, $row;
