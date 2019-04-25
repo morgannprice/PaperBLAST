@@ -4,7 +4,7 @@
 # Required: base=subdir/orgs -- where the input files are, relative to tmp
 #
 # Optional:
-# orgId -- which organism
+# orgId -- which genome
 # path -- which pathway
 # step -- which step in that pathway
 
@@ -23,6 +23,7 @@ sub ScoreToLabel($);
 sub ShowScoreShort($);
 sub HMMToURL($);
 sub GeneURL($$$); # gdb, gid, locusId
+sub RuleToScore($);
 
 my $tmpDir = "../tmp"; # for CacheAssembly
 
@@ -81,11 +82,13 @@ $title = "Finding step $step for $pathSpec"
 $title .= " in $orgs{$orgId}{genomeName}"
   if $orgId ne "";
 my $nOrgs = scalar(@orgs);
-start_page('title' => $title, 'banner' => "Gap viewer for $nOrgs genomes (alpha)", 'bannerURL' => "gapView.cgi?base=$base");
+start_page('title' => $title, 'banner' => "Gap viewer for $nOrgs genomes (prototype)", 'bannerURL' => "gapView.cgi?base=$base");
 
-if ($orgId eq "") {
-  my @orgsSorted = sort { $a->{genomeName} cmp $b->{genomeName} } @orgs;
-  print p(scalar(@orgsSorted), "organisms");
+my @orgsSorted = sort { $a->{genomeName} cmp $b->{genomeName} } @orgs;
+my @ruleScoreLabels = ("has a gap", "may have a gap", "all steps were found");
+
+if ($orgId eq "" && $pathSpec eq "") {
+  print p(scalar(@orgsSorted), "genomes");
   print start_ul;
   foreach my $org (@orgsSorted) {
     my $orgId = $org->{orgId};
@@ -94,7 +97,51 @@ if ($orgId eq "") {
     print li(a({ -href => $URL }, $org->{genomeName} ));
   }
   print end_ul;
-} elsif (@path > 1) {
+  # and a list of pathways
+  print p(scalar(@path), "pathways");
+  print start_ul;
+  foreach my $path (@path) {
+    print li(a({ -href => "gapView.cgi?base=$base&path=$path" }, $path));
+  }
+  print end_ul;
+} elsif ($orgId eq "" && $pathSpec ne "") {
+  # overview of this pathway across organisms
+  print p("Pathway $pathSpec in", scalar(@orgs), "genomes");
+  my @sumRules = ReadTable("$pre.$pathSpec.sum.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
+  @sumRules = grep { $_->{rule} eq "all" } @sumRules;
+  my %orgAll = map { $_->{orgId} => $_ } @sumRules;
+  my @sumSteps = ReadTable("$pre.$pathSpec.sum.steps", qw{orgId gdb gid step score locusId sysName});
+  my %orgStep = (); # orgId => step => row from sum.steps
+  foreach my $row (@sumSteps) {
+    $orgStep{$row->{orgId}}{$row->{step}} = $row;
+  }
+  my $st = ReadSteps("../tmp/gaps/$pathSpec.steps");
+  $steps = $st->{steps};
+  my @tr = ();
+  my @th = qw{Genome Best-path};
+  map s/-/ /, @th;
+  push @tr, Tr(th({-valign => "top"}, \@th));
+  foreach my $org (@orgsSorted) {
+    my $orgId = $org->{orgId};
+    my $all = $orgAll{$orgId} || die "No all line for $orgId and $pathSpec\n";
+    my @show = ();
+    foreach my $step (split / /, $all->{expandedPath}) {
+      my $score = exists $orgStep{$orgId}{$step} ? $orgStep{$orgId}{$step}{score} : 0;
+      push @show, a({ -href => "gapView.cgi?base=$base&orgId=$orgId&path=$pathSpec&step=$step",
+                      -style => ScoreToStyle($score),
+                      -title => "$steps->{$step}{desc} (" . ScoreToLabel($score) . ")" },
+                    $step);
+    }
+    my $score = RuleToScore($all);
+    push @tr, Tr(td({-valign => "top"},
+                    [ a({ -href => "gapView.cgi?base=$base&path=$pathSpec&orgId=$orgId",
+                          -style => ScoreToStyle($score),
+                          -title => "$pathSpec $ruleScoreLabels[$score]" },
+                        $orgs{$orgId}{genomeName}),
+                      join(", ", @show) ]));
+  }
+  print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr);
+} elsif ($pathSpec eq "") {
   # overview of pathways for this organism
   my @hr = ("Pathway", span({-title=>"Best path"}, "Steps"));
   my @tr = ();
@@ -120,19 +167,16 @@ if ($orgId eq "") {
                       -title => "$steps->{$step}{desc} (" . ScoreToLabel($score) . ")" },
                     $step);
     }
-    my $pathScore = 2;
-    $pathScore = 1 if $all->{nMed} > 0;
-    $pathScore = 0 if $all->{nLo} > 0;
-    my @labels = ("has a gap", "may have a gap", "all steps were found");
+    my $pathScore = RuleToScore($all);
     push @tr, Tr({-valign => "top"},
                  td([a({ -href => "gapView.cgi?base=$base&orgId=$orgId&path=$path",
                          -style => ScoreToStyle($pathScore),
-                         -title => $labels[$pathScore] }, $path),
+                         -title => $ruleScoreLabels[$pathScore] }, $path),
                      join(", ", @show)]));
   }
   print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr);
 } elsif ($step eq "") {
-  # overview of this pathway, first the rules, then all of the steps
+  # overview of this pathway in this organism, first the rules, then all of the steps
   my @sumRules = ReadTable("$pre.$pathSpec.sum.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
   @sumRules = grep { $_->{orgId} eq $orgId } @sumRules;
   my %sumRules = map { $_->{rule} => $_ } @sumRules;
@@ -166,9 +210,7 @@ if ($orgId eq "") {
                            -href => "gapView.cgi?base=$base&orgId=$orgId&path=$pathSpec&step=$part" },
                          $part);
         } elsif (exists $rules->{$part}) {
-          my $score = 2;
-          $score = 1 if $sumRules{$part}{nMed} > 0;
-          $score = 0 if $sumRules{$part}{nLo} > 0;
+          my $score = RuleToScore($sumRules{$part});
           push @parts, span({ -style => ScoreToStyle($score), -title => "see rule for $part below" }, $part);
         } else {
           die "Unknown part $part";
@@ -366,16 +408,18 @@ print p("Or see all steps for",
   if $orgId ne "" && $pathSpec ne "" && $step ne "";
 print p("Or Curated BLAST in",
         a({ -href => "http://papers.genomics.lbl.gov/cgi-bin/genomeSearch.cgi?gdb=$orgs{$orgId}{gdb}&gid=$orgs{$orgId}{gid}" },
-          $orgs{$orgId}{genomeName}));
+          $orgs{$orgId}{genomeName}))
+  if $orgId ne "";
 print p("Or see all", a({ -href => "gapView.cgi?base=$base"}, "$nOrgs genomes"))
   if $orgId ne "";
 
 print <<END
 <br>
 <hr>
+<br>
 <B>About the gap viewer</B>
 <P>Each pathway is defined by a set of rules based on individual steps or genes. Candidates for each step are identified by using ublast against a database of characterized proteins or by using HMMer. Ublast hits may be split across two different proteins.
-<P>A candidate for a step is "high confidence" if:
+<P>A candidate for a step is "high confidence" if either:
 <UL>
 <LI>ublast finds a hit at above 40% identity and 80% coverage, and bits >= other bits+10
 <LI>HMMer finds a hit with 80% coverage of the model, and either other identity < 40 or other coverage < 0.75
@@ -389,7 +433,7 @@ where "other" refers to the best ublast hit to a sequence that is not annotated 
 <LI>HMMer finds a hit (regardless of coverage or other bits)
 </UL>
 <P>Other blast hits with at least 50% coverage are "low confidence."
-<P>The gap viewer relies on the list of predicted proteins and does not search the six-frame translation. In most cases, you can search the six-frame translation by clicking on links to Curated BLAST in the per-step page (see the step definition section).
+<P>The gap viewer relies on the predicted proteins in the genome and does not search the six-frame translation. In most cases, you can search the six-frame translation by clicking on links to Curated BLAST for each step definition (in the per-step page).
 <center>by <A HREF="http://morgannprice.org/">Morgan Price</A>,
 <A HREF="http://genomics.lbl.gov/">Arkin group</A>,
 Lawrence Berkeley National Laboratory</center>
@@ -461,4 +505,13 @@ sub GeneURL($$$) {
     return "https://img.jgi.doe.gov/cgi-bin/w/main.cgi?section=GeneDetail&page=geneDetail&gene_oid=$locusId";
   }
   die "Unknown genome database $gdb\n";
+}
+
+sub RuleToScore($) {
+  my ($sumRule) = @_;
+  die "Undefined input to RuleToScore" unless defined $sumRule;
+  my $score = 2;
+  $score = 1 if $sumRule->{nMed} > 0;
+  $score = 0 if $sumRule->{nLo} > 0;
+  return $score;
 }
