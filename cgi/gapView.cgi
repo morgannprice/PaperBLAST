@@ -96,11 +96,41 @@ if ($orgId eq "") {
   print end_ul;
 } elsif (@path > 1) {
   # overview of pathways for this organism
-  print start_ul;
+  my @hr = ("Pathway", span({-title=>"Best path"}, "Steps"));
+  my @tr = ();
+  push @tr, th({-valign => "top"}, \@hr);
   foreach my $path (@path) {
-    print li(a({-href => "gapView.cgi?base=$base&orgId=$orgId&path=$path"}, $path));
+    my @sumRules = ReadTable("$pre.$path.sum.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
+    my @all = grep { $_->{orgId} eq $orgId && $_->{rule} eq "all" } @sumRules;
+    die "Wrong number of rows for $orgId and rule = all in $pre.$pathSpec.sum.rules\n"
+      unless @all == 1;
+    my ($all) = @all;
+    my @sumSteps = ReadTable("$pre.$path.sum.steps", qw{orgId gdb gid step score locusId sysName});
+    @sumSteps = grep { $_->{orgId} eq $orgId } @sumSteps;
+    my %sumSteps = map { $_->{step} => $_ } @sumSteps;
+    my @show = ();
+
+    my $st = ReadSteps("../tmp/gaps/$path.steps");
+    $steps = $st->{steps};
+    foreach my $step (split / /, $all->{expandedPath}) {
+      die "Unknown step $step for $path\n" unless exists $steps->{$step};
+      my $score = exists $sumSteps{$step} ? $sumSteps{$step}{score} : 0;
+      push @show, a({ -href => "gapView.cgi?base=$base&orgId=$orgId&path=$path&step=$step",
+                      -style => ScoreToStyle($score),
+                      -title => "$steps->{$step}{desc} (" . ScoreToLabel($score) . ")" },
+                    $step);
+    }
+    my $pathScore = 2;
+    $pathScore = 1 if $all->{nMed} > 0;
+    $pathScore = 0 if $all->{nLo} > 0;
+    my @labels = ("has a gap", "may have a gap", "all steps were found");
+    push @tr, Tr({-valign => "top"},
+                 td([a({ -href => "gapView.cgi?base=$base&orgId=$orgId&path=$path",
+                         -style => ScoreToStyle($pathScore),
+                         -title => $labels[$pathScore] }, $path),
+                     join(", ", @show)]));
   }
-  print end_ul;
+  print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr);
 } elsif ($step eq "") {
   # overview of this pathway, first the rules, then all of the steps
   my @sumRules = ReadTable("$pre.$pathSpec.sum.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
@@ -172,7 +202,7 @@ if ($orgId eq "") {
     foreach my $cand (@cand) {
       my ($locusId,$sysName,$score) = @$cand;
       my $id = $sysName || $locusId;
-      # Create 2 links if this is a split hit
+      # Create two links if this is a split hit
       my @idParts = split /,/, $id;
       my @locusParts = split /,/, $locusId;
       my @parts = ();
@@ -216,6 +246,9 @@ if ($orgId eq "") {
       my $id = a({-href => GeneURL($orgs{$orgId}{gdb}, $orgs{$orgId}{gid}, $cand->{locusId}) },
                  $cand->{sysName} || $cand->{locusId} );
       my $desc = $cand->{desc};
+      # HMM hits are based on the 1st ORF only so ignore the split when showing the HMM part
+      my $id1 = $id;
+      my $desc1 = $desc;
       if ($cand->{locusId2}) { # (this should only happen for BLAST hits)
         $id .= "; " . a({-href => GeneURL($orgs{$orgId}{gdb}, $orgs{$orgId}{gid}, $cand->{locusId2}) },
                         $cand->{sysName2} || $cand->{locusId2} );
@@ -267,7 +300,7 @@ if ($orgId eq "") {
       if ($cand->{hmmScore} ne "") {
         my $hmmURL = HMMToURL($cand->{hmmId});
         push @tr, Tr(td({ -valign => "top" },
-                        [ ShowScoreShort($cand->{hmmScore}), $id, $desc,
+                        [ ShowScoreShort($cand->{hmmScore}), $id1, $desc1,
                           a({-href => $hmmURL, -title => $cand->{hmmDesc} }, $cand->{hmmId}),
                           "", int(0.5 + 100 * $cand->{hmmCoverage})."%",
                           $cand->{hmmBits},
