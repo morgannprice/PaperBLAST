@@ -15,7 +15,7 @@
 # path -- overview of the pathway across organisms
 # path & showdef -- detailed pathway definition (mostly, show the .steps file verbatim)
 # orgId & path -- the pathway in the organism, with lists of rules and top candidates for each step
-# orgId & path & step -- all candidates for the step
+# orgId & path & step -- all candidates for the step, and the detailed definition of the step
 
 use strict;
 use CGI qw(:standard Vars start_ul);
