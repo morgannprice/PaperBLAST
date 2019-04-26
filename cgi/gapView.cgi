@@ -7,6 +7,7 @@
 # orgId -- which genome
 # path -- which pathway
 # step -- which step in that pathway
+# showdef -- show the pathway definition
 
 use strict;
 use CGI qw(:standard Vars start_ul);
@@ -26,6 +27,7 @@ sub GeneURL($$$); # gdb, gid, locusId
 sub RuleToScore($);
 
 my $tmpDir = "../tmp"; # for CacheAssembly
+my $stepPath = "../tmp/gaps";
 
 my $base = param("base") || die "Must specify base";
 $base =~ m!^[a-zA-Z0-9._-]+/?[a-zA-Z0-9._-]+$! || die "Invalid base $base";
@@ -46,6 +48,7 @@ my @path = (); # all pathways, or the one specified
 if ($pathSpec eq "") {
   @path = sort qw{his met ser thr gly cys ile leu val chorismate phe tyr trp asn gln arg lys pro};
 } else {
+  die "Invalid path $pathSpec\n" unless $pathSpec =~ m/^[a-zA-Z0-9._'-]+$/;
   @path = ($pathSpec);
 }
 
@@ -69,7 +72,7 @@ if (!defined $step) {
 
 my ($steps, $rules);
 if (@path == 1) {
-  my $st = ReadSteps("../tmp/gaps/$path[0].steps");
+  my $st = ReadSteps("$stepPath/$path[0].steps");
   $steps = $st->{steps};
   $rules = $st->{rules};
   die "Non-existent step $step" if $step ne "" && !exists $steps->{$step};
@@ -81,13 +84,20 @@ $title = "Finding step $step for $pathSpec"
   if $step ne "" && $orgId ne "" && $pathSpec ne "";
 $title .= " in $orgs{$orgId}{genomeName}"
   if $orgId ne "";
+$title = "Pathway definition for $pathSpec" if $pathSpec ne "" && param("showdef");
 my $nOrgs = scalar(@orgs);
 start_page('title' => $title, 'banner' => "Gap viewer for $nOrgs genomes (prototype)", 'bannerURL' => "gapView.cgi?base=$base");
 
 my @orgsSorted = sort { $a->{genomeName} cmp $b->{genomeName} } @orgs;
 my @ruleScoreLabels = ("has a gap", "may have a gap", "all steps were found");
 
-if ($orgId eq "" && $pathSpec eq "") {
+if ($pathSpec ne "" && param("showdef")) {
+  my $stfile = "$stepPath/$pathSpec.steps";
+  open (my $fh, "<", $stfile) || die "No such file: $stfile\n";
+  my @lines = <$fh>;
+  close($fh) || die "Error reading $fh";
+  print pre(join("",@lines));
+} elsif ($orgId eq "" && $pathSpec eq "") {
   print p(scalar(@orgsSorted), "genomes");
   print start_ul;
   foreach my $org (@orgsSorted) {
@@ -106,7 +116,7 @@ if ($orgId eq "" && $pathSpec eq "") {
   print end_ul;
 } elsif ($orgId eq "" && $pathSpec ne "") {
   # overview of this pathway across organisms
-  print p("Pathway $pathSpec in", scalar(@orgs), "genomes");
+  print p("Analysis of pathway $pathSpec in", scalar(@orgs), "genomes");
   my @sumRules = ReadTable("$pre.$pathSpec.sum.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
   @sumRules = grep { $_->{rule} eq "all" } @sumRules;
   my %orgAll = map { $_->{orgId} => $_ } @sumRules;
@@ -115,7 +125,7 @@ if ($orgId eq "" && $pathSpec eq "") {
   foreach my $row (@sumSteps) {
     $orgStep{$row->{orgId}}{$row->{step}} = $row;
   }
-  my $st = ReadSteps("../tmp/gaps/$pathSpec.steps");
+  my $st = ReadSteps("$stepPath/$pathSpec.steps");
   $steps = $st->{steps};
   my @tr = ();
   my @th = qw{Genome Best-path};
@@ -157,7 +167,7 @@ if ($orgId eq "" && $pathSpec eq "") {
     my %sumSteps = map { $_->{step} => $_ } @sumSteps;
     my @show = ();
 
-    my $st = ReadSteps("../tmp/gaps/$path.steps");
+    my $st = ReadSteps("$stepPath/$path.steps");
     $steps = $st->{steps};
     foreach my $step (split / /, $all->{expandedPath}) {
       die "Unknown step $step for $path\n" unless exists $steps->{$step};
@@ -398,6 +408,8 @@ if ($orgId eq "" && $pathSpec eq "") {
   print end_ul();
 }
 
+print p("Or see", a({-href => "gapView.cgi?base=$base&path=$pathSpec&showdef=1" }, "pathway definition for $pathSpec"))
+  if $pathSpec ne "" && !param("showdef");
 print p("Or see all pathways for",
         a({ -href => "gapView.cgi?base=$base&orgId=$orgId" }, $orgs{$orgId}{genomeName}))
   if $orgId ne "" && $pathSpec ne "" && $step eq "";
@@ -411,7 +423,7 @@ print p("Or Curated BLAST in",
           $orgs{$orgId}{genomeName}))
   if $orgId ne "";
 print p("Or see all", a({ -href => "gapView.cgi?base=$base"}, "$nOrgs genomes"))
-  if $orgId ne "";
+  if $orgId ne "" || param("showdef");
 
 print <<END
 <br>
