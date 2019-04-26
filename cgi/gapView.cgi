@@ -106,6 +106,8 @@ if ($pathSpec ne "" && param("showdef")) {
   my @lines = <$fh>;
   close($fh) || die "Error reading $fh";
   print pre(join("",@lines));
+  push @links, a({-href => "$stepPath/$pathSpec.query"}, "Table of queries for $pathSpec")
+                 . " (tab-delimited)";
 } elsif ($orgId eq "" && $pathSpec eq "") {
   print p(scalar(@orgsSorted), "genomes");
   print start_ul;
@@ -373,7 +375,6 @@ if ($pathSpec ne "" && param("showdef")) {
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr);
   }
-  # Arguably should be showing the queries as well
   print h3("Definition of step $step");
   print start_ul();
   foreach my $search (@{ $steps->{$step}{search} }) {
