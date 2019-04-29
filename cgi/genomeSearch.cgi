@@ -30,6 +30,7 @@ use DBI;
 use URI::Escape; # for uri_escape()
 use HTML::Entities;
 use IO::Handle; # for autoflush
+use List::Util qw{min max};
 use lib "../lib";
 use pbutils; # for ReadFastaEntry(), Curated functions
 use FetchAssembly; # for GetMatchingAssemblies(), CacheAssembly(), warning(), fail(), etc.
@@ -228,17 +229,29 @@ if ($gdb && $gquery) {
         -title => "The Restriction Enzyme Database"}, "REBASE").",",
       "and the",
       a({-href => "http://fit.genomics.lbl.gov/",
-        -title => "Reannotations from genome-wide fitness data"}, "Fitness Browser").".",
-      "For details see the",
-      a({ -href => "https://msystems.asm.org/content/4/2/e00072-19.full",
-          -title => "Curated BLAST for Genomes, mSystems 2019"}, "paper from 2019"),
-      "or the",
-      a({ -href => "https://github.com/morgannprice/PaperBLAST"}, "code")."."),
-    h3("Related Tools"),
+        -title => "Reannotations from genome-wide fitness data"}, "Fitness Browser")."."),
+    h3("Related tools"),
     start_ul(),
     li(a({ -href => "curatedSearch.cgi" }, "Search for curated proteins by keyword")),
     li(a({ -href => "litSearch.cgi" }, "PaperBLAST: Find papers about a protein or its homologs")),
-    end_ul();
+    end_ul(),
+    h3("How it works"),
+    p("Curated BLAST finds curated proteins whose descriptions match the query",
+      "and uses", a({-href => "https://www.drive5.com/usearch/"}, "ublast"),
+      "to compare these to the annotated proteins in the genome.",
+      "Then, it uses ublast to compare the curated proteins to all possible proteins",
+      "in the genome (the six-frame translation)."),
+    p("For details see the",
+      a({ -href => "https://msystems.asm.org/content/4/2/e00072-19.full",
+          -title => "Curated BLAST for Genomes, mSystems 2019"}, "paper from 2019"),
+      "or the",
+      a({ -href => "https://github.com/morgannprice/PaperBLAST"}, "code").".",
+      "Changes since the paper:",
+      start_ul(),
+      li(qq{Shows hits to unannotated reading frames if they hit regions of the curated
+            protein that were not hit by any annotated protein
+            (or if they score more highly).}),
+      end_ul() );
   finish_page();
 }
 
@@ -451,13 +464,17 @@ my $uhits = ParseUblast($ublastFile, \%seqsx, \%idToChit);
 unlink($ublastFile);
 unlink($xfile) if $upfile;
 
-my %maxCuratedScore = ();
+my %maxCuratedScore = (); # curated => [maxscore, minbegin, maxend]
 while (my ($curated, $hits) = each %byCurated) {
-  my $maxscore = 0;
+  my @scores = map $_->{score}, @$hits;
+  my @beg = ();
+  my @end = ();
   foreach my $hit (@$hits) {
-    $maxscore = $hit->{score} if $hit->{score} > $maxscore;
+    my ($cbeg,$cend) = split /:/, $hit->{hrange};
+    push @beg, $cbeg;
+    push @end, $cend;
   }
-  $maxCuratedScore{$curated} = $maxscore;
+  $maxCuratedScore{$curated} = [max(@scores), min(@beg), max(@end)];
 }
 # Parse the 6-frame hits, ignoring any hits unless they are better than the best
 # hit against the gene models
@@ -465,8 +482,13 @@ my %parsedx = (); # reading frame to list of hits
 foreach my $row (@$uhits) {
   push @{ $parsedx{$row->{input}} }, $row;
 }
+
 # filter each list -- unless a hit is noticeably better than the best hit to an annotated protein,
-# it should be ignored. Also, if the best hit for a frame is masked in that way, mask all
+# or it includes a region of the curated protein that was not seen before,
+# it should be ignored. (The second case is so that for genes with the start codon
+# or with frameshift errors, the hit to the other part of the gene is reported.)
+#
+# Also, if the best hit for a frame is masked in that way, mask all
 # hits for that frame.
 my $nWithHits = scalar(keys %parsedx);
 foreach my $input (keys %parsedx) {
@@ -475,7 +497,14 @@ foreach my $input (keys %parsedx) {
   foreach my $i (0..(scalar(@rows)-1)) {
     my $row = $rows[$i];
     my $query = $row->{hit};
-    if (!exists $maxCuratedScore{$query} || $row->{score} >= 1.1 * $maxCuratedScore{$query}) {
+    my ($cbeg,$cend) = split /:/, $row->{hrange};
+    my $maxC = exists $maxCuratedScore{$query} ? $maxCuratedScore{$query} : undef;
+    $row->{maxCurated} = $maxC if defined $maxC;
+    my ($maxS, $minBeg, $maxEnd) = @$maxC if defined $maxC;
+    if (!defined $maxC
+        || $row->{score} >= 1.1 * $maxS
+        || $cbeg <= $minBeg - 5
+        || $cend >= $maxEnd + 5) {
       push @out, $row;
     } else {
       last if $i == 0; # best hit must be useful or else suppress the reading frame entirely
@@ -547,6 +576,11 @@ sub PrintHits($$$$) {
     }
     my $showIdentity = int($row->{identity} + 0.5);
     my $seqlen = length($seq);
+    if (exists $row->{maxCurated}) {
+      my (undef, $minB, $maxE) = @{ $row->{maxCurated} };
+      push @descs, small(i({-title => "Annotated proteins are similar to a.a. $minB:$maxE/$clen; this frame is similar to $row->{hrange}/$clen"},
+                         "Also see hits to annotated proteins above"));
+    }
     push @show, Tr(\%trattr,
                    td({-align => "left", -valign => "top"},
                       p({-style => $indentStyle}, join("<BR>", @descs))),
