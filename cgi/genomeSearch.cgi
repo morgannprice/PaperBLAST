@@ -518,25 +518,32 @@ foreach my $input (keys %parsedx) {
 }
 my $nKept = scalar(keys %parsedx);
 if ($nWithHits > 0) {
-  my @found = ("Found hits to $nWithHits reading frames.");
-  if ($nKept > 0) {
-    push @found,
-      qq{Except for $nKept reading frames, these were redundant with annotated proteins.
+  my @found = ();
+  if ($upfile && $isNuc) {
+    push @found, "Found hits to $nWithHits reading frames.",
+      "Or try", a({-href => $URLnoq}, "another query");
+  } else {
+    push @found, "Found hits to $nWithHits reading frames.";
+    if ($nKept > 0) {
+      push @found,
+        qq{Except for $nKept reading frames, these were redundant with annotated proteins.
              These remaining reading frames may be pseudogenes, omissions in the genome annotation,
              or N-terminal extensions of annotated proteins.};
-  } elsif (! $upfile) {
-    push @found, "These were all redundant with annotated proteins.";
+    } elsif (! $upfile) {
+      push @found, "These were all redundant with annotated proteins.";
+    }
   }
   print p(@found);
 } else {
   print p("Did not find any hits to reading frames.");
+  print p("Try", a({-href => $URLnoq}, "another query"))
+    if $upfile && $isNuc;
 }
-print p("Or try", a({-href => $URLnoq}, "another query"))."\n"
-  if $upfile && $isNuc;
 my @inputsX = sort { $parsedx{$b}[0]{score} <=> $parsedx{$a}[0]{score} } (keys %parsedx);
 foreach my $input (@inputsX) {
   &PrintHits($input, $seqsx{$input}, $parsedx{$input}, 1); # 1 for 6-frame translation
 }
+
 unlink($chitsfaaFile);
 finish_page();
 
