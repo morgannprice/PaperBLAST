@@ -12,16 +12,19 @@ Usage: curatedFaa.pl -db litsearch.db -uniq uniq.faa -out curated.faa
 Filters out curated entries that are probably not actually characterized.
   -filtered filteredFile -- save the non-curated entries to filteredFile
   -showdesc -- include definitions of the curated entries
+  -curatedids -- report the curated ids rather than the unique id,
+     and report all curated descriptions to an out.desc file
 END
 ;
 
-my ($dbfile, $uniqfile, $outfile, $filterfile, $showdesc);
+my ($dbfile, $uniqfile, $outfile, $filterfile, $showdesc, $curatedids);
 die $usage
   unless GetOptions('db=s' => \$dbfile,
                     'uniq=s' => \$uniqfile,
                     'out=s' => \$outfile,
                     'filter=s' => \$filterfile,
-                    'showdesc' => \$showdesc)
+                    'showdesc' => \$showdesc,
+                   'curatedids' => \$curatedids)
   && defined $dbfile && defined $uniqfile && defined $outfile
   && @ARGV ==0;
 die "No such file: $dbfile\n" unless -e $dbfile;
@@ -72,33 +75,56 @@ foreach my $row (@$seqdups) {
 my %written = ();
 open(my $fhU, "<", $uniqfile) || die "Cannot read $uniqfile";
 open(my $fhOut, ">", $outfile) || die "Cannot write to $outfile";
+my $fhD;
+if (defined $curatedids) {
+  open($fhD, ">", "$outfile.desc") || die "Cannot write to $outfile.desc";
+  print $fhD join("\t", "ids", "descs")."\n";
+}
+
 my $state = {};
 while (my ($uniqId,$sequence) = ReadFastaEntry($fhU, $state)) {
   if (exists $curatedIds{$uniqId} || exists $keepIds{$uniqId}) {
-    my $defline = ">${uniqId}";
-    if (defined $showdesc) {
-      my @ids = ();
-      push @ids, $uniqId if exists $curatedIds{$uniqId};
-      push @ids, @{ $keepIds{$uniqId} } if exists $keepIds{$uniqId};
-      foreach my $id (@ids) {
-        die unless exists $curatedIds{$id};
-        $defline .= " ";
-        $defline .= ";; " unless $id eq $ids[0];
-        $defline .= "$id $curatedIds{$id}";
+    if (defined $curatedids) {
+      my $ci = FetchCuratedInfo($dbh, $uniqId);
+      die "$uniqId is not curated" unless @$ci > 0;
+      my @ids = map { $_->[0] . "::" . $_->[1] } @$ci;
+      my @desc = map $_->[2], @$ci;
+      print $fhOut ">" . join(",", @ids) . "\n" . $sequence . "\n";
+      print $fhD join("\t", join(",",@ids), join(";; ", @desc))."\n";
+    } else {
+      my $showid = $uniqId;
+      my $desc;
+      my $defline = ">" . $showid;
+      if (defined $showdesc) {
+        my @ids = ();
+        push @ids, $uniqId if exists $curatedIds{$uniqId};
+        push @ids, @{ $keepIds{$uniqId} } if exists $keepIds{$uniqId};
+        foreach my $id (@ids) {
+          die unless exists $curatedIds{$id};
+          $defline .= " ";
+          $defline .= ";; " unless $id eq $ids[0];
+          $defline .= "$id $curatedIds{$id}";
+        }
       }
+      print $fhOut "$defline\n$sequence\n";
     }
-    print $fhOut "$defline\n$sequence\n";
     $written{$uniqId} = 1;
   }
 }
 close($fhU) || die "Error reading $uniqfile";
 close($fhOut) || die "Error writing to $outfile";
+
 foreach my $curatedId (keys %curatedIds) {
   die "Did not write a sequence for $curatedId\n"
     unless exists $written{$curatedId} || exists $isDup{$curatedId};
 }
 print STDERR join(" ", "Found", scalar(keys %curatedIds), "characterized entries and wrote",
                   scalar(keys %written), "different", "sequences", "to", $outfile)."\n";
+
+if (defined $fhD) {
+  close($fhD) || die "Error writing to $outfile.desc";
+  print STDERR "Wrote $outfile.desc\n"
+}
 
 if (defined $filterfile) {
   open (my $fh, ">", $filterfile) || die "Cannot write to $filterfile";
