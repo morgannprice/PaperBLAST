@@ -6,7 +6,12 @@ use File::stat;
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw(read_list wget ftp_html_to_files write_list mkdir_if_needed ReadFasta ParsePTools ReadFastaEntry ReadTable ReadColumnNames NewerThan CuratedMatch CuratedWordMatch IdToUniqId FetchSeqs);
+@EXPORT = qw!read_list wget ftp_html_to_files write_list mkdir_if_needed
+             ReadFasta ParsePTools ReadFastaEntry ReadTable ReadColumnNames
+             NewerThan
+             CuratedMatch CuratedWordMatch
+             IdToUniqId FetchSeqs UniqIdToSeq
+             FetchCuratedInfo!;
 
 sub read_list($) {
   my ($file) = @_;
@@ -293,6 +298,39 @@ sub FetchSeqs($$$$) {
   system("$fastacmd -i $listFile -d $blastdb -p T > $outfile") == 0
     || die "fastacmd failed: $!";
   unlink($listFile);
+}
+
+sub UniqIdToSeq($$$) {
+  my ($pbdir, $blastdir, $uniqId) = @_;
+  my $tmpfile = "/tmp/$$.uniqtoseq.faa";
+  FetchSeqs($blastdir, "$pbdir/uniq.faa", [$uniqId], $tmpfile);
+  my $seqs = ReadFasta($tmpfile);
+  unlink($tmpfile);
+  my @v = values(%$seqs);
+  die unless @v == 1;
+  return $v[0];
+}
+
+# PaperBLAST database handle and uniqId => reference to a list of (db,protId,desc) pairs
+sub FetchCuratedInfo($$) {
+  my ($pb, $uniqId) = @_;
+  my $dups = $pb->selectcol_arrayref(qq{ SELECT duplicate_id FROM SeqToDuplicate
+                                         WHERE sequence_id = ? },
+                                     {}, $uniqId);
+  my @ids = ( $uniqId );
+  push @ids, @$dups;
+  my @out = ();
+  foreach my $id (@ids) {
+    if ($id =~ m/^([^:]+)::(.*)$/) {
+      my ($db,$protId) = ($1,$2);
+      my ($desc) = $pb->selectrow_array("SELECT desc FROM CuratedGene WHERE db = ? AND protId = ?",
+                                        {}, $db, $protId);
+      die "No CuratedGene entry for ${db}::${protId}" unless defined $desc;
+      push @out, [$db,$protId, $desc];
+    }
+  }
+  @out = sort { $a->[0] cmp $b->[0] || $a->[1] cmp $b->[1] } @out;
+  return \@out;
 }
 
 1;
