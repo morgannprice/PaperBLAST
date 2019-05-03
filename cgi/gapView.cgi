@@ -37,6 +37,8 @@ sub HMMToURL($);
 sub GeneURL($$); # orgId (that is in %orgs), locusId
 sub RuleToScore($);
 sub LocusIdToFetchId($);
+sub ReadCand($$);
+sub OrgToAssembly($);
 
 my $tmpDir = "../tmp"; # for CacheAssembly
 my $stepPath = "../tmp/gaps";
@@ -259,7 +261,6 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
     print end_ul, "\n";
     my @stepsSorted = sort { $a->{i} <=> $b->{i} } (values %$steps);
     print h3(scalar(@stepsSorted) . " steps (" . scalar(@sumSteps) . " with candidates)"), "\n";
-    my %sumSteps = map { $_->{step} => $_ } @sumSteps;
     my @tr = ();
     my @header = qw{Step Description Best-candidate 2nd-candidate};
     foreach (@header) {
@@ -674,7 +675,7 @@ sub ReadCand($$) {
 }
 
 # Convert an identifier into a form suitable for FetchSeqs (which relies on fastacmd)
-sub LocusIdToFetchId {
+sub LocusIdToFetchId($) {
   my ($locusId) = @_;
   $locusId = "lcl|" . $locusId if $locusId =~ m/^\d+$/;
   return $locusId;
