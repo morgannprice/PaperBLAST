@@ -94,13 +94,15 @@ sub FetchUniProtSequence($) {
   # fetch the full entry because this allows either ids or accessions (i.e., Q72CU7_DESVH or Q72CU7) to be used
   my $URL = "https://www.uniprot.org/uniprot/${id}.txt";
 
-#  my $ua = LWP::UserAgent->new( ssl_opts => { SSL_verify_mode => 'SSL_VERIFY_NONE' } );
-#  my $response = $ua->get($URL);
-#  die "redirect" if $response->is_redirect;
-#  die "Cannot contact $URL: " . $response->as_string unless $response->is_success;
-#  my $content = $response->decoded_content;
-#  return undef unless $content;
-  my $content = get($URL);
+  my $content;
+  for (my $i = 0; $i < 3; $i++) {
+    $content = get($URL);
+    if (defined $content) {
+      last;
+    } else {
+      sleep(1);
+    }
+  }
   die "Failed to fetch $URL\n" unless $content;
   my @lines = split /\n/, $content;
 
