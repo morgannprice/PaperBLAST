@@ -487,7 +487,7 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
           my $bl2seq = "../bin/blast/bl2seq";
           die "No such executable: $bl2seq\n" unless -x $bl2seq;
           print "<pre>";
-          system($bl2seq, "-p", "blastp", "-i", $faaCurated, "-j", $faaCand, "-e", 0.01) == 0
+          system($bl2seq, "-p", "blastp", "-i", $faaCurated, "-j", $faaCand, "-e", 0.01, "-F", "m S") == 0
             || die "bl2seq failed: $!";
           unlink($faaCurated);
           unlink($faaCand);
