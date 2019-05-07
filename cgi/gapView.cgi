@@ -70,11 +70,6 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
     @path = ($pathSpec);
   }
 
-  foreach my $path (@path) {
-    my $sumfile = "$pre.$path.sum.steps";
-    die "No such file: $sumfile" unless -e $sumfile;
-  }
-
   my $orgId = param("orgId"); # the organism specified, or, ""
   $orgId = "" if !defined $orgId;
   if ($orgId ne "") {
@@ -145,10 +140,11 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
   } elsif ($orgId eq "" && $pathSpec ne "") {
     # overview of this pathway across organisms
     print p("Analysis of pathway $pathSpec in", scalar(@orgs), "genomes"), "\n";
-    my @sumRules = ReadTable("$pre.$pathSpec.sum.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
-    @sumRules = grep { $_->{rule} eq "all" } @sumRules;
+    my @sumRules = ReadTable("$pre.sum.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
+    @sumRules = grep { $_->{pathway} eq $pathSpec && $_->{rule} eq "all" } @sumRules;
     my %orgAll = map { $_->{orgId} => $_ } @sumRules;
-    my @sumSteps = ReadTable("$pre.$pathSpec.sum.steps", qw{orgId gdb gid step score locusId sysName});
+    my @sumSteps = ReadTable("$pre.sum.steps", qw{orgId gdb gid step score locusId sysName});
+    @sumSteps = grep { $_->{pathway} eq $pathSpec} @sumSteps;
     my %orgStep = ();           # orgId => step => row from sum.steps
     foreach my $row (@sumSteps) {
       $orgStep{$row->{orgId}}{$row->{step}} = $row;
@@ -184,22 +180,24 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
     my @hr = ("Pathway", span({-title=>"Best path"}, "Steps"));
     my @tr = ();
     push @tr, th({-valign => "top"}, \@hr);
+    my @sumRules = ReadTable("$pre.sum.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
+    my @all = grep { $_->{orgId} eq $orgId && $_->{rule} eq "all" } @sumRules;
+    my %all = map { $_->{pathway} => $_ } @all;
+    my @sumSteps = ReadTable("$pre.sum.steps", qw{orgId gdb gid step score locusId sysName});
+    my %sumSteps = (); # pathway => step => summary
+    foreach my $st (@sumSteps){
+      $sumSteps{$st->{pathway}}{$st->{step}} = $st;
+    }
     foreach my $path (@path) {
-      my @sumRules = ReadTable("$pre.$path.sum.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
-      my @all = grep { $_->{orgId} eq $orgId && $_->{rule} eq "all" } @sumRules;
-      die "Wrong number of rows for $orgId and rule = all in $pre.$pathSpec.sum.rules\n"
+      my $all = $all{$path} || die "Missing result for rule = all and orgId = $orgId in $pre.sum.rules\n"
         unless @all == 1;
-      my ($all) = @all;
-      my @sumSteps = ReadTable("$pre.$path.sum.steps", qw{orgId gdb gid step score locusId sysName});
-      @sumSteps = grep { $_->{orgId} eq $orgId } @sumSteps;
-      my %sumSteps = map { $_->{step} => $_ } @sumSteps;
       my @show = ();
 
       my $st = ReadSteps("$stepPath/$path.steps");
       $steps = $st->{steps};
       foreach my $step (split / /, $all->{expandedPath}) {
         die "Unknown step $step for $path\n" unless exists $steps->{$step};
-        my $score = exists $sumSteps{$step} ? $sumSteps{$step}{score} : 0;
+        my $score = exists $sumSteps{$path}{$step} ? $sumSteps{$path}{$step}{score} : 0;
         push @show, a({ -href => "gapView.cgi?base=$base&orgId=$orgId&path=$path&step=$step",
                         -style => ScoreToStyle($score),
                         -title => "$steps->{$step}{desc} (" . ScoreToLabel($score) . ")" },
@@ -215,11 +213,11 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
   } elsif ($step eq "") {
     # overview of this pathway in this organism, first the rules, then all of the steps
-    my @sumRules = ReadTable("$pre.$pathSpec.sum.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
-    @sumRules = grep { $_->{orgId} eq $orgId } @sumRules;
+    my @sumRules = ReadTable("$pre.sum.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
+    @sumRules = grep { $_->{orgId} eq $orgId && $_->{pathway} eq $pathSpec } @sumRules;
     my %sumRules = map { $_->{rule} => $_ } @sumRules;
-    my @sumSteps = ReadTable("$pre.$pathSpec.sum.steps", qw{orgId gdb gid step score locusId sysName});
-    @sumSteps = grep { $_->{orgId} eq $orgId } @sumSteps;
+    my @sumSteps = ReadTable("$pre.sum.steps", qw{orgId gdb gid step score locusId sysName});
+    @sumSteps = grep { $_->{orgId} eq $orgId && $_->{pathway} eq $pathSpec } @sumSteps;
     my %sumSteps = map { $_->{step} => $_ } @sumSteps;
     print h3(scalar(@sumRules), "rules"), "\n";
     print start_ul;
@@ -671,7 +669,8 @@ sub ReadCand($$) {
                blastBits curatedIds identity blastCoverage blastScore curatedDesc
                hmmBits hmmId hmmCoverage hmmScore hmmDesc
                otherIds otherBits otherIdentity otherCoverage otherDesc};
-  return ReadTable("$pre.$pathSpec.sum.cand", \@req);
+  my @rows = ReadTable("$pre.sum.cand", \@req);
+  return grep { $_->{pathway} eq $pathSpec } @rows;
 }
 
 # Convert an identifier into a form suitable for FetchSeqs (which relies on fastacmd)
