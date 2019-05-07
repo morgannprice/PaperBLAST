@@ -81,6 +81,7 @@ END
   unlink($faaCand);
   open(my $fhRH, "<", $rhitsFile) || die "Cannot read from $rhitsFile\n";
   open(my $fhOut, ">", $outFile) || die "Cannot write to $outFile\n";
+  print $fhOut join("\t", @outfields)."\n";
   while (my $line = <$fhRH>) {
     chomp $line;
     my ($locusId, $otherId, $identity, $alen, $mm, $gap, $locusBegin, $locusEnd, $otherBegin, $otherEnd, $eval, $bits)
