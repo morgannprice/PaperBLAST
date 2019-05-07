@@ -280,17 +280,16 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
       my @show = ();
       foreach my $cand (@cand) {
         my ($locusId,$sysName,$score) = @$cand;
-        my $id = $sysName || $locusId;
         # Create two links if this is a split hit
-        my @idParts = split /,/, $id;
+        my @sysNameParts = split /,/, $sysName;
         my @locusParts = split /,/, $locusId;
         my @parts = ();
-        while (@idParts > 0) {
-          my $id = shift @idParts;
+        while (@locusParts > 0) {
           my $locus = shift @locusParts;
+          my $sysName = shift @sysNameParts;
           push @parts, a({ -style => ScoreToStyle($score), -title => ScoreToLabel($score),
                            -href => GeneURL($orgId, $locus) },
-                         $id );
+                         $sysName || $locus );
         }
         push @show, join(" with ", @parts);
       }
