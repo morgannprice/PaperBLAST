@@ -166,7 +166,7 @@ END
     die "ublast found hit for unknown item $curatedId\n" unless exists $curated{$curatedId};
     $hitId =~ s/ .*//; # the first part of the header line is the locusId
     print $fhOut join("\t", $hitId, "blast", $curatedId, $bits, $sbeg, $send, $qbeg, $qend,
-                      length($curated{$curatedId}))."\n";
+                      length($curated{$curatedId}), $identity)."\n";
   }
   close($fhH) || die "Error reading $cfile.hits\n";
   unlink("$cfile");
