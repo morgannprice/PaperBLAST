@@ -265,8 +265,6 @@ END
         }
         # select the best candidates for this step
         foreach my $cand (@cand) {
-          $cand->{pathway} = $pathwayId;
-          $cand->{step} = $step;
           $cand->{maxBits} = max($cand->{blastBits} || 0, $cand->{hmmBits} || 0);
         }
         @cand = sort { $b->{score} <=> $a->{score}
@@ -286,9 +284,7 @@ END
                 $merge->{$key} = $cand1->{$key};
               }
             }
-            $merge->{maxBits} = max($merge->{blastBits}, $merge->{hmmBits}) || 0;
-            $merge->{pathway} = $pathwayId;
-            $merge->{step} = $step;
+            $merge->{maxBits} = max($merge->{blastBits}, $merge->{hmmBits} || 0);
 
             # replace the previous entries for the merged genes with the merge
             @cand = grep { $_->{locusId} ne $merge->{locusId}
@@ -298,6 +294,12 @@ END
                            || $b->{maxBits} <=> $a->{maxBits}
                            || $b->{locusId} cmp $a->{locusId} } @cand;
           }
+        }
+        # And make sure all metadata fields are present
+        foreach my $cand (@cand) {
+          $cand->{orgId} = $orgId;
+          $cand->{pathway} = $pathwayId;
+          $cand->{step} = $step;
         }
         $cand{$orgId}{$pathwayId}{$step} = \@cand;
       }
@@ -337,7 +339,7 @@ END
           $cand->{otherDesc} = $curatedInfo{ $cand->{otherIds } }[1] if $cand->{otherIds};
           $cand->{gdb} = $orgs{$orgId}{gdb};
           $cand->{gid} = $orgs{$orgId}{gid};
-          my @out = map { exists $cand->{$_} ? $cand->{$_} : "" } @candfields;
+          my @out = map { defined $cand->{$_} ? $cand->{$_} : "" } @candfields;
           print $fhCand join("\t", @out)."\n";
         }
         # per-step line (only for those with candidates)
@@ -630,7 +632,7 @@ sub FindSplit($$$) {
       my $combCoverage = $combLen / $hit1->{cLength};
       my $combScore = $combIdentity >= 40 && $combCoverage >= 0.8 ? 2 : 1;
       my $score1 = exists $candhash->{$locus1} ? $candhash->{$locus1}{score} : 0;
-      my $score2 = exists $candhash->{$locus1} ? $candhash->{$locus2}{score} : 0;
+      my $score2 = exists $candhash->{$locus2} ? $candhash->{$locus2}{score} : 0;
       next unless $combScore > $score1 && $combScore > $score2;
 
       # Build a merged hit
@@ -642,7 +644,7 @@ sub FindSplit($$$) {
                    'blastCoverage' => $combCoverage,
                    'blastScore' => $combScore,
                    'score' => $combScore,
-                   'otherId' => $rh1->{otherId} || $rh2->{otherId} || "",
+                   'otherIds' => $rh1->{otherId} || $rh2->{otherId} || "",
                    'otherBits' => ($rh1->{bits} || 0) + ($rh2->{bits} || 0),
                    'otherIdentity' => max($rh1->{otherIdentity} || 0, $rh2->{otherIdentity} || 0),
                    'otherCoverage' => max($rh1->{otherCoverage} || 0, $rh2->{otherCoverage} || 0) };
