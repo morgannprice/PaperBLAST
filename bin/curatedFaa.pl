@@ -13,7 +13,7 @@ Filters out curated entries that are probably not actually characterized.
   -filtered filteredFile -- save the non-curated entries to filteredFile
   -showdesc -- include definitions of the curated entries
   -curatedids -- report the curated ids rather than the unique id,
-     and report all curated descriptions to an out.desc file
+     and save all lengths and descriptions in a out.info file
 END
 ;
 
@@ -34,6 +34,7 @@ my $dbh = DBI->connect("dbi:SQLite:dbname=$dbfile","","",{ RaiseError => 1 }) ||
 my %curatedIds = (); # db::protId => desc
 my $genes = $dbh->selectall_arrayref("SELECT db,protId,desc FROM CuratedGene");
 my %filtered = (); # db => protId => 1
+
 foreach my $gene (@$genes) {
   my ($db, $protId, $desc) = @$gene;
   # Curated annotations for proteins that are not actually characterized often match these patterns
@@ -75,10 +76,10 @@ foreach my $row (@$seqdups) {
 my %written = ();
 open(my $fhU, "<", $uniqfile) || die "Cannot read $uniqfile";
 open(my $fhOut, ">", $outfile) || die "Cannot write to $outfile";
-my $fhD;
+my $fhInfo;
 if (defined $curatedids) {
-  open($fhD, ">", "$outfile.desc") || die "Cannot write to $outfile.desc";
-  print $fhD join("\t", "ids", "descs")."\n";
+  open($fhInfo, ">", "$outfile.info") || die "Cannot write to $outfile.info";
+  print $fhInfo join("\t", "ids", "length", "descs")."\n";
 }
 
 my $state = {};
@@ -90,7 +91,7 @@ while (my ($uniqId,$sequence) = ReadFastaEntry($fhU, $state)) {
       my @ids = map { $_->[0] . "::" . $_->[1] } @$ci;
       my @desc = map $_->[2], @$ci;
       print $fhOut ">" . join(",", @ids) . "\n" . $sequence . "\n";
-      print $fhD join("\t", join(",",@ids), join(";; ", @desc))."\n";
+      print $fhInfo join("\t", join(",",@ids), length($sequence), join(";; ", @desc))."\n";
     } else {
       my $showid = $uniqId;
       my $desc;
@@ -121,9 +122,9 @@ foreach my $curatedId (keys %curatedIds) {
 print STDERR join(" ", "Found", scalar(keys %curatedIds), "characterized entries and wrote",
                   scalar(keys %written), "different", "sequences", "to", $outfile)."\n";
 
-if (defined $fhD) {
-  close($fhD) || die "Error writing to $outfile.desc";
-  print STDERR "Wrote $outfile.desc\n"
+if (defined $fhInfo) {
+  close($fhInfo) || die "Error writing to $outfile.info";
+  print STDERR "Wrote $outfile.info\n"
 }
 
 if (defined $filterfile) {
