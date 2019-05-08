@@ -16,6 +16,7 @@ use Steps qw{ReadSteps ReadOrgTable ReadOrgProtein ParseOrgLocus};
 #   (other-based) otherBits, otherIdentity, otherCoverage
 # or else returns undef if there is no useful hit.
 # Assumes that reverse hits have highest bit score first
+# (but does not assume that the hits are sorted)
 sub ScoreCandidate($$);
 
 # locusBegin, locusEnd, and list of reverse hits => first one meeting overlap requirement
@@ -257,10 +258,9 @@ END
           my @rev = ();
           @rev = @{ $revhits{$orgId}{$locusId} } if exists $revhits{$orgId}{$locusId};
           @rev = grep !exists $ignore{$pathwayId}{$step}{ $_->{otherId} }, @rev;
-          @rev = sort { $b->{bits} <=> $a->{bits} } @rev;
+          @rev = sort { $b->{bits} <=> $a->{bits}
+                        || $a->{otherId} cmp $b->{otherId} } @rev;
           $locusRev{$locusId} = \@rev; # save for splitting below
-          my @blasthits = grep { $_->{type} eq "blast" } @$hits;
-          my @hmmhits = grep { $_->{type} eq "hmm" } @$hits;
           my $cand = ScoreCandidate($hits, \@rev);
           push @cand, $cand if defined $cand;
         }
@@ -479,7 +479,8 @@ sub ScoreCandidate($$) {
   my $orgId = $hits->[0]{orgId};
   my $locusId = $hits->[0]{locusId};
 
-  my @blastHits = sort { $b->{bits} <=> $a->{bits} } grep { $_->{type} eq "blast" } @$hits;
+  my @blastHits = sort { $b->{bits} <=> $a->{bits} || $a->{curatedId} cmp $b->{curatedId} }
+    grep { $_->{type} eq "blast" } @$hits;
   my $bestBlastHit;
   foreach my $hit (@blastHits) {
     next unless $hit->{coverage} >= 0.5;
