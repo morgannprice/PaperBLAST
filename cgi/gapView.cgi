@@ -1,19 +1,26 @@
 #!/usr/bin/perl -w
+# View pathway reconstructions
 
-# Parameters:
-# Required: base=subdir/orgs -- where the input files are, relative to tmp
+# Required parameters:
+# orgs -- either an orgId as in FetchAssembly or a multi-organism directory
+# set -- which group of pathways
 #
-# Optional:
+# Optional parameters:
 # orgId -- which genome
 # path -- which pathway
 # showdef -- show the pathway definition
 # step -- which step in that pathway
 # locusId -- which candidate gene for that step
 #
-# Modes of this viewer include:
+# Modes of this viewer:
+# If the analysis does not exist, it tries to run the analysis
+#	If the orgs directory does not exist, it tries to fetch the genome first
+# Otherwise:
 # No optional arguments -- list the genomes and pathways
+#	(if there is just one organism, shows that overview instead)
 # orgId -- overview of the organism
 # path -- overview of the pathway across organisms
+#	(if there is just one organism, shows that organism/pathway page instead)
 # path & showdef -- detailed pathway definition (mostly, show the .steps file verbatim)
 # orgId & path -- the pathway in the organism, with lists of rules and top candidates for each step
 # orgId & path & step -- all candidates for the step, and the detailed definition of the step
@@ -29,6 +36,7 @@ use Steps;
 use pbutils;
 use pbweb qw{start_page};
 use FetchAssembly qw{CacheAssembly};
+use File::stat;
 
 sub ScoreToStyle($);
 sub ScoreToLabel($);
@@ -41,20 +49,117 @@ sub ReadCand($$);
 sub OrgToAssembly($);
 
 my $tmpDir = "../tmp"; # for CacheAssembly
-my $stepPath = "../tmp/gaps";
 my %orgs = (); # orgId => hash including gdb, gid, genomeName
+my $nCPU = 6;
 
 {
   FetchAssembly::SetFitnessBrowserPath("../fbrowse_data");
 
-  my $base = param("base") || die "Must specify base";
-  $base =~ m!^[a-zA-Z0-9._-]+/?[a-zA-Z0-9._-]+$! || die "Invalid base $base";
-  my $pre = "../tmp/$base";
+  my $set = param("set") || die "Must specify set parameter";
+  $set =~ m/^[a-zA-Z0-9._-]+$/ || die "Invalid set $set";
+  my $stepPath = "../gaps/$set"; # with the *.step files and the $set.table file
+  my $queryPath = "../tmp/path.$set"; # with the *.query files and other intermediate files
+  foreach my $dir ($stepPath,$queryPath) {
+    die "Invalid set $set: no $dir directory" unless -d $dir;
+  }
 
-  my @orgs = ReadOrgTable("$pre.org");
-  die "No organisms for $pre.org" unless @orgs > 0;
+  my @pathInfo = ReadTable("$stepPath/$set.table", ["pathwayId","desc"]);
+  my ($setDescRow) = grep {$_->{pathwayId} eq "all"} @pathInfo;
+  die "No info for all in $stepPath/$set.table" unless defined $setDescRow;
+  my $setDesc = $setDescRow->{desc};
+  @pathInfo = grep {$_->{pathwayId} ne "all"} @pathInfo;
+  my %pathDesc = map { $_->{pathwayId} => $_->{desc} } @pathInfo;
+
+  my $orgsSpec = param('orgs') || die "Must specify orgs parameter";
+  $orgsSpec =~ m/^[a-zA-Z0-9._-]+$/ || die "Invalid orgs $orgsSpec";
+  my $orgpre = "../tmp/$orgsSpec/orgs";
+
+  autoflush STDOUT 1; # show preliminary results
+  my $banner = "Gap viewer for $setDesc (prototype)";
+  my $sumpre = "../tmp/$orgsSpec/$set.sum";
+
+  # Wait up to 2 minutes
+  if (!-e "$sumpre.done" && -e "$sumpre.begin"
+      && stat("$sumpre.begin")->mtime >= time() - 2*60) {
+    # Waiting mode
+    start_page('title' => 'Analysis in progress',
+               'banner' => "Gap viewer for $setDesc (prototype)",
+               'bannerURL' => "gapView.cgi?orgs=$orgsSpec&set=$set");
+    print
+      p("Analysis of $setDesc is already underway. Please check",
+        a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set"}, "here"),
+        "in a few seconds"),
+      end_html;
+    exit(0);
+  }
+
+  if (!-e "$sumpre.done" && !-e "$sumpre.begin") {
+    # Computation mode
+
+    start_page('title' => "Analyzing $setDesc",
+               'banner' => "Gap viewer for $setDesc (prototype)",
+               'bannerURL' => "gapView.cgi?orgs=$orgsSpec&set=$set");
+    print "\n";
+    unless (-e "$orgpre.org") {
+      # Try to load the organism
+      $orgsSpec =~ m/^([^_]+)__(.*)$/ || die "Invalid organism specifier $orgsSpec";
+      my ($gdb,$gid) = ($1,$2);
+      print p("Fetching assembly $gid from $gdb"), "\n";
+      CacheAssembly($gdb, $gid, $tmpDir) || die;
+      mkdir("$tmpDir/$orgsSpec");
+      my @cmd = ("../bin/buildorgs.pl", "-out", $orgpre, "-orgs", $gdb.":".$gid);
+      system(@cmd) == 0
+        || die "command @cmd\nfailed with error: $!";
+    }
+    my @orgs = ReadOrgTable("$orgpre.org");
+    die "No organisms for $orgpre.org" unless @orgs > 0;
+    die "No such file: $orgpre.faa" unless -e "$orgpre.faa";
+    my @qFiles = map { $queryPath . "/" . $_->{pathwayId} . ".query" } @pathInfo;
+    foreach my $qFile (@qFiles) {
+      die "No such file: $qFile" unless -e $qFile;
+    }
+    system("touch", "$sumpre.begin");
+    my $time = 10 * scalar(@orgs);
+    print p("Analyzing $setDesc in", scalar(@orgs), "genomes. This should take around $time seconds."), "\n";
+    my @cmds = ();
+    push @cmds, ["../bin/gapsearch.pl", "-orgs", $orgpre, "-query", @qFiles,
+                 "-nCPU", $nCPU, "-out", "$tmpDir/$orgsSpec/$set.hits"];
+    push @cmds, ["../bin/gaprevsearch.pl", "-orgs", $orgpre,
+                 "-hits", "$tmpDir/$orgsSpec/$set.hits",
+                 "-nCPU", $nCPU,
+                 "-curated", "$queryPath/curated.faa.udb",
+                 "-out", "$tmpDir/$orgsSpec/$set.revhits"];
+    my @pathList = map { $_->{pathwayId} } @pathInfo;
+    push @cmds, ["../bin/gapsummary.pl",
+                 "-pathways", @pathList,
+                 "-orgs", $orgpre,
+                 "-hits", "$tmpDir/$orgsSpec/$set.hits",
+                 "-rev", "$tmpDir/$orgsSpec/$set.revhits",
+                 "-out", "$tmpDir/$orgsSpec/$set.sum",
+                 "-info", "$queryPath/curated.faa.info",
+                 "-stepDir", $stepPath,
+                 "-queryDir", $queryPath];
+    push @cmds, ["touch", "$sumpre.done"];
+    my %label = ('gapsearch.pl' => 'Searching for candidates for each step',
+                 'gaprevsearch.pl' => 'Comparing candidates to other curated proteins',
+                 'gapsummary.pl' => 'Scoring each candidate and pathway');
+    foreach my $cmd (@cmds) {
+      my $show = $cmd->[0]; $show =~ s!.*/!!;
+      print p($label{$show})."\n" if exists $label{$show};
+      system(@$cmd) == 0 || die "Command failed\n@$cmd\nError code: $!";
+    }
+    print "</pre>\n",
+      p("Analysis succeeded, please",
+      a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set"}, "view results")),
+      end_html;
+    exit(0);
+  }
+
+  #else -- viewing mode
+  my @orgs = ReadOrgTable("$orgpre.org");
+  die "No organisms for $orgpre.org" unless @orgs > 0;
   %orgs = map { $_->{orgId} => $_ } @orgs;
-  my $faafile = "$pre.faa";
+  my $faafile = "$orgpre.faa";
   die "No such file: $faafile" unless -e $faafile;
 
   my $pathSpec = param("path");
@@ -64,9 +169,10 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
   my @path = (); # all pathways, or the one specified
 
   if ($pathSpec eq "") {
-    @path = sort qw{his met ser thr gly cys ile leu val chorismate phe tyr trp asn gln arg lys pro};
+    @path = map { $_->{pathwayId} } @pathInfo;
   } else {
-    die "Invalid path $pathSpec\n" unless $pathSpec =~ m/^[a-zA-Z0-9._'-]+$/;
+    die "Unknown pathway $pathSpec" unless exists $pathDesc{$pathSpec};
+    die "Invalid path $pathSpec" unless $pathSpec =~ m/^[a-zA-Z0-9._'-]+$/;
     @path = ($pathSpec);
   }
 
@@ -75,6 +181,7 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
   if ($orgId ne "") {
     die "Unknown orgId $orgId" unless exists $orgs{$orgId};
   }
+  $orgId = $orgs[0]{orgId} if @orgs == 1;
 
   my $step = param("step");
   if (!defined $step) {
@@ -96,15 +203,16 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
   $locusSpec =~ m/^[a-zA-Z90-9_.-]*$/ || die "Invalid locus $locusSpec";
 
   my $title = $locusSpec ne "" ? "Aligments for a candidate for $step" : "Gaps";
-  $title .= " for $pathSpec" if $pathSpec ne "" && $locusSpec eq "";
+  $title .= " for $pathDesc{$pathSpec}" if $pathSpec ne "" && $locusSpec eq "";
   $title = "Finding step $step for $pathSpec"
     if $step ne "" && $orgId ne "" && $pathSpec ne "" && $locusSpec eq "";
   $title .= " in $orgs{$orgId}{genomeName}"
     if $orgId ne "";
   $title = "Pathway definition for $pathSpec" if $pathSpec ne "" && param("showdef");
   my $nOrgs = scalar(@orgs);
-  start_page('title' => $title, 'banner' => "Gap viewer for $nOrgs genomes (prototype)", 'bannerURL' => "gapView.cgi?base=$base");
-  autoflush STDOUT 1; # show preliminary results
+  start_page('title' => $title,
+             'banner' => $banner,
+             'bannerURL' => "gapView.cgi?orgs=$orgsSpec&set=$set");
   print "\n";
 
   my @orgsSorted = sort { $a->{genomeName} cmp $b->{genomeName} } @orgs;
@@ -117,14 +225,14 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
     my @lines = <$fh>;
     close($fh) || die "Error reading $fh";
     print pre(join("",@lines)), "\n";
-    push @links, a({-href => "$stepPath/$pathSpec.query"}, "Table of queries for $pathSpec")
+    push @links, a({-href => "$queryPath/$pathSpec.query"}, "Table of queries for $pathSpec")
       . " (tab-delimited)";
   } elsif ($orgId eq "" && $pathSpec eq "") {
     # list of pathways
     print p(scalar(@path), "pathways");
     print start_ul;
     foreach my $path (@path) {
-      print li(a({ -href => "gapView.cgi?base=$base&path=$path" }, $path));
+      print li(a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=$path" }, $path));
     }
     print end_ul, "\n";
     # list genomes
@@ -132,7 +240,7 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
     print start_ul;
     foreach my $org (@orgsSorted) {
       my $orgId = $org->{orgId};
-      my $URL = "gapView.cgi?base=$base&orgId=$orgId";
+      my $URL = "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId";
       $URL .= "&path=$pathSpec" if @path == 1;
       print li(a({ -href => $URL }, $org->{genomeName} ));
     }
@@ -140,10 +248,10 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
   } elsif ($orgId eq "" && $pathSpec ne "") {
     # overview of this pathway across organisms
     print p("Analysis of pathway $pathSpec in", scalar(@orgs), "genomes"), "\n";
-    my @sumRules = ReadTable("$pre.sum.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
+    my @sumRules = ReadTable("$sumpre.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
     @sumRules = grep { $_->{pathway} eq $pathSpec && $_->{rule} eq "all" } @sumRules;
     my %orgAll = map { $_->{orgId} => $_ } @sumRules;
-    my @sumSteps = ReadTable("$pre.sum.steps", qw{orgId gdb gid step score locusId sysName});
+    my @sumSteps = ReadTable("$sumpre.steps", qw{orgId gdb gid step score locusId sysName});
     @sumSteps = grep { $_->{pathway} eq $pathSpec} @sumSteps;
     my %orgStep = ();           # orgId => step => row from sum.steps
     foreach my $row (@sumSteps) {
@@ -161,14 +269,14 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
       my @show = ();
       foreach my $step (split / /, $all->{expandedPath}) {
         my $score = exists $orgStep{$orgId}{$step} ? $orgStep{$orgId}{$step}{score} : 0;
-        push @show, a({ -href => "gapView.cgi?base=$base&orgId=$orgId&path=$pathSpec&step=$step",
+        push @show, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step",
                         -style => ScoreToStyle($score),
                         -title => "$steps->{$step}{desc} (" . ScoreToLabel($score) . ")" },
                       $step);
       }
       my $score = RuleToScore($all);
       push @tr, Tr(td({-valign => "top"},
-                      [ a({ -href => "gapView.cgi?base=$base&path=$pathSpec&orgId=$orgId",
+                      [ a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=$pathSpec&orgId=$orgId",
                             -style => ScoreToStyle($score),
                             -title => "$pathSpec $ruleScoreLabels[$score]" },
                           $orgs{$orgId}{genomeName}),
@@ -180,16 +288,16 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
     my @hr = ("Pathway", span({-title=>"Best path"}, "Steps"));
     my @tr = ();
     push @tr, th({-valign => "top"}, \@hr);
-    my @sumRules = ReadTable("$pre.sum.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
+    my @sumRules = ReadTable("$sumpre.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
     my @all = grep { $_->{orgId} eq $orgId && $_->{rule} eq "all" } @sumRules;
     my %all = map { $_->{pathway} => $_ } @all;
-    my @sumSteps = ReadTable("$pre.sum.steps", qw{orgId gdb gid step score locusId sysName});
+    my @sumSteps = ReadTable("$sumpre.steps", qw{orgId gdb gid step score locusId sysName});
     my %sumSteps = (); # pathway => step => summary
     foreach my $st (@sumSteps){
       $sumSteps{$st->{pathway}}{$st->{step}} = $st;
     }
     foreach my $path (@path) {
-      my $all = $all{$path} || die "Missing result for rule = all and orgId = $orgId in $pre.sum.rules\n"
+      my $all = $all{$path} || die "Missing result for rule = all and orgId = $orgId in $sumpre.rules\n"
         unless @all == 1;
       my @show = ();
 
@@ -198,14 +306,14 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
       foreach my $step (split / /, $all->{expandedPath}) {
         die "Unknown step $step for $path\n" unless exists $steps->{$step};
         my $score = exists $sumSteps{$path}{$step} ? $sumSteps{$path}{$step}{score} : 0;
-        push @show, a({ -href => "gapView.cgi?base=$base&orgId=$orgId&path=$path&step=$step",
+        push @show, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$path&step=$step",
                         -style => ScoreToStyle($score),
                         -title => "$steps->{$step}{desc} (" . ScoreToLabel($score) . ")" },
                       $step);
       }
       my $pathScore = RuleToScore($all);
       push @tr, Tr({-valign => "top"},
-                   td([a({ -href => "gapView.cgi?base=$base&orgId=$orgId&path=$path",
+                   td([a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$path",
                            -style => ScoreToStyle($pathScore),
                            -title => $ruleScoreLabels[$pathScore] }, $path),
                        join(", ", @show)]));
@@ -213,10 +321,10 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
   } elsif ($step eq "") {
     # overview of this pathway in this organism, first the rules, then all of the steps
-    my @sumRules = ReadTable("$pre.sum.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
+    my @sumRules = ReadTable("$sumpre.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
     @sumRules = grep { $_->{orgId} eq $orgId && $_->{pathway} eq $pathSpec } @sumRules;
     my %sumRules = map { $_->{rule} => $_ } @sumRules;
-    my @sumSteps = ReadTable("$pre.sum.steps", qw{orgId gdb gid step score locusId sysName});
+    my @sumSteps = ReadTable("$sumpre.steps", qw{orgId gdb gid step score locusId sysName});
     @sumSteps = grep { $_->{orgId} eq $orgId && $_->{pathway} eq $pathSpec } @sumSteps;
     my %sumSteps = map { $_->{step} => $_ } @sumSteps;
     print h3(scalar(@sumRules), "rules"), "\n";
@@ -230,7 +338,7 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
         my $score = $stepS->{score} || 0;
         my $label = ScoreToLabel($score);
         my $id = $stepS->{sysName} || $stepS->{locusId} || "";
-        push @parts, a({ -href => "gapView.cgi?base=$base&orgId=$orgId&path=$pathSpec&step=$step",
+        push @parts, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step",
                          -style => ScoreToStyle($score),
                          -title => "$stepDef->{desc} -- $id ($label)" },
                        $step);
@@ -243,7 +351,7 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
           if (exists $steps->{$part}) {
             my $score = exists $sumSteps{$part} ? $sumSteps{$part}{score} : 0;
             push @parts, a({ -style => ScoreToStyle($score), -title => "$steps->{$part}{desc}",
-                             -href => "gapView.cgi?base=$base&orgId=$orgId&path=$pathSpec&step=$part" },
+                             -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$part" },
                            $part);
           } elsif (exists $rules->{$part}) {
             my $score = RuleToScore($sumRules{$part});
@@ -297,14 +405,14 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
         push @show, "";
       }
       push @tr, Tr(td({-valign => "top" },
-                      [ a({-href => "gapView.cgi?base=$base&orgId=$orgId&path=$pathSpec&step=$step"}, $step),
+                      [ a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step"}, $step),
                         $stepS->{desc},
                         $show[0], $show[1] ]));
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
   } elsif ($locusSpec eq "") {
     # overview of this step in this organism
-    my @cand = ReadCand($pre,$pathSpec);
+    my @cand = ReadCand($sumpre,$pathSpec);
     @cand = grep { $_->{orgId} eq $orgId && $_->{step} eq $step } @cand;
     if (@cand == 0) {
       print h3("No candidates for $step: $steps->{$step}{desc}"), "\n";
@@ -365,7 +473,7 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
                             $id, $desc,
                             a({-href => $URL, -title => "View $idShowHit in PaperBLAST"}, $descShowCurated),
                             int(0.5 + $cand->{identity})."%",
-                            a({ -href => "gapView.cgi?base=$base&orgId=$orgId&path=$pathSpec&step=$step&locusId=$cand->{locusId}",
+                            a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step&locusId=$cand->{locusId}",
                                 -title => "View alignments" },
                               int(0.5 + 100 * $cand->{blastCoverage})."%"),
                             $cand->{blastBits},
@@ -381,7 +489,7 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
                           [ ShowScoreShort($cand->{hmmScore}), $id1, $desc1,
                             a({-href => $hmmURL, }, $cand->{hmmDesc}, "(". $cand->{hmmId} . ")"),
                             "",
-                            a({ -href => "gapView.cgi?base=$base&orgId=$orgId&path=$pathSpec&step=$step&locusId=$cand->{locusId}",
+                            a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step&locusId=$cand->{locusId}",
                                 -title => "View alignments" },
                               int(0.5 + 100 * $cand->{hmmCoverage})."%"),
                             $cand->{hmmBits},
@@ -436,10 +544,10 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
     print end_ul(), "\n";
   } else {
     # Show alignments
-    push @links, a({-href => "gapView.cgi?base=$base&orgId=$orgId&path=$pathSpec&step=$step"},
+    push @links, a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step"},
                     "All candidates for step $step in", $orgs{$orgId}{genomeName});
     my @querycol = qw{step type query desc file sequence};
-    my @queries = ReadTable("$stepPath/$pathSpec.query", \@querycol);
+    my @queries = ReadTable("$queryPath/$pathSpec.query", \@querycol);
     my %curatedSeq = ();
     foreach my $query (@queries) {
       my $id = $query->{query};
@@ -450,7 +558,7 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
       }
     }
     my %hmmToFile = map { $_->{query} => $_->{file} } grep { $_->{type} eq "hmm" } @queries;
-    my @cand = ReadCand($pre,$pathSpec);
+    my @cand = ReadCand($sumpre,$pathSpec);
     @cand = grep { $_->{orgId} eq $orgId && $_->{step} eq $step && $_->{locusId} eq $locusSpec} @cand;
     die "$locusSpec is not a candidate" unless @cand > 0;
     my $assembly = OrgToAssembly($orgId);
@@ -496,7 +604,7 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
       if ($cand->{hmmBits} > 0) {
         print p(b("Align locus $cand->{locusId} $cand->{sysName} ($cand->{desc})",
                   br(), "to HMM $cand->{hmmId} ($cand->{hmmDesc})"));
-        my $hmmfile = "$stepPath/" . $hmmToFile{$cand->{hmmId}};
+        my $hmmfile = "$queryPath/" . $hmmToFile{$cand->{hmmId}};
         die "No hmm file for $cand->{hmmId}" unless exists $hmmToFile{$cand->{hmmId}};
         die "No file for $cand->{hmmId}: $hmmfile is missing\n" unless -e $hmmfile;
         my $hmmsearch = "../bin/hmmsearch";
@@ -512,19 +620,21 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
     }
   }
 
-  push @links, a({-href => "gapView.cgi?base=$base&path=$pathSpec&showdef=1" },
-                 "Detailed pathway definition for $pathSpec")
+  push @links, a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=$pathSpec&showdef=1" },
+                 "Definition of $pathDesc{$pathSpec}")
     if $pathSpec ne "" && !param("showdef");
-  push @links, a({-href => "gapView.cgi?base=$base&path=$pathSpec"},
+  push @links, a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=$pathSpec"},
                  "Pathway $pathSpec across", scalar(@orgs), "genomes")
-    if $pathSpec ne "" && (param("showdef") || $orgId ne "");
-  push @links, a({ -href => "gapView.cgi?base=$base&orgId=$orgId" },
+    if $pathSpec ne "" && (param("showdef") || $orgId ne "") && @orgs > 1;
+  push @links, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId" },
                  "All pathways for", $orgs{$orgId}{genomeName})
     if $orgId ne "" && $pathSpec ne "";
+  my $inOrgLabel = "";
+  $inOrgLabel = "in " . a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId" }, $orgs{$orgId}{genomeName})
+    if @orgs > 1 && $orgId ne "";
   push @links, join(" ", "All steps for",
-                    a({ -href => "gapView.cgi?base=$base&orgId=$orgId&path=$pathSpec" }, $pathSpec),
-                    "in",
-                    a({ -href => "gapView.cgi?base=$base&orgId=$orgId" }, $orgs{$orgId}{genomeName}))
+                    a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec" }, $pathSpec),
+                    $inOrgLabel)
     if $orgId ne "" && $pathSpec ne "" && $step ne "";
   push @links,
     a({ -href => "http://papers.genomics.lbl.gov/cgi-bin/genomeSearch.cgi?gdb=$orgs{$orgId}{gdb}&gid=$orgs{$orgId}{gid}" },
@@ -532,8 +642,8 @@ my %orgs = (); # orgId => hash including gdb, gid, genomeName
       if $orgId ne "";
   push @links, a({-href => OrgToAssembly($orgId)->{URL} }, "Genome of $orgs{$orgId}{genomeName}")
     if $orgId ne "";
-  push @links, a({ -href => "gapView.cgi?base=$base"}, "All $nOrgs genomes and all pathways")
-    unless $orgId eq "" && $pathSpec eq "";
+  push @links, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set"}, "All $nOrgs genomes and all pathways")
+    unless ($orgId eq "" && $pathSpec eq "") || @orgs == 1;
   print h3("Links"), start_ul(), li(\@links), end_ul
     if @links > 0;
 
@@ -663,12 +773,12 @@ sub OrgToAssembly($) {
 }
 
 sub ReadCand($$) {
-  my ($pre, $pathSpec) = @_;
+  my ($sumpre, $pathSpec) = @_;
   my @req = qw{orgId gdb gid step score locusId sysName desc locusId2 sysName2 desc2
                blastBits curatedIds identity blastCoverage blastScore curatedDesc
                hmmBits hmmId hmmCoverage hmmScore hmmDesc
                otherIds otherBits otherIdentity otherCoverage otherDesc};
-  my @rows = ReadTable("$pre.sum.cand", \@req);
+  my @rows = ReadTable("$sumpre.cand", \@req);
   return grep { $_->{pathway} eq $pathSpec } @rows;
 }
 
