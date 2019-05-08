@@ -1,22 +1,27 @@
 #!/usr/bin/perl -w
 # View pathway reconstructions
 
-# Required parameters:
+# Optional parameters:
 # orgs -- either an orgId as in FetchAssembly or a multi-organism directory
 # set -- which group of pathways
-#
-# Optional parameters:
 # orgId -- which genome
 # path -- which pathway
 # showdef -- show the pathway definition
 # step -- which step in that pathway
 # locusId -- which candidate gene for that step
+# gdb -- which genome database to search in
+# gquery -- an organism name to search for
 #
 # Modes of this viewer:
-# If the analysis does not exist, it tries to run the analysis
+# If gdb and gquery are set, search for relevant genomes
+# Otherwise, if orgs is missing, either build it from gdb and gid,
+#	or, show the front page
+# Otherwise, require orgs (set defaults to "aa")
+# If the analysis has not been run yet, it tries to run the analysis
 #	If the orgs directory does not exist, it tries to fetch the genome first
-# Otherwise:
-# No optional arguments -- list the genomes and pathways
+# If the analysis was started recently, it waits
+# Otherwise, the analysis exists:
+# No other arguments -- list the genomes and pathways
 #	(if there is just one organism, shows that overview instead)
 # orgId -- overview of the organism
 # path -- overview of the pathway across organisms
@@ -35,7 +40,7 @@ use lib "../lib";
 use Steps;
 use pbutils;
 use pbweb qw{start_page};
-use FetchAssembly qw{CacheAssembly};
+use FetchAssembly qw{CacheAssembly GetMatchingAssemblies GetMaxNAssemblies};
 use File::stat;
 
 sub ScoreToStyle($);
@@ -47,6 +52,7 @@ sub RuleToScore($);
 sub LocusIdToFetchId($);
 sub ReadCand($$);
 sub OrgToAssembly($);
+sub Finish(); # show "About the gap viewer" and exit
 
 my $tmpDir = "../tmp"; # for CacheAssembly
 my %orgs = (); # orgId => hash including gdb, gid, genomeName
@@ -55,13 +61,14 @@ my $nCPU = 6;
 {
   FetchAssembly::SetFitnessBrowserPath("../fbrowse_data");
 
-  my $set = param("set") || die "Must specify set parameter";
+  my $set = param("set") || "aa";
   $set =~ m/^[a-zA-Z0-9._-]+$/ || die "Invalid set $set";
   my $stepPath = "../gaps/$set"; # with the *.step files and the $set.table file
   my $queryPath = "../tmp/path.$set"; # with the *.query files and other intermediate files
   foreach my $dir ($stepPath,$queryPath) {
     die "Invalid set $set: no $dir directory" unless -d $dir;
   }
+
 
   my @pathInfo = ReadTable("$stepPath/$set.table", ["pathwayId","desc"]);
   my ($setDescRow) = grep {$_->{pathwayId} eq "all"} @pathInfo;
@@ -70,12 +77,79 @@ my $nCPU = 6;
   @pathInfo = grep {$_->{pathwayId} ne "all"} @pathInfo;
   my %pathDesc = map { $_->{pathwayId} => $_->{desc} } @pathInfo;
 
-  my $orgsSpec = param('orgs') || die "Must specify orgs parameter";
-  $orgsSpec =~ m/^[a-zA-Z0-9._-]+$/ || die "Invalid orgs $orgsSpec";
-  my $orgpre = "../tmp/$orgsSpec/orgs";
-
   autoflush STDOUT 1; # show preliminary results
   my $banner = "Gap viewer for $setDesc (prototype)";
+
+  my @gdbs = ("NCBI", "IMG", "UniProt", "MicrobesOnline", "FitnessBrowser");
+  my %gdb_labels1 = ("NCBI" => "NCBI assemblies",
+                     "UniProt" => "UniProt proteomes",
+                     "IMG" => "JGI/IMG genomes", "FitnessBrowser" => "Fitness Browser genomes");
+  my %gdb_labels = map { $_ => exists $gdb_labels1{$_} ? $gdb_labels1{$_} : "$_ genomes"} @gdbs;
+
+  my $orgsSpec = param('orgs');
+  $orgsSpec = param('gdb') . "__" . param('gid')
+    if !defined $orgsSpec && param('gdb') && param('gid');
+
+  if (!defined $orgsSpec && param('gquery')) {
+    # Genome query mode
+    my $gquery = param('gquery');
+    my $gdb = param('gdb') || die "Must specify gdb with gquery";
+    die "Unknown genome database: $gdb\n"
+      if !exists $gdb_labels{$gdb};
+    start_page('title' => "Find gaps in $setDesc",
+               'banner' => $banner,
+               'bannerURL' => "gapView.cgi");
+    print p("Searching", $gdb_labels{$gdb}, "for", "'" . $gquery . "'"), "\n";
+    my @rows = GetMatchingAssemblies($gdb, $gquery);
+    my $limit = GetMaxNAssemblies();
+    if (@rows > 0) {
+      my $desc = "Found " . scalar(@rows) . " assemblies";
+      if (@rows == 1) {
+        $desc = "Found 1 assembly";
+      } elsif (@rows >= $limit) {
+        $desc = "Found the first " . scalar(@rows) . " matching assemblies";
+      }
+      $desc .= ", please choose one" if @rows > 1;
+      print p($desc . ":"), "\n";
+      print start_form(-method => 'get', -action => 'gapView.cgi'),
+        hidden(-name => 'gdb', -value => $gdb, -override => 1),
+        hidden(-name => 'set', -value => $set, -override => 1);
+      foreach my $row (@rows) {
+        my $checked = @rows == 1 ? "CHECKED" : "";
+        print qq{<INPUT type="radio" NAME="gid" VALUE="$row->{gid}" $checked />},
+          a({ -href => $row->{URL} }, $row->{genomeName} ),
+            " ", small("(" . $row->{gid} . ")"), br();
+      }
+      print p(submit(-name => "Analyze")),
+            end_form;
+      Finish();
+    } else {
+      print p("Sorry, no matching genomes were found.");
+    }
+    print p("Try", a({-href => "gapView.cgi?set=$set&gdb=$gdb"}, "another genome"));
+    Finish();
+  } elsif (!defined $orgsSpec) {
+    # Front page mode
+    start_page('title' => "Find gaps in $setDesc",
+               'banner' => $banner,
+               'bannerURL' => "gapView.cgi");
+    print
+      p("View gaps in",
+        a({-href => "gapView.cgi?set=$set&orgs=orgs35"}, "35 bacteria"),
+        "or choose a genome:"),
+      start_form(-method => 'get', -action => "gapView.cgi", -autocomplete => 'on'),
+      hidden(-name => 'set', -value => $set, -override => 1),
+      p("Genome database to search:",
+        popup_menu(-name => 'gdb', -values => \@gdbs, -labels => \%gdb_labels, -default => $gdbs[0])),
+      p(textfield(-name => 'gquery', -value => '', -size => 50, -maxlength => 200)),
+      p(small("Example:", a({-href => "gapView.cgi?gdb=NCBI&gquery=Desulfovibrio"}, "Desulfovibrio"))),
+      p(submit(-name => "findgenome", -value => 'Find Genome')),
+      end_form;
+    Finish();
+  }
+
+  $orgsSpec =~ m/^[a-zA-Z0-9._-]+$/ || die "Invalid orgs $orgsSpec";
+  my $orgpre = "../tmp/$orgsSpec/orgs";
   my $sumpre = "../tmp/$orgsSpec/$set.sum";
 
   # Wait up to 2 minutes
@@ -83,22 +157,21 @@ my $nCPU = 6;
       && stat("$sumpre.begin")->mtime >= time() - 2*60) {
     # Waiting mode
     start_page('title' => 'Analysis in progress',
-               'banner' => "Gap viewer for $setDesc (prototype)",
-               'bannerURL' => "gapView.cgi?orgs=$orgsSpec&set=$set");
+               'banner' => $banner,
+               'bannerURL' => "gapView.cgi");
     print
       p("Analysis of $setDesc is already underway. Please check",
         a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set"}, "here"),
-        "in a few seconds"),
-      end_html;
-    exit(0);
+        "in a few seconds");
+      Finish();
   }
 
   if (!-e "$sumpre.done" && !-e "$sumpre.begin") {
     # Computation mode
 
     start_page('title' => "Analyzing $setDesc",
-               'banner' => "Gap viewer for $setDesc (prototype)",
-               'bannerURL' => "gapView.cgi?orgs=$orgsSpec&set=$set");
+               'banner' => $banner,
+               'bannerURL' => "gapView.cgi");
     print "\n";
     unless (-e "$orgpre.org") {
       # Try to load the organism
@@ -212,7 +285,7 @@ my $nCPU = 6;
   my $nOrgs = scalar(@orgs);
   start_page('title' => $title,
              'banner' => $banner,
-             'bannerURL' => "gapView.cgi?orgs=$orgsSpec&set=$set");
+             'bannerURL' => "gapView.cgi");
   print "\n";
 
   my @orgsSorted = sort { $a->{genomeName} cmp $b->{genomeName} } @orgs;
@@ -232,7 +305,8 @@ my $nCPU = 6;
     print p(scalar(@path), "pathways");
     print start_ul;
     foreach my $path (@path) {
-      print li(a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=$path" }, $path));
+      print li(a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=$path" },
+                 $pathDesc{$path}));
     }
     print end_ul, "\n";
     # list genomes
@@ -653,41 +727,7 @@ my $nCPU = 6;
     li(a({-href => "$orgpre.faa"}, "Protein sequences"), "(fasta format)"),
     li(a({-href => "$orgpre.org"}, "Organisms"), "(tab-delimited)"),
     end_ul;
-  print <<END
-<h3>About the gap viewer</h3>
-<P>Each pathway is defined by a set of rules based on individual steps or genes. Candidates for each step are identified by using ublast against a database of characterized proteins or by using HMMer. Ublast hits may be split across two different proteins.
-<P>A candidate for a step is "high confidence" if either:
-<UL>
-<LI>ublast finds a hit at above 40% identity and 80% coverage, and bits >= other bits+10
-<LI>HMMer finds a hit with 80% coverage of the model, and either other identity < 40 or other coverage < 0.75
-</UL>
-where "other" refers to the best ublast hit to a sequence that is not annotated as performing this step (and is not "ignored").
-
-<P>Otherwise, a candidate is "medium confidence" if either:
-<UL>
-<LI>ublast finds a hit at above 40% identity and 70% coverage (ignoring otherBits)
-<LI>ublast finds a hit at above 30% identity and 80% coverage, and bits >= other bits
-<LI>HMMer finds a hit (regardless of coverage or other bits)
-</UL>
-<P>Other blast hits with at least 50% coverage are "low confidence."
-<P>Steps with no high- or medium-confidence candidates may be considered gaps.
-For the typical bacterium that can make all 20 amino acids, there are 1-2 gaps in amino acid biosynthesis pathways.
-Gaps may be due to:
-<UL>
-<LI>our ignorance of proteins' functions,
-<LI>omissions in the gene models,
-<LI>frame-shift errors in the genome sequence,
-<LI>or the organism lacks the pathway.
-</UL>
-
-<P>The gap viewer relies on the predicted proteins in the genome and does not search the six-frame translation. In most cases, you can search the six-frame translation by clicking on links to Curated BLAST for each step definition (in the per-step page).
-<center>by <A HREF="http://morgannprice.org/">Morgan Price</A>,
-<A HREF="http://genomics.lbl.gov/">Arkin group</A>,
-Lawrence Berkeley National Laboratory</center>
-END
-    ;
-  print end_html;
-  exit(0);
+  Finish();
 }
 
 sub RuleToScore($) {
@@ -793,4 +833,42 @@ sub LocusIdToFetchId($) {
   my ($locusId) = @_;
   $locusId = "lcl|" . $locusId if $locusId =~ m/^\d+$/;
   return $locusId;
+}
+
+sub Finish() {
+  print <<END
+<h3>About the gap viewer</h3>
+<P>Each pathway is defined by a set of rules based on individual steps or genes. Candidates for each step are identified by using ublast against a database of characterized proteins or by using HMMer. Ublast hits may be split across two different proteins.
+<P>A candidate for a step is "high confidence" if either:
+<UL>
+<LI>ublast finds a hit at above 40% identity and 80% coverage, and bits >= other bits+10
+<LI>HMMer finds a hit with 80% coverage of the model, and either other identity < 40 or other coverage < 0.75
+</UL>
+where "other" refers to the best ublast hit to a sequence that is not annotated as performing this step (and is not "ignored").
+
+<P>Otherwise, a candidate is "medium confidence" if either:
+<UL>
+<LI>ublast finds a hit at above 40% identity and 70% coverage (ignoring otherBits)
+<LI>ublast finds a hit at above 30% identity and 80% coverage, and bits >= other bits
+<LI>HMMer finds a hit (regardless of coverage or other bits)
+</UL>
+<P>Other blast hits with at least 50% coverage are "low confidence."
+<P>Steps with no high- or medium-confidence candidates may be considered gaps.
+For the typical bacterium that can make all 20 amino acids, there are 1-2 gaps in amino acid biosynthesis pathways.
+Gaps may be due to:
+<UL>
+<LI>our ignorance of proteins' functions,
+<LI>omissions in the gene models,
+<LI>frame-shift errors in the genome sequence,
+<LI>or the organism lacks the pathway.
+</UL>
+
+<P>The gap viewer relies on the predicted proteins in the genome and does not search the six-frame translation. In most cases, you can search the six-frame translation by clicking on links to Curated BLAST for each step definition (in the per-step page).
+<center>by <A HREF="http://morgannprice.org/">Morgan Price</A>,
+<A HREF="http://genomics.lbl.gov/">Arkin group</A>,
+Lawrence Berkeley National Laboratory</center>
+END
+    ;
+  print end_html;
+  exit(0);
 }
