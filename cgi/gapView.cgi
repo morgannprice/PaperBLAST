@@ -78,7 +78,7 @@ my $nCPU = 6;
   my %pathDesc = map { $_->{pathwayId} => $_->{desc} } @pathInfo;
 
   autoflush STDOUT 1; # show preliminary results
-  my $banner = "Gap viewer for $setDesc (prototype)";
+  my $banner = "Gap viewer for $setDesc";
 
   my @gdbs = ("NCBI", "IMG", "UniProt", "MicrobesOnline", "FitnessBrowser");
   my %gdb_labels1 = ("NCBI" => "NCBI assemblies",
@@ -136,13 +136,13 @@ my $nCPU = 6;
     print
       p("View gaps in",
         a({-href => "gapView.cgi?set=$set&orgs=orgs35"}, "35 bacteria"),
-        "or choose a genome:"),
+        "that grow in minimal media, or choose a genome to analyze:"),
       start_form(-method => 'get', -action => "gapView.cgi", -autocomplete => 'on'),
       hidden(-name => 'set', -value => $set, -override => 1),
       p("Genome database to search:",
         popup_menu(-name => 'gdb', -values => \@gdbs, -labels => \%gdb_labels, -default => $gdbs[0])),
       p(textfield(-name => 'gquery', -value => '', -size => 50, -maxlength => 200)),
-      p(small("Example:", a({-href => "gapView.cgi?gdb=NCBI&gquery=Desulfovibrio"}, "Desulfovibrio"))),
+      p(small("Example:", a({-href => "gapView.cgi?gdb=NCBI&gquery=Desulfovibrio vulgaris"}, "Desulfovibrio vulgaris"))),
       p(submit(-name => "findgenome", -value => 'Find Genome')),
       end_form;
     Finish();
@@ -714,7 +714,10 @@ my $nCPU = 6;
     a({ -href => "http://papers.genomics.lbl.gov/cgi-bin/genomeSearch.cgi?gdb=$orgs{$orgId}{gdb}&gid=$orgs{$orgId}{gid}" },
       "Curated BLAST against", $orgs{$orgId}{genomeName})
       if $orgId ne "";
-  push @links, a({-href => OrgToAssembly($orgId)->{URL} }, "Genome of $orgs{$orgId}{genomeName}")
+  push @links, join(" ",
+                    "Genome of ",
+                    a({-href => OrgToAssembly($orgId)->{URL} }, "$orgs{$orgId}{genomeName}"),
+                    "(" . OrgToAssembly($orgId)->{gid} . ") at $orgs{$orgId}{gdb}")
     if $orgId ne "";
   push @links, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set"}, "All $nOrgs genomes and all pathways")
     unless ($orgId eq "" && $pathSpec eq "") || @orgs == 1;
@@ -836,9 +839,11 @@ sub LocusIdToFetchId($) {
 }
 
 sub Finish() {
+  my $email = 'funwithwords26@gmail.com';
   print <<END
 <h3>About the gap viewer</h3>
 <P>Each pathway is defined by a set of rules based on individual steps or genes. Candidates for each step are identified by using ublast against a database of characterized proteins or by using HMMer. Ublast hits may be split across two different proteins.
+
 <P>A candidate for a step is "high confidence" if either:
 <UL>
 <LI>ublast finds a hit at above 40% identity and 80% coverage, and bits >= other bits+10
@@ -859,11 +864,15 @@ Gaps may be due to:
 <UL>
 <LI>our ignorance of proteins' functions,
 <LI>omissions in the gene models,
-<LI>frame-shift errors in the genome sequence,
-<LI>or the organism lacks the pathway.
+<LI>frame-shift errors in the genome sequence, or
+<LI>the organism lacks the pathway.
 </UL>
 
 <P>The gap viewer relies on the predicted proteins in the genome and does not search the six-frame translation. In most cases, you can search the six-frame translation by clicking on links to Curated BLAST for each step definition (in the per-step page).
+
+<P>If you notice any errors or omissions in the step descriptions, or any questionable results, please
+<A HREF="mailto:$email">let us know</A>.
+
 <center>by <A HREF="http://morgannprice.org/">Morgan Price</A>,
 <A HREF="http://genomics.lbl.gov/">Arkin group</A>,
 Lawrence Berkeley National Laboratory</center>
