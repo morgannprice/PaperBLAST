@@ -7,10 +7,10 @@ use Steps qw{WriteAssemblyAsOrgProteins WriteSixFrameAsOrgProteins};
 use FetchAssembly qw{CacheAssembly SetFitnessBrowserPath SetPrivDir};
 use pbutils qw{ReadFastaEntry};
 
-my $cachedir = "PaperBLAST/tmp";
-my $privdir = "PaperBLAST/private"; # for JGI access key
-my $febadata = "feba/cgi_data";
-my $usearch = "./usearch";
+my $cachedir = "$Bin/../tmp";
+my $privdir = "$Bin/../private"; # for JGI access key
+my $febadata = "$Bin/../fbrowse_data";
+my $usearch = "$Bin/usearch";
 
 my $usage = <<END
 ./buildorgs.pl -out prefix -orgs gdb1:gid1 ... gdbN:gidN
