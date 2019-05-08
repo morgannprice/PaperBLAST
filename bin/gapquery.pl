@@ -17,7 +17,6 @@ my $debug;
 
 {
   my $pbdir = "papers.data";
-  my $bindir = ".";
   my $tigrinfoFile = "tigrinfo";
   my $pfaminfoFile = "pfam.tab";
   my $tigrfile = "TIGRFAMs.hmm";
@@ -61,7 +60,6 @@ Also creates the HMM files in outdir.
 
 Optional arguments:
 -pbdir $pbdir -- data directory including litsearch.db and uniq.faa
--bin $bindir -- directory with executables for blast, usearch, hmmer
 -tigrinfo $tigrinfoFile -- tab-delimited file describing TIGRFams
 -pfaminfo $pfaminfoFile -- tab-delimited file describing PFams
 -pfamfile $pfamfile -- the indexed HMM database for PFam
@@ -74,7 +72,6 @@ END
   my $outdir;
   die $usage
     unless GetOptions('pbdir=s' => \$pbdir,
-                      'bin=s' => \$bindir,
                       'tigrinfo=s' => \$tigrinfoFile,
                       'pfaminfo=s' => \$pfaminfoFile,
                       'tigrfile=s' => \$tigrfile,
@@ -83,13 +80,13 @@ END
                       'dir=s' => \$outdir,
                       'debug' => \$debug)
       && defined $stepsfile && defined $outdir;
-  foreach my $dir ($pbdir, $bindir, $outdir) {
+  foreach my $dir ($pbdir, $outdir) {
     die "No such directory: $dir\n" unless -d $dir;
   }
   foreach my $file ($stepsfile, $tigrinfoFile, $pfaminfoFile, $tigrfile, $pfamfile) {
     die "No such file: $file\n" unless -e $file;
   }
-  my $hmmfetch = "$bindir/hmmer/hmmfetch";
+  my $hmmfetch = "$Bin/hmmfetch";
   foreach my $x ($hmmfetch) {
     die "No such executable: $x\n" unless -x $x;
   }
