@@ -651,6 +651,7 @@ my $nCPU = 6;
     li(a({-href => "$sumpre.steps"}, "Steps"), "(tab-delimited)"),
     li(a({-href => "$sumpre.rules"}, "Rules"), "(tab-delimited)"),
     li(a({-href => "$orgpre.faa"}, "Protein sequences"), "(fasta format)"),
+    li(a({-href => "$orgpre.org"}, "Organisms"), "(tab-delimited)"),
     end_ul;
   print <<END
 <h3>About the gap viewer</h3>
