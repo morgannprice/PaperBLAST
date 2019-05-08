@@ -3,7 +3,8 @@
 use strict;
 use Getopt::Long;
 use List::Util qw{min max};
-use lib "PaperBLAST/lib";
+use FindBin qw{$Bin};
+use lib "$Bin/../lib";
 use pbutils qw{ReadTable};
 use Steps qw{ReadSteps ReadOrgTable ReadOrgProtein ParseOrgLocus};
 
