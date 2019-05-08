@@ -204,11 +204,11 @@ my $nCPU = 6;
 
   my $title = $locusSpec ne "" ? "Aligments for a candidate for $step" : "Gaps";
   $title .= " for $pathDesc{$pathSpec}" if $pathSpec ne "" && $locusSpec eq "";
-  $title = "Finding step $step for $pathSpec"
+  $title = "Finding step $step for $pathDesc{$pathSpec}"
     if $step ne "" && $orgId ne "" && $pathSpec ne "" && $locusSpec eq "";
   $title .= " in $orgs{$orgId}{genomeName}"
     if $orgId ne "";
-  $title = "Pathway definition for $pathSpec" if $pathSpec ne "" && param("showdef");
+  $title = "Definition of $pathDesc{$pathSpec}" if $pathSpec ne "" && param("showdef");
   my $nOrgs = scalar(@orgs);
   start_page('title' => $title,
              'banner' => $banner,
@@ -315,7 +315,7 @@ my $nCPU = 6;
       push @tr, Tr({-valign => "top"},
                    td([a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$path",
                            -style => ScoreToStyle($pathScore),
-                           -title => $ruleScoreLabels[$pathScore] }, $path),
+                           -title => $pathDesc{$path } . " - " . $ruleScoreLabels[$pathScore] }, $path),
                        join(", ", @show)]));
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
@@ -646,7 +646,12 @@ my $nCPU = 6;
     unless ($orgId eq "" && $pathSpec eq "") || @orgs == 1;
   print h3("Links"), start_ul(), li(\@links), end_ul
     if @links > 0;
-
+  print h3("Downloads"), start_ul(),
+    li(a({-href => "$sumpre.cand"}, "Candidates"), "(tab-delimited)"),
+    li(a({-href => "$sumpre.steps"}, "Steps"), "(tab-delimited)"),
+    li(a({-href => "$sumpre.rules"}, "Rules"), "(tab-delimited)"),
+    li(a({-href => "$orgpre.faa"}, "Protein sequences"), "(fasta format)"),
+    end_ul;
   print <<END
 <h3>About the gap viewer</h3>
 <P>Each pathway is defined by a set of rules based on individual steps or genes. Candidates for each step are identified by using ublast against a database of characterized proteins or by using HMMer. Ublast hits may be split across two different proteins.
