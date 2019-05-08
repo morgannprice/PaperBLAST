@@ -1,0 +1,31 @@
+# BRENDA::Q4JDI4 is misannotated as 3-phosphoglycerate dehydrogenase instead of 3-phosphoglycerate kinase
+# (the curators were notified and report that they have corrected this)
+# CA265_RS09010 (A0A1X9ZCD3) from Pedobacter sp. GW460-11-11-14-LB5
+# is annotated as 3-phosphoglycerate dehydrogenase
+# and has auxotrophic phenotypes. In particular, mutants are partially rescued by glycine or serine.
+# Also it is adjacent to the putative serC.
+serA	3-phosphoglycerate dehydrogenase	EC:1.1.1.95	uniprot:A0A1X9ZCD3	ignore:BRENDA::Q4JDI4
+# MJ0959 (Y959_METJA) is phosphoserine transaminase, see PMID:17071763
+serC	3-phosphoserine aminotransferase	EC:2.6.1.52	uniprot:Y959_METJA
+# CA265_RS22635 (A0A1X9ZBA8_9SPHI) has a diverged serB and is auxotrophic. It also appears to be fused to 
+# diverged serA, but there is another serA (CA265_RS09010), so it may not be a functional dehydrogenase.
+# Echvi_2777 (L0G228_ECHVK) from Echinicola vietnamensis KMM 6221 is a diverged serB and is auxotrophic, rescued by serine.
+# It is fused to serA and probably provides that activity as well
+# (Ignore hits to serA because of serAB fusions.)
+serB	phosphoserine phosphatase	EC:3.1.3.3	uniprot:A0A1X9ZBA8_9SPHI	uniprot:L0G228_ECHVK	ignore_other:EC 1.1.1.95
+
+# MetaCyc lists a second biosynthetic pathway for L-serine,
+# involving 3-phosphoglycerate phosphatase (to glycerate)
+# and hydroxypyruvate reductase (in reverse, to hydroxypyruvate)
+# An aminotransferase (using either alanine or glycine) can then form L-serine.
+#
+# This pathway is known only in plants, and MetaCyc states that the
+# gene for the first step (EC 3.1.3.38) is not known. Alkaline
+# phosphatase from E. coli (phoA) is reported to be catalyze this reaction
+# (but has rather broad specificity).
+#
+# hydroxypyruvate reductase might be difficult to distinguish from
+# 3-phosphoglycerate dehydrogenase, and the key gene for the pathway
+# is not linked to sequence, so this pathway is not represented here.
+
+all: serA serC serB

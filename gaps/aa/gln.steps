@@ -1,0 +1,43 @@
+# (Assume that glutamate can be formed by transamination of alpha-ketoglutarate,
+# an interemdiate in the TCA cycle)
+
+# MetaCyc pathway L-glutamine biosynthesis I
+# A protein from Cupriavidus necator is reported to be a 3-hydroxylaminophenol mutase (see Swiss-Prot 3HAPM_CUPNJ),
+# involved in 3-nitrophenol degradation. That is the only glutamine synthetase-like protein
+# in the proteome of Cupriavidus necator (strain JMP 134 / LMG 1197) [see proteome UP000002697]
+# and is 96% identical to the essential protein RR42_RS12995 from Cupriavidus basilensis 4G11.
+# It is probably a glutamine synthetase.
+glnA	glutamine synthetase	EC:6.3.1.2	ignore_other:EC 5.4.4.3
+
+# MetaCyc pathway L-glutamine biosynthesis III also has glutamate as an intermediate
+
+# MetaCyc pathway glutaminyl-tRNA(Gln) biosynthesis via transamidation
+# Usually provided by a nondescriminating glutamyl-tRNA synthetase
+# CCNA_01982 (A0A0H3C8P5_CAUVN) from Caulobacter crescentus is the sole glutamyl-tRNA
+# synthetase, there is no glutaminyl-tRNA synthetase, and gatABC are present,
+# so we annotated it as non-discriminating. In contrast, as of March 2019, unirule
+# UR000075658 labeled it as EC 6.1.1.17 (the discriminating kind).
+gltX	glutamyl-tRNA(Glx) synthetase	EC:6.1.1.24	uniprot:A0A0H3C8P5_CAUVN
+
+# The amidotransferase often acts on both glutamyl-tRNA(Gln) and aspartyl-tRNA(Asn) --
+# do not try to distinguish.
+# (Also some organisms have gatDE, believed to form glutaminyl-tRNA only, so not relevant here.
+#  Also TIGRFam reports that some archaea are thought to have an asn-specific enzyme, but the genes are not known.)
+# Note there are no hits for some of these terms -- for some reason only gatB is annotated as a
+# aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit
+# Need to flag the metacyc entries separately because they have HTML tags in their descriptions
+gatA	glutamyl-tRNA(Gln) amidotransferase subunit A	hmm:TIGR00132	term:aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit A	term:glutamyl-tRNA(Gln) amidotransferase subunit A	curated:metacyc::MONOMER-13955	ignore_other:EC 6.3.5.7
+gatB	glutamyl-tRNA(Gln) amidotransferase subunit B	hmm:TIGR00133	term:aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit B	term:glutamyl-tRNA(Gln) amidotransferase subunit B	curated:metacyc::MONOMER-13956	ignore_other:EC 6.3.5.7
+gatC	glutamyl-tRNA(Gln) amidotransferase subunit C	hmm:TIGR00135	term:aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit C	term:glutamyl-tRNA(Gln) amidotransferase subunit C	curated:metacyc::MONOMER-13957	ignore_other:EC 6.3.5.7
+
+# And in some archaea, gatDE replaces gatABC for transamidation of glutamyl-tRNA
+gatD	glutamyl-tRNA(Gln) amidotransferase, subunit D	hmm:TIGR02153	ignore_other:EC 6.3.5.7
+gatE	glutamyl-tRNA(Gln) amidotransferase, subunit E	hmm:TIGR00134	ignore_other:EC 6.3.5.7
+
+transamidation: gatA gatB gatC
+transamidation: gatD gatE
+
+to_glutamine: glnA
+to_gln_tRNA: gltX transamidation
+all: to_glutamine
+all: to_gln_tRNA

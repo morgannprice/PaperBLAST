@@ -1,0 +1,51 @@
+### L-proline biosynthesis I (from glutamate)
+
+proB	glutamate 5-kinase	EC:2.7.2.11
+
+# to glutamate 5-semialdehyde, which spontaneously dehydrates to 1-pyrroline-5-carboxylate
+proA	gamma-glutamylphosphate reductase	EC:1.2.1.41
+
+# to proline
+proC	pyrroline-5-carboxylate reductase	EC:1.5.1.2
+
+### L-proline biosynthesis II (from arginine) is only known in eukaryotes
+# and is not described here
+
+### L-proline biosynthesis III (ornithine to glutamate semialdehyde) is only known
+# in eukaryotes and is not described here
+
+### L-proline biosynthesis IV (ornithine to 5-amino-2-oxopentanoate) is only known
+# in eukaryotes and is not described here. (Also it is not linked to genes.)
+
+# Some methanogens synthesize proline via ornithine cyclodeaminase (see PMID:11489875)
+# Unfortunately, the cyclodeaminase has only been linked to sequence in bacteria.
+# Ornithine is formed via the initial steps of common arginine synthesis pathways, argABCDE or argJBCDJ
+
+# Do not include N-succinylglutamate synthases from Bacteroidetes, as no N-succinylornithine hydrolase is known.
+# But do include the related protein Cabys_1732 (H1XRZ0_9BACT) which is reported to form
+# N-acetylglutamate (PMID:28265262).
+# Add BRENDA::A0A0H2X8L7 (described as argB, but also is argA) and also
+# N515DRAFT_3768 (A0A1I2DIM7), which is similar to ArgAB fusion proteins and is rescued by arginine.
+argA	N-acetylglutamate synthase	EC:2.3.1.1	uniprot:H1XRZ0_9BACT	curated:BRENDA::A0A0H2X8L7	uniprot:A0A1I2DIM7
+
+argB	N-acetylglutamate kinase	EC:2.7.2.8
+
+argC	N-acylglutamatylphosphate reductase	EC:1.2.1.38
+
+argD	N-acetylornithine aminotransferase	EC:2.6.1.11	ignore_other:EC 2.6.1.81
+
+# N515DRAFT_3767 (A0A1I2DJB5_9GAMM) is a putative argE, quite diverged (the closest characterized protein is 25% identity to E. coli argE)
+# Mutants are auxotrophic and rescued by arginine.
+# (Unfortunately this EC number also includes N-acetylcitrulline deacetylase)
+argE	N-acetylornithine deacetylase	EC:3.5.1.16	uniprot:A0A1I2DJB5_9GAMM	uniprot:Q8A1V9_BACTN	uniprot:A0A1X9Z8E1_9SPHI	uniprot:L0G443_ECHVK
+
+# CH_122594 lacks an EC number (not fully characterized), although it is likely to be ArgJ (50% identity to O94346)
+argJ	ornithine acetyltransferase	EC:2.3.1.35	ignore:CharProtDB::CH_122594
+
+cyclodeaminase	ornithine cyclodeaminase	EC:4.3.1.12
+
+ornithine: argA argB argC argD argE
+ornithine: argB argC argD argJ
+
+all: proB proA proC
+all: ornithine cyclodeaminase

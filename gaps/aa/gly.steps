@@ -1,0 +1,29 @@
+# MetaCyc glycine biosynthesis I is from serine
+# Some methanogens use tetrahydromethanopterin instead of tetrahydrofolate as the folate carrier
+# which is annotated as "Serine hydroxymethyltransferase" but with a different EC number
+glyA	serine hydroxymethyltransferase	EC:2.1.2.1	term:Serine hydroxymethyltransferase
+
+# MetaCyc glycine biosynthesis II from methylene-THF, CO2, and ammonia
+# is not listed because it is not clear that bacteria really
+# run this in reverse (although apparently budding yeast can)
+
+# MetaCyc glycine biosynthesis III from glyxoylate
+# I will assume that isocitrate is reachable
+# the key enzyme for forming glyoxylate is isocitrate lyase
+# Am a bit concerned that this will yield non-specific results
+aceA	isocitrate lyase	EC:4.1.3.1
+agx1	alanine--glyoxylate aminotransferase	EC:2.6.1.44
+
+# MetaCyc glycine biosynthesis IV from threonine
+gly1	L-threonine aldolase	EC:4.1.2.5	EC:4.1.2.48
+
+# Another pathway not listed is the formation of glycine from glycolate
+# as in Pelagibacter (see PMID:23096402). This is an unusual nutritional requirement.
+
+from_serine: glyA
+via_glyoxylate: aceA agx1
+from_threonine: gly1
+
+all: from_serine
+all: via_glyoxylate
+all: from_threonine

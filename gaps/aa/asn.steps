@@ -1,0 +1,42 @@
+# MetaCyc pathway L-asparagine biosynthesis I
+asnB	asparagine synthase (glutamine-hydrolysing)	EC:6.3.5.4
+
+# MetaCyc pathway L-asparagine biosynthesis II
+asnA	aspartate--ammonia ligase	EC:6.3.1.1
+
+# MetaCyc pathway L-asparagine biosynthesis III, tRNA-dependent
+
+# It is difficult to distinguish the "non-discriminatory" aspS2 from the discriminatory aspS-tRNA(Asp) synthetase
+# by similarity
+# Also the presence of gatABC is not sufficient to conclude that aspS2 is present because those genes are
+# also involved in tRNA-dependent synthesis of glutamine.
+# However, if aspargine synthase and asparginyl-tRNA synthetase (asnRS) are absent,
+# then we can conclude that the aspartyl-tRNA synthetase is non-discriminatory.
+# This is the basis for annotating CCNA_01969 (A0A0H3C7V8_CAUVN), Dshi_2633 (SYDND_DINSH), PGA1_c24530 (I7EPB8)
+#
+# In Desulfovibrio vulgaris (2 strains) and in Synechococcus, the situation is more complicated
+# -- there is an asnRS, but it is not essential, or even improtant for fitness in most conditions.
+# This also indicates the presence of the tRNA-dependent pathway.
+# (It is also doubtful whether any of those genomes encode asnB or asnA.)
+# This is the basis for annotating DvMF_2038 (B8DMM5_DESVM), DVU3367 (SYDND_DESVH), Synpcc7942_1313 (SYDND_SYNE7)
+#
+# (Also some organisms have gatDE, believed to form glutaminyl-tRNA only, so not relevant here,
+#  but TIGRFam suggests that gatD might replace gatB in some archaea -- so that should
+#  possibly be added.)
+aspS2	aspartyl-tRNA(Asp/Asn) synthetase	EC:6.1.1.23	uniprot:A0A0H3C7V8_CAUVN	uniprot:SYDND_DINSH	uniprot:I7EPB8	uniprot:B8DMM5_DESVM	uniprot:SYDND_DESVH	uniprot:SYDND_SYNE7
+
+# Need to flag the metacyc entries separately because they have HTML tags in their descriptions
+# There are no hits for some of these terms -- for some reason only gatB is annotated as a
+# aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit
+gatA	glutamyl-tRNA(Gln) amidotransferase subunit A	hmm:TIGR00132	term:aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit A	term:glutamyl-tRNA(Gln) amidotransferase subunit A	curated:metacyc::MONOMER-13955	ignore_other:EC 6.3.5.7
+gatB	glutamyl-tRNA(Gln) amidotransferase subunit B	hmm:TIGR00133	term:aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit B	term:glutamyl-tRNA(Gln) amidotransferase subunit B	curated:metacyc::MONOMER-13956	ignore_other:EC 6.3.5.7
+gatC	glutamyl-tRNA(Gln) amidotransferase subunit C	hmm:TIGR00135	term:aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit C	term:glutamyl-tRNA(Gln) amidotransferase subunit C	curated:metacyc::MONOMER-13957	ignore_other:EC 6.3.5.7
+
+transamidation: gatA gatB gatC
+
+to_asparagine: asnB
+to_asparagine: asnA
+to_asn_tRNA: aspS2 transamidation
+
+all: to_asparagine
+all: to_asn_tRNA

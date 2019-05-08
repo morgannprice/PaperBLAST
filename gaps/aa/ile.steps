@@ -1,0 +1,80 @@
+# MetaCyc L-isoleucine biosynthesis I (from threonine)
+# (Ignore some CharProtDB annotations with threonine deaminase but no EC)
+ilvA	threonine deaminase	EC:4.3.1.19	ignore_other:threonine deaminase
+# ilvIH (or ilvGM) is a two-subunit enzyme that forms acetolactate or acetohydroxybutanoate
+# BRENDA often annotates both subunits the same, so it is unclear which is which
+# CH_124129 and CH_123884 are probably correct but have limited data and vaguer annotations
+#
+ilvH	acetohydroxybutanoate synthase catalytic subunit	hmm:TIGR00118	term:acetohydroxy-acid synthase%large	term:acetohydroxy acid synthase%large	term:acetohydroxybutanoate synthase, catalytic subunit	term:acetohydroxybutanoate synthase, catalytic subunit	term:acetohydroxyacid synthase subunit B	ignore_other:EC 2.2.1.6	ignore:CharProtDB::CH_124219	ignore:CharProtDB::CH_123884
+
+# The isolated catalytic subunit has some activity so it's not clear if the regulatory
+# subunit should be required.
+ilvI	acetohydroxybutanoate synthase regulatory subunit 	hmm:TIGR00119	term:acetohydroxy-acid synthase%small	term:acetohydroxybutanoate synthase, regulatory subunit	ignore_other:EC 2.2.1.6
+# 
+# The three EC numbers correspond to different preferences for NAD(P)H as the cofactor;
+# the transformations to the carbon skeleton are the same.
+ilvC	2-hydroxy-3-ketol-acid reductoisomerase	EC:1.1.1.86	EC:1.1.1.382	EC:1.1.1.383
+# The ignored enzyme is involved in salinosporamide A biosynthesis but does a very similar reaction
+# and is >50% identical to N515DRAFT_0569, which is confirmed by fitness data to be biosynthetic
+ilvD	(R)-2,3-dihydroxy-3-methylpentanoate dehydratase	EC:4.2.1.9	ignore:metacyc::MONOMER-15882
+ilvE	isoleucine transaminase	EC:2.6.1.42
+
+oxobutanoate: ilvA
+
+# MetaCyc L-isoleucine biosynthesis II describes the formation of 2-oxobutanoate
+# via citramalate. The other steps are the same (although it gives a different
+# EC number for ilvC because of different cofactor preference)
+# The citramalate synthase from Leptopsira interrogans (LA_2350, NP_712531, or Q8F3Q1_LEPIN) has
+# been characterized biochemically but is not in the curated databases, see PMID:18498255
+cimA	(R)-citramalate synthase	EC:2.3.1.182	uniprot:Q8F3Q1_LEPIN
+
+# In leucine synthesis, LeuCD allows the dehydration of 2-isopropylmalate and hydration to 3-isopropylmalate
+# Similarly, many of these enzymes allow the isomerization of citramalate to 3-methylmalate via citraconate
+# Citramalate isomerase is usually given as  EC 4.2.1.35, as opposed to 4.2.1.33 for traditional leuCD.
+# However, in initial testing, all of the bacteria with the citramalate pathway appeared to have "typical" leuBCD
+# (Desulfovibrio vulgaris Hildenborough, Desulfovibrio vulgaris Miyazaki F,
+# Bacteroides thetaiotaomicron, Magnetospirillum magneticum AMB-1,
+# Synechococcus elongatus PCC 7942).
+# Also, ignore a 2,3-methylmalate dehydratase (Q0QLE2,Q0QLE1) which is >50% identical to
+# leuCD from DvH (DVU2982,DVU2983)
+# And ignore some BRENDA annotations without subunit information
+# And, DvH leuC (DVU2982) has similarity to both LeuC and to homoaconitase, and fitness data confirms
+# its role in amino acid biosynthesis, so explicitly include it
+leuC	citramalate isomerase large subunit	term:citramalate isomerase large subunit	term:3-isopropylmalate dehydratase large subunit	term:3-isopropylmalate dehydratase%LeuC	hmm:TIGR00170	hmm:TIGR02083	hmm:TIGR02086	ignore:SwissProt::Q0QLE2	ignore_other:EC 4.2.1.33	ignore_other:EC 4.2.1.35	uniprot:LEUC_DESVH
+leuD	citramalate isomerase small subunit	term:citramalate isomerase small subunit	term:3-isopropylmalate dehydratase small subunit	term:3-isopropylmalate dehydratase%LeuD	hmm:TIGR00171	hmm:TIGR02084	hmm:TIGR02087	ignore:SwissProt::Q0QLE1	ignore_other:EC 4.2.1.33	ignore_other:EC 4.2.1.35
+# The dehydrogenase is encoded by a leuB-type enzyme.
+# Similarly as for leuCD, any 3-isopropylmalate dehydrogenase should be assumed to be capable of this reaction
+leuB	3-methylmalate dehydrogenase	EC:1.1.1.85	EC:1.1.1.n5
+
+oxobutanoate: cimA leuC leuD leuB
+
+# MetaCyc L-isoleucine biosynthesis III describes the formation of
+# 2-oxobutanoate from glutamate via glutamate mutase.  It is not
+# included because the first step (glutamate mutase, EC 5.4.99.1)
+# has not been linked to sequence and because no organism has been
+# demonstrated to rely on this pathway to form oxobutanoate.
+
+# MetaCyc L-isoleucine biosynthesis IV describes the formation of
+# 2-oxobutanoate from propionate. Some of these organisms are
+# fermentative and may form propionate as an end product; others may
+# only be able to use this pathway if propionate is provided.
+# So it is not always clear if it could be the main pathway to
+# 2-oxobutanoate.
+# 
+prpE	propionyl-CoA synthetase	term:propionyl-CoA synthetase	term:propionate--CoA ligase	EC:6.2.1.17
+# The key reaction is alpha-ketobutyrate synthase or
+# 2-oxobutanoate:ferredoxin oxidoreductase (in reverse)
+# These are heterodimeric enzymes and the only one mentioned by MetaCyc is
+# an enzyme from Sulfolobus tokodaii 7 that includes ST2300 (alpha subunit, OFOA_SULSP).
+# The beta subunit is OFOB_SULSP (but metacyc seems not to know this).
+# Some related enzymes also are believed to do this
+ofoa	2-oxobutanoate:ferredoxin oxidoreductase, alpha subunit	uniprot:OFOA1_SULTO	uniprot:OFOA_SULSP	uniprot:OFOA_SACSO	uniprot:OFOA2_SULTO	uniprot:OFOA1_AERPE	uniprot:OFOA2_AERPE
+ofob	2-oxobutanoate:ferredoxin oxidoreductase, beta subunit	uniprot:OFOB1_SULTO	uniprot:OFOB_SULSP	uniprot:OFOB_SACSO	uniprot:OFOB2_SULTO	uniprot:OFOB1_AERPE	uniprot:OFOB2_AERPE
+
+oxobutanoate: prpE ofoa ofob
+
+# MetaCyc L-isoleucine biosynthesis V describes biosynthesis from 2-methylbutanoate, which
+# is a fermentation end product in the rumen. This is an anusual precursor
+# so I did not include it.
+
+all: oxobutanoate ilvI ilvH ilvC ilvD ilvE

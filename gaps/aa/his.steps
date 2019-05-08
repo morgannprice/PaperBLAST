@@ -1,0 +1,17 @@
+#Steps:
+prs	ribose-phosphate diphosphokinase	EC:2.7.6.1
+hisG	ATP phosphoribosyltransferase	EC:2.4.2.17
+# Genetic evidence suggests that DVU1186 = Q72CU7_DESVH is phosphoribosyl-ATP pyrophosphatase
+# CH_123581 probably does all three: hisD, hisE, and hisI
+hisI	phosphoribosyl-ATP pyrophosphatase	EC:3.6.1.31	uniprot:Q72CU7_DESVH	ignore:CharProtDB::CH_123581
+hisE	phosphoribosyl-AMP cyclohydrolase	EC:3.5.4.19	hmm:PF01502	ignore:CharProtDB::CH_123581
+hisA	isomerase HisA	EC:5.3.1.16
+hisF	IGP synthase, cyclase subunit	term:hisF	hmm:TIGR00735
+hisH	IGP synthase, amidotransferase subunit	term:hisH	hmm:TIGR01855
+hisB	IGP dehydratase	EC:4.2.1.19
+hisC	histidinol-phosphate aminotransferase	EC:2.6.1.9
+hisN	histidinol-phosphate phosphatase	EC:3.1.3.15
+hisD	histidinol dehydrogenase	EC:1.1.1.23	ignore:CharProtDB::CH_123581
+
+#Rules:
+all: prs hisG hisI hisE hisA hisF hisH hisB hisC hisN hisD

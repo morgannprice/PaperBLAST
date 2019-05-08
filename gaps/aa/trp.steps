@@ -1,0 +1,55 @@
+# MetaCyc only lists one pathway for tryptophan biosynthesis,
+# from chorismate, glutamine, 5-phosphoribose-1-diphosphate, and serine
+
+# These are also referred to as alpha/beta or component 1/2 or I/II
+# Note that E. coli TrpD is fused to anthranilate phosphoribosyltransferase
+# but that is described separately.
+# Note that some related proteins have EC 2.6.1.85 which should perhaps be ignored
+# BT0532 (Q8AAD3_BACTN) and CA265_RS22890 (A0A1X9ZB07_9SPHI) are also component I
+# Similarly for DVU0465 (Q72EV3_DESVH) and DvMF_1746 (B8DM47_DESVM)
+
+trpE	anthranilate synthase subunit TrpE	hmm:TIGR00564	hmm:TIGR00565	hmm:TIGR01820	term:anthranilate synthase component 1	term:anthranilate synthase component I	term:anthranilate synthase alpha subunit	uniprot:Q8AAD3_BACTN	uniprot:A0A1X9ZB07_9SPHI	uniprot:Q72EV3_DESVH	uniprot:B8DM47_DESVM	ignore_other:EC 4.1.3.27
+
+# TIGR00566 also matches the amidotransferase component of para-aminobenzoate synthase,
+# and some proteins are components of both anthranilate synthase and 4-amino-4-deoxychorismate synthase (EC 2.6.1.85)
+# BT0531 (Q8AAD4_BACTN) and CA265_RS22895 (A0A1X9ZDE4_9SPHI) are also component II
+# Similarly for DVU0466 (Q72EV2_DESVH) and DvMF_1745 (B8DM46_DESVM)
+trpD_1	glutamine amidotransferase of anthranilate synthase	hmm:TIGR00566	term:anthranilate synthase component 2	term:anthranilate synthase component II	term:anthranilate synthase beta subunit	uniprot:Q8AAD4_BACTN	uniprot:A0A1X9ZDE4_9SPHI	uniprot:Q72EV2_DESVH	uniprot:B8DM46_DESVM	ignore_other:EC 4.1.3.27	ignore_other:EC 2.6.1.85
+
+# Often fused to anthranilate synthase so ignore that (i.e., P00500 is labeled in BRENDA as
+# a subunit of anthranilate synthase; it is probably anthranilate phosphoribosyltransferase as well)
+trpD_2	anthranilate phosphoribosyltransferase	EC:2.4.2.18	ignore_other:EC 4.1.3.27
+
+# Some alphaproteobacteria have a single-protein anthranilate synthase
+trpED	anthranilate synthase, alpha proteobacterial clade	hmm:TIGR01815	ignore_other:EC 4.1.3.27
+
+# Some bacteria have a bifunctional phosphoribosylanthranilate isomerase (EC 5.3.1.24)
+# and isomerase in histidine biosynthesis ("hisA", EC 5.3.1.16), i.e. see P16250.
+# (In both reactions a N-modified-1-amino-ribofuranose-5-phosphate rearranges to a
+#  linear N-modified-1-amino-ribulose-5-phosphate)
+# So if a plausible hisA is present, do not assert that this is missing
+# In Bacteroides thetaiotaomicron, BT0528 (Q8AAD7_BACTN) has a PRAI domain (PF00697), is auxotrophic,
+# and clusters with trp synthesis genes
+# Similarly, annotate CCNA_03659 (A0A0H3CC53_CAUVN), SMc02767 (TRPF_RHIME), Ga0059261_0237 (A0A1L6JC25_9SPHN)
+# Sometimes known as trpF or as part of trpC (if fused to IGPS)
+PRAI	phosphoribosylanthranilate isomerase	EC:5.3.1.24	uniprot:Q8AAD7_BACTN	uniprot:A0A0H3CC53_CAUVN	uniprot:TRPF_RHIME	uniprot:A0A1L6JC25_9SPHN	ignore_other:EC 5.3.1.16
+
+# Sometimes fused to anthranilate synthase subunits or known as trpC (if fused to PRAI).
+# Ignore BRENDA::P24920 because annotated as phosphoribosylanthranilate isomerase but is also believed to be IGPS.
+# And based on presence in Trp clusters and auxotrophic or cofit phenotypes, annotate somewhat diverged IGPS:
+# HP15_3291 (E4PQZ8_MARAH), DvMF_1743 (B8DM44_DESVM), BT0529 (TRPC_BACTN),
+# AZOBR_RS07450 (G8AL05_AZOBR), Pf1N1B4_2549 (A0A166NT80_PSEFL), AO353_07210 (A0A0N9WG05_PSEFL)
+IGPS	indole-3-glycerol phosphate synthase	EC:4.1.1.48	uniprot:E4PQZ8_MARAH	uniprot:B8DM44_DESVM	uniprot:TRPC_BACTN	uniprot:G8AL05_AZOBR	uniprot:A0A166NT80_PSEFL	uniprot:A0A166NT80_PSEFL	ignore_other:EC 4.1.3.27	ignore:BRENDA::P24920
+
+# This reaction is 4.1.2.8 by itself or part of 4.2.1.20
+trpA	indoleglycerol phosphate aldolase	hmm:TIGR00262	ignore_other:EC 4.2.1.20	ignore_other:EC 4.1.2.8
+
+# Some members of TIGR01415 might also have this activity
+# The family also includes indole-scavenging "trpB-2" proteins, whose presence generally indicates
+# tryptophan synthesis (EC 4.2.1.122)
+trpB	tryptophan synthase	hmm:TIGR00263	ignore_other:EC 4.2.1.20	ignore_other:EC 4.2.1.122
+
+trp_synthase: trpE trpD_1
+trp_synthase: trpED
+
+all: trp_synthase trpD_2 PRAI IGPS trpA trpB

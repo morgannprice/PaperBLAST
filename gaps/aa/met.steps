@@ -1,0 +1,123 @@
+#Steps
+# Derived from metacyc biosynthesis I, II, III, and IV
+# (IV is the DUF39 or anaerobic pathway; MetaCyc calls it "archaeal",
+#  but there is genetic evidence for it in Desulfovibrio)
+# Not represented here is the formation of methyl-THF (in most
+# bacteria) or methyl-corrinoid proteins (in methanogens) as the methyl donor
+# for methionine synthase.
+
+# The classical pathways, with either direct sulfuration or transsulfuration of activated homoserine
+# (metB requires cysteine)
+asp_kinase	aspartate kinase	EC:2.7.2.4
+asd	asparate semi-aldehyde dehydrogenase	EC:1.2.1.11
+
+# Ga0059261_2711 from Sphingomonas koreensis DSMZ 15582 is distant from characterized homoserine dehydrogenases
+# and is confirmed by the fitness browser. It is identical to A0A1L6J6Q3 in UniProt.
+# It has been updated in the reannotations so need not be mentioned here.
+# BT2403 from Bacteroides thetaiotaomicron (Q8A541_BACTN) is a fusion of asparate kinase and homoserine dehydrogenase.
+# The homoserine dehydrogenase portion is somewhat diverged. Its role is confirmed by strong cofitness with
+# threonine synthase (the defined media for B. thetaiotaomicron included methionine)
+# DvMF_1412 from Desulfovibrio vulgaris Miyazaki F (B8DRS3_DESVM) is a somewhat diverged homoserine dehydrogenase
+# It has auxotrophic phenotypes.
+hom	homoserine dehydrogenase	EC:1.1.1.3	uniprot:A0A1L6J6Q3	uniprot:Q8A541_BACTN	uniprot:B8DRS3_DESVM
+
+# As discussed in Bastard et al (below), many homologs of MetA family are
+# actually homoserine O-acetyltransferases, and many homologs of MetX
+# are actually homoserine O-succinyltransferases.  Fortunately, a many
+# homologs of both types have been curated in Swiss-Prot.
+metA	homoserine O-succinyltransferase	EC:2.3.1.46
+# MetX is often found alongside a methyltransferase-like protein MetW.
+# Because MetW is not consistently required for MetX's activity, it is not included here.
+metX	homoserine O-acetyltransferase	EC:2.3.1.31
+
+# Details on MetW: Bastard et al 2017 (28581482) briefly mention that
+# MetX proteins lacked activity when expressed in E. coli unless MetW
+# was cloned along with it. They purified MetX by adding an N-terminal
+# hexahistidine tag, MetW would not necessarily be purified along with
+# it. Most likely, MetW is either modifying MetX and improving its
+# activity, or forming a complex with MetX and stabilizing it.  Mutant
+# fitness data for MetW from various Proteobacteria shows that MetW is
+# not be required for MetX activity (see Herbaspirillum seropedicae or
+# Cupriavidus necator). In other organisms, MetW mutants have milder
+# phenotypes than MetX mutants, or MetX mutants do not have a defect
+# in some conditions, which suggests that MetW is only sometimes
+# required (Burkholderia phytofirmans, Acidovorax 3H11, Dechlorosoma
+# suillum PS, Marinobacter adhaerens). This might suggest that any
+# modification has a regulatory role. In many other organisms, there
+# is tight cofitness between MetX and MetW, suggesting that MetW is
+# required for MetX's activity (Paraburkholderia bryophila, many
+# Pseudomonas, Caulobacter crescentus, or Sphingomonas koreensis).
+
+hom_kinase	homoserine kinase	EC:2.7.1.39
+metB	cystathionine gamma-synthase	EC:2.5.1.48
+metC	cystathionine beta-lyase	EC:4.4.1.13	
+metY	O-acetylhomoserine sulfhydrylase	EC:2.5.1.49	ignore_other:O-succinylhomoserine sulfhydrylase
+
+# No EC number for metZ, so use "O-succinylhomoserine sulfhydrylase", which matches METZ_PSEAE and METZ_MYCTU
+# Two related proteins, Ac3H11_2452 (A0A165KUI5_9BURK) and HSERO_RS16440 (D8J1Y3_HERSS)
+# are diverged metZ -- strongly cofit with homoserine succinyltransferases and similar to either
+# sulfhydrylases or methionine gamma-lyase (but the latter function would not explain their phenotype)
+metZ	O-succinylhomoserine sulfhydrylase	term:O-succinylhomoserine sulfhydrylase	ignore_other:EC 2.5.1.49	uniprot:A0A165KUI5_9BURK	uniprot:D8J1Y3_HERSS
+
+metE	vitamin B12-independent methionine synthase	EC:2.1.1.14
+
+# MetH occasionaly oxidizes the vitamin B12 cofactor from Co(I) to Co(II), so
+# a reductase is needed to maintain its activity.
+# In E. coli and many other bacteria, the MetH protein includes a reactivation domain (PF02965),
+# but other ATP-dependent (ramA-like) activation proteins are also thought to exist.
+# These are sometimes annotated with this EC number.
+# And in Phaeobacter and some related bacteria, MetH is split into 3 parts; also ignore the accessory proteins
+# (putatively for B12 reactivation)
+# Desulfovibrio have a somewhat diverged MetH, without the activation domain, but confirmed by
+# cofitness (DVU1585 or Q72BP9_DESVH is cofit with MetF; DvMF_0476 or B8DKK4_DESVM is cofit with a RamA-
+# like activation prtoein)
+metH	vitamin B12-dependent methionine synthase	EC:2.1.1.13	ignore:reanno::Phaeo:GFF1501	ignore:reanno::Phaeo:GFF1318	ignore:reanno::Phaeo:GFF1321	ignore:reanno::Phaeo:GFF1319	ignore:reanno::Phaeo:GFF1582	uniprot:Q72BP9_DESVH	uniprot:B8DKK4_DESVM
+split_metH_1	Methionine synthase component, B12 binding and B12-binding cap domains	curated:reanno::Phaeo:GFF1319
+split_metH_2	Methionine synthase component, methyltransferase domain	curated:reanno::Phaeo:GFF1321
+split_metH_3	Methionine synthase component, pterin-binding domain	curated:reanno::Phaeo:GFF1582
+
+# Ignore MetH, as that often contains the reactivation domain and creates confusion when checking for reverse hits
+B12_reactivation_domain	MetH reactivation domain	hmm:PF02965	ignore_other:EC 2.1.1.13
+
+# As of April 2019, all characterized members of the RamA family or PF14574 are involved in the reactivation
+# of co(II)balamin. This includes RamA (B8Y445), DvMF_1398, PGA1_c15200, and ELI_0370 (part of a O-demethylase)
+# Many bacteria contain MetH and probably rely on a distant homolog of RamA for reactivationof B-12
+# PF14574 describes only the C-terminal putative ATPase domain of RamA, but no other functions are known.
+#	http://papers.genomics.lbl.gov/cgi-bin/hmmSearch.cgi?hmmId=PF14574
+B12_reactivation_RamA	ATP-dependent reduction of co(II)balamin	hmm:PF14574	term:ATP-dependent reduction of co(II)balamin
+
+# reductive sulfuration of aspartate semi-aldehyde
+# MA1821 or DvMF_1464
+asd_S_transferase	sulfuration of L-asparate semialdehyde, persulfide component	uniprot:Q8TPT4_METAC	curated:reanno::Miya:8500721
+# MA1822 or DvMF_0262
+asd_S_ferredoxin	reductive sulfuration of L-asparate semialdehyde, ferredoxin component	uniprot:Q8TPT3_METAC	curated:reanno::Miya:8499492
+#  The persulfide forming component is not 100% required in Methanosarcina acetivorans (possible redundancy)
+# MA1715 or DvMF_0044
+asd_S_perS	putative persulfide forming protein	uniprot:Y1715_METAC	curated:reanno::Miya:8499265
+
+# Methanogens have a short homolog of MetE that transfers methyl groups to methionine.
+# The physiological donor is suspected to be a corrinoid protein (see PMID:10469143)
+# but this is not proven. 
+# We also suspect that this pathway is how Dehalococcoides form methionine, with CoFeSP as the
+# corrinoid protein, but that is not proven.
+# (And Dehalococcoides short metE is highly divergent from the methanogen protein)
+metE'	Methylcobalamin:homocysteine methyltransferase	term:Methylcobalamin:homocysteine methyltransferase
+
+#Rules
+asparate_semialdehyde: asp_kinase asd
+asd_S: asd_S_transferase asd_S_ferredoxin asd_S_perS
+homoserine: asparate_semialdehyde hom
+transsulfuration: metA metB metC
+transsulfuration: metX metB metC
+transsulfuration: hom_kinase metB metC
+homocysteine: asparate_semialdehyde asd_S
+homocysteine: homoserine metX metY
+homocysteine: homoserine metA metZ
+homocysteine: homoserine transsulfuration
+B12_reactivation: B12_reactivation_domain
+B12_reactivation: B12_reactivation_RamA
+methionine_synthase: metH B12_reactivation
+methionine_synthase: split_metH_1 split_metH_2 split_metH_3 B12_reactivation
+methionine_synthase: metE' B12_reactivation
+methionine_synthase: metE
+all: homocysteine methionine_synthase 

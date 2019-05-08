@@ -1,0 +1,95 @@
+### lysine biosynthesis I (via DAP and succinylated intermediates)
+# from aspartate and pyruvate (and glutamate as amino group donor)
+
+asp_kinase	aspartate kinase	EC:2.7.2.4
+
+asd	asparate semi-aldehyde dehydrogenase	EC:1.2.1.11
+
+dapA	4-hydroxy-tetrahydrodipicolinate synthase	EC:4.3.3.7
+
+# Formerly known as dihydrodipicolinate reductase
+# Echvi_2395 (L0G028_ECHVK) and CA265_RS15670 (A0A1X9Z7Q6_9SPHI) are somewhat diverged,
+# but conserved essentiality confirms they are dapB
+dapB	4-hydroxy-tetrahydrodipicolinate reductase	EC:1.17.1.8	uniprot:L0G028_ECHVK	uniprot:A0A1X9Z7Q6_9SPHI
+
+# Formerly known as 2,3,4,5-tetrahydropyridine-2-carboxylate N-succinyltransferase
+dapD	tetrahydrodipicolinate succinylase	EC:2.3.1.117
+
+# 2.6.1.52 is the EC number for 3-phosphoserine aminotransferase (serC), which catalyzes
+# this reaction in E. coli
+dapC	N-succinyldiaminopimelate aminotransferase	EC:2.6.1.17	EC:2.6.1.52
+
+dapE	succinyl-diaminopimelate desuccinylase	EC:3.5.1.18
+
+# L,L-diaminopimelate to meso-diaminopimelate
+dapF	diaminopimelate epimerase	EC:5.1.1.7
+
+lysA	diaminopimelate decarboxylase	EC:4.1.1.20
+
+### lysine biosynthesis II (via DAP and aceylated intermediates)
+# The same as pathway I except for tetrahydrodipicolinate => L,L-diaminopimelate
+# which involves dapHXL instead of dapDCE
+
+# Also known as ykuQ
+dapH	tetrahydrodipicolinate acetyltransferase	EC:2.3.1.89
+
+# Also known as patA
+dapX	acetyl-diaminopimelate aminotransferase	uniprot:DAPX_BACSU
+
+# Also known as ykuR
+dapL	N-acetyl-diaminopimelate deacetylase	EC:3.5.1.47
+
+### lysine biosynthesis III (via DAP, no blocking group)
+# The same as pathways I/II except for tetrahydrodipicolinate => meso-diaminopimelate
+# which proceeds in one step
+
+ddh	meso-diaminopimelate D-dehydrogenase	EC:1.4.1.16
+
+###  lysine biosynthesis VI (via DAP, direct aminotransferase)
+# The same as pathways I-II except for tetrahydrodipicolinate => L,L-diaminopimelate
+# which proceeds in one step
+
+DAPtransferase	L,L-diaminopimelate aminotransferase	EC:2.6.1.83
+
+#### Lysine biosynthesis IV, via 2-aminoadipate and saccharopine,
+# is only reported to occur in eukaryotes and is not described here
+
+### Lysine biosynthesis V, via 2-aminoadipate and LysW carrier protein
+
+# forming (2R)-homocitrate
+hcs	homocitrate synthase	EC:2.3.3.14
+
+# (2R)-homocitrate to (1R,2S)-homoisocitrate via cis-homoaconitate
+lysT	homoaconitase large subunit	term:homoaconitase large subunit	ignore_other:EC 4.2.114	ignore_other:EC 4.2.1.36
+lysU	homoaconitase small subunit	term:homoaconitase small subunit	ignore_other:EC 4.2.1.114	ignore_other:EC 4.2.1.36
+
+# to 2-oxoadipate. This rule also matches some isocitrate/homoisocitrate dehydrogenases (1.1.1.286)
+# which often have multiple subunits in eukaryotes; this is not represented here.
+hicdh	homo-isocitrate dehydrogenase	EC:1.1.1.87	EC:1.1.1.286
+
+# to 2-aminoadipate
+lysN	2-aminoadipate:2-oxoglutarate aminotransferase	EC:2.6.1.39
+
+# the carrier protein
+lysW	2-aminoadipate carrier protein	term:alpha-aminoadipate%carrier
+
+lysX	2-aminoadipate-LysW ligase	EC:6.3.2.43
+
+lysZ	[LysW]-2-aminoadipate 6-kinase	term:[LysW]-aminoadipate kinase	term:[LysW]-aminoadipate/[LysW]-glutamate kinase
+
+lysY	[LysW]-2-aminoadipate 6-phosphate reductase	term:[LysW]-L-2-aminoadipate 6-phosphate reductase	term:[LysW]-L-2-aminoadipate/[LysW]-L-glutamate phosphate reductase
+
+lysJ	[LysW]-2-aminoadipate semialdehyde transaminase	term:[LysW]-aminoadipate semialdehyde transaminase	term:[LysW]-aminoadipate semialdehyde/glutamate semialdehyde transaminase
+
+lysK	[LysW]-lysine hydrolase	term:[LysW]%lysine%hydrolase	term:2-aminoadipate carrier protein%hydrolase	term:LysW%lysine hydrolase
+
+
+meso-DAP: asp_kinase asd dapA dapB dapD dapC dapE dapF
+meso-DAP: asp_kinase asd dapA dapB dapH dapX dapL dapF
+meso-DAP: asp_kinase asd dapA dapB ddh
+meso-DAP: asp_kinase asd dapA dapB DAPtransferase dapF
+
+lysW_pathway: hcs lysT lysU hicdh lysN lysW lysX lysZ lysY lysJ lysK
+
+all: meso-DAP lysA
+all: lysW_pathway

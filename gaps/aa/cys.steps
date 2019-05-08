@@ -1,0 +1,64 @@
+# MetaCyc L-cysteine biosynthesis I: from serine
+
+# Desulfovibrios have a somewhat diverged serine O-acetyltransferase.
+# DVU0662 (Q72EB6_DESVH) and DvMF_2657 (B8DIT5_DESVM) are both essential which suggests that they are correctly annotated
+cysE	serine acetyltransferase	EC:2.3.1.30	uniprot:Q72EB6_DESVH	uniprot:B8DIT5_DESVM
+
+# E. coli also has cysM (same EC number)
+cysK	O-acetylserine sulfhydrylase	EC:2.5.1.47
+
+from_serine: cysE cysK
+
+# Variant with succinylated intermediates (Bastard et al. 2017;  https://doi.org/10.1038/nchembio.2397)
+# The EC number for these corresponds to homoserine O-succinyltransferase so do not use that
+SST	serine O-succinyltransferase	term:serine O-succinyltransferase
+# The O-succinylserine sulfhydrylase is not known but is expected to be similar to cysK
+from_serine: SST cysK
+
+# MetaCyc L-cysteine biosynthesis II (tRNA-dependent)
+sepS	O-phosphoseryl-tRNA ligase	EC:6.1.1.27
+pscS	Sep-tRNA:Cys-tRNA synthase	EC:2.5.1.73
+from_phosphoserine: sepS pscS
+
+# MetaCyc L-cysteine biosynthesis III: reverse transsulfuration from serine + homocysteine
+CBS	cystathionine beta-synthase	EC:4.2.1.22
+# 4.4.1.1 includes some other reactions
+CGL	cystathionine gamma-lyase	term:cystathionine gamma-lyase
+from_serine_homocysteine: CBS CGL
+
+# There is no pathway IV
+
+# MetaCyc L-cysteine biosynthesis V (protein-bound thiocarboxylates)
+Mt_cysM	CysO-thiocarboxylate-dependent cysteine synthase	EC:2.5.1.113
+mec	[CysO sulfur-carrier protein]-S-L-cysteine hydrolase	EC:3.13.1.6
+moeZ	[sulfur carrier protein CysO]--sulfur ligase	curated:metacyc::G185E-7476-MONOMER
+cysO	sulfur carrier protein CysO	curated:SwissProt::P9WP33
+from_phosphoserine: Mt_cysM mec moeZ cysO
+
+# L-cysteine biosynthesis VI from serine + methionine
+# is not (as far as I know) found in prototrophic bacteria, so ignore.
+# (It is found in H. pylori, which lacks biosynthesis of homocysteine or methionine.)
+# Also it is a supserset of the reactions in biosynthesis III, from serine + homocysteine
+#metK	methionine adenosyltransferase	EC:2.5.1.6
+# SAM => S-adenosyl-homocysteine is catalyzed by many methyltransferases, do not represent
+#mqnB	adenosylhomocysteine nucleosidase	EC:3.2.2.9
+#luxS	S-ribosylhomocysteine lyase	EC:4.4.1.21
+# and CBS and CGL are defined above
+#from_methionine: metK mqnB luxS CBS CGL
+
+# L-cysteine biosynthesis VII is from sulfocysteine, an uncommon precursor, so do not include
+
+# L-cysteine biosynthesis VIII via serine kinase
+# Note this is a superset of the reactions in pathway IX below
+serK	serine kinase (ADP-dependent)	uniprot:Q5JD03
+# PSSH is similar to cysK or Mt_cysM so may need ignore clauses?
+PSSH	O-phosphoserine sulfhydrylase	EC:2.5.1.65
+from_serine: serK PSSH
+
+# L-cysteine biosynthesis IX is also from phosphoserine
+# Do not include the 1st two steps that are part of serine biosynthesis
+from_phosphoserine: PSSH
+
+all: from_serine
+all: from_phosphoserine
+all: from_serine_homocysteine
