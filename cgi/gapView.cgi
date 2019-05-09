@@ -60,6 +60,7 @@ my $nCPU = 6;
 
 {
   FetchAssembly::SetFitnessBrowserPath("../fbrowse_data");
+  FetchAssembly::SetPrivDir("../private");
 
   my $set = param("set") || "aa";
   $set =~ m/^[a-zA-Z0-9._-]+$/ || die "Invalid set $set";
