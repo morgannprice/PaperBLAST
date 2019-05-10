@@ -294,6 +294,7 @@ my $nCPU = 6;
 
   my @links = ();     # a list of items to put inside li at the bottom
   if ($pathSpec ne "" && param("showdef")) {
+    # show the definition of this pathway
     my $stfile = "$stepPath/$pathSpec.steps";
     open (my $fh, "<", $stfile) || die "No such file: $stfile\n";
     my @lines = <$fh>;
@@ -367,8 +368,10 @@ my $nCPU = 6;
     my @all = grep { $_->{orgId} eq $orgId && $_->{rule} eq "all" } @sumRules;
     my %all = map { $_->{pathway} => $_ } @all;
     my @sumSteps = ReadTable("$sumpre.steps", qw{orgId gdb gid step score locusId sysName});
+    @sumSteps = grep { $_->{orgId} eq $orgId } @sumSteps;
     my %sumSteps = (); # pathway => step => summary
     foreach my $st (@sumSteps){
+      die if exists $sumSteps{$st->{pathway}}{$st->{step}};
       $sumSteps{$st->{pathway}}{$st->{step}} = $st;
     }
     foreach my $path (@path) {
