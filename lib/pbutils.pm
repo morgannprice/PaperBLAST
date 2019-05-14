@@ -7,7 +7,9 @@ use File::stat;
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
 @EXPORT = qw!read_list wget ftp_html_to_files write_list mkdir_if_needed
-             ReadFasta ParsePTools ReadFastaEntry ReadTable ReadColumnNames
+             ReadFasta ReadFastaDesc ReadFastaEntry
+             ParsePTools
+             ReadTable ReadColumnNames
              NewerThan
              CuratedMatch CuratedWordMatch
              IdToUniqId FetchSeqs UniqIdToSeq
@@ -88,6 +90,43 @@ sub ReadFasta ($) {
     }
     close(IN) || die "Error reading $filename";
     return(\%seqs);
+}
+
+# Returns a hash containing either "error"
+# or hashes of "seq", "desc", and "len"
+sub ReadFastaDesc($) {
+    my ($file) = @_;
+    my %seq = ();
+    my %desc = ();
+    my $name = undef;
+    open(FAA, "<", $file) || return('error' => "Cannot read $file" );
+    while(<FAA>) {
+        s/[\r\n]+$//;
+        if (m/^>(.*)$/) {
+            my $header = $1;
+            if ($header =~ m/^(\S+)\s+(\S.*)$/) {
+                $name = $1;
+                $desc{$name} = $2;
+            } else {
+                return('error' => "bad header for sequence:\n$header\n") unless $header =~ m/^\S+$/;
+                $name = $header;
+                $desc{$name} = $header;
+            }
+            return('error' => "Duplicate sequence id:\n$name\n") if exists $seq{$name};
+            $seq{$name} = "";
+        } else {
+            return('error' => "sequence before header:\n$_\n") unless defined $name;
+            s/\s//g;
+            $seq{$name} .= $_;
+        }
+    }
+    close(FAA) || return('error' => "Error reading $file");
+    my %len = ();
+    while (my ($name,$seq) = each %seq) {
+        $len{$name} = length($seq);
+        return('error' => "No sequence for id:\n$name\n") if ($len{$name} == 0);
+    }
+    return("desc" => \%desc, "seq" => \%seq, "len" => \%len);
 }
 
 # Read a record from a pathway tools attribute-value file
