@@ -49,9 +49,14 @@ metX	homoserine O-acetyltransferase	EC:2.3.1.31
 # Pseudomonas, Caulobacter crescentus, or Sphingomonas koreensis).
 
 hom_kinase	homoserine kinase	EC:2.7.1.39
-metB	cystathionine gamma-synthase	EC:2.5.1.48
+
+# METI_BACSU (O31631) has activity as CGS but is given a more vague EC number
+metB	cystathionine gamma-synthase	curated:SwissProt::O31631	EC:2.5.1.48
+
 metC	cystathionine beta-lyase	EC:4.4.1.13	
-metY	O-acetylhomoserine sulfhydrylase	EC:2.5.1.49	ignore_other:O-succinylhomoserine sulfhydrylase
+
+# METI_BACSU (O31631) has activity as OAS but is given a more vague EC number
+metY	O-acetylhomoserine sulfhydrylase	EC:2.5.1.49	curated:SwissProt::O31631	ignore_other:O-succinylhomoserine sulfhydrylase
 
 # No EC number for metZ, so use "O-succinylhomoserine sulfhydrylase", which matches METZ_PSEAE and METZ_MYCTU
 # Two related proteins, Ac3H11_2452 (A0A165KUI5_9BURK) and HSERO_RS16440 (D8J1Y3_HERSS)

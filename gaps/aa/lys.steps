@@ -33,8 +33,8 @@ lysA	diaminopimelate decarboxylase	EC:4.1.1.20
 # Also known as ykuQ
 dapH	tetrahydrodipicolinate acetyltransferase	EC:2.3.1.89
 
-# Also known as patA
-dapX	acetyl-diaminopimelate aminotransferase	uniprot:DAPX_BACSU
+# Also known as patA in Bacillus subtilis
+dapX	acetyl-diaminopimelate aminotransferase	term:N-acetyl-LL-diaminopimelate aminotransferase
 
 # Also known as ykuR
 dapL	N-acetyl-diaminopimelate deacetylase	EC:3.5.1.47

@@ -18,12 +18,15 @@ aroD	3-dehydroquinate dehydratase	EC:4.2.1.10
 aroE	shikimate dehydrogenase	EC:1.1.1.25	EC:1.1.1.282	uniprot:Q8A006_BACTN
 
 # In E. coli, AroL and AroK are isozymes
+# In Bacillus subtilis, this gene was known as AroI, and it was cloned by complementation
+# (see A. Nakane et al, J. Fermentation and Bioengineering 1994, 77:312-314)
+#  That sequence is identical to AROK_BACSU
 # Manually add BT3393 from B. thetaiotaomicron because it is diverged, is the only good candidate,
 # and is essential in various Bacteroidetes.
 # Similarly Echvi_0140 from Echinicola vietnamensis
 # And DVU0892 from D. vulgaris Hildenborough is confirmed by cofitness
 # CCNA_03103 is confirmed by cofitness and similar proteins such as SMc00695 and PGA1_c14090 are essential
-aroL	shikimate kinase	EC:2.7.1.71	uniprot:AROK_BACTN	uniprot:L0FT15_ECHVK	uniprot:AROK_DESVH	uniprot:AROK_CAUVN	uniprot:AROK_RHIME	uniprot:I7EWF3_PHAIB
+aroL	shikimate kinase	EC:2.7.1.71	uniprot:AROK_BACSU	uniprot:AROK_BACTN	uniprot:L0FT15_ECHVK	uniprot:AROK_DESVH	uniprot:AROK_CAUVN	uniprot:AROK_RHIME	uniprot:I7EWF3_PHAIB
 
 # Add AroA from Desulfovibrio vulgaris (DVU0463) because it is a bit diverged, is conserved essential,
 # and clusters with aromatic amino acid biosynthesis genes

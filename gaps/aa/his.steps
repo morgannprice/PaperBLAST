@@ -9,8 +9,21 @@ hisA	isomerase HisA	EC:5.3.1.16
 hisF	IGP synthase, cyclase subunit	term:hisF	hmm:TIGR00735
 hisH	IGP synthase, amidotransferase subunit	term:hisH	hmm:TIGR01855
 hisB	IGP dehydratase	EC:4.2.1.19
-hisC	histidinol-phosphate aminotransferase	EC:2.6.1.9
-hisN	histidinol-phosphate phosphatase	EC:3.1.3.15
+
+# In Bacillus subtilis, the histidinol-phosphate aminotransferase activity is provided by a gene that is in a cluster of
+# genes for tyrosine and phenylalanine biosynthesis, see PMID:4431. Homology suggests that this
+# activity is provided by "HisH" (BSU22620), which indeed is just upstream of tyrA (also see PMID:6092865).
+# This protein is now usually referred to as "HisC" (HIS8_BACSU)
+hisC	histidinol-phosphate aminotransferase	EC:2.6.1.9	uniprot:HIS8_BACSU
+
+# In Bacillus subtilis and some related bacteria, histidinol-phosphate phosphatase is known as HisJ
+# and has been confirmed by biochemical assays of purified proteins, see PMC3570733
+# The identifiers given (see their Table 3) are
+# MCCL_0344 BBR47_00270 BCE_1533 BcerKBAB4_1335 BcerKBAB4_1335 BSU29620 BH3206 GK2799 SMU_1486c
+# which map to the uniprot ids
+# B9E9Z0_MACCJ C0ZH63_BREBN Q73B87_BACC1 A9VLI0_BACWK HIS9_BACHD Q5KW52_GEOKA Q8DT80_STRMU HIS9_BACSU
+hisN	histidinol-phosphate phosphatase	EC:3.1.3.15	uniprot:B9E9Z0_MACCJ	uniprot:C0ZH63_BREBN	uniprot:Q73B87_BACC1	uniprot:A9VLI0_BACWK	uniprot:HIS9_BACHD	uniprot:Q5KW52_GEOKA	uniprot:Q8DT80_STRMU	uniprot:HIS9_BACSU
+
 hisD	histidinol dehydrogenase	EC:1.1.1.23	ignore:CharProtDB::CH_123581
 
 #Rules:
