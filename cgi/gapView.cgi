@@ -412,6 +412,7 @@ my $nCPU = 6;
     print h3(scalar(@sumRules), "rules"), "\n";
     print start_ul;
     foreach my $rule (reverse @sumRules) {
+      my $hasSubRule = 0;
       my @stepList = split / /, $rule->{expandedPath};
       my @parts = ();
       foreach my $step (@stepList) {
@@ -425,8 +426,9 @@ my $nCPU = 6;
                          -title => "$stepDef->{desc} -- $id ($label)" },
                        $step);
       }
-      print li($rule->{rule}.":", @parts);
+      print li($rule->{rule}); #, "with best-scoring path:", @parts);
       print start_ul;
+      my $or = "";
       foreach my $list (@{ $rules->{ $rule->{rule} } }) {
         my @parts = ();
         foreach my $part (@$list) {
@@ -438,12 +440,15 @@ my $nCPU = 6;
           } elsif (exists $rules->{$part}) {
             my $score = RuleToScore($sumRules{$part});
             push @parts, span({ -style => ScoreToStyle($score), -title => "see rule for $part below" }, $part);
+            $hasSubRule = 1;
           } else {
             die "Unknown part $part";
           }
         }
-        print li("from " . join(", ", @parts));
+        print li("${or}parts: " . join(", ", @parts));
+        $or = "or ";
       }
+      print li("best-scoring path:", @parts) if $hasSubRule || @{ $rules->{ $rule->{rule} } } > 1;
       print end_ul, "\n";
     }
     print end_ul, "\n";
