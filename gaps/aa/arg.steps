@@ -94,7 +94,19 @@ argF'	acetylornithine transcarbamoylase	EC:2.1.3.9
 
 # There is also an archaeal pathway with argX instead of argA and argJ -- this
 # links glutamate to the LysW carrier protein (also involved in lysine biosynthesis)
-# It is not represented here but requires argX, lysWZYJK, carAB, and argFGH
+# The kinase, reductase, and aminotransferase are given the same EC number
+# so our model of the pathway uses the same steps (argBCD) although in Sulfolobus the
+# genes are known as lysZYJ.
+# After the aminotransferase reaction, ornithine is released by lysK (EC 3.5.1.130)
+# And the carrier protein (lysW) is also required
+
+# The carrier protein is better known for carrying aminoadipate (for lysine biosynthesis)
+lysW	2-aminoadipate carrier protein	term:alpha-aminoadipate%carrier
+
+argX	glutamate--LysW ligase	term:Glutamate--LysW ligase
+
+# This protein is often annotated as [LysW]-lysine hydrolase as that activity was discovered first
+lysK	[LysW]-ornithine hydrolase	term:[LysW]%lysine%hydrolase term:[LysW]%ornithine%hydrolase	term:2-aminoadipate carrier protein%hydrolase	term:LysW%lysine hydrolase	term:LysW%ornithine hydrolase
 
 # Pathway I
 all: argA argB argC argD argE carA carB argI argG argH
@@ -107,3 +119,6 @@ all: argJ argB argC argD carA carB argI argG argH
 
 # Pathway III (N-acetylcitrulline)
 all: argA argB argC argD carA carB argF' argE argG argH
+
+# Pathway IV (LysW)
+all: lysW argX argB argC argD lysK carA carB argI argG argH
