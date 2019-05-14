@@ -153,9 +153,12 @@ my $nCPU = 6;
   my $orgpre = "../tmp/$orgsSpec/orgs";
   my $sumpre = "../tmp/$orgsSpec/$set.sum";
 
-  # Wait up to 2 minutes
-  if (!-e "$sumpre.done" && -e "$sumpre.begin"
-      && stat("$sumpre.begin")->mtime >= time() - 2*60) {
+  my $alreadyBuilt = NewerThan("$sumpre.done", "$queryPath/date");
+
+  # Wait up to 5 minutes for a previously running job to finish
+  if (! $alreadyBuilt
+      && -e "$sumpre.begin"
+      && stat("$sumpre.begin")->mtime >= time() - 5*60) {
     # Waiting mode
     start_page('title' => 'Analysis in progress',
                'banner' => $banner,
@@ -167,7 +170,7 @@ my $nCPU = 6;
       Finish();
   }
 
-  if (!-e "$sumpre.done" && !-e "$sumpre.begin") {
+  unless ($alreadyBuilt) {
     # Computation mode
 
     start_page('title' => "Analyzing $setDesc",
@@ -222,6 +225,7 @@ my $nCPU = 6;
       print p($label{$show})."\n" if exists $label{$show};
       system(@$cmd) == 0 || die "Command failed\n@$cmd\nError code: $!";
     }
+    unlink("$sumpre.begin");
     print "</pre>\n",
       p("Analysis succeeded, please",
       a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set"}, "view results")),
