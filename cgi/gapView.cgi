@@ -29,6 +29,7 @@
 # path & showdef -- detailed pathway definition (mostly, show the .steps file verbatim)
 # orgId & path -- the pathway in the organism, with lists of rules and top candidates for each step
 # orgId & path & step -- all candidates for the step, and the detailed definition of the step
+# orgId & locusId -- show information about the gene, which step it is a candidate for, etc.
 # orgId & path & step & locusId -- show relevant alignments
 
 use strict;
@@ -49,10 +50,11 @@ sub ShowScoreShort($);
 sub HMMToURL($);
 sub GeneURL($$); # orgId (that is in %orgs), locusId
 sub RuleToScore($);
-sub LocusIdToFetchId($);
 sub ReadCand($$);
 sub OrgToAssembly($);
 sub Finish(); # show "About the gap viewer" and exit
+sub CandToOtherColumns($);
+sub CuratedToLink($$);
 
 my $tmpDir = "../tmp"; # for CacheAssembly
 my %orgs = (); # orgId => hash including gdb, gid, genomeName
@@ -184,6 +186,7 @@ my $nCPU = 6;
       print p("Fetching assembly $gid from $gdb"), "\n";
       CacheAssembly($gdb, $gid, $tmpDir) || die;
       mkdir("$tmpDir/$orgsSpec");
+      # buildorgs.pl creates $orgpre.org and $orgpre.faa and runs formatdb
       my @cmd = ("../bin/buildorgs.pl", "-out", $orgpre, "-orgs", $gdb.":".$gid);
       system(@cmd) == 0
         || die "command @cmd\nfailed with error: $!";
@@ -280,7 +283,10 @@ my $nCPU = 6;
   $locusSpec = "" if !defined $locusSpec;
   $locusSpec =~ m/^[a-zA-Z90-9_.-]*$/ || die "Invalid locus $locusSpec";
 
-  my $title = $locusSpec ne "" ? "Aligments for a candidate for $step" : "Gaps";
+  my $title = "Gaps";
+  if ($locusSpec ne "") {
+    $title = $step ne "" ? "Aligments for a candidate for $step" : "Protein $locusSpec";
+  }
   $title .= " for $pathDesc{$pathSpec}" if $pathSpec ne "" && $locusSpec eq "";
   $title = "Finding step $step for $pathDesc{$pathSpec}"
     if $step ne "" && $orgId ne "" && $pathSpec ne "" && $locusSpec eq "";
@@ -363,7 +369,7 @@ my $nCPU = 6;
                         join(", ", @show) ]));
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
-  } elsif ($pathSpec eq "") {
+  } elsif ($pathSpec eq "" && $locusSpec eq "") {
     # overview of pathways for this organism
     my @hr = ("Pathway", span({-title=>"Best path"}, "Steps"));
     my @tr = ();
@@ -401,7 +407,7 @@ my $nCPU = 6;
                        join(", ", @show)]));
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
-  } elsif ($step eq "") {
+  } elsif ($step eq "" && $locusSpec eq "") {
     # overview of this pathway in this organism, first the rules, then all of the steps
     my @sumRules = ReadTable("$sumpre.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
     @sumRules = grep { $_->{orgId} eq $orgId && $_->{pathway} eq $pathSpec } @sumRules;
@@ -483,7 +489,7 @@ my $nCPU = 6;
           my $locus = shift @locusParts;
           my $sysName = shift @sysNameParts;
           push @parts, a({ -style => ScoreToStyle($score), -title => ScoreToLabel($score),
-                           -href => GeneURL($orgId, $locus) },
+                           -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&locusId=$locus" },
                          $sysName || $locus );
         }
         push @show, join(" with ", @parts);
@@ -514,60 +520,30 @@ my $nCPU = 6;
       my @tr = Tr(th({-valign => "bottom"}, \@header));
       foreach my $cand (@cand) {
         # potentially make two rows, one for BLAST and one for HMM
-        my $id = a({-href => GeneURL($orgId, $cand->{locusId}) },
+        my $id = a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&locusId=".$cand->{locusId} },
                    $cand->{sysName} || $cand->{locusId} );
         my $desc = $cand->{desc};
         # HMM hits are based on the 1st ORF only so ignore the split when showing the HMM part
         my $id1 = $id;
         my $desc1 = $desc;
         if ($cand->{locusId2}) { # (this should only happen for BLAST hits)
-          $id .= "; " . a({-href => GeneURL($orgId, $cand->{locusId2}) },
+          $id .= "; " . a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&locusId=".$cand->{locusId2} },
                           $cand->{sysName2} || $cand->{locusId2} );
           $desc .= "; " . $cand->{desc2};
         }
-        my $otherIdentity = "";
-        $otherIdentity = span({ -title => "coverage: " . int(0.5 + 100 *$cand->{otherCoverage})."%"},
-                              int(0.5 + $cand->{otherIdentity})."%")
-          if $cand->{otherBits};
-        my $descShowOther = $cand->{otherDesc}; $descShowOther =~ s/;;.*//;
-        my @otherIds = split /,/, $cand->{otherIds};
-        my $URLother = "";
-        my $idShowOther = "";
-        my $linkOther = "";
-        if ($cand->{otherBits}) {
-          $URLother = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=" . $otherIds[0];
-          $idShowOther = $otherIds[0];
-          $idShowOther =~ s/^.*://;
-          $linkOther = a({-href => $URLother, -title => "view $idShowOther in PaperBLAST"}, $descShowOther);
-        }
+        my ($linkOther, $otherIdentity, $otherBits) = CandToOtherColumns($cand);
+
         if ($cand->{blastScore} ne "") {
-          my $descShowCurated = $cand->{curatedDesc}; $descShowCurated =~ s/;;.*//;
-          my @hitIds = split /,/, $cand->{curatedIds};
-          if ($hitIds[0] =~ m/^uniprot:/) {
-            $hitIds[0] =~ s/^uniprot://;
-            $descShowCurated =~ s/^RecName: Full=//;
-            $descShowCurated =~ s/[{][A-Za-z0-9:|_. ;,-]+[}]//g;
-            $descShowCurated =~ s/AltName:.*//;
-            $descShowCurated =~ s/EC=/EC /g;
-            $descShowCurated =~ s/ +;/;/g;
-            $descShowCurated =~ s/;+ *$//;
-          }
-          my $URL = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=" . $hitIds[0];
-          my $idShowHit = $hitIds[0];
-          $idShowHit =~ s/^.*://;
           push @tr, Tr(td({-valign => "top"},
                           [ ShowScoreShort($cand->{blastScore}),
                             $id, $desc,
-                            a({-href => $URL, -title => "View $idShowHit in PaperBLAST"}, $descShowCurated),
+                            CuratedToLink($cand->{curatedIds}, $cand->{curatedDesc}),
                             int(0.5 + $cand->{identity})."%",
                             a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step&locusId=$cand->{locusId}",
                                 -title => "View alignments" },
                               int(0.5 + 100 * $cand->{blastCoverage})."%"),
                             $cand->{blastBits},
-                            small($linkOther),
-                            small($otherIdentity),
-                            small($cand->{otherBits} > 0 ? $cand->{otherBits} : "")
-                          ]));
+                            $linkOther, $otherIdentity, $otherBits ]));
         }
 
         if ($cand->{hmmScore} ne "") {
@@ -580,10 +556,7 @@ my $nCPU = 6;
                                 -title => "View alignments" },
                               int(0.5 + 100 * $cand->{hmmCoverage})."%"),
                             $cand->{hmmBits},
-                            small($linkOther),
-                            small($otherIdentity),
-                            small($cand->{otherBits} > 0 ? $cand->{otherBits} : "")
-                          ]));
+                            $linkOther, $otherIdentity, $otherBits ]));
         }
       }
       print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
@@ -629,7 +602,115 @@ my $nCPU = 6;
       print li($show);
     }
     print end_ul(), "\n";
-  } else {
+  } elsif ($locusSpec ne "" && $step eq "") {
+    # Show the gene
+    # First fetch its header and sequence
+    my $tmp = "/tmp/gapView.$locusSpec.$$";
+    my $faaCand = "$tmp.genome.faa";
+    FetchSeqs("../bin/blast", $faafile, [$orgId.":".$locusSpec], $faaCand);
+    my %fasta = ReadFastaDesc($faaCand);
+    unlink($faaCand);
+    my $descs = $fasta{desc};
+    my $seqs = $fasta{seq};
+    die unless scalar(keys %$seqs) == 1 && scalar(keys %$descs) == 1;
+    my ($desc) = values %$descs;
+    my ($seq) = values %$seqs;
+    print p("Annotation:", $desc);
+    print p("Length:", length($seq), "amino acids");
+    print p("Source:", $orgs{$orgId}{gid}, "in", $orgs{$orgId}{gdb});
+
+    my @cand = ReadCand($sumpre,"");
+    @cand = grep { $_->{locusId} eq $locusSpec || $_->{locusId2} eq $locusSpec} @cand;
+    if (@cand == 0) {
+      print h3("Not a candidate for any step in $setDesc");
+    } else {
+      print h3("Candidate for", scalar(@cand), "steps in $setDesc");
+      my @header = qw{Pathway Step Score Similar-to Id. Cov. Bits Other-hit Other-id. Other-bits};
+      foreach (@header) { s/-/ /; }
+      my @tr = Tr(th({-valign => "bottom"}, \@header));
+      foreach my $cand (@cand) {
+        # potentially make two rows, one for BLAST and one for HMM
+        my ($linkOther, $otherIdentity, $otherBits) = CandToOtherColumns($cand);
+        my $pathLink = a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$cand->{pathway}" },
+                         $pathDesc{ $cand->{pathway} });
+        my $stepLink = a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$cand->{pathway}&step=$cand->{step}" },
+                         $cand->{step} );
+        if ($cand->{blastScore} ne "") {
+          my $asterisk = "";
+          $asterisk = a({ -title => "Split hit"}, "*") if $cand->{locusId2};
+          push @tr, Tr(td({-valign => "top"},
+                          [ $pathLink, $stepLink,
+                            ShowScoreShort($cand->{blastScore}),
+                            CuratedToLink($cand->{curatedIds}, $cand->{curatedDesc}),
+                            int(0.5 + $cand->{identity})."%",
+                            a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$cand->{pathway}&step=$cand->{step}&locusId=$locusSpec",
+                                -title => "View alignments" },
+                              int(0.5 + 100 * $cand->{blastCoverage})."%") . $asterisk,
+                            $cand->{blastBits},
+                            $linkOther, $otherIdentity, $otherBits ]));
+        }
+        if ($cand->{hmmScore} ne "") {
+          my $hmmURL = HMMToURL($cand->{hmmId});
+          push @tr, Tr(td{-valign => "top"},
+                       [ $pathLink, $stepLink,
+                         ShowScoreShort($cand->{hmmScore}),
+                         a({-href => $hmmURL, }, $cand->{hmmDesc}, "(". $cand->{hmmId} . ")"),
+                         "",
+                         a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId"
+                             . "&path=$cand->{pathway}&step=$cand->{step}&locusId=$locusSpec",
+                             -title => "View alignments" },
+                           int(0.5 + 100 * $cand->{hmmCoverage})."%"),
+                         $cand->{hmmBits},
+                         $linkOther, $otherIdentity, $otherBits ]);
+        }
+      }
+      print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
+    }
+
+    # Show tools
+    my @seqparts = $seq =~ /.{1,60}/g;
+    my $newline = "%0A";
+    print
+      h3("Sequence Analysis Tools");
+    my $URL = GeneURL($orgId,$locusSpec);
+    print p("View",
+            a({-href => $URL}, "$locusSpec"),
+            "at", $orgs{$orgId}{gdb})
+      if $URL ne "";
+    print
+      p(a({-href => "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=>${locusSpec}$newline$seq"},
+          "PaperBLAST"),
+        "(search for papers about homologs of this protein)"),
+      p(a({-href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=>${locusSpec}$newline$seq"},
+          "Search CDD"),
+        "(the Conserved Domains Database, which includes COG and superfam)"),
+      p(a({-href => "http://pfam.xfam.org/search/sequence?seqOpts=&ga=0&evalue=1.0&seq=$seq"},
+        "Search PFam"),
+        "(including for weak hits, up to E = 1)"),
+      p("Predict protein localization: ",
+        a({-href => "http://www.psort.org/psortb/results.pl?"
+           . join("&",
+                  "organism=bacteria",
+                  "gram=negative",
+                  "format=html",
+                  "sendresults=display",
+                  "email=",
+                  "seqs=>${locusSpec}$newline$seq")},
+          "PSORTb"),
+        "(Gram negative bacteria)"),
+      p("Predict transmembrane helices:",
+        a({-href => "http://www.cbs.dtu.dk/cgi-bin/webface2.fcgi?"
+           . join("&",
+                  "configfile=/usr/opt/www/pub/CBS/services/TMHMM-2.0/TMHMM2.cf",
+                  "outform=-noshort",
+                  "SEQ=>${locusSpec}$newline$seq")},
+          "TMHMM")),
+      p("Check the SEED with",
+      a({-href => "http://pubseed.theseed.org/FIG/seedviewer.cgi?page=FigFamViewer&fasta_seq=>${locusSpec}$newline$seq"},
+        "FIGfam search")),
+      h3("Sequence"),
+      join("\n", "<pre>", @seqparts, "</pre>"), "\n";
+  } elsif ($locusSpec ne "" && $step ne "") {
     # Show alignments
     push @links, a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step"},
                     "All candidates for step $step in", $orgs{$orgId}{genomeName});
@@ -648,14 +729,6 @@ my $nCPU = 6;
     my @cand = ReadCand($sumpre,$pathSpec);
     @cand = grep { $_->{orgId} eq $orgId && $_->{step} eq $step && $_->{locusId} eq $locusSpec} @cand;
     die "$locusSpec is not a candidate" unless @cand > 0;
-    my $assembly = OrgToAssembly($orgId);
-    die unless -e $assembly->{faafile};
-    if (! -e $assembly->{faafile} . ".pin") {
-      my $formatdb = "../bin/blast/formatdb";
-      die "No such executable: $formatdb" unless -x $formatdb;
-      system($formatdb, "-p", "T", "-o", "T", "-i", $assembly->{faafile}) == 0
-        || die "Formatting $assembly->{faafile} failed: $!\n";
-    }
     my $tmp = "/tmp/gapView.$pathSpec.$$";
     foreach my $cand (@cand) {
       if ($cand->{blastBits} > 0) {
@@ -676,7 +749,7 @@ my $nCPU = 6;
           print $fhC ">$hitIds[0]\n$curatedSeq\n";
           close($fhC) || die "Error writing to $faaCurated";
           my $faaCand = "$tmp.genome.faa";
-          FetchSeqs("../bin/blast", $assembly->{faafile}, [LocusIdToFetchId($locusId)], $faaCand);
+          FetchSeqs("../bin/blast", $faafile, [$orgId.":".$locusId], $faaCand);
           my $bl2seq = "../bin/blast/bl2seq";
           die "No such executable: $bl2seq\n" unless -x $bl2seq;
           print "<pre>";
@@ -697,7 +770,7 @@ my $nCPU = 6;
         my $hmmsearch = "../bin/hmmsearch";
         die "No such executable: $hmmsearch\n" unless -x $hmmsearch;
         my $faaCand = "$tmp.genome.faa";
-        FetchSeqs("../bin/blast", $assembly->{faafile}, [LocusIdToFetchId($cand->{locusId})], $faaCand);
+        FetchSeqs("../bin/blast", $faafile, [$orgId.":".$cand->{locusId}], $faaCand);
         print "<pre>";
         system($hmmsearch, $hmmfile, $faaCand) == 0
           || die "hmmsearch failed: $!";
@@ -705,6 +778,8 @@ my $nCPU = 6;
         unlink($faaCand);
       }
     }
+  } else {
+    die "Unknown mode\n";
   }
 
   push @links, a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=$pathSpec&showdef=1" },
@@ -715,7 +790,7 @@ my $nCPU = 6;
     if $pathSpec ne "" && (param("showdef") || $orgId ne "") && @orgs > 1;
   push @links, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId" },
                  "All pathways for", $orgs{$orgId}{genomeName})
-    if $orgId ne "" && $pathSpec ne "";
+    if $orgId ne "" && ($pathSpec ne "" || $locusSpec ne "");
   my $inOrgLabel = "";
   $inOrgLabel = "in " . a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId" }, $orgs{$orgId}{genomeName})
     if @orgs > 1 && $orgId ne "";
@@ -800,9 +875,6 @@ sub GeneURL($$) {
     my $assembly = OrgToAssembly($orgId);
     if (exists $assembly->{prot}{$locusId}) {
       my $g = $assembly->{prot}{$locusId};
-      if (exists $g->{"non-redundant_refseq"} && $g->{"non-redundant_refseq"}) {
-        return "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=".$g->{"non-redundant_refseq"};
-      }
       return "https://www.ncbi.nlm.nih.gov/gene/?term=" . $g->{GeneID}
         if $g->{GeneID};
       if ($g->{genomic_accession} && $g->{start} && $g->{end}) {
@@ -811,8 +883,10 @@ sub GeneURL($$) {
         # The NCBI sequence viewer is smart enough to clip to valid regions
         return "https://www.ncbi.nlm.nih.gov/nuccore/$g->{genomic_accession}/scaffold?report=graph&v=$left:$right";
       }
+      # No longer build PaperBLAST links
+      #return "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=".$g->{"non-redundant_refseq"}
+      #  if (exists $g->{"non-redundant_refseq"} && $g->{"non-redundant_refseq"}) {
     }
-    # else give up, no link; ideally should fetch the protein sequence and return a PaperBLAST link instead?
     return "";
   } elsif ($gdb eq "IMG") {
     return "https://img.jgi.doe.gov/cgi-bin/w/main.cgi?section=GeneDetail&page=geneDetail&gene_oid=$locusId";
@@ -834,6 +908,8 @@ sub OrgToAssembly($) {
   return $assembly;
 }
 
+# ReadCand(prefix to summary file, pathway)
+# use an empty pathway argument to get candidates for all pathways
 sub ReadCand($$) {
   my ($sumpre, $pathSpec) = @_;
   my @req = qw{orgId gdb gid step score locusId sysName desc locusId2 sysName2 desc2
@@ -841,14 +917,49 @@ sub ReadCand($$) {
                hmmBits hmmId hmmCoverage hmmScore hmmDesc
                otherIds otherBits otherIdentity otherCoverage otherDesc};
   my @rows = ReadTable("$sumpre.cand", \@req);
-  return grep { $_->{pathway} eq $pathSpec } @rows;
+  @rows = grep { $_->{pathway} eq $pathSpec } @rows
+    if defined $pathSpec && $pathSpec ne "";
+  return @rows;
 }
 
-# Convert an identifier into a form suitable for FetchSeqs (which relies on fastacmd)
-sub LocusIdToFetchId($) {
-  my ($locusId) = @_;
-  $locusId = "lcl|" . $locusId if $locusId =~ m/^\d+$/;
-  return $locusId;
+sub CandToOtherColumns($) {
+  my ($cand) = @_;
+  my $otherIdentity = "";
+  $otherIdentity = span({ -title => "coverage: " . int(0.5 + 100 *$cand->{otherCoverage})."%"},
+                        int(0.5 + $cand->{otherIdentity})."%")
+    if $cand->{otherBits};
+  my $descShowOther = $cand->{otherDesc}; $descShowOther =~ s/;;.*//;
+  my @otherIds = split /,/, $cand->{otherIds};
+  my $URLother = "";
+    my $linkOther = "";
+  if ($cand->{otherBits}) {
+    $URLother = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=" . $otherIds[0];
+    my $idShowOther = $otherIds[0];
+    $idShowOther =~ s/^.*://;
+    $linkOther = a({-href => $URLother, -title => "view $idShowOther in PaperBLAST"}, $descShowOther);
+  }
+  return (small($linkOther), small($otherIdentity), small($cand->{otherBits}));
+}
+
+sub CuratedToLink($$) {
+  my ($curatedIds, $curatedDesc) = @_;
+  die "Undefined curatedIds" unless defined $curatedIds;
+  die "Undefined curatedDesc" unless defined $curatedDesc;
+  $curatedDesc =~ s/;;.*//;
+  my @hitIds = split /,/, $curatedIds;
+  if ($hitIds[0] =~ m/^uniprot:/) {
+    $hitIds[0] =~ s/^uniprot://;
+    $curatedDesc =~ s/^RecName: Full=//;
+    $curatedDesc =~ s/[{][A-Za-z0-9:|_. ;,-]+[}]//g;
+    $curatedDesc =~ s/AltName:.*//;
+    $curatedDesc =~ s/EC=/EC /g;
+    $curatedDesc =~ s/ +;/;/g;
+    $curatedDesc =~ s/;+ *$//;
+  }
+  my $URL = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=" . $hitIds[0];
+  my $idShowHit = $hitIds[0];
+  $idShowHit =~ s/^.*://;
+  return a({-href => $URL, -title => "View $idShowHit in PaperBLAST"}, $curatedDesc);
 }
 
 sub Finish() {
