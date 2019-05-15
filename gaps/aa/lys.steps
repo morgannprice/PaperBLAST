@@ -81,7 +81,7 @@ lysY	[LysW]-2-aminoadipate 6-phosphate reductase	term:[LysW]-L-2-aminoadipate 6-
 
 lysJ	[LysW]-2-aminoadipate semialdehyde transaminase	term:[LysW]-aminoadipate semialdehyde transaminase	term:[LysW]-aminoadipate semialdehyde/glutamate semialdehyde transaminase
 
-lysK	[LysW]-lysine hydrolase	term:[LysW]%lysine%hydrolase	term:2-aminoadipate carrier protein%hydrolase	term:LysW%lysine hydrolase
+lysK	[LysW]-lysine hydrolase	term:LysW%lysine%hydrolase	term:aminoadipate carrier protein%lysine%hydrolase
 
 
 meso-DAP: asp_kinase asd dapA dapB dapD dapC dapE dapF
