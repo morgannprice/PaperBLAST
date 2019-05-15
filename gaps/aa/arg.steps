@@ -34,8 +34,8 @@ argD	N-acetylornithine aminotransferase	EC:2.6.1.11	ignore_other:EC 2.6.1.81
 argE	N-acetylornithine deacetylase	EC:3.5.1.16	uniprot:A0A1I2DJB5_9GAMM
 
 # This could obtain the amino group from glutamine (EC 6.3.5.5) or from ammonia (EC 6.3.4.16)
-carA	carbamoyl phosphate synthase subunit alpha	term:carbamoyl-phosphate synthase%small	term:carbamoyl-phosphate synthase%subunit 1/2	ignore_other:EC 6.3.5.5	ignore_other:EC 6.3.4.16
-carB	carbamoyl phosphate synthase subunit beta	term:carbamoyl-phosphate synthase%large	term:carbamoyl-phosphate synthase%subunit 2/2	ignore_other:EC 6.3.5.5	ignore_other:EC 6.3.4.16
+carA	carbamoyl phosphate synthase subunit alpha	term:carbamoyl-phosphate synthase%small	ignore_other:EC 6.3.5.5	ignore_other:EC 6.3.4.16	hmm:TIGR01368
+carB	carbamoyl phosphate synthase subunit beta	term:carbamoyl-phosphate synthase%large	ignore_other:EC 6.3.5.5	ignore_other:EC 6.3.4.16	hmm:TIGR01369
 
 # ornithine to citrulline (E. coli has two paralogs, argI and argF)
 argI	ornithine carbamoyltransferase	EC:2.1.3.3
@@ -106,7 +106,7 @@ lysW	2-aminoadipate carrier protein	term:alpha-aminoadipate%carrier
 argX	glutamate--LysW ligase	term:Glutamate--LysW ligase
 
 # This protein is often annotated as [LysW]-lysine hydrolase as that activity was discovered first
-lysK	[LysW]-ornithine hydrolase	term:[LysW]%lysine%hydrolase term:[LysW]%ornithine%hydrolase	term:2-aminoadipate carrier protein%hydrolase	term:LysW%lysine hydrolase	term:LysW%ornithine hydrolase
+lysK	[LysW]-ornithine hydrolase	term:[LysW]%lysine%hydrolase	term:[LysW]%ornithine%hydrolase	term:2-aminoadipate carrier protein%hydrolase	term:LysW%lysine hydrolase	term:LysW%ornithine hydrolase
 
 # Pathway I
 all: argA argB argC argD argE carA carB argI argG argH
