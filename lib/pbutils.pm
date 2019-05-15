@@ -299,11 +299,30 @@ sub CuratedMatch($$$) {
                                      { Slice => {} }, "%" . $query . "%", $limit);
 }
 
-sub CuratedWordMatch($$) {
-  my ($chits, $query) = @_;
+# Given rows that include the desc field, return a reference to a
+# list with the rows whose desc matches the query as words
+# % is the wild card; all other characters are treated literally
+# The optional third argument is which field to use (defaults to "desc")
+sub CuratedWordMatch {
+  my ($chits, $query, $field) = @_;
+  die "Invalid chits argument to CuratedWordMatch"
+    unless ref $chits eq "ARRAY";
+  die "Invalid query argument to CuratedWordMatch"
+    unless ref $query eq "" && defined $query;
+  $field = "desc" if !defined $field;
+  die "Invalid field argument to CuratedWordMatch"
+    unless ref $field eq "";
+
+  # bracket characters are trouble, so remove from both query and tested description
+  my $sub = "[" . quotemeta("[]{}") . "]";
+  $query =~ s/$sub//g;
   my $quoted = quotemeta($query); # this will quote % as well
-  $quoted =~ s/\\%/\\b.*\\b/g; # turn % into a separation of words; note quoting of \\ so that it appears in the new string
-  my @keep = grep { $_->{desc} =~ m/\b$quoted\b/i } @$chits;
+  # turn % into a separation of words; note quoting of \\ so that \b it appears in the new string
+  $quoted =~ s/\\%/\\b.*\\b/g;
+  my @keep = grep { my $test = $_->{$field};
+                    die "Missing desc field in CuratedWordMatch()" unless defined $test;
+                    $test =~ s/$sub//g;
+                    $test =~ m/\b$quoted\b/i } @$chits;
   return \@keep;
 }
 
