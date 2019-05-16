@@ -11,6 +11,7 @@
 # locusId -- which candidate gene for that step
 # gdb -- which genome database to search in
 # gquery -- an organism name to search for
+# findgene -- a search term for finding proteins
 #
 # Modes of this viewer:
 # If gdb and gquery are set, search for relevant genomes
@@ -31,6 +32,7 @@
 # orgId & path & step -- all candidates for the step, and the detailed definition of the step
 # orgId & locusId -- show information about the gene, which step it is a candidate for, etc.
 # orgId & path & step & locusId -- show relevant alignments
+# orgId & findgene -- find genes matching
 
 use strict;
 use CGI qw(:standard Vars start_ul);
@@ -284,13 +286,20 @@ my $nCPU = 6;
   $locusSpec = "" if !defined $locusSpec;
   $locusSpec =~ m/^[a-zA-Z90-9_.-]*$/ || die "Invalid locus $locusSpec";
 
-  my $title = "'Gaps'";
+  my $findgene = param('findgene');
+  $findgene = "" if !defined $findgene;
+  my $findgeneShow = HTML::Entities::encode($findgene);
+
+  my $title = $setDesc;
   if ($locusSpec ne "") {
     $title = $step ne "" ? "Aligments for a candidate for $step" : "Protein $locusSpec";
+  } elsif ($pathSpec ne "") {
+    $title = $pathDesc{$pathSpec};
   }
-  $title .= " for $pathDesc{$pathSpec}" if $pathSpec ne "" && $locusSpec eq "";
   $title = "Finding step $step for $pathDesc{$pathSpec}"
     if $step ne "" && $orgId ne "" && $pathSpec ne "" && $locusSpec eq "";
+  $title = "Searching for proteins"
+    if $orgId ne "" && $findgene ne "";
   $title .= " in $orgs{$orgId}{genomeName}"
     if $orgId ne "";
   $title = "Definition of $pathDesc{$pathSpec}" if $pathSpec ne "" && param("showdef");
@@ -370,7 +379,59 @@ my $nCPU = 6;
                         join(", ", @show) ]));
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
-  } elsif ($pathSpec eq "" && $locusSpec eq "") {
+  } elsif ($orgId ne "" && $findgene ne "") {
+    print p(qq{Searching for "$findgeneShow" in}, $orgs{$orgId}{genomeName}), "\n";
+    my $assembly = OrgToAssembly($orgId);
+    my $regexp = quotemeta($findgene);
+    $regexp =~ s/\\%/.*/g;
+    my @hits = (); # each is a list of [locusId, desc]
+    if (exists $assembly->{features}) {
+      foreach my $row (@{ $assembly->{features} }) {
+        next unless $row->{class} eq "with_protein";
+        next unless $row->{name} =~ m/$regexp/i;
+        my $id = $row->{product_accession} || $row->{"non-redundant_refseq"};
+        die "Invalid identifier $id in feature file\n"
+          unless defined $id && $id ne "";
+        my $desc = $row->{name};
+        my @moreids = ();
+        if ($row->{locus_tag}) {
+          push @moreids, $row->{locustag};
+          push @moreids, $assembly->{oldid}{$row->{locus_tag}}
+            if exists $assembly->{oldid}{$row->{locus_tag}};
+        }
+        push @hits, [ $id, join(" ", @moreids, $desc) ];
+      }
+    } else {
+      die "No faa file for this assembly\n" unless exists $assembly->{faafile};
+      open(my $fhA, "<", $assembly->{faafile}) || die "Cannot read $assembly->{faafile}";
+      my $state = {};
+      while (my ($header, undef) = ReadFastaEntry($fhA, $state)) {
+        if ($header =~ m/$regexp/i) {
+          my @pieces = split / /, $header;
+          my $id = shift @pieces;
+          die "Blank header in fasta file" unless defined $id && $id ne "";
+          push @hits, [ $id, join(" ", @pieces) ];
+        }
+      }
+      close($fhA) || die "Error reading $assembly->{faafile}";
+    }
+    if (@hits == 0) {
+      print p("No matching proteins were found");
+    } else {
+      my @cand = ReadCand($sumpre,"");
+      my %locusNCand = ();
+      foreach my $row (@cand) {
+        $locusNCand{$row->{locusId}}++;
+      }
+      foreach my $row (@hits) {
+        my ($id, $desc) = @$row;
+        $desc .= small(" (candidate for", $locusNCand{$id}, "steps)")
+          if exists $locusNCand{$id};
+        print p(a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&locusId=$id"}, $id),
+                $desc)."\n";
+      }
+    }
+  } elsif ($orgId ne "" && $pathSpec eq "" && $locusSpec eq "") {
     # overview of pathways for this organism
     my @hr = ("Pathway", span({-title=>"Best path"}, "Steps"));
     my @tr = ();
@@ -408,7 +469,7 @@ my $nCPU = 6;
                        join(", ", @show)]));
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
-  } elsif ($step eq "" && $locusSpec eq "") {
+  } elsif ($orgId ne "" && $pathSpec ne "" && $step eq "" && $locusSpec eq "") {
     # overview of this pathway in this organism, first the rules, then all of the steps
     my @sumRules = ReadTable("$sumpre.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
     @sumRules = grep { $_->{orgId} eq $orgId && $_->{pathway} eq $pathSpec } @sumRules;
@@ -504,7 +565,7 @@ my $nCPU = 6;
                         $show[0], $show[1] ]));
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
-  } elsif ($locusSpec eq "") {
+  } elsif ($orgId ne "" && $pathSpec ne "" && $step ne "" && $locusSpec eq "") {
     # overview of this step in this organism
     my @cand = ReadCand($sumpre,$pathSpec);
     @cand = grep { $_->{orgId} eq $orgId && $_->{step} eq $step } @cand;
@@ -603,7 +664,7 @@ my $nCPU = 6;
       print li($show);
     }
     print end_ul(), "\n";
-  } elsif ($locusSpec ne "" && $step eq "") {
+  } elsif ($orgId ne "" && $step eq "" && $locusSpec ne "") {
     # Show the gene
     # First fetch its header and sequence
     my $tmp = "/tmp/gapView.$locusSpec.$$";
@@ -623,7 +684,7 @@ my $nCPU = 6;
     my @cand = ReadCand($sumpre,"");
     @cand = grep { $_->{locusId} eq $locusSpec || $_->{locusId2} eq $locusSpec} @cand;
     if (@cand == 0) {
-      print h3("Not a candidate for any step in $setDesc");
+      print p("Not a candidate for any step in $setDesc"),"\n";
     } else {
       print h3("Candidate for", scalar(@cand), "steps in $setDesc");
       my @header = qw{Pathway Step Score Similar-to Id. Cov. Bits Other-hit Other-id. Other-bits};
@@ -783,31 +844,44 @@ my $nCPU = 6;
     die "Unknown mode\n";
   }
 
+  if ($orgId ne "") {
+    push @links, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId" },
+                   "$setDesc in", $orgs{$orgId}{genomeName})
+      if $pathSpec ne "" || $locusSpec ne "" || $findgene ne "";
+    push @links, join(" ", "All steps for",
+                      a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec" }, $pathSpec),
+                      "in",
+                      a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId" }, $orgs{$orgId}{genomeName}))
+      if $pathSpec ne "" && $step ne "";
+    my @form1 = (start_form(-method => 'get', -action => "genomeSearch.cgi"),
+                 hidden(-name => 'gid', -value => $orgs{$orgId}{gid}, -override => 1),
+                 hidden(-name => 'gdb', -value => $orgs{$orgId}{gdb}, -override => 1),
+                 a({ -title => "Find characterized proteins whose descriptions match"
+                     . " and have homologs in this genome",
+                     -href => "genomeSearch.cgi?gib=$orgs{$orgId}{gid}&gdb=$orgs{$orgId}{gdb}" },
+                   "Curated BLAST:"),
+                 textfield(-name => 'query', -value => '', -size => 30, -maxlength => 200),
+                 submit("Go"),
+                 end_form);
+    push @links, join("\n", @form1);
+    my @form2 = (start_form(-method => 'get', -action => 'gapView.cgi'),
+                 hidden(-name => 'orgs'),
+                 hidden(-name => 'set'),
+                 hidden(-name => 'orgId'),
+                 a({-title => "Search through the gene descriptions."
+                    . " You can use % as a wild-card character"}, "Search annotations: "),
+                 textfield(-name => 'findgene', -value => '', -size => 30, -maxlength => 200, -override => 1),
+                 submit("Go"),
+                 end_form);
+    push @links, join("", @form2);
+  }
+
   push @links, a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=$pathSpec&showdef=1" },
                  "Definition of $pathDesc{$pathSpec}")
     if $pathSpec ne "" && !param("showdef");
   push @links, a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=$pathSpec"},
                  "Pathway $pathSpec across", scalar(@orgs), "genomes")
     if $pathSpec ne "" && (param("showdef") || $orgId ne "") && @orgs > 1;
-  push @links, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId" },
-                 "All pathways for", $orgs{$orgId}{genomeName})
-    if $orgId ne "" && ($pathSpec ne "" || $locusSpec ne "");
-  my $inOrgLabel = "";
-  $inOrgLabel = "in " . a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId" }, $orgs{$orgId}{genomeName})
-    if @orgs > 1 && $orgId ne "";
-  push @links, join(" ", "All steps for",
-                    a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec" }, $pathSpec),
-                    $inOrgLabel)
-    if $orgId ne "" && $pathSpec ne "" && $step ne "";
-  push @links,
-    a({ -href => "http://papers.genomics.lbl.gov/cgi-bin/genomeSearch.cgi?gdb=$orgs{$orgId}{gdb}&gid=$orgs{$orgId}{gid}" },
-      "Curated BLAST against", $orgs{$orgId}{genomeName})
-      if $orgId ne "";
-  push @links, join(" ",
-                    "Genome of ",
-                    a({-href => OrgIdToURL($orgId) }, "$orgs{$orgId}{genomeName}"),
-                    "(" . $orgs{$orgId}{gid} . ") at $orgs{$orgId}{gdb}")
-    if $orgId ne "";
   push @links, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set"}, "All $nOrgs genomes and all pathways")
     unless ($orgId eq "" && $pathSpec eq "") || @orgs == 1;
   print h3("Links"), start_ul(), li(\@links), end_ul
