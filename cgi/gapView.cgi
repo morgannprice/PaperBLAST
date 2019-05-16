@@ -388,14 +388,16 @@ my $nCPU = 6;
     if (exists $assembly->{features}) {
       foreach my $row (@{ $assembly->{features} }) {
         next unless $row->{class} eq "with_protein";
-        next unless $row->{name} =~ m/$regexp/i;
+        next unless $row->{name} =~ m/$regexp/i
+          || $row->{locus_tag} =~ m/^$regexp/i
+          || (exists $assembly->{oldid}{$row->{locus_tag}} && $assembly->{oldid}{$row->{locus_tag}} =~ m/^$regexp/i);
         my $id = $row->{product_accession} || $row->{"non-redundant_refseq"};
         die "Invalid identifier $id in feature file\n"
           unless defined $id && $id ne "";
         my $desc = $row->{name};
         my @moreids = ();
         if ($row->{locus_tag}) {
-          push @moreids, $row->{locustag};
+          push @moreids, $row->{locus_tag};
           push @moreids, $assembly->{oldid}{$row->{locus_tag}}
             if exists $assembly->{oldid}{$row->{locus_tag}};
         }
