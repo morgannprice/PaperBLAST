@@ -517,6 +517,7 @@ sub CacheAssembly($$$) {
         unless &FetchNCBIFeatureFile($assembly, $featurefile);
     }
     my $features = ParseNCBIFeatureFile($featurefile);
+    $assembly->{features} = $features;
     $assembly->{prot} = {};
     $assembly->{oldid} = {};
     foreach my $row (@$features) {
