@@ -1,0 +1,20 @@
+pathwayId	desc
+all	Amino acid biosynthesis
+arg	L-arginine biosynthesis
+asn	L-asparagine biosynthesis
+chorismate	chorsimate biosynthesis
+cys	L-cysteine biosynthesis
+gln	L-glutamine biosynthesis
+gly	glycine biosynthesis
+his	L-histidine biosynthesis
+ile	L-isoleucine biosynthesis
+leu	L-leucine biosynthesis
+lys	L-lysine biosynthesis
+met	L-methionine biosynthesis
+phe	L-phenylalanine biosynthesis
+pro	L-proline biosynthesis
+ser	L-serine biosynthesis
+thr	L-threonine biosynthesis
+trp	L-tryptophan biosynthesis
+tyr	L-tyrosine biosynthesis
+val	L-valine biosynthesis
