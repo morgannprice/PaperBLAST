@@ -52,7 +52,7 @@ sub GeneURL($$); # orgId (that is in %orgs), locusId
 sub RuleToScore($);
 sub ReadCand($$);
 sub OrgToAssembly($);
-sub Finish(); # show "About the gap viewer" and exit
+sub Finish(); # show "About GapMind" and exit
 sub CandToOtherColumns($);
 sub CuratedToLink($$);
 
@@ -81,7 +81,7 @@ my $nCPU = 6;
   my %pathDesc = map { $_->{pathwayId} => $_->{desc} } @pathInfo;
 
   autoflush STDOUT 1; # show preliminary results
-  my $banner = "Gap viewer for $setDesc";
+  my $banner = "GapMind for $setDesc";
 
   my @gdbs = ("NCBI", "IMG", "UniProt", "MicrobesOnline", "FitnessBrowser");
   my %gdb_labels1 = ("NCBI" => "NCBI assemblies",
@@ -99,7 +99,7 @@ my $nCPU = 6;
     my $gdb = param('gdb') || die "Must specify gdb with gquery";
     die "Unknown genome database: $gdb\n"
       if !exists $gdb_labels{$gdb};
-    start_page('title' => "Find gaps in $setDesc",
+    start_page('title' => "GapMind for $setDesc",
                'banner' => $banner,
                'bannerURL' => "gapView.cgi");
     print p("Searching", $gdb_labels{$gdb}, "for", "'" . $gquery . "'"), "\n";
@@ -133,11 +133,11 @@ my $nCPU = 6;
     Finish();
   } elsif (!defined $orgsSpec) {
     # Front page mode
-    start_page('title' => "Find gaps in $setDesc",
+    start_page('title' => "Mind gaps in $setDesc",
                'banner' => $banner,
                'bannerURL' => "gapView.cgi");
     print
-      p("View gaps in",
+      p("View 'gaps' in",
         a({-href => "gapView.cgi?set=$set&orgs=orgs35"}, "35 bacteria"),
         "that grow in minimal media, or choose a genome to analyze:"),
       start_form(-method => 'get', -action => "gapView.cgi", -autocomplete => 'on'),
@@ -283,7 +283,7 @@ my $nCPU = 6;
   $locusSpec = "" if !defined $locusSpec;
   $locusSpec =~ m/^[a-zA-Z90-9_.-]*$/ || die "Invalid locus $locusSpec";
 
-  my $title = "Gaps";
+  my $title = "'Gaps'";
   if ($locusSpec ne "") {
     $title = $step ne "" ? "Aligments for a candidate for $step" : "Protein $locusSpec";
   }
@@ -965,7 +965,7 @@ sub CuratedToLink($$) {
 sub Finish() {
   my $email = 'funwithwords26@gmail.com';
   print <<END
-<h3>About the gap viewer</h3>
+<h3>About GapMind</h3>
 <P>Each pathway is defined by a set of rules based on individual steps or genes. Candidates for each step are identified by using ublast against a database of characterized proteins or by using HMMer. Ublast hits may be split across two different proteins.
 
 <P>A candidate for a step is "high confidence" if either:
@@ -982,7 +982,7 @@ where "other" refers to the best ublast hit to a sequence that is not annotated 
 <LI>HMMer finds a hit (regardless of coverage or other bits)
 </UL>
 <P>Other blast hits with at least 50% coverage are "low confidence."
-<P>Steps with no high- or medium-confidence candidates may be considered gaps.
+<P>Steps with no high- or medium-confidence candidates may be considered "gaps."
 For the typical bacterium that can make all 20 amino acids, there are 1-2 gaps in amino acid biosynthesis pathways.
 Gaps may be due to:
 <UL>
@@ -992,7 +992,7 @@ Gaps may be due to:
 <LI>the organism lacks the pathway.
 </UL>
 
-<P>The gap viewer relies on the predicted proteins in the genome and does not search the six-frame translation. In most cases, you can search the six-frame translation by clicking on links to Curated BLAST for each step definition (in the per-step page).
+<P>GapMind relies on the predicted proteins in the genome and does not search the six-frame translation. In most cases, you can search the six-frame translation by clicking on links to Curated BLAST for each step definition (in the per-step page).
 
 <P>If you notice any errors or omissions in the step descriptions, or any questionable results, please
 <A HREF="mailto:$email">let us know</A>.
