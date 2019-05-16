@@ -51,6 +51,7 @@ sub HMMToURL($);
 sub GeneURL($$); # orgId (that is in %orgs), locusId
 sub RuleToScore($);
 sub ReadCand($$);
+sub OrgIdToURL($);
 sub OrgToAssembly($);
 sub Finish(); # show "About GapMind" and exit
 sub CandToOtherColumns($);
@@ -804,8 +805,8 @@ my $nCPU = 6;
       if $orgId ne "";
   push @links, join(" ",
                     "Genome of ",
-                    a({-href => OrgToAssembly($orgId)->{URL} }, "$orgs{$orgId}{genomeName}"),
-                    "(" . OrgToAssembly($orgId)->{gid} . ") at $orgs{$orgId}{gdb}")
+                    a({-href => OrgIdToURL($orgId) }, "$orgs{$orgId}{genomeName}"),
+                    "(" . $orgs{$orgId}{gid} . ") at $orgs{$orgId}{gdb}")
     if $orgId ne "";
   push @links, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set"}, "All $nOrgs genomes and all pathways")
     unless ($orgId eq "" && $pathSpec eq "") || @orgs == 1;
@@ -960,6 +961,25 @@ sub CuratedToLink($$) {
   my $idShowHit = $hitIds[0];
   $idShowHit =~ s/^.*://;
   return a({-href => $URL, -title => "View $idShowHit in PaperBLAST"}, $curatedDesc);
+}
+
+sub OrgIdToURL($) {
+  my ($orgId) = @_;
+  die "Invalid orgId" unless exists $orgs{$orgId};
+  my $gdb = $orgs{$orgId}{gdb};
+  my $gid = $orgs{$orgId}{gid};
+  die unless $gdb && $gid;
+  # Avoid running any queries or fetching the genome (via CacheAssembly)
+  # if all we need is a link to the genome page
+  return "https://www.ncbi.nlm.nih.gov/assembly/$gid"
+    if $gdb eq "NCBI";
+  return "http://fit.genomics.lbl.gov/cgi-bin/org.cgi?orgId=$gid"
+    if $gdb eq "FitnessBrowser";
+  return "http://www.microbesonline.org/cgi-bin/genomeInfo.cgi?tId=$gid"
+    if $gdb eq "MicrobesOnline";
+  # the other databases are trickier, so just fetch everything
+  my $assembly = OrgToAssembly($orgId);
+  return $assembly->{URL};
 }
 
 sub Finish() {
