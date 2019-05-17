@@ -12,11 +12,12 @@ use URI::Escape;
 use HTTP::Cookies;
 use JSON;
 use DBI;
+use Digest::MD5;
 use CGI qw{end_html a p};
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw(GetMatchingAssemblies CacheAssembly
+@EXPORT = qw(GetMatchingAssemblies CacheAssembly AASeqToAssembly
              warning fail
              SetPrivDir GetPrivDir
              GetFitnessBrowserPath SetFitnessBrowserPath FitnessBrowserDbh
@@ -488,7 +489,13 @@ sub CacheAssembly($$$) {
   my ($gdb, $gid, $dir) = @_;
   return undef unless $gdb && $gid;
   die "Not a directory: $dir\n" unless -d $dir;
-  if ($gdb eq "NCBI") {
+  if ($gdb eq "local") {
+    die "Invalid gid $gid\n" unless $gid =~ m/^[0-9A-Fa-f]+$/;
+    my $faaFile = "$dir/$gid/faa";
+    die "No such file: $faaFile\n" unless -e $faaFile;
+    return { 'gdb' => $gdb, 'gid' => $gid,
+             'faafile' => $faaFile, 'URL' => "", 'genomeName' => "Fasta sequences" };
+  } elsif ($gdb eq "NCBI") {
     my @hits = FetchNCBIInfo($gid);
     fail("Do not recognize NCBI assembly $gid")
       unless @hits;
@@ -716,6 +723,30 @@ sub CacheAssembly($$$) {
     return $assembly;
   }
   fail("Database $gdb is not supported");
+}
+
+# Given a hash of header to protein sequence, compute the CRC, and save it as an assembly
+sub AASeqToAssembly($$) {
+  my ($aaseq, $dir) = @_;
+  my $n = scalar(keys %$aaseq);
+  die "Empty input to AASeqToAssembly is not allowed\n" unless $n > 0;
+  my $md5 = Digest::MD5->new;
+  foreach my $key (sort keys %$aaseq) {
+    $md5->add($key, "\n", $aaseq->{$key}, "\n");
+  }
+  my $hex = $md5->hexdigest;
+  -d "$dir/$hex" || mkdir("$dir/$hex") || die "Cannot make directory $dir/$hex";
+  my $faaFile = "$dir/$hex/faa";
+  unless (-e $faaFile) {
+    my $tmpFile = $faaFile . ".$$.tmp";
+    open(my $fhA, ">", $tmpFile) || die "Cannot write to $tmpFile";
+    foreach my $key (sort keys %$aaseq) {
+      print $fhA ">" . $key . "\n" . $aaseq->{$key} . "\n";
+    }
+    close($fhA) || die "Error writing to $tmpFile";
+    rename($tmpFile, $faaFile) || die "Cannot rename $tmpFile to $faaFile";
+  }
+  return CacheAssembly('local', $hex, $dir);
 }
 
 my $fbdb_path = "";
