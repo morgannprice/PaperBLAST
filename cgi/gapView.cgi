@@ -12,6 +12,9 @@
 # gdb -- which genome database to search in
 # gquery -- an organism name to search for
 # findgene -- a search term for finding proteins
+# file -- uploaded fasta file (used to create orgs)
+#	(This usually leads to running the analysis, or showing
+#	the overview page)
 #
 # Modes of this viewer:
 # If gdb and gquery are set, search for relevant genomes
@@ -43,7 +46,7 @@ use lib "../lib";
 use Steps;
 use pbutils;
 use pbweb qw{start_page};
-use FetchAssembly qw{CacheAssembly GetMatchingAssemblies GetMaxNAssemblies};
+use FetchAssembly qw{CacheAssembly AASeqToAssembly GetMatchingAssemblies GetMaxNAssemblies};
 use File::stat;
 
 sub ScoreToStyle($);
@@ -58,10 +61,17 @@ sub OrgToAssembly($);
 sub Finish(); # show "About GapMind" and exit
 sub CandToOtherColumns($);
 sub CuratedToLink($$);
+sub ProcessUpload($);
 
 my $tmpDir = "../tmp"; # for CacheAssembly
 my %orgs = (); # orgId => hash including gdb, gid, genomeName
 my $nCPU = 6;
+
+# maximum size of posted data, in bytes
+my $maxMB = 100;
+$CGI::POST_MAX = $maxMB*1024*1024;
+my $maxNSeqsK = 100;
+my $maxNSeqs = $maxNSeqsK * 1000;
 
 {
   FetchAssembly::SetFitnessBrowserPath("../fbrowse_data");
@@ -74,7 +84,6 @@ my $nCPU = 6;
   foreach my $dir ($stepPath,$queryPath) {
     die "Invalid set $set: no $dir directory" unless -d $dir;
   }
-
 
   my @pathInfo = ReadTable("$stepPath/$set.table", ["pathwayId","desc"]);
   my ($setDescRow) = grep {$_->{pathwayId} eq "all"} @pathInfo;
@@ -89,12 +98,36 @@ my $nCPU = 6;
   my @gdbs = ("NCBI", "IMG", "UniProt", "MicrobesOnline", "FitnessBrowser");
   my %gdb_labels1 = ("NCBI" => "NCBI assemblies",
                      "UniProt" => "UniProt proteomes",
-                     "IMG" => "JGI/IMG genomes", "FitnessBrowser" => "Fitness Browser genomes");
+                     "IMG" => "JGI/IMG genomes", "FitnessBrowser" => "Fitness Browser genomes",
+                     "local" => "Uploaded proteome");
   my %gdb_labels = map { $_ => exists $gdb_labels1{$_} ? $gdb_labels1{$_} : "$_ genomes"} @gdbs;
 
   my $orgsSpec = param('orgs');
   $orgsSpec = param('gdb') . "__" . param('gid')
     if !defined $orgsSpec && param('gdb') && param('gid');
+
+  if (defined param('file')) {
+    # Process the upload file and set $orgsSpec
+    my $upFile = param('file');
+    my $error;
+    my %up;
+    if (ref $upFile) {
+      my $fhUp = $upFile->handle || die "Not a file handle";
+      %up = ProcessUpload($fhUp);
+      $error = $up{error};
+    } else {
+      $error = "No upload file specified";
+    }
+    if ($error) {
+      start_page('title' => 'Upload Error in GapMind',
+                 'banner' => $banner,
+                 'bannerURL' => "gapView.cgi");
+      print p(HTML::Entities::encode($error));
+      Finish();
+    }
+    # else
+    $orgsSpec = $up{gdb} . "__" . $up{gid};
+  }
 
   if (!defined $orgsSpec && param('gquery')) {
     # Genome query mode
@@ -150,6 +183,12 @@ my $nCPU = 6;
       p(textfield(-name => 'gquery', -value => '', -size => 50, -maxlength => 200)),
       p(small("Example:", a({-href => "gapView.cgi?gdb=NCBI&gquery=Desulfovibrio vulgaris"}, "Desulfovibrio vulgaris"))),
       p(submit(-name => "findgenome", -value => 'Find Genome')),
+      end_form,
+      start_form(-method => 'post', -action => "gapView.cgi", -autocomplete => 'on'),
+      hidden(-name => 'set', -value => $set, -override => 1),
+      p("Or upload a proteome in fasta format:",
+        filefield(-name=>'file', -size=>40)),
+      p(submit('Upload')),
       end_form;
     Finish();
   }
@@ -860,14 +899,14 @@ my $nCPU = 6;
                  hidden(-name => 'gdb', -value => $orgs{$orgId}{gdb}, -override => 1),
                  a({ -title => "Find characterized proteins whose descriptions match"
                      . " and have homologs in this genome",
-                     -href => "genomeSearch.cgi?gib=$orgs{$orgId}{gid}&gdb=$orgs{$orgId}{gdb}" },
+                     -href => "genomeSearch.cgi?gid=$orgs{$orgId}{gid}&gdb=$orgs{$orgId}{gdb}" },
                    "Curated BLAST:"),
                  textfield(-name => 'query', -value => '', -size => 30, -maxlength => 200),
                  submit("Go"),
                  end_form);
     push @links, join("\n", @form1);
     my @form2 = (start_form(-method => 'get', -action => 'gapView.cgi'),
-                 hidden(-name => 'orgs'),
+                 hidden(-name => 'orgs', -override => 1),
                  hidden(-name => 'set'),
                  hidden(-name => 'orgId'),
                  a({-title => "Search through the gene descriptions."
@@ -876,6 +915,11 @@ my $nCPU = 6;
                  submit("Go"),
                  end_form);
     push @links, join("", @form2);
+    push @links, join(" ",
+                      a({ -href => OrgIdToURL($orgId) }, $orgs{$orgId}{genomeName}),
+                      small('(' . $orgs{$orgId}{gid} . ')'),
+                      "at", $orgs{$orgId}{gdb})
+      unless $orgs{$orgId}{gdb} eq "local";
   }
 
   push @links, a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=$pathSpec&showdef=1" },
@@ -967,6 +1011,8 @@ sub GeneURL($$) {
     return "";
   } elsif ($gdb eq "IMG") {
     return "https://img.jgi.doe.gov/cgi-bin/w/main.cgi?section=GeneDetail&page=geneDetail&gene_oid=$locusId";
+  } elsif ($gdb eq "local") {
+    return "";
   }
   die "Unknown genome database $gdb\n";
 }
@@ -1056,6 +1102,44 @@ sub OrgIdToURL($) {
   # the other databases are trickier, so just fetch everything
   my $assembly = OrgToAssembly($orgId);
   return $assembly->{URL};
+}
+
+sub ProcessUpload($) {
+  my ($fhUp) = @_;
+  my $state = {};
+  my %seq = (); # header => sequence
+  my %ids = (); # ids seen already
+  while (my ($header, $seq) = ReadFastaEntry($fhUp, $state, 1)) {
+    return ('error' => "Invalid characters in sequence for $header -- only A-Z or * are allowed")
+      unless $seq =~ m/^[A-Z*]+$/;
+    return ('error' => "Invalid characters in header $header -- only ascii characters are allowed")
+      unless $header =~ m/^[\0-\x7f]+$/;
+    my @pieces = split / /, $header;
+    my $id = shift @pieces;
+    return ('error' => "No identifier at beginning of header $header")
+      unless defined $id && $id ne "";
+    return ('error' => "Duplicate sequence for identifier $id")
+      if exists $ids{$id};
+    $seq{$header} = $seq;
+  }
+  return ('error' => "Sorry, uploaded file is not a valid fasta file: $state->{error}")
+    if exists $state->{error};
+  return ('error' => "No input sequences in upload")
+    if scalar(keys %seq) == 0;
+  return ('error' => "Sorry, the input has too many sequences (the limit is $maxNSeqsK,000)")
+    if scalar(keys %seq) > $maxNSeqs;
+
+  my $totLen = 0;
+  my $nNucChar = 0;
+  foreach my $seq (values %seq) {
+    $totLen += length($seq);
+    $nNucChar += ($seq =~ tr/ACGTUN//);
+  }
+  return ('error' => "The uploaded sequences seem to be nucleotide sequences rather than protein sequences")
+    if $nNucChar/ $totLen >= 0.9;
+
+  my $assembly = AASeqToAssembly(\%seq, $tmpDir) || die;
+  return ('gdb' => $assembly->{gdb}, 'gid' => $assembly->{gid});
 }
 
 sub Finish() {
