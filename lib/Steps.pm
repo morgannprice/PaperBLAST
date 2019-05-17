@@ -192,6 +192,9 @@ sub WriteAssemblyAsOrgProteins($$) {
         my $gn = $1 if $rest =~ m/ GN=(\S+) /;
         $desc .= " ($gn)" if $gn;
       }
+    } elsif ($assembly->{gdb} eq "local") {
+      $locusId = shift @words;
+      $desc = join(" ", @words);
     } else {
       die "Unknown genome database $assembly->{gdb}";
     }
