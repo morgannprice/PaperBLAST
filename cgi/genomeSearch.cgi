@@ -84,10 +84,11 @@ my $upfile = $gid ? undef : $cgi->param('file');
 my $query = $cgi->param('query');
 my $word = $cgi->param('word');
 
-my @gdbs = ("NCBI", "IMG", "UniProt", "MicrobesOnline", "FitnessBrowser");
+my @gdbs = ("NCBI", "IMG", "UniProt", "MicrobesOnline", "FitnessBrowser", "local");
 my %gdb_labels1 = ("NCBI" => "NCBI assemblies",
                    "UniProt" => "UniProt proteomes",
-                   "IMG" => "JGI/IMG genomes", "FitnessBrowser" => "Fitness Browser genomes");
+                   "IMG" => "JGI/IMG genomes", "FitnessBrowser" => "Fitness Browser genomes",
+                   "local" => "Uploaded proteome"); # from other tools
 my %gdb_labels = map { $_ => exists $gdb_labels1{$_} ? $gdb_labels1{$_} : "$_ genomes"} @gdbs;
 die "Unknown genome database: $gdb\n"
   if $gdb && !exists $gdb_labels{$gdb};
