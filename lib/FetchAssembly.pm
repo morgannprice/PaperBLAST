@@ -363,6 +363,7 @@ sub ExplodeJGI($$) {
   my $prefix = $files[0];
   $prefix =~ s!/.*!!;
   mkdir($dir) || die "Cannot create directory $dir";
+
   # explode and check that prefix.genes.faa and prefix.fna both exist
   # Note that strip-components will ignore the 1st subdirectory indicator,
   # and above we checked that there are no other subdirectories,
@@ -493,8 +494,16 @@ sub CacheAssembly($$$) {
     die "Invalid gid $gid\n" unless $gid =~ m/^[0-9A-Fa-f]+$/;
     my $faaFile = "$dir/$gid/faa";
     die "No such file: $faaFile\n" unless -e $faaFile;
+    # Read the first line to get a more useful genome name
+    open (my $fh, "<", $faaFile) || die "Error reading $faaFile";
+    my $header = <$fh> || die "$faaFile is empty";
+    chomp $header;
+    $header =~ s/^>//;
+    my $id = $header; $id =~ s/ .*//;
+    close($fh) || die "Error reading $faaFile";
     return { 'gdb' => $gdb, 'gid' => $gid,
-             'faafile' => $faaFile, 'URL' => "", 'genomeName' => "Fasta sequences" };
+             'faafile' => $faaFile, 'URL' => "",
+             'genomeName' => "Proteome with $id..." };
   } elsif ($gdb eq "NCBI") {
     my @hits = FetchNCBIInfo($gid);
     fail("Do not recognize NCBI assembly $gid")

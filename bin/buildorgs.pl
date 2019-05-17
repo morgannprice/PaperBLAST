@@ -86,7 +86,9 @@ foreach my $orgspec (@orgspec) {
       die "Duplicate sequence for $key in $gid\n" if exists $headerToSeq{$key};
       $headerToSeq{$key} = $faa{seq}{$id} || die "Empty sequence for $id in $gid\n";
     }
-    $genomeName = scalar(keys %headerToSeq) . " proteins"
+    my @ids = sort keys %{ $faa{seq} };
+    my $n = scalar(@ids);
+    $genomeName = "$ids[0]:$ids[-1] ($n proteins)"
       unless defined $genomeName;
     $assembly = AASeqToAssembly(\%headerToSeq, $cachedir);
     $assembly->{genomeName} = $genomeName;
