@@ -4,8 +4,8 @@ use Getopt::Long;
 use FindBin qw{$Bin};
 use lib "$Bin/../lib";
 use Steps qw{WriteAssemblyAsOrgProteins WriteSixFrameAsOrgProteins};
-use FetchAssembly qw{CacheAssembly SetFitnessBrowserPath SetPrivDir};
-use pbutils qw{ReadFastaEntry};
+use FetchAssembly qw{CacheAssembly SetFitnessBrowserPath SetPrivDir AASeqToAssembly};
+use pbutils qw{ReadFastaEntry ReadFastaDesc};
 
 my $cachedir = "$Bin/../tmp";
 my $privdir = "$Bin/../private"; # for JGI access key
@@ -17,7 +17,9 @@ my $usage = <<END
 
 where gdb is one of the genome databases supported by FetchAssembly
 (NCBI, JGI, UniProt, MicrobesOnline, FitnessBrowser)
-and gid is a genome identifier.
+and gid is a genome identifier,
+or, gdb=file and gid=filename
+or, gdb=file and gid=filename:genomeName
 
 Writes to prefix.faa and prefix.org
 
@@ -63,16 +65,35 @@ die "No such executable: $formatdb\n" unless -x $formatdb;
 my %gid = (); # gid => assembly
 my @assemblies = ();
 foreach my $orgspec (@orgspec) {
-  die "Whitespace not allowed in organism specifier: $orgspec\n"
-    if $orgspec =~ m/\s/;
   my @parts = split /:/, $orgspec;
   die "organism specifier $orgspec should have two parts"
-    unless @parts == 2;
+    unless @parts == 2 || (@parts ==3 && $parts[0] eq "file");
   my ($gdb, $gid) = @parts;
+  die "Whitespace not allowed in organism specifier: $orgspec\n"
+    if $gdb =~ m/\s/ || $gid =~ m/\s/;
   die "Duplicate genome identifier $gid -- each genome can be included only once\n"
     if exists $gid{$gid};
-  my $assembly = CacheAssembly($gdb, $gid, $cachedir)
-    || die "Cannot fetch $orgspec\n";
+  my $assembly;
+  if ($gdb eq "file") {
+    my $genomeName = $parts[2] if @parts > 2;
+    die "No such file: $gid\n" unless -e $gid;
+    my %faa = ReadFastaDesc($gid);
+    die "Invalid fasta input $gid: " . values(%faa)
+      if exists $faa{error};
+    my %headerToSeq = ();
+    while (my ($id, $desc) = each %{ $faa{desc} }) {
+      my $key = "$id $desc";
+      die "Duplicate sequence for $key in $gid\n" if exists $headerToSeq{$key};
+      $headerToSeq{$key} = $faa{seq}{$id} || die "Empty sequence for $id in $gid\n";
+    }
+    $genomeName = scalar(keys %headerToSeq) . " proteins"
+      unless defined $genomeName;
+    $assembly = AASeqToAssembly(\%headerToSeq, $cachedir);
+    $assembly->{genomeName} = $genomeName;
+  } else {
+    $assembly = CacheAssembly($gdb, $gid, $cachedir)
+      || die "Cannot fetch $orgspec\n";
+  }
   print STDERR "Loaded $orgspec\n";
   push @assemblies, $assembly;
   $gid{$gid} = $assembly;
