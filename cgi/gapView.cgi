@@ -72,6 +72,7 @@ my $maxMB = 100;
 $CGI::POST_MAX = $maxMB*1024*1024;
 my $maxNSeqsK = 100;
 my $maxNSeqs = $maxNSeqsK * 1000;
+my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein ids
 
 {
   FetchAssembly::SetFitnessBrowserPath("../fbrowse_data");
@@ -323,7 +324,7 @@ my $maxNSeqs = $maxNSeqsK * 1000;
 
   my $locusSpec = param("locusId");
   $locusSpec = "" if !defined $locusSpec;
-  $locusSpec =~ m/^[a-zA-Z90-9_.-]*$/ || die "Invalid locus $locusSpec";
+  $locusSpec =~ m/^[$charsInId]*$/ || die "Invalid locus $locusSpec";
 
   my $findgene = param('findgene');
   $findgene = "" if !defined $findgene;
@@ -906,7 +907,7 @@ my $maxNSeqs = $maxNSeqsK * 1000;
                  end_form);
     push @links, join("\n", @form1);
     my @form2 = (start_form(-method => 'get', -action => 'gapView.cgi'),
-                 hidden(-name => 'orgs', -override => 1),
+                 hidden(-name => 'orgs', -value => $orgsSpec, -override => 1),
                  hidden(-name => 'set'),
                  hidden(-name => 'orgId'),
                  a({-title => "Search through the gene descriptions."
@@ -1112,14 +1113,13 @@ sub ProcessUpload($) {
   while (my ($header, $seq) = ReadFastaEntry($fhUp, $state, 1)) {
     return ('error' => "Invalid characters in sequence for $header -- only A-Z or * are allowed")
       unless $seq =~ m/^[A-Z*]+$/;
-    return ('error' => "Invalid characters in header $header -- only ascii characters are allowed")
-      unless $header =~ m/^[\0-\x7f]+$/;
     my @pieces = split / /, $header;
     my $id = shift @pieces;
     return ('error' => "No identifier at beginning of header $header")
       unless defined $id && $id ne "";
     return ('error' => "Duplicate sequence for identifier $id")
       if exists $ids{$id};
+    $ids{$id} = 1;
     $seq{$header} = $seq;
   }
   return ('error' => "Sorry, uploaded file is not a valid fasta file: $state->{error}")
