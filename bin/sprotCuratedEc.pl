@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
-use lib "/usr2/people/mprice/workbook/PaperBLAST/SWISS/lib";
+use FindBin qw{$Bin};
+use lib "$Bin/../lib/SWISS";
 use SWISS::Entry;
 
 die "Usage: zcat uniprot_sprot.dat.gz | sprotCuratedEc.pl > curatedEc.faa\n"
