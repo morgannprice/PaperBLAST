@@ -8,8 +8,62 @@ use lib "$Bin/../lib";
 use pbutils qw{ReadTable};
 use Steps qw{ReadSteps ReadOrgTable ReadOrgProtein ParseOrgLocus};
 
+my $maxCand = 5;
+my @weightsDef = (-2,-0.1,1); # default weights for rules with low/medium/high candidates
+my $infoFile = "curated.faa.info";
+my $fOverlap = 0.5;
+my $stepDir = ".";
+my $queryDir = ".";
+my $usage = <<END
+Usage: gapsummary.pl -pathways his met ... pro -orgs orgprefix
+  -hits hitsfile -revhits revhitsfile -out summary
+
+The hits and revhites files are from gapsearch.pl and gaprevsearch.pl
+Writes 1 line per organism x step to summary.steps (if has any candidates)
+Writes 1 line per step x gene candidate to summary.cand
+Writes 1 line per rule to summary.rules
+
+Currently, the score of a candidate for a step is defined as
+
+2: blast to a characterized protein at above 40% identity and 80%
+   coverage and bits >= otherBits+10,
+   or hmm match and 80% coverage and !(otherIdentity >= 40 &
+   otherCoverage >= 0.75)
+
+1: blast to a characterized or curated protein at above 30% id. and
+   80% cov. and bits >= otherBits, or blast above 40% id. and 70%
+   coverage (ignoring otherBits)
+   or hmm match (regardless of coverage or otherBits)
+0: other blast hit with 50% coverage
+
+This script also searches for split loci by trying to join two BLAST
+hits to the same characterized or curated protein together (unless
+there are already two candidates with score=2). It considers loci for
+joining if they have at least 30% identity and bits >= otherBits+10
+but do not meet the coverage requirements (score < 2). Split loci are
+indicated by a non-empty locusId2 in the summary.cand file and by
+comma-delimited locusIds or sysNames in the summary.steps file.
+
+The "best" path for a rule is the one that has the no low-confidence
+or no medium-confidence steps. If there are no such paths, or there is
+a tie, it chooses the path with the highest total score (see -weights
+below). If there is still a tie, it chooses the longer path.
+
+Optional arguments:
+-info $infoFile -- made by curatedFaa.pl with the -curatedids
+  option
+-stepDir $stepDir -- which directory the *.steps files are in
+-queryDir $queryDir -- which directory the *.query files are in
+-maxCand $maxCand -- number of candidates for each step to keep
+-weights weightLow weightMedium weightHigh -- the weight for
+  each type of step. The default is @weightsDef.
+-overlap $fOverlap -- ignore hits to other sequences that do not
+   overlap at least this fraction of the original hit's alignment.
+END
+;
+
 # Given a list of hits and a list of reverse hits, all relating to the same orgId/locusId,
-# return a hash that describes the hit, with the fields
+# return a hash that describes the best hit, with the fields
 #   orgId, locusId, score,
 #   (blast-based) blastBits, curatedIds, identity, blastCoverage, blastScore
 #   (hmm-based) hmmBits, hmmId, hmmCoverage, hmmScore
@@ -31,54 +85,13 @@ sub RelevantRevhit($$$);
 # Returns a candidate object (but with no HMM fields filled out), or undef
 sub FindSplit($$$);
 
-my $maxCand = 5;
-my @weightsDef = (-2,-0.1,1); # default weights for rules with low/medium/high candidates
-my $infoFile = "curated.faa.info";
-my $fOverlap = 0.5;
-my $stepDir = ".";
-my $queryDir = ".";
-my $usage = <<END
-Usage: gapsummary.pl -pathways his met ... pro -orgs orgprefix
-  -hits hitsfile -revhits revhitsfile -out summary
-
-The hits and revhites files are from gapsearch.pl and gaprevsearch.pl
-Writes 1 line per organism x step to summary.steps (if has any candidates)
-Writes 1 line per step x gene candidate to summary.cand
-Writes 1 line per rule to summary.rules
-
-Currently, the score of a candidate for a step is defined as
-2: blast above 40% identity and 80% coverage and bits >= otherBits+10,
-   or hmm match and 80% coverage and !(otherIdentity >= 40 & otherCoverage >= 0.75)
-1: blast above 30% id. and 80% cov. and bits >= otherBits,
-   or blast above 40% id. and 70% coverage (ignoring otherBits)
-   or hmm match (regardless of coverage or otherBits)
-0: other blast hit with 50% coverage
-
-This script also searches for split loci by trying to join two BLAST
-hits to the same characterized protein together (unless there are
-already candidates with score=2). It considers loci for joining if
-they have at least 30% identity and bits >= otherBits+10 but do not
-meet the coverage requirements (score < 2). Split loci are indicated
-by a non-empty locusId2 in the summary.cand file and by comma-delimited
-locusIds or sysNames in the summary.steps file.
-
-The "best" path for a rule is the one that has the no low-confidence
-or no medium-confidence steps. If there are no such paths, or there is
-a tie, it chooses the path with the highest total score (see -weights
-below). If there is still a tie, it chooses the longer path.
-
-Optional arguments:
--info $infoFile -- made by curatedFaa.pl with the -curatedids
-  option
--stepDir $stepDir -- which directory the *.steps files are in
--queryDir $queryDir -- which directory the *.query files are in
--maxCand $maxCand -- number of candidates for each step to keep
--weights weightLow weightMedium weightHigh -- the weight for
-  each type of step. The default is @weightsDef.
--overlap $fOverlap -- ignore hits to other sequences that do not
-   overlap at least this fraction of the original hit's alignment.
-END
-;
+# Given two hits of different loci to the same curated item,
+# along with the best score of each locus and reverse
+# hit information, returns a combined hit or undef.
+# The order of arguments is:
+# hit1, bestscore1, reverse hit list for hit1,
+# hit2, bestscore2, most relevant reverse hit for hit2
+sub MergeHits($$$$$$);
 
 {
   my @pathways;
@@ -148,7 +161,8 @@ END
       my $type = $query->{type};
       my $step = $query->{step};
       $id = "uniprot:" . $id if $type eq "uniprot";
-      if ($type eq "curated" || $type eq "uniprot") {
+      $id = "curated2:" . $id if $type eq "curated2";
+      if ($type eq "curated" || $type eq "curated2" || $type eq "uniprot") {
         $blastQuery{$pathId}{$step}{$id} = 1;
         $queryToStep{$id}{$pathId}{$step} = 1;
         $ignore{$pathId}{$step}{$id} = 1;
@@ -161,7 +175,7 @@ END
         die "Unknown query type $type in $queryFile\n";
       }
       # And save descriptions
-      if ($type eq "curated" || $type eq "uniprot" || $type eq "hmm") {
+      if ($type eq "curated" || $type eq "curated2" || $type eq "uniprot" || $type eq "hmm") {
         if (exists $queryDesc{$id}) {
           die "Mismatch for description of $id in $queryFile -- $queryDesc{$id} vs. $query->{desc}\n"
             unless $queryDesc{$id} eq $query->{desc};
@@ -176,7 +190,13 @@ END
   # This is converted to an orgId and a locusId below
   my @hitFields = qw{locusId type curatedId bits locusBegin locusEnd cBegin cEnd cLength identity};
   my @hits = ReadTable($hitsFile, \@hitFields);
-
+  # add the fromCurated field to all blast hits -- these are lower priority because
+  # the reference protein is not actually characterized
+  foreach my $hit (@hits) {
+    if ($hit->{type} eq "blast") {
+      $hit->{fromCurated} = $hit->{curatedId} =~ m/^curated2:/ ? 1 : 0;
+    }
+  }
   my @revFields = qw{locusId otherId bits locusBegin locusEnd otherBegin otherEnd otherIdentity};
   my @revhits = ReadTable($revhitsFile, \@revFields);
 
@@ -260,17 +280,19 @@ END
           @rev = grep !exists $ignore{$pathwayId}{$step}{ $_->{otherId} }, @rev;
           @rev = sort { $b->{bits} <=> $a->{bits}
                         || $a->{otherId} cmp $b->{otherId} } @rev;
-          $locusRev{$locusId} = \@rev; # save for splitting below
+          $locusRev{$locusId} = \@rev; # saved for use in splitting below
           my $cand = ScoreCandidate($hits, \@rev);
           push @cand, $cand if defined $cand;
         }
         # select the best candidates for this step
+        # push curated-not-characterized items after other items with the same score
         foreach my $cand (@cand) {
           $cand->{maxBits} = max($cand->{blastBits} || 0, $cand->{hmmBits} || 0);
         }
         @cand = sort { $b->{score} <=> $a->{score}
-                       || $b->{maxBits} <=> $a->{maxBits}
-                       || $b->{locusId} cmp $a->{locusId} } @cand;
+                         || $a->{fromCurated} <=> $b->{fromCurated}
+                         || $b->{maxBits} <=> $a->{maxBits}
+                         || $b->{locusId} cmp $a->{locusId} } @cand;
         @cand = splice(@cand, 0, $maxCand) if @cand > $maxCand;
 
         # look for split ORFs unless there are two high-confidence candidates
@@ -278,32 +300,33 @@ END
           my %locusCand = map { $_->{locusId} => $_ } @cand;
           my $merge = FindSplit($locushash, \%locusRev, \%locusCand);
           if (defined $merge) {
-            # Put the HMM info from 1st (higher scoring) locus into $merge
+            # Put the HMM and fromCurated info from 1st (higher scoring) locus into $merge
             my $cand1 = $locusCand{ $merge->{locusId} };
-            if (defined $cand1) {
-              foreach my $key (qw{hmmBits hmmId hmmCoverage hmmScore}) {
-                $merge->{$key} = $cand1->{$key};
-              }
+            die unless defined $cand1;
+            foreach my $key (qw{hmmBits hmmId hmmCoverage hmmScore fromCurated}) {
+              $merge->{$key} = $cand1->{$key};
             }
             $merge->{maxBits} = max($merge->{blastBits}, $merge->{hmmBits} || 0);
-
             # replace the previous entries for the merged genes with the merge
             @cand = grep { $_->{locusId} ne $merge->{locusId}
-                           && $_->{locusId} ne $merge->{locusId2} } @cand;
+                             && $_->{locusId} ne $merge->{locusId2} } @cand;
             push @cand, $merge;
+            # Re-sort and re-truncate the list
             @cand = sort { $b->{score} <=> $a->{score}
-                           || $b->{maxBits} <=> $a->{maxBits}
-                           || $b->{locusId} cmp $a->{locusId} } @cand;
+                             || $a->{fromCurated} <=> $b->{fromCurated}
+                             || $b->{maxBits} <=> $a->{maxBits}
+                             || $b->{locusId} cmp $a->{locusId} } @cand;
+            @cand = splice(@cand, 0, $maxCand) if @cand > $maxCand;
           }
         }
-        # And make sure all metadata fields are present
+        # Make sure all metadata fields are present
         foreach my $cand (@cand) {
           $cand->{orgId} = $orgId;
           $cand->{pathway} = $pathwayId;
           $cand->{step} = $step;
         }
         $cand{$orgId}{$pathwayId}{$step} = \@cand;
-      }
+      } # end loop over steps
     }
   }
 
@@ -469,8 +492,6 @@ END
   }
   close($fhR) || die "Error writing to $outpre.rules\n";
   print STDERR "Wrote $outpre.rules\n";
-
-
 }
 
 sub ScoreCandidate($$) {
@@ -494,9 +515,11 @@ sub ScoreCandidate($$) {
     } elsif ($hit->{identity} >= 40 && $hit->{coverage} >= 0.7) {
       $score = 1;
     }
+    $score = 1 if $score == 2 && $hit->{curatedId} =~ m/^curated2:/;
     unless (defined $bestBlastHit && $score <= $bestBlastHit->{blastScore}) {
       $bestBlastHit = { 'blastBits' => $hit->{bits},
                         'curatedIds' => $hit->{curatedId},
+                        'fromCurated' => $hit->{fromCurated},
                         'identity' => $hit->{identity},
                         'blastCoverage' => $hit->{coverage},
                         'blastScore' => $score,
@@ -548,6 +571,7 @@ sub ScoreCandidate($$) {
   }
   $out->{score} = max($bestBlastHit ? $bestBlastHit->{blastScore} : 0,
                       $bestHMMHit ? $bestHMMHit->{hmmScore} : 0);
+  $out->{fromCurated} = 0 unless defined $out->{fromCurated};
   return $out;
 }
 
@@ -557,7 +581,7 @@ sub RelevantRevhit($$$) {
     # compute overlap region, if any
     my $begin = max($locusBegin, $rh->{locusBegin});
     my $end = min($locusEnd, $rh->{locusEnd});
-    return $rh 
+    return $rh
       if $end >= $begin
         && $end-$begin+1 >= ($locusEnd-$locusBegin+1) * $fOverlap;
   }
@@ -571,87 +595,115 @@ sub RelevantRevhit($$$) {
 sub FindSplit($$$) {
   my ($hithash, $revhash, $candhash) = @_;
 
-  my %locusBest = (); # locusId => best hit
-  my %locusTarget = (); # locusId => target => hit
+  my %locusBest = (); # locusId => best hits
+  my %locusTarget = (); # locusId => curatedId => best hit object
   while (my ($locusId, $hits) = each %$hithash) {
-    foreach my $hit (@$hits) {
-      next unless $hit->{type} eq "blast" && $hit->{identity} >= 30;
-      $locusBest{$locusId} = $hit
-        unless exists $locusBest{$locusId} && $locusBest{$locusId}{bits} >= $hit->{bits};
-      $locusTarget{$locusId}{$hit->{curatedId}} = $hit
-        unless exists $locusTarget{$locusId}{$hit->{curatedId}}
-          && $locusTarget{$locusId}{$hit->{curatedId}}{bits} >= $hit->{bits};
+    my @hits = grep { $_->{type} eq "blast" && $_->{identity} >= 30 } @$hits;
+    @hits = sort { $a->{fromCurated} <=> $b->{fromCurated}
+                     || $b->{bits} <=> $a->{bits} } @hits;
+    @hits = splice(@hits, 0, $maxCand) if @hits > $maxCand;
+    $locusBest{$locusId} = \@hits if @hits > 0;
+    foreach my $hit (@hits) {
+      $locusTarget{$locusId}{ $hit->{curatedId} } = $hit
+        unless exists $locusTarget{$locusId}{ $hit->{locusId} };
     }
   }
 
-  my @loci = sort { $locusBest{$b}{bits} <=> $locusBest{$a}{bits} } keys %locusBest;
+  my @loci = sort { $locusBest{$b}[0]{bits} <=> $locusBest{$a}[0]{bits} } keys %locusBest;
   @loci = splice(@loci, 0, $maxCand) if @loci > $maxCand;
 
   # And test all remaining pairs
+  my @comb = ();
   for (my $j = 1; $j < scalar(@loci); $j++) {
-    # Consider the best hit for the lower-scoring protein, on the theory
-    # that its alignment is more likely to be missed
     my $locus2 = $loci[$j];
-    my $hit2 = $locusBest{$locus2};
-    # Skip this locus if there is an other hit that is close
-    my $rh2 = RelevantRevhit($hit2->{locusBegin}, $hit2->{locusEnd}, $revhash->{$locus2});
-    next if defined $rh2 && $hit2->{bits} <= $rh2->{bits} + 10;
+    foreach my $hit2 (@{ $locusBest{$locus2} }) {
+      # Skip if there is an other hit that is close
+      my $rh2 = RelevantRevhit($hit2->{locusBegin}, $hit2->{locusEnd}, $revhash->{$locus2});
+      next if defined $rh2 && $hit2->{bits} <= $rh2->{bits} + 10;
 
-    my $curatedId = $hit2->{curatedId} || die;
-    for (my $i = 0; $i < $j; $i++) {
-      my $locus1 = $loci[$i]; # the higher-scoring one
-
-      die if $locus1 eq $locus2;
-      next unless exists $locusTarget{$locus1}{$curatedId};
-      my $hit1 = $locusTarget{$locus1}{$curatedId};
-      die unless $hit1 && $hit2 && $hit1->{curatedId} eq $hit2->{curatedId};
-
-      # Overlap on the curated sequence should be at most 20% of either alignment
-      # Combined alignment should cover at least 70% of the curated protein
-      my $alnLen1 = $hit1->{cEnd} - $hit1->{cBegin}+1;
-      my $alnLen2 = $hit2->{cEnd} - $hit2->{cBegin}+1;
-      my ($overlap, $combLen);
-      if ($hit1->{cEnd} < $hit2->{cBegin} || $hit1->{cBegin} > $hit2->{cEnd}) {
-        # No overlap
-        $overlap = 0;
-        $combLen = $alnLen1 + $alnLen2;
-      } else {
-        my $combBegin = min($hit1->{cBegin}, $hit2->{cBegin});
-        my $combEnd = max($hit1->{cEnd}, $hit2->{cEnd});
-        $combLen = $combEnd - $combBegin + 1;
-        $overlap = $alnLen1 + $alnLen2 - $combLen;
+      my $curatedId = $hit2->{curatedId} || die;
+      for (my $i = 0; $i < $j; $i++) {
+        my $locus1 = $loci[$i]; # the higher-scoring one
+        die if $locus1 eq $locus2;
+        next unless exists $locusTarget{$locus1}{$curatedId};
+        my $hit1 = $locusTarget{$locus1}{$curatedId};
+        die unless $hit1 && $hit2 && $hit1->{curatedId} eq $hit2->{curatedId};
+        my $score1 = exists $candhash->{$locus1}{score} ? $candhash->{$locus1}{score} : -1;
+        my $score2 = exists $candhash->{$locus2}{score} ? $candhash->{$locus2}{score} : -1;
+        my $combHit = MergeHits($hit1, $score1, $revhash->{$locus1},
+                                $hit2, $score2, $rh2);
+        push @comb, $combHit if defined $combHit;
       }
-      next unless $overlap < 0.2 * $alnLen1
-        && $overlap < 0.2 * $alnLen2
-          && $combLen >= 0.7 * $hit1->{cLength};
-
-      # Check that there is no better other-hit for locus1
-      my $rh1 = RelevantRevhit($hit1->{locusBegin}, $hit1->{locusEnd}, $revhash->{$locus1});
-      next if defined $rh1 && $hit1->{bits} <= $rh1->{bits} + 10;
-
-      # Score the hit and check that it is better than either component
-      my $combIdentity = ($alnLen1 * $hit1->{identity} + $alnLen2 * $hit2->{identity}) / ($alnLen1 + $alnLen2);
-      my $combCoverage = $combLen / $hit1->{cLength};
-      my $combScore = $combIdentity >= 40 && $combCoverage >= 0.8 ? 2 : 1;
-      my $score1 = exists $candhash->{$locus1} ? $candhash->{$locus1}{score} : 0;
-      my $score2 = exists $candhash->{$locus2} ? $candhash->{$locus2}{score} : 0;
-      next unless $combScore > $score1 && $combScore > $score2;
-
-      # Build a merged hit
-      my $comb = { 'locusId' => $locus1,
-                   'locusId2' => $locus2,
-                   'curatedIds' => $curatedId,
-                   'blastBits' => $hit1->{bits} + $hit2->{bits},
-                   'identity' => $combIdentity,
-                   'blastCoverage' => $combCoverage,
-                   'blastScore' => $combScore,
-                   'score' => $combScore,
-                   'otherIds' => $rh1->{otherId} || $rh2->{otherId} || "",
-                   'otherBits' => ($rh1->{bits} || 0) + ($rh2->{bits} || 0),
-                   'otherIdentity' => max($rh1->{otherIdentity} || 0, $rh2->{otherIdentity} || 0),
-                   'otherCoverage' => max($rh1->{otherCoverage} || 0, $rh2->{otherCoverage} || 0) };
-      return $comb;
     }
   }
-  return undef;
+  @comb = sort { $b->{score} <=> $a->{score}
+                   || $b->{blastBits} <=> $a->{blastBits} } @comb;
+  # Return just one hit as finding these is uncommon and we don't know if hits are
+  # redundant (i.e., same pair of loci but different curatedId)
+  return $comb[0]; # may be undef
+}
+
+sub MergeHits($$$$$$){
+  my ($hit1, $bestscore1, $revhits1,
+      $hit2, $bestscore2, $revhit2) = @_;
+  die unless $hit1->{curatedId} eq $hit2->{curatedId};
+  my $curatedId = $hit1->{curatedId};
+
+  my $locus1 = $hit1->{locusId};
+  my $locus2 = $hit2->{locusId};
+  die unless defined $locus1 && defined $locus2 && $locus1 ne $locus2;
+
+  my $alnLen1 = $hit1->{cEnd} - $hit1->{cBegin}+1;
+  my $alnLen2 = $hit2->{cEnd} - $hit2->{cBegin}+1;
+
+  # Overlap on the curated sequence should be at most 20% of either alignment
+  # Combined alignment should cover at least 70% of the curated protein
+  my ($overlap, $combLen);
+  if ($hit1->{cEnd} < $hit2->{cBegin} || $hit1->{cBegin} > $hit2->{cEnd}) {
+    # No overlap
+    $overlap = 0;
+    $combLen = $alnLen1 + $alnLen2;
+  } else {
+    my $combBegin = min($hit1->{cBegin}, $hit2->{cBegin});
+    my $combEnd = max($hit1->{cEnd}, $hit2->{cEnd});
+    $combLen = $combEnd - $combBegin + 1;
+    $overlap = $alnLen1 + $alnLen2 - $combLen;
+  }
+  return undef unless $overlap < 0.2 * $alnLen1
+    && $overlap < 0.2 * $alnLen2
+    && $combLen >= 0.7 * $hit1->{cLength};
+
+
+  # Check that there is no better other-hit for locus1 and locus2
+  return undef if defined $revhit2 && $hit2->{bits} <= $revhit2->{bits} + 10;
+
+  my $revhit1 = RelevantRevhit($hit1->{locusBegin}, $hit1->{locusEnd}, $revhits1);
+  return undef if defined $revhit1 && $hit1->{bits} <= $revhit1->{bits} + 10;
+
+  # Score the hit and check that it is better than either component
+  my $combIdentity = ($alnLen1 * $hit1->{identity} + $alnLen2 * $hit2->{identity}) / ($alnLen1 + $alnLen2);
+  my $combCoverage = $combLen / $hit1->{cLength};
+  my $combScore = $combIdentity >= 40 && $combCoverage >= 0.8 ? 2 : 1;
+  $combScore = 1 if $combScore == 2 && $curatedId =~ m/^curated2:/;
+
+  return undef unless $combScore > $bestscore1 && $combScore > $bestscore2;
+
+  # Ensure that the hash references below succeed
+  $revhit1 = {} if !defined $revhit1;
+  $revhit2 = {} if !defined $revhit2;
+
+  # Return a merged hit
+  return { 'locusId' => $locus1,
+           'locusId2' => $locus2,
+           'curatedIds' => $curatedId,
+           'blastBits' => $hit1->{bits} + $hit2->{bits},
+           'identity' => $combIdentity,
+           'blastCoverage' => $combCoverage,
+           'blastScore' => $combScore,
+           'score' => $combScore,
+           'otherIds' => $revhit1->{otherId} || $revhit2->{otherId} || "",
+           'otherBits' => ($revhit1->{bits} || 0) + ($revhit2->{bits} || 0),
+           'otherIdentity' => max($revhit1->{otherIdentity} || 0, $revhit2->{otherIdentity} || 0),
+           'otherCoverage' => max($revhit1->{otherCoverage} || 0, $revhit2->{otherCoverage} || 0)
+         };
 }

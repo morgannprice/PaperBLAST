@@ -61,7 +61,7 @@ END
   my $aaIn = "$orgprefix.faa";
 
   my %hmmFile = (); # hmmId => filename
-  my %curated = (); # curatedId to sequence
+  my %curated = (); # curatedId (or uniprot: or curated2:) to sequence
 
   my @querycol = qw{step type query desc file sequence};
   foreach my $qfile (@queryfiles) {
@@ -75,9 +75,10 @@ END
     foreach my $query (@queries) {
       my $id = $query->{query};
       my $type = $query->{type};
+      $id = "curated2:" . $id if $type eq "curated2";
       $id = "uniprot:" . $id if $type eq "uniprot";
 
-      if ($type eq "curated" || $type eq "uniprot") {
+      if ($type eq "curated" || $type eq "curated2" || $type eq "uniprot") {
         die "Inconsistent sequence for $id in $qfile\n"
           if exists $curated{$id} && $curated{$id} ne $query->{sequence};
         $curated{$id} = $query->{sequence};

@@ -20,7 +20,7 @@ my $debug;
 {
   my @hmmIn = qw{tigrinfo pfam.tab TIGRFAMs.hmm Pfam-A.hmm};
   my $usage = <<END
-Usage: gapquery.pl -hmmdir hmmdir -steps stepsfile -dir dir
+Usage: gapquery.pl -hmmdir hmmdir -steps stepsfile -outdir dir
 
 stepsfile includes the following lines:
 comment lines (that start with #)
@@ -47,38 +47,45 @@ blank (whitespace only lines)
 
 This script considers only the step lines.
 
-Writes to outdir/steps.query, a tab-delimited file with the fields
-step, type, query, desc, file (optional), sequence (optional)
-type is one of curated, hmm, uniprot, or ignore
-query is the sequence identifier(s), HMM identifier, or the uniprot identifier
-  (If multiple curated items have the same sequence, all identifiers are joined by ",")
-sequence is not set for hmm items; those have file set instead (i.e., PF02965.17.hmm)
-Also creates the HMM files in outdir.
+Writes to dir/steps.query, a tab-delimited file with the fields
+step, type, query, desc, file (optional), sequence (optional).
+  type is one of: curated (which usually means characterized), curated2
+    (just curated), hmm, uniprot, or ignore.
+  query is the sequence identifier(s), HMM identifier, or the uniprot
+    identifier (If multiple curated items have the same sequence, all
+    identifiers are joined by ",") sequence is not set for hmm items;
+    those have file set instead (i.e., PF02965.17.hmm)
+Also creates the HMM files in dir.
 
 The hmm directory must contain these files:
 @hmmIn
 
 Optional arguments:
--curated curated.faa -- the file of curated sequences. curated.faa.desc
-  must also exist. By default, it looks for this in outdir/curated.faa
+-curated curated.faa -- the file of characterized
+  sequences. curated.faa.desc must also exist. By default, it looks
+  for this in dir/curated.faa
+-curated2 curated2.faa -- the file of curated sequences. By default,
+  it looks for this in dir/curated.faa
 -debug
 END
 ;
 
-  my ($stepsFile, $outDir, $hmmDir, $curatedFaa);
+  my ($stepsFile, $outDir, $hmmDir, $curatedFaa, $curated2Faa);
   die $usage
     unless GetOptions('steps=s' => \$stepsFile,
                       'outdir=s' => \$outDir,
                       'hmmdir=s' => \$hmmDir,
                       'curated=s' => \$curatedFaa,
+                      'curated2=s' => \$curated2Faa,
                       'debug' => \$debug)
       && defined $stepsFile && defined $outDir && defined $hmmDir;
   foreach my $dir ($outDir,$hmmDir) {
     die "No such directory: $dir\n" unless -d $dir;
   }
   $curatedFaa = "$outDir/curated.faa" unless defined $curatedFaa;
+  $curated2Faa = "$outDir/curated2.faa" unless defined $curated2Faa;
   @hmmIn = map "$hmmDir/$_", @hmmIn;
-  foreach my $file ($stepsFile, @hmmIn, $curatedFaa, "$curatedFaa.info") {
+  foreach my $file ($stepsFile, @hmmIn, $curatedFaa, "$curatedFaa.info", $curated2Faa) {
     die "No such file: $file\n" unless -e $file;
   }
   my $hmmfetch = "$Bin/hmmfetch";
@@ -120,6 +127,24 @@ END
     }
   }
 
+  # Load curated2. For each item, store ids, length, descs, seq
+  open(my $fh2, "<", $curated2Faa) || die "Cannot read $curated2Faa\n";
+  my $state2 = {};
+  my @curated2 = ();
+  while (my ($header,$seq) = ReadFastaEntry($fh2, $state2)) {
+    my @words = split / /, $header;
+    my $id = shift @words;
+    die unless defined $id && $id ne "";
+    push @curated2, { 'ids' => $id,
+                      'length' => length($seq),
+                      'descs' => join(" ", @words),
+                      'seq' => $seq };
+  }
+  close($fh2) || die "Error reading $curated2Faa\n";
+  my %curated2 = map { $_->{ids} => $_ } @curated2;
+  die "Duplicate identifiers in $curated2Faa\n"
+    unless scalar(keys %curated2) == scalar(@curated2);
+
   # Check that each step or rule is used as a dependency, except for the rule named all
   my %dep = ();
   foreach my $lists (values %$rules) {
@@ -142,6 +167,7 @@ END
   my %stepHmm = (); # step => hmm => 1
   # (@curatedInfo calls them "ids" and they are often comma delimited but here they are treated as a single id)
   my %stepCurated = (); # step => curated id => 1
+  my %stepCurated2 = (); # step => curated2 id => 1
   my %stepUniprot = (); # step => uniprot => 1
   my %stepIgnore = (); # step => curated id => 1
 
@@ -150,32 +176,37 @@ END
     my $l = $steps->{$step}{search};
     foreach my $row (@$l) {
       my ($type, $value) = @$row;
-      if ($type eq "EC") {
-        my $curated = WordMatchRows(\@curatedInfo, $value);
-        foreach my $row (@$curated) {
-          $stepCurated{$step}{$row->{ids}} = 1;
-        }
-        if (exists $ecTIGR{$value}) {
-          foreach my $row (@{ $ecTIGR{$value} }) {
-            $stepHmm{$step}{ $row->{tigrId} } = 1;
-          }
-        }
-        print STDERR "Warning: $step\t$desc: no curated hits or TIGRFam for EC:$value\n"
-          if @$curated == 0 && !exists $ecTIGR{$value};
-      } elsif ($type eq "hmm") {
-        $stepHmm{$step}{$value} = 1;
-      } elsif ($type eq "term") {
+
+      if ($type eq "EC" || $type eq "term") {
         my $curated = WordMatchRows(\@curatedInfo, $value);
         print STDERR "Warning: $step\t$desc: no curated hits for $value\n"
           unless @$curated;
         foreach my $row (@$curated) {
           $stepCurated{$step}{$row->{ids}} = 1;
         }
+        my $curated2 = WordMatchRows(\@curated2, $value);
+        foreach my $row (@$curated2) {
+          $stepCurated2{$step}{$row->{ids}} = 1;
+        }
+        print STDERR "Warning: $step\t$desc: no curated hits or TIGRFam for EC:$value\n"
+          if $type eq "EC" && @$curated == 0 && !exists $ecTIGR{$value};
+      }
+
+      if ($type eq "EC") {
+        if (exists $ecTIGR{$value}) {
+          foreach my $row (@{ $ecTIGR{$value} }) {
+            $stepHmm{$step}{ $row->{tigrId} } = 1;
+          }
+        }
+      } elsif ($type eq "term") {
+        ;
       } elsif ($type eq "curated") {
         my $ids = $curatedInfo{$value}{ids}
           || die "No curated id matches $value\n";
         # Use the standard combined identifier
         $stepCurated{$step}{$ids} = 1;
+      } elsif ($type eq "hmm") {
+        $stepHmm{$step}{$value} = 1;
       } elsif ($type eq "uniprot") {
         die "Invalid uniprot identifier $value -- wrong format\n"
           unless $value =~ m/^[0-9A-Z_]+$/;
@@ -202,11 +233,13 @@ END
 
     # Ensure that there are some items that match the step
     if (!exists $stepHmm{$step} && !exists $stepUniprot{$step}) {
-      die "No curated, hmm, or uniprot items for $step\n"
-        unless exists $stepCurated{$step};
+      die "No curated, curated2, hmm, or uniprot items for $step\n"
+        unless exists $stepCurated{$step} || exists $stepCurated2{$step};
       my @ids = grep { !exists $stepIgnore{$step}{$_} } keys %{ $stepCurated{$step} };
-      die "No hmm or uniprot items for $step, and the only curated items are ignored\n"
+      print STDERR "No hmm or uniprot items for $step, and the only curated items are ignored\n"
         unless @ids > 0;
+      die "No item can match step $step\n"
+        unless @ids > 0 || exists $stepCurated2{$step};
     }
   }
 
@@ -303,9 +336,14 @@ END
     }
     foreach my $id (sort keys %{ $stepCurated{$step} }) {
       next if exists $stepIgnore{$step}{$id};
-      die unless exists $curatedInfo{$id} && exists $curatedSeq{$id};;
+      die unless exists $curatedInfo{$id} && exists $curatedSeq{$id};
       print $fhO join("\t", $step, "curated",
                       $id, $curatedInfo{$id}{descs}, "", $curatedSeq{$id})."\n";
+    }
+    foreach my $id (sort keys %{ $stepCurated2{$step} }) {
+      die unless exists $curated2{$id};
+      print $fhO join("\t", $step, "curated2",
+                      $id, $curated2{$id}{descs}, "", $curated2{$id}{seq})."\n";
     }
     foreach my $id (sort keys %{ $stepIgnore{$step} }) {
       die unless exists $curatedInfo{$id};
