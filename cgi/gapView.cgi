@@ -27,6 +27,7 @@
 # Otherwise, the analysis exists:
 # No other arguments -- list the genomes and pathways
 #	(if there is just one organism, shows that overview instead)
+# gaps -- list the gaps for all organisms or, if orgId is set, for 1 organism
 # orgId -- overview of the organism
 # path -- overview of the pathway across organisms
 #	(if there is just one organism, shows that organism/pathway page instead)
@@ -55,13 +56,17 @@ sub ShowScoreShort($);
 sub HMMToURL($);
 sub GeneURL($$); # orgId (that is in %orgs), locusId
 sub RuleToScore($);
-sub ReadCand($$);
+sub ReadSumCand($$);
+sub ReadSumSteps($);
 sub OrgIdToURL($);
 sub OrgToAssembly($);
 sub Finish(); # show "About GapMind" and exit
 sub CandToOtherColumns($);
 sub CuratedToLink($$);
 sub ProcessUpload($);
+sub ShowCandidatesForStep($$$);
+sub LoadStepObj($$);
+sub GetStepsObj($$);
 
 my $tmpDir = "../tmp"; # for CacheAssembly
 my %orgs = (); # orgId => hash including gdb, gid, genomeName
@@ -297,7 +302,6 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
   } else {
     die "Unknown pathway $pathSpec" unless exists $pathDesc{$pathSpec};
     die "Invalid path $pathSpec" unless $pathSpec =~ m/^[a-zA-Z0-9._'-]+$/;
-    @path = ($pathSpec);
   }
 
   my $orgId = param("orgId"); # the organism specified, or, ""
@@ -308,18 +312,12 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
   $orgId = $orgs[0]{orgId} if @orgs == 1;
 
   my $step = param("step");
-  if (!defined $step) {
-    $step = "";
-  } else {
+  $step = "" if !defined $step;
+  if ($step ne "") {
+    die "step specified without path specified" unless $pathSpec ne "";
     $step =~ m/^[a-zA-Z0-9._'"-]+$/ || die "Invalid step $step";
-  }
-
-  my ($steps, $rules);
-  if (@path == 1) {
-    my $st = ReadSteps("$stepPath/$path[0].steps");
-    $steps = $st->{steps};
-    $rules = $st->{rules};
-    die "Non-existent step $step" if $step ne "" && !exists $steps->{$step};
+    my $st = GetStepsObj($stepPath, $pathSpec);
+    die "Non-existent step $step" unless exists $st->{steps}{$step};
   }
 
   my $locusSpec = param("locusId");
@@ -331,6 +329,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
   my $findgeneShow = HTML::Entities::encode($findgene);
 
   my $title = $setDesc;
+  $title = "Potential Gaps in $setDesc" if param('gaps');
   if ($locusSpec ne "") {
     $title = $step ne "" ? "Aligments for a candidate for $step" : "Protein $locusSpec";
   } elsif ($pathSpec ne "") {
@@ -354,7 +353,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
 
   my @links = ();     # a list of items to put inside li at the bottom
   if ($pathSpec ne "" && param("showdef")) {
-    # show the definition of this pathway
+    # mode: show the definition of this pathway
     my $stfile = "$stepPath/$pathSpec.steps";
     open (my $fh, "<", $stfile) || die "No such file: $stfile\n";
     my @lines = <$fh>;
@@ -362,8 +361,53 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     print pre(join("",@lines)), "\n";
     push @links, a({-href => "$queryPath/$pathSpec.query"}, "Table of queries for $pathSpec")
       . " (tab-delimited)";
+  } elsif (param('gaps')) {
+    # Overview of gaps, either for 1 organism or all organisms
+    my @gaps = grep { $_->{score} < 2 && $_->{onBestPath} } ReadSumSteps($sumpre);
+    @gaps = grep { $_->{orgId} eq $orgId } @gaps
+      if $orgId ne "";
+    @gaps = sort { $a->{pathway} cmp $b->{pathway}
+                    || $a->{step} cmp $b->{step}
+                    || $orgs{ $a->{orgId} }{genomeName} cmp $orgs{$b->{orgId} }{genomeName}} @gaps;
+    if (@gaps == 0) {
+      print p("Each pathway in",
+              a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId" },
+                $orgs{$orgId}{genomeName}),
+              "has a high-confidence path");
+    } else {
+      my %pathSteps = (); # pathId to steps object (if loaded already)
+      my $nLo = scalar(grep {$_->{score} == 0} @gaps);
+      my $nMed = scalar(grep {$_->{score} == 1} @gaps);
+      my $totals = "Found $nLo low-confidence and $nMed medium-confidence steps on the best paths for "
+        . scalar(@pathInfo) . " pathways";
+      $totals .= " x " . scalar(@orgs) . " genomes" if $orgId eq "";
+      print p($totals.".");
+      my @th = qw{Pathway Step Organism Best-candidate 2nd-candidate};
+      map s/-/ /, @th;
+      my @tr = ();
+      push @tr, Tr(th({-valign => "top"}, \@th));
+      foreach my $row (@gaps) {
+        my ($show1, $show2) = ShowCandidatesForStep($orgsSpec, $set, $row);
+        my $p = $row->{pathway};
+        my $s = $row->{step};
+        my $o = $row->{orgId};
+        push @tr, Tr(td({-valign => "top" },
+                        [ a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$p",
+                              -title => $pathDesc{$p},
+                              -style => ScoreToStyle($row->{score}) }, $p),
+                          a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$p&step=$s",
+                              -title => ScoreToLabel($row->{score}),
+                              -style => ScoreToStyle($row->{score}) },
+                            "$s: " . GetStepsObj($stepPath, $p)->{steps}{$s}{desc}),
+                          a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$o" },
+                            $orgs{$o}{genomeName}),
+                          $show1, $show2 ]));
+
+      }
+      print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
+    }
   } elsif ($orgId eq "" && $pathSpec eq "") {
-    # list of pathways
+    # mode: list of pathways & genomes
     print p(scalar(@path), "pathways");
     print start_ul;
     foreach my $path (@path) {
@@ -382,19 +426,19 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     }
     print end_ul, "\n";
   } elsif ($orgId eq "" && $pathSpec ne "") {
-    # overview of this pathway across organisms
+    # mode: overview of this pathway across organisms
     print p("Analysis of pathway $pathSpec in", scalar(@orgs), "genomes"), "\n";
     my @sumRules = ReadTable("$sumpre.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
     @sumRules = grep { $_->{pathway} eq $pathSpec && $_->{rule} eq "all" } @sumRules;
     my %orgAll = map { $_->{orgId} => $_ } @sumRules;
-    my @sumSteps = ReadTable("$sumpre.steps", qw{orgId gdb gid step score locusId sysName});
+    my @sumSteps = ReadSumSteps($sumpre);
     @sumSteps = grep { $_->{pathway} eq $pathSpec} @sumSteps;
     my %orgStep = ();           # orgId => step => row from sum.steps
     foreach my $row (@sumSteps) {
       $orgStep{$row->{orgId}}{$row->{step}} = $row;
     }
-    my $st = ReadSteps("$stepPath/$pathSpec.steps");
-    $steps = $st->{steps};
+    my $st = GetStepsObj($stepPath, $pathSpec);
+    my $steps = $st->{steps};
     my @tr = ();
     my @th = qw{Genome Best-path};
     map s/-/ /, @th;
@@ -420,6 +464,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
   } elsif ($orgId ne "" && $findgene ne "") {
+    # mode: gene search
     print p(qq{Searching for "$findgeneShow" in}, $orgs{$orgId}{genomeName}), "\n";
     my $assembly = OrgToAssembly($orgId);
     my $regexp = quotemeta($findgene);
@@ -460,7 +505,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     if (@hits == 0) {
       print p("No matching proteins were found");
     } else {
-      my @cand = ReadCand($sumpre,"");
+      my @cand = ReadSumCand($sumpre,"");
       my %locusNCand = ();
       foreach my $row (@cand) {
         $locusNCand{$row->{locusId}}++;
@@ -474,14 +519,14 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
       }
     }
   } elsif ($orgId ne "" && $pathSpec eq "" && $locusSpec eq "") {
-    # overview of pathways for this organism
+    # mode: overview of pathways for this organism
     my @hr = ("Pathway", span({-title=>"Best path"}, "Steps"));
     my @tr = ();
     push @tr, th({-valign => "top"}, \@hr);
     my @sumRules = ReadTable("$sumpre.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
     my @all = grep { $_->{orgId} eq $orgId && $_->{rule} eq "all" } @sumRules;
     my %all = map { $_->{pathway} => $_ } @all;
-    my @sumSteps = ReadTable("$sumpre.steps", qw{orgId gdb gid step score locusId sysName});
+    my @sumSteps = ReadSumSteps($sumpre);
     @sumSteps = grep { $_->{orgId} eq $orgId } @sumSteps;
     my %sumSteps = (); # pathway => step => summary
     foreach my $st (@sumSteps){
@@ -493,8 +538,8 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
         unless @all == 1;
       my @show = ();
 
-      my $st = ReadSteps("$stepPath/$path.steps");
-      $steps = $st->{steps};
+      my $st = GetStepsObj($stepPath, $path);
+      my $steps = $st->{steps};
       foreach my $step (split / /, $all->{expandedPath}) {
         die "Unknown step $step for $path\n" unless exists $steps->{$step};
         my $score = exists $sumSteps{$path}{$step} ? $sumSteps{$path}{$step}{score} : 0;
@@ -512,11 +557,14 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
   } elsif ($orgId ne "" && $pathSpec ne "" && $step eq "" && $locusSpec eq "") {
-    # overview of this pathway in this organism, first the rules, then all of the steps
+    # mode: overview of this pathway in this organism, first the rules, then all of the steps
+    my $st = GetStepsObj($stepPath, $pathSpec);
+    my $steps = $st->{steps};
+    my $rules = $st->{rules};
     my @sumRules = ReadTable("$sumpre.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
     @sumRules = grep { $_->{orgId} eq $orgId && $_->{pathway} eq $pathSpec } @sumRules;
     my %sumRules = map { $_->{rule} => $_ } @sumRules;
-    my @sumSteps = ReadTable("$sumpre.steps", qw{orgId gdb gid step score locusId sysName});
+    my @sumSteps = ReadSumSteps($sumpre);
     @sumSteps = grep { $_->{orgId} eq $orgId && $_->{pathway} eq $pathSpec } @sumSteps;
     my %sumSteps = map { $_->{step} => $_ } @sumSteps;
     print h3(scalar(@sumRules), "rules"), "\n";
@@ -575,41 +623,18 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     foreach my $stepS (@stepsSorted) {
       my $step = $stepS->{name};
       die "invalid step $step" unless exists $steps->{$step};
-      my @cand = ();
-      if (exists $sumSteps{$step}) {
-        push @cand, [ $sumSteps{$step}{locusId}, $sumSteps{$step}{sysName}, $sumSteps{$step}{score} ]
-          if $sumSteps{$step}{locusId} ne "";
-        push @cand, [ $sumSteps{$step}{locusId2}, $sumSteps{$step}{sysName2}, $sumSteps{$step}{score2} ]
-          if $sumSteps{$step}{locusId2} ne "";
-      }
-      my @show = ();
-      foreach my $cand (@cand) {
-        my ($locusId,$sysName,$score) = @$cand;
-        # Create two links if this is a split hit
-        my @sysNameParts = split /,/, $sysName;
-        my @locusParts = split /,/, $locusId;
-        my @parts = ();
-        while (@locusParts > 0) {
-          my $locus = shift @locusParts;
-          my $sysName = shift @sysNameParts;
-          push @parts, a({ -style => ScoreToStyle($score), -title => ScoreToLabel($score),
-                           -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&locusId=$locus" },
-                         $sysName || $locus );
-        }
-        push @show, join(" with ", @parts);
-      }
-      while (@show < 2) {
-        push @show, "";
-      }
+      my ($show1, $show2) = ShowCandidatesForStep($orgsSpec, $set, $sumSteps{$step});
       push @tr, Tr(td({-valign => "top" },
                       [ a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step"}, $step),
                         $stepS->{desc},
-                        $show[0], $show[1] ]));
+                        $show1, $show2 ]));
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
   } elsif ($orgId ne "" && $pathSpec ne "" && $step ne "" && $locusSpec eq "") {
-    # overview of this step in this organism
-    my @cand = ReadCand($sumpre,$pathSpec);
+    # mode: overview of this step in this organism
+    my $st = GetStepsObj($stepPath, $pathSpec);
+    my $steps = $st->{steps};
+    my @cand = ReadSumCand($sumpre,$pathSpec);
     @cand = grep { $_->{orgId} eq $orgId && $_->{step} eq $step } @cand;
     if (@cand == 0) {
       print h3("No candidates for $step: $steps->{$step}{desc}"), "\n";
@@ -707,7 +732,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     }
     print end_ul(), "\n";
   } elsif ($orgId ne "" && $step eq "" && $locusSpec ne "") {
-    # Show the gene
+    # mode: show a gene
     # First fetch its header and sequence
     my $tmp = "/tmp/gapView.$locusSpec.$$";
     my $faaCand = "$tmp.genome.faa";
@@ -723,7 +748,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     print p("Length:", length($seq), "amino acids");
     print p("Source:", $orgs{$orgId}{gid}, "in", $orgs{$orgId}{gdb});
 
-    my @cand = ReadCand($sumpre,"");
+    my @cand = ReadSumCand($sumpre,"");
     @cand = grep { $_->{locusId} eq $locusSpec || $_->{locusId2} eq $locusSpec} @cand;
     if (@cand == 0) {
       print p("Not a candidate for any step in $setDesc"),"\n";
@@ -815,7 +840,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
       h3("Sequence"),
       join("\n", "<pre>", @seqparts, "</pre>"), "\n";
   } elsif ($locusSpec ne "" && $step ne "") {
-    # Show alignments
+    # mode: show alignments for a gene
     push @links, a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step"},
                     "All candidates for step $step in", $orgs{$orgId}{genomeName});
     my @querycol = qw{step type query desc file sequence};
@@ -827,10 +852,12 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
         $curatedSeq{$id} = $query->{sequence};
       } elsif ($query->{type} eq "uniprot") {
         $curatedSeq{"uniprot:".$id} = $query->{sequence};
+      } elsif ($query->{type} eq "curated2") {
+        $curatedSeq{"curated2:".$id} = $query->{sequence};
       }
     }
     my %hmmToFile = map { $_->{query} => $_->{file} } grep { $_->{type} eq "hmm" } @queries;
-    my @cand = ReadCand($sumpre,$pathSpec);
+    my @cand = ReadSumCand($sumpre,$pathSpec);
     @cand = grep { $_->{orgId} eq $orgId && $_->{step} eq $step && $_->{locusId} eq $locusSpec} @cand;
     die "$locusSpec is not a candidate" unless @cand > 0;
     my $tmp = "/tmp/gapView.$pathSpec.$$";
@@ -842,8 +869,14 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
         foreach my $row (@loci) {
           my ($locusId, $sysName, $desc) = @$row;
           # Should move the descShowCurated/idShowHit code above to a subroutine for showing what it hits
-          print p(b("Align candidate $locusId $sysName ($desc)", br(),
-                    "to $cand->{curatedIds} ($cand->{curatedDesc})"));
+          my $curatedComment = "a characterized protein";
+          $curatedComment = "from UniProt"
+            if $cand->{curatedIds} =~ m/^uniprot:/;
+          $curatedComment = "a curated, but not characterized, protein from Swiss-Prot"
+            if $cand->{curatedIds} =~ m/^curated2:/;
+          print p("Align candidate (subject)", b("$locusId $sysName"), ":", $desc,
+                  "to curated sequence (query)", CuratedToLink($cand->{curatedIds}, $cand->{curatedDesc}),
+                  "($curatedComment)");
           my $curatedSeq = $curatedSeq{ $cand->{curatedIds} };
           die "Unknown sequence for query " . $cand->{curatedIds}
             unless $curatedSeq;
@@ -865,7 +898,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
         }
         # Arguably, should show alignments to "other" as well
       }
-      if ($cand->{hmmBits} > 0) {
+      if ($cand->{hmmBits} ne "" && $cand->{hmmBits} > 0) {
         print p(b("Align locus $cand->{locusId} $cand->{sysName} ($cand->{desc})",
                   br(), "to HMM $cand->{hmmId} ($cand->{hmmDesc})"));
         my $hmmfile = "$queryPath/" . $hmmToFile{$cand->{hmmId}};
@@ -929,8 +962,18 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
   push @links, a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=$pathSpec"},
                  "Pathway $pathSpec across", scalar(@orgs), "genomes")
     if $pathSpec ne "" && (param("showdef") || $orgId ne "") && @orgs > 1;
+  if (!param('gaps') && $pathSpec eq "") {
+    if ($orgId eq "") {
+      push @links, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&gaps=1" },
+                     "Potential gaps across $nOrgs genomes and all pathways");
+    } else {
+      push @links, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&gaps=1" },
+                     "Potential gaps in", $orgs{$orgId}{genomeName});
+    }
+  }
   push @links, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set"}, "All $nOrgs genomes and all pathways")
-    unless ($orgId eq "" && $pathSpec eq "") || @orgs == 1;
+    unless ($orgId eq "" && $pathSpec eq "" && !param('gaps')) || @orgs == 1;
+
   print h3("Links"), start_ul(), li(\@links), end_ul
     if @links > 0;
   print h3("Downloads"), start_ul(),
@@ -954,7 +997,7 @@ sub RuleToScore($) {
 
 sub ScoreToStyle($) {
   my ($score) = @_;
-  return "" if $score eq "";
+  $score = 0 if $score eq "";
   my $color = $score > 1 ? "#007000" : ($score < 1 ? "#CC4444" : "#000000");
   return "color: $color; font-weight: bold;" if $score > 1;
   return "color: $color;";
@@ -962,13 +1005,13 @@ sub ScoreToStyle($) {
 
 sub ScoreToLabel($) {
   my ($score) = @_;
-  return "" if $score eq "";
+  $score = 0 if $score eq "";
   return $score > 1 ? "high confidence" : ($score < 1 ? "low confidence" : "medium confidence");
 }
 
 sub ShowScoreShort($) {
   my ($score) = @_;
-  return "" if $score eq "";
+  $score = 0 if $score eq "";
   return span({ -style => ScoreToStyle($score), -title => ScoreToLabel($score) },
               $score > 1 ? "hi" : ($score < 1 ? "lo" : "med"));
 }
@@ -1035,9 +1078,16 @@ sub OrgToAssembly($) {
   return $assembly;
 }
 
-# ReadCand(prefix to summary file, pathway)
+sub ReadSumSteps($) {
+  my ($sumpre) = @_;
+  return ReadTable("$sumpre.steps",
+                   qw{orgId gdb gid pathway step onBestPath score locusId sysName
+                      score2 locusId2 sysName2});
+}
+
+# ReadSumCand(prefix to summary file, pathway)
 # use an empty pathway argument to get candidates for all pathways
-sub ReadCand($$) {
+sub ReadSumCand($$) {
   my ($sumpre, $pathSpec) = @_;
   my @req = qw{orgId gdb gid step score locusId sysName desc locusId2 sysName2 desc2
                blastBits curatedIds identity blastCoverage blastScore curatedDesc
@@ -1144,6 +1194,49 @@ sub ProcessUpload($) {
 
   my $assembly = AASeqToAssembly(\%seq, $tmpDir) || die;
   return ('gdb' => $assembly->{gdb}, 'gid' => $assembly->{gid});
+}
+
+# Given a row from the steps table (or undef),
+# returns the HTML for locusId/sysName/score
+# (including a link to the page for the gene)
+sub ShowCandidatesForStep($$$) {
+  my ($orgsSpec, $set, $row) = @_;
+  return ("","") unless defined $row;
+  my $orgId = $row->{orgId} || die;
+  my @cand = ();
+  push @cand, [ $row->{locusId}, $row->{sysName}, $row->{score} ]
+    if $row->{locusId} ne "";
+  push @cand, [ $row->{locusId2}, $row->{sysName2}, $row->{score2} ]
+    if $row->{locusId2} ne "";
+  my @show = ();
+  foreach my $cand (@cand) {
+    my ($locusId,$sysName,$score) = @$cand;
+    # Create two links if this is a split hit
+    my @sysNameParts = split /,/, $sysName;
+    my @locusParts = split /,/, $locusId;
+    my @parts = ();
+    while (@locusParts > 0) {
+      my $locus = shift @locusParts;
+      my $sysName = shift @sysNameParts;
+      push @parts, a({ -style => ScoreToStyle($score), -title => ScoreToLabel($score),
+                       -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&locusId=$locus" },
+                     $sysName || $locus );
+    }
+    push @show, join(" with ", @parts);
+  }
+  while (@show < 2) {
+    push @show, "";
+  }
+  return @show;
+}
+
+my %stepsCache = ();
+sub GetStepsObj($$) {
+  my ($stepPath, $path) = @_;
+  die unless defined $path && $path ne "";
+  $stepsCache{$path} = ReadSteps("$stepPath/$path.steps")
+    unless exists $stepsCache{$path};
+  return $stepsCache{$path};
 }
 
 sub Finish() {
