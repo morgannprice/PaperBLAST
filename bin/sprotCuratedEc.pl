@@ -18,5 +18,22 @@ while(my $text = <STDIN>) {
   next unless $OCs[0] eq "Bacteria" || $OCs[0] eq "Archaea";
   my $desc = join("; ", map { $_->text } $entry->DEs->elements);
   next unless $desc =~ m/ EC /;
+  my $FTs = $entry->FTs->list;
+  my $isFragment = 0;
+  foreach my $ft (@$FTs) {
+    if ($ft->[0] eq "NON_TER") {
+      print STDERR $entry->AC . " is a fragment, skipped\n";
+      $isFragment = 1;
+    }
+  }
+  next if $isFragment;
+  my $hasCaution = 0;
+  foreach my $CC ($entry->CCs->elements) {
+    if ($CC->topic eq "CAUTION") {
+      print STDERR $entry->AC . " has a caution, skipped\n";
+      $hasCaution = 1;
+    }
+  }
+  next if $hasCaution;
   print ">" . $entry->AC . " $desc\n" . $entry->SQ . "\n";
 }
