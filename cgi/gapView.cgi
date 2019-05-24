@@ -242,7 +242,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
       die "No such file: $qFile" unless -e $qFile;
     }
     system("touch", "$sumpre.begin");
-    my $time = 10 * scalar(@orgs);
+    my $time = 15 * scalar(@orgs);
     print p("Analyzing $setDesc in", scalar(@orgs), "genomes. This should take around $time seconds."), "\n";
     my @cmds = ();
     push @cmds, ["../bin/gapsearch.pl", "-orgs", $orgpre, "-query", @qFiles,
@@ -555,7 +555,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
             die "Unknown part $part";
           }
         }
-        print li("${or}parts: " . join(", ", @parts));
+        print li("${or}steps: " . join(", ", @parts));
         $or = "or ";
       }
       print li("best-scoring path:", @parts) if $hasSubRule || @{ $rules->{ $rule->{rule} } } > 1;
@@ -954,6 +954,7 @@ sub RuleToScore($) {
 
 sub ScoreToStyle($) {
   my ($score) = @_;
+  return "" if $score eq "";
   my $color = $score > 1 ? "#007000" : ($score < 1 ? "#CC4444" : "#000000");
   return "color: $color; font-weight: bold;" if $score > 1;
   return "color: $color;";
@@ -961,11 +962,13 @@ sub ScoreToStyle($) {
 
 sub ScoreToLabel($) {
   my ($score) = @_;
+  return "" if $score eq "";
   return $score > 1 ? "high confidence" : ($score < 1 ? "low confidence" : "medium confidence");
 }
 
 sub ShowScoreShort($) {
   my ($score) = @_;
+  return "" if $score eq "";
   return span({ -style => ScoreToStyle($score), -title => ScoreToLabel($score) },
               $score > 1 ? "hi" : ($score < 1 ? "lo" : "med"));
 }
@@ -1070,9 +1073,9 @@ sub CuratedToLink($$) {
   die "Undefined curatedIds" unless defined $curatedIds;
   die "Undefined curatedDesc" unless defined $curatedDesc;
   $curatedDesc =~ s/;;.*//;
-  my @hitIds = split /,/, $curatedIds;
-  if ($hitIds[0] =~ m/^uniprot:/) {
-    $hitIds[0] =~ s/^uniprot://;
+  my ($first) = split /,/, $curatedIds;
+  if ($first =~ m/^uniprot:/) {
+    $first =~ s/^uniprot://;
     $curatedDesc =~ s/^RecName: Full=//;
     $curatedDesc =~ s/[{][A-Za-z0-9:|_. ;,-]+[}]//g;
     $curatedDesc =~ s/AltName:.*//;
@@ -1080,8 +1083,9 @@ sub CuratedToLink($$) {
     $curatedDesc =~ s/ +;/;/g;
     $curatedDesc =~ s/;+ *$//;
   }
-  my $URL = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=" . $hitIds[0];
-  my $idShowHit = $hitIds[0];
+  $first =~ s/^curated2://;
+  my $URL = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=" . $first;
+  my $idShowHit = $first;
   $idShowHit =~ s/^.*://;
   return a({-href => $URL, -title => "View $idShowHit in PaperBLAST"}, $curatedDesc);
 }
