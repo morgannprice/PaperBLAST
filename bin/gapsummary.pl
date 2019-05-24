@@ -19,7 +19,7 @@ Usage: gapsummary.pl -pathways his met ... pro -orgs orgprefix
   -hits hitsfile -revhits revhitsfile -out summary
 
 The hits and revhites files are from gapsearch.pl and gaprevsearch.pl
-Writes 1 line per organism x step to summary.steps (if has any candidates)
+Writes 1 line per organism x step to summary.steps
 Writes 1 line per step x gene candidate to summary.cand
 Writes 1 line per rule to summary.rules
 
@@ -29,7 +29,6 @@ Currently, the score of a candidate for a step is defined as
    coverage and bits >= otherBits+10,
    or hmm match and 80% coverage and !(otherIdentity >= 40 &
    otherCoverage >= 0.75)
-
 1: blast to a characterized or curated protein at above 30% id. and
    80% cov. and bits >= otherBits, or blast above 40% id. and 70%
    coverage (ignoring otherBits)
@@ -330,67 +329,6 @@ sub MergeHits($$$$$$);
     }
   }
 
-  # Write out the candidates and steps
-  open(my $fhCand, ">", "$outpre.cand") || die "Cannot write to $outpre.cand\n";
-  open(my $fhStep, ">", "$outpre.steps") || die "Cannot write to $outpre.steps";
-  my @candfields = qw{orgId gdb gid pathway step score
-                      locusId sysName desc
-                      locusId2 sysName2 desc2
-                      blastBits curatedIds identity blastCoverage blastScore curatedDesc
-                      hmmBits hmmId hmmCoverage hmmScore hmmDesc
-                      otherIds otherBits otherIdentity otherCoverage otherDesc};
-  print $fhCand join("\t", @candfields)."\n";
-  my @stepfields = qw{orgId gdb gid pathway step score locusId sysName score2 locusId2 sysName2};
-  print $fhStep join("\t", @stepfields)."\n";
-  foreach my $orgId (sort keys %cand) {
-    foreach my $path (@pathways) {
-      next unless exists $cand{$orgId}{$path};
-      my $stephash = $cand{$orgId}{$path};
-      foreach my $step (sort keys %$stephash) {
-        my $cands = $stephash->{$step};
-        # per-candidate output
-        foreach my $cand (@$cands) {
-          my (undef, $sysName, $desc) = @{ $locusInfo{$orgId}{$cand->{locusId}} };
-          $cand->{sysName} = $sysName;
-          $cand->{desc} = $desc;
-          if ($cand->{locusId2}) {
-            my (undef, $sysName2, $desc2) = @{ $locusInfo{$orgId}{$cand->{locusId2}} };
-            $cand->{sysName2} = $sysName2;
-            $cand->{desc2} = $desc2;
-          }
-          $cand->{curatedDesc} = $queryDesc{ $cand->{curatedIds} } if $cand->{curatedIds};
-          $cand->{hmmDesc} = $queryDesc{ $cand->{hmmId} } if $cand->{hmmId};
-          $cand->{otherDesc} = $curatedInfo{ $cand->{otherIds } }[1] if $cand->{otherIds};
-          $cand->{gdb} = $orgs{$orgId}{gdb};
-          $cand->{gid} = $orgs{$orgId}{gid};
-          my @out = map { defined $cand->{$_} ? $cand->{$_} : "" } @candfields;
-          print $fhCand join("\t", @out)."\n";
-        }
-        # per-step line (only for those with candidates)
-        next if @$cands == 0;
-        my @stepout = ($orgId, $orgs{$orgId}{gdb}, $orgs{$orgId}{gid}, $path, $step);
-        foreach my $i (0,1) {
-          my $c = $cands->[$i] if $i < @$cands;
-          if (!defined $c) {
-            push @stepout, ("", "", "");
-          } else {
-            my $locusId = $c->{locusId};
-            my $sysName = $locusInfo{$orgId}{$locusId}[1];
-            if ($c->{locusId2}) {
-              $locusId .= "," . $c->{locusId2};
-              $sysName .= "," . $locusInfo{$orgId}{ $c->{locusId2} }[1];
-            }
-            push @stepout, $c->{score}, $locusId, $sysName;
-          }
-        }
-        print $fhStep join("\t", @stepout)."\n";
-      }
-    }
-  }
-  close($fhCand) || die "Error writing to $outpre.cand\n";
-  close($fhStep) || die "Error writing to $outpre.steps\n";
-  print STDERR "Wrote $outpre.cand and $outpre.steps\n";
-
   # And score the rules
   my %ruleScores = (); # orgId => pathway => rulename => hash of n, n012, score, path, path2, stepsUsed, expandedPath
   # where n is #steps, n012 is a vector with #of steps at each score,
@@ -471,6 +409,79 @@ sub MergeHits($$$$$$);
       }
     }
   }
+
+  # Record which steps are on the best path for the 'all' rule
+  my %onBestPath = (); # orgId => pathId => step => 1
+  foreach my $orgId (sort keys %orgs) {
+    foreach my $pathId (@pathways) {
+      my $path = $ruleScores{$orgId}{$pathId}{'all'}{pathExpanded};
+      die "No path for all for $orgId $pathId" unless @$path > 0;
+      foreach my $step (@$path) {
+        $onBestPath{$orgId}{$pathId}{$step} = 1;
+      }
+    }
+  }
+
+  # Write out the candidates and steps
+  open(my $fhCand, ">", "$outpre.cand") || die "Cannot write to $outpre.cand\n";
+  open(my $fhStep, ">", "$outpre.steps") || die "Cannot write to $outpre.steps";
+  my @candfields = qw{orgId gdb gid pathway step score
+                      locusId sysName desc
+                      locusId2 sysName2 desc2
+                      blastBits curatedIds identity blastCoverage blastScore curatedDesc
+                      hmmBits hmmId hmmCoverage hmmScore hmmDesc
+                      otherIds otherBits otherIdentity otherCoverage otherDesc};
+  print $fhCand join("\t", @candfields)."\n";
+  my @stepfields = qw{orgId gdb gid pathway step onBestPath score locusId sysName score2 locusId2 sysName2};
+  print $fhStep join("\t", @stepfields)."\n";
+  foreach my $orgId (sort keys %cand) {
+    foreach my $pathId (@pathways) {
+      my $steps = $pathways{$pathId}{steps};
+      my $stephash = $cand{$orgId}{$pathId} || {};
+      foreach my $step (sort keys %$steps) {
+        my $cands = $stephash->{$step} || [];
+        # per-candidate output
+        foreach my $cand (@$cands) {
+          my (undef, $sysName, $desc) = @{ $locusInfo{$orgId}{$cand->{locusId}} };
+          $cand->{sysName} = $sysName;
+          $cand->{desc} = $desc;
+          if ($cand->{locusId2}) {
+            my (undef, $sysName2, $desc2) = @{ $locusInfo{$orgId}{$cand->{locusId2}} };
+            $cand->{sysName2} = $sysName2;
+            $cand->{desc2} = $desc2;
+          }
+          $cand->{curatedDesc} = $queryDesc{ $cand->{curatedIds} } if $cand->{curatedIds};
+          $cand->{hmmDesc} = $queryDesc{ $cand->{hmmId} } if $cand->{hmmId};
+          $cand->{otherDesc} = $curatedInfo{ $cand->{otherIds } }[1] if $cand->{otherIds};
+          $cand->{gdb} = $orgs{$orgId}{gdb};
+          $cand->{gid} = $orgs{$orgId}{gid};
+          my @out = map { defined $cand->{$_} ? $cand->{$_} : "" } @candfields;
+          print $fhCand join("\t", @out)."\n";
+        }
+        # per-step line
+        my @stepout = ($orgId, $orgs{$orgId}{gdb}, $orgs{$orgId}{gid},
+                       $pathId, $step, exists $onBestPath{$orgId}{$pathId}{$step} ? 1 : 0);
+        foreach my $i (0,1) {
+          my $c = $cands->[$i] if $i < @$cands;
+          if (!defined $c) {
+            push @stepout, ("", "", "");
+          } else {
+            my $locusId = $c->{locusId};
+            my $sysName = $locusInfo{$orgId}{$locusId}[1];
+            if ($c->{locusId2}) {
+              $locusId .= "," . $c->{locusId2};
+              $sysName .= "," . $locusInfo{$orgId}{ $c->{locusId2} }[1];
+            }
+            push @stepout, $c->{score}, $locusId, $sysName;
+          }
+        }
+        print $fhStep join("\t", @stepout)."\n";
+      }
+    }
+  }
+  close($fhCand) || die "Error writing to $outpre.cand\n";
+  close($fhStep) || die "Error writing to $outpre.steps\n";
+  print STDERR "Wrote $outpre.cand and $outpre.steps\n";
 
   # And write out the best paths
   open (my $fhR, ">", "$outpre.rules") || die "Cannot write to $outpre.rules\n";
