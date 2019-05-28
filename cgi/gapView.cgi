@@ -57,6 +57,7 @@ sub HMMToURL($);
 sub GeneURL($$); # orgId (that is in %orgs), locusId
 sub RuleToScore($);
 sub ReadSumCand($$);
+sub SumCandToHash($);
 sub ReadSumSteps($);
 sub OrgIdToURL($);
 sub OrgToAssembly($);
@@ -64,7 +65,7 @@ sub Finish(); # show "About GapMind" and exit
 sub CandToOtherColumns($);
 sub CuratedToLink($$);
 sub ProcessUpload($);
-sub ShowCandidatesForStep($$$);
+sub ShowCandidatesForStep($$$$);
 sub LoadStepObj($$);
 sub GetStepsObj($$);
 
@@ -376,6 +377,10 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
               "has a high-confidence path");
     } else {
       my %pathSteps = (); # pathId to steps object (if loaded already)
+      my @cand = ReadSumCand($sumpre, "");
+      @cand = grep { $_->{orgId} eq $orgId } @cand
+        if $orgId ne "";
+      my $candHash = SumCandToHash(\@cand);
       my $nLo = scalar(grep {$_->{score} == 0} @gaps);
       my $nMed = scalar(grep {$_->{score} == 1} @gaps);
       my $totals = "Found $nLo low-confidence and $nMed medium-confidence steps on the best paths for "
@@ -387,7 +392,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
       my @tr = ();
       push @tr, Tr(th({-valign => "top"}, \@th));
       foreach my $row (@gaps) {
-        my ($show1, $show2) = ShowCandidatesForStep($orgsSpec, $set, $row);
+        my ($show1, $show2) = ShowCandidatesForStep($orgsSpec, $set, $row, $candHash);
         my $p = $row->{pathway};
         my $s = $row->{step};
         my $o = $row->{orgId};
@@ -567,6 +572,9 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     my @sumSteps = ReadSumSteps($sumpre);
     @sumSteps = grep { $_->{orgId} eq $orgId && $_->{pathway} eq $pathSpec } @sumSteps;
     my %sumSteps = map { $_->{step} => $_ } @sumSteps;
+    my @cand = ReadSumCand($sumpre, $pathSpec);
+    @cand = grep { $_->{orgId} eq $orgId } @cand;
+    my $candHash = SumCandToHash(\@cand);
     print h3(scalar(@sumRules), "rules"), "\n";
     print start_ul;
     foreach my $rule (reverse @sumRules) {
@@ -623,7 +631,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     foreach my $stepS (@stepsSorted) {
       my $step = $stepS->{name};
       die "invalid step $step" unless exists $steps->{$step};
-      my ($show1, $show2) = ShowCandidatesForStep($orgsSpec, $set, $sumSteps{$step});
+      my ($show1, $show2) = ShowCandidatesForStep($orgsSpec, $set, $sumSteps{$step}, $candHash);
       push @tr, Tr(td({-valign => "top" },
                       [ a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step"}, $step),
                         $stepS->{desc},
@@ -651,14 +659,14 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
         # potentially make two rows, one for BLAST and one for HMM
         my $id = a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&locusId=".$cand->{locusId} },
                    $cand->{sysName} || $cand->{locusId} );
-        my $desc = $cand->{desc};
+        my $desc = HTML::Entities::encode( $cand->{desc} );
         # HMM hits are based on the 1st ORF only so ignore the split when showing the HMM part
         my $id1 = $id;
         my $desc1 = $desc;
         if ($cand->{locusId2}) { # (this should only happen for BLAST hits)
           $id .= "; " . a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&locusId=".$cand->{locusId2} },
                           $cand->{sysName2} || $cand->{locusId2} );
-          $desc .= "; " . $cand->{desc2};
+          $desc .= "; " . HTML::Entities::encode( $cand->{desc2} );
         }
         my ($linkOther, $otherIdentity, $otherBits) = CandToOtherColumns($cand);
 
@@ -902,7 +910,10 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
         # Arguably, should show alignments to "other" as well
       }
       if ($cand->{hmmBits} ne "" && $cand->{hmmBits} > 0) {
-        print p(b("Align locus $cand->{locusId} $cand->{sysName} ($cand->{desc})",
+        print p(b("Align locus",
+                  HTML::Entities::encode($cand->{locusId}),
+                  HTML::Entities::encode($cand->{sysName}),
+                  HTML::Entities::encode("($cand->{desc})"),
                   br(), "to HMM $cand->{hmmId} ($cand->{hmmDesc})"));
         my $hmmfile = "$queryPath/" . $hmmToFile{$cand->{hmmId}};
         die "No hmm file for $cand->{hmmId}" unless exists $hmmToFile{$cand->{hmmId}};
@@ -1102,6 +1113,17 @@ sub ReadSumCand($$) {
   return @rows;
 }
 
+# From a list of cands, to a hash of
+# orgId => locusId => list of rows
+sub SumCandToHash($) {
+  my ($cands) = @_;
+  my %out = ();
+  foreach my $cand (@$cands) {
+    push @{ $out{ $cand->{orgId} }{ $cand->{locusId} } }, $cand;
+  }
+  return \%out;
+}
+
 sub CandToOtherColumns($) {
   my ($cand) = @_;
   my $otherIdentity = "";
@@ -1202,27 +1224,43 @@ sub ProcessUpload($) {
 # Given a row from the steps table (or undef),
 # returns the HTML for locusId/sysName/score
 # (including a link to the page for the gene)
-sub ShowCandidatesForStep($$$) {
-  my ($orgsSpec, $set, $row) = @_;
-  return ("","") unless defined $row;
-  my $orgId = $row->{orgId} || die;
-  my @cand = ();
-  push @cand, [ $row->{locusId}, $row->{sysName}, $row->{score} ]
-    if $row->{locusId} ne "";
-  push @cand, [ $row->{locusId2}, $row->{sysName2}, $row->{score2} ]
-    if $row->{locusId2} ne "";
+# $cands should be a hash of orgId => locusId => list of candidates
+sub ShowCandidatesForStep($$$$) {
+  my ($orgsSpec, $set, $stepRow, $candHash) = @_;
+  return ("","") unless defined $stepRow;
+  my $orgId = $stepRow->{orgId} || die;
+  my $locusHash = $candHash->{$orgId} || die;
+  my @work = ();
+  push @work, [ $stepRow->{locusId}, $stepRow->{sysName},  $stepRow->{score} ]
+    if $stepRow->{locusId} ne "";
+  push @work, [ $stepRow->{locusId2}, $stepRow->{sysName2}, $stepRow->{score2} ]
+    if $stepRow->{locusId2} ne "";
+
   my @show = ();
-  foreach my $cand (@cand) {
-    my ($locusId,$sysName,$score) = @$cand;
+  foreach my $work (@work) {
+    my ($locusId,$sysName,$score) = @$work;
     # Create two links if this is a split hit
     my @sysNameParts = split /,/, $sysName;
     my @locusParts = split /,/, $locusId;
+    die unless @locusParts > 0;
+    my $locusPart1 = $locusParts[0];
+    my @candRows = @{ $locusHash->{$locusPart1} };
+    die "No candidate row for locus $locusPart1" unless @candRows > 0;
     my @parts = ();
     while (@locusParts > 0) {
       my $locus = shift @locusParts;
       my $sysName = shift @sysNameParts;
+      my $desc = $candRows[0]{desc};
+      if ($locus ne $locusPart1) {
+        my @candRows2 = grep { $_->{locusId2} eq $locus } @candRows;
+        die "No candidate row for locus $locusPart1 and locus2 $locus" unless @candRows2 > 0;
+        $desc = $candRows2[0]{desc2};
+      }
+      my $title = ScoreToLabel($score);
+      $title .= ", annotated as " . HTML::Entities::encode($desc)
+        if $desc =~ m/[a-zA-Z0-9]/; # ignore empty descriptions
       push @parts, a({ -style => ScoreToStyle($score),
-                       -title => ScoreToLabel($score),
+                       -title => $title,
                        -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&locusId=$locus" },
                      $sysName || $locus );
     }
