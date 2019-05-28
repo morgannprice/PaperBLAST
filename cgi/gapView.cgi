@@ -68,6 +68,7 @@ sub ProcessUpload($);
 sub ShowCandidatesForStep($$$$);
 sub LoadStepObj($$);
 sub GetStepsObj($$);
+sub LegendForColorCoding();
 
 my $tmpDir = "../tmp"; # for CacheAssembly
 my %orgs = (); # orgId => hash including gdb, gid, genomeName
@@ -137,7 +138,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
   }
 
   if (!defined $orgsSpec && param('gquery')) {
-    # Genome query mode
+    # mode: Find genome
     my $gquery = param('gquery');
     my $gdb = param('gdb') || die "Must specify gdb with gquery";
     die "Unknown genome database: $gdb\n"
@@ -175,7 +176,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     print p("Try", a({-href => "gapView.cgi?set=$set&gdb=$gdb"}, "another genome"));
     Finish();
   } elsif (!defined $orgsSpec) {
-    # Front page mode
+    # mode: Front page
     start_page('title' => "Mind gaps in $setDesc",
                'banner' => $banner,
                'bannerURL' => "gapView.cgi");
@@ -210,7 +211,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
   if (! $alreadyBuilt
       && -e "$sumpre.begin"
       && stat("$sumpre.begin")->mtime >= time() - 5*60) {
-    # Waiting mode
+    # mode: The analysis is already running
     start_page('title' => 'Analysis in progress',
                'banner' => $banner,
                'bannerURL' => "gapView.cgi");
@@ -222,8 +223,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
   }
 
   unless ($alreadyBuilt) {
-    # Computation mode
-
+    # mode: Run the analysis
     start_page('title' => "Analyzing $setDesc",
                'banner' => $banner,
                'bannerURL' => "gapView.cgi");
@@ -285,7 +285,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     exit(0);
   }
 
-  #else -- viewing mode
+  #else -- viewing modes
   my @orgs = ReadOrgTable("$orgpre.org");
   die "No organisms for $orgpre.org" unless @orgs > 0;
   %orgs = map { $_->{orgId} => $_ } @orgs;
@@ -354,7 +354,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
 
   my @links = ();     # a list of items to put inside li at the bottom
   if ($pathSpec ne "" && param("showdef")) {
-    # mode: show the definition of this pathway
+    # mode: Show the definition of this pathway
     my $stfile = "$stepPath/$pathSpec.steps";
     open (my $fh, "<", $stfile) || die "No such file: $stfile\n";
     my @lines = <$fh>;
@@ -363,8 +363,8 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     push @links, a({-href => "$queryPath/$pathSpec.query"}, "Table of queries for $pathSpec")
       . " (tab-delimited)";
   } elsif (param('gaps')) {
-    # Overview of gaps, either for 1 organism or all organisms
-    my @gaps = grep { $_->{score} < 2 && $_->{onBestPath} } ReadSumSteps($sumpre);
+    # mode: Overview of gaps, either for 1 organism or all organisms
+    my @gaps = grep { ($_->{score} eq "" || $_->{score} < 2) && $_->{onBestPath} } ReadSumSteps($sumpre);
     @gaps = grep { $_->{orgId} eq $orgId } @gaps
       if $orgId ne "";
     @gaps = sort { $a->{pathway} cmp $b->{pathway}
@@ -410,9 +410,10 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
 
       }
       print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
+      print LegendForColorCoding();
     }
   } elsif ($orgId eq "" && $pathSpec eq "") {
-    # mode: list of pathways & genomes
+    # mode: List pathways & genomes
     print p(scalar(@path), "pathways");
     print start_ul;
     foreach my $path (@path) {
@@ -431,7 +432,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     }
     print end_ul, "\n";
   } elsif ($orgId eq "" && $pathSpec ne "") {
-    # mode: overview of this pathway across organisms
+    # mode: Overview of this pathway across organisms
     print p("Analysis of pathway $pathSpec in", scalar(@orgs), "genomes"), "\n";
     my @sumRules = ReadTable("$sumpre.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
     @sumRules = grep { $_->{pathway} eq $pathSpec && $_->{rule} eq "all" } @sumRules;
@@ -468,8 +469,9 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
                         join(", ", @show) ]));
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
+    print LegendForColorCoding();
   } elsif ($orgId ne "" && $findgene ne "") {
-    # mode: gene search
+    # mode: Search for a gene
     print p(qq{Searching for "$findgeneShow" in}, $orgs{$orgId}{genomeName}), "\n";
     my $assembly = OrgToAssembly($orgId);
     my $regexp = quotemeta($findgene);
@@ -524,7 +526,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
       }
     }
   } elsif ($orgId ne "" && $pathSpec eq "" && $locusSpec eq "") {
-    # mode: overview of pathways for this organism
+    # mode: Overview of pathways for this organism
     my @hr = ("Pathway", span({-title=>"Best path"}, "Steps"));
     my @tr = ();
     push @tr, th({-valign => "top"}, \@hr);
@@ -561,8 +563,10 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
                        join(", ", @show)]));
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
+    print LegendForColorCoding();
   } elsif ($orgId ne "" && $pathSpec ne "" && $step eq "" && $locusSpec eq "") {
-    # mode: overview of this pathway in this organism, first the rules, then all of the steps
+    # mode: Overview of this pathway in this organism
+    # First the rules, then all of the steps
     my $st = GetStepsObj($stepPath, $pathSpec);
     my $steps = $st->{steps};
     my $rules = $st->{rules};
@@ -638,8 +642,9 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
                         $show1, $show2 ]));
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
+    print LegendForColorCoding();
   } elsif ($orgId ne "" && $pathSpec ne "" && $step ne "" && $locusSpec eq "") {
-    # mode: overview of this step in this organism
+    # mode: Overview of this step in this organism
     my $st = GetStepsObj($stepPath, $pathSpec);
     my $steps = $st->{steps};
     my @cand = ReadSumCand($sumpre,$pathSpec);
@@ -697,6 +702,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
         }
       }
       print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
+      print LegendForColorCoding();
     }
     print h3("Definition of step $step"), "\n";
     print start_ul();
@@ -740,7 +746,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     }
     print end_ul(), "\n";
   } elsif ($orgId ne "" && $step eq "" && $locusSpec ne "") {
-    # mode: show a gene
+    # mode: Show a gene
     # First fetch its header and sequence
     my $tmp = "/tmp/gapView.$locusSpec.$$";
     my $faaCand = "$tmp.genome.faa";
@@ -851,7 +857,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
       h3("Sequence"),
       join("\n", "<pre>", @seqparts, "</pre>"), "\n";
   } elsif ($locusSpec ne "" && $step ne "") {
-    # mode: show alignments for a gene
+    # mode: Show alignments for a gene
     push @links, a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step"},
                     "All candidates for step $step in", $orgs{$orgId}{genomeName});
     my @querycol = qw{step type query desc file sequence};
@@ -937,10 +943,8 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     push @links, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId" },
                    "$setDesc in", $orgs{$orgId}{genomeName})
       if $pathSpec ne "" || $locusSpec ne "" || $findgene ne "";
-    push @links, join(" ", "All steps for",
-                      a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec" }, $pathSpec),
-                      "in",
-                      a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId" }, $orgs{$orgId}{genomeName}))
+    push @links, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec" },
+                   "$pathDesc{$pathSpec} in $orgs{$orgId}{genomeName}")
       if $pathSpec ne "" && $step ne "";
     my @form1 = (start_form(-method => 'get', -action => "genomeSearch.cgi"),
                  hidden(-name => 'gid', -value => $orgs{$orgId}{gid}, -override => 1),
@@ -974,7 +978,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
                  "Definition of $pathDesc{$pathSpec}")
     if $pathSpec ne "" && !param("showdef");
   push @links, a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=$pathSpec"},
-                 "Pathway $pathSpec across", scalar(@orgs), "genomes")
+                 "$pathDesc{$pathSpec} across $nOrgs  genomes")
     if $pathSpec ne "" && (param("showdef") || $orgId ne "") && @orgs > 1;
   if (!param('gaps') && $pathSpec eq "") {
     if ($orgId eq "") {
@@ -1151,7 +1155,7 @@ sub CuratedToLink($$) {
   my ($first) = split /,/, $curatedIds;
   if ($first =~ m/^uniprot:/) {
     $first =~ s/^uniprot://;
-    $curatedDesc =~ s/^RecName: Full=//;
+    $curatedDesc =~ s/^(Sub|Rec)Name: Full=//;
     $curatedDesc =~ s/[{][A-Za-z0-9:|_. ;,-]+[}]//g;
     $curatedDesc =~ s/AltName:.*//;
     $curatedDesc =~ s/EC=/EC /g;
@@ -1288,6 +1292,15 @@ sub GetStepsObj($$) {
   $stepsCache{$path} = ReadSteps("$stepPath/$path.steps")
     unless exists $stepsCache{$path};
   return $stepsCache{$path};
+}
+
+sub LegendForColorCoding() {
+  my @titles = ("Low confidence candidates are highly diverged, have low coverage of the characterized homolog, or are similar to proteins that have other functions.",
+                "Medium confidence candidates are less than 40% identical to a characterized protein; or the alignment (to either a characterized protein or an HMM) had under 80% coverage; or the candidate was found by similarity to a uncharacterized (but well-curated) protein.",
+                "High confidence candidates match an HMM or are over 40% similar to a characterized protein; and the alignment covers 80% of the characterized protein or the HMM; and the candidate is less similar to characterized proteins that have other functions.");
+
+  my @showScores = map span({ -style => ScoreToStyle($_), -title => $titles[$_] }, ScoreToLabel($_)), (2,1,0);
+  return p("Confidence:", @showScores)."\n";
 }
 
 sub Finish() {
