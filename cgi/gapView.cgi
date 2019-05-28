@@ -1158,11 +1158,20 @@ sub CuratedToLink($$) {
     $curatedDesc =~ s/ +;/;/g;
     $curatedDesc =~ s/;+ *$//;
   }
+  my $unchar = $first =~ m/^curated2:/;
+  my $uncharLabel = $unchar ? "(uncharacterized)" : "";
   $first =~ s/^curated2://;
   my $URL = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=" . $first;
   my $idShowHit = $first;
   $idShowHit =~ s/^.*://;
-  return a({-href => $URL, -title => "View $idShowHit in PaperBLAST"}, $curatedDesc);
+  my $link = a({-href => $URL, -title => "View $idShowHit $uncharLabel in PaperBLAST"}, $curatedDesc);
+  $link .= " (" . a({-title => join(" ",
+                                    "This protein has not been studied experimentally.",
+                                    "It is included in GapMind's database because its annotation",
+                                    "was manually curated.")
+                    }, "uncharacterized") . ")"
+    if $unchar;
+  return $link;
 }
 
 sub OrgIdToURL($) {
