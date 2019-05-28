@@ -762,7 +762,10 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
         my ($linkOther, $otherIdentity, $otherBits) = CandToOtherColumns($cand);
         my $pathLink = a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$cand->{pathway}" },
                          $pathDesc{ $cand->{pathway} });
-        my $stepLink = a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$cand->{pathway}&step=$cand->{step}" },
+        my $stepObj = GetStepsObj($stepPath, $cand->{pathway});
+        die "Non-existent step $step" unless exists $stepObj->{steps}{ $cand->{step} };
+        my $stepLink = a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$cand->{pathway}&step=$cand->{step}",
+                           -title => $stepObj->{steps}{ $cand->{step} }{desc} },
                          $cand->{step} );
         if ($cand->{blastScore} ne "") {
           my $asterisk = "";
@@ -1218,7 +1221,8 @@ sub ShowCandidatesForStep($$$) {
     while (@locusParts > 0) {
       my $locus = shift @locusParts;
       my $sysName = shift @sysNameParts;
-      push @parts, a({ -style => ScoreToStyle($score), -title => ScoreToLabel($score),
+      push @parts, a({ -style => ScoreToStyle($score),
+                       -title => ScoreToLabel($score),
                        -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&locusId=$locus" },
                      $sysName || $locus );
     }
