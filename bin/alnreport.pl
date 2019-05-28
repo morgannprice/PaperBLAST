@@ -36,7 +36,7 @@ foreach my $i (1..$numpos) {
 }
 
 # Fetch the UniProt entry
-my $url = "http://www.uniprot.org/uniprot/$subjectId.txt";
+my $url = "https://www.uniprot.org/uniprot/$subjectId.txt";
 print STDERR "Fetching $url\n" if $debug;
 my $uniprot = LWP::Simple::get($url);
 chomp $uniprot;
