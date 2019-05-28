@@ -185,6 +185,7 @@ if (defined $acc2 && $out[0] !~ m/No hits/i) {
     die "Invalid uniprotId $uniprotId" unless $uniprotId =~ m/^[A-Z0-9_]+$/;
     if (system("../bin/alnreport.pl $uniprotId $prefix.bl2seq > $prefix.alnreport") != 0) {
       print p(small("No feature table because alnreport.pl failed for $uniprotId -- is bioperl installed?"));
+      unlink("$prefix.alnreport");
     } else {
       my @alnreport = ReadTable("$prefix.alnreport");
       unlink("$prefix.alnreport");
