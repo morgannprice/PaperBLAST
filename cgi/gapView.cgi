@@ -68,6 +68,9 @@ sub ProcessUpload($);
 sub ShowCandidatesForStep($$$$);
 sub LoadStepObj($$);
 sub GetStepsObj($$);
+sub StepRowToCuratedComment($$);
+sub StepRowToCurated($$);
+sub ShowCuratedLong($);
 sub LegendForColorCoding();
 
 my $tmpDir = "../tmp"; # for CacheAssembly
@@ -349,6 +352,17 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
              'bannerURL' => "gapView.cgi");
   print "\n";
 
+  my @curatedGaps = ReadTable("$stepPath/$set.curated.gaps.tsv",
+                              qw{gdb gid pathway step class comment});
+  @curatedGaps = grep { $_->{class} ne "" } @curatedGaps;
+  my %curatedGaps = (); # gid => pathway => step => row; step may be ""
+  foreach my $c (@curatedGaps) {
+    die "Unknown pathway $c->{pathway}" unless exists $pathDesc{ $c->{pathway} };
+    die "Duplicate row for $c->{gid} $c->{pathway} $c->{step}"
+      if exists $curatedGaps{ $c->{gid} }{ $c->{pathway} }{ $c->{step} };
+    $curatedGaps{ $c->{gid} }{ $c->{pathway} }{ $c->{step} } = $c;
+  }
+
   my @orgsSorted = sort { $a->{genomeName} cmp $b->{genomeName} } @orgs;
   my @ruleScoreLabels = ("has a gap", "may have a gap", "all steps were found");
 
@@ -381,14 +395,24 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
       @cand = grep { $_->{orgId} eq $orgId } @cand
         if $orgId ne "";
       my $candHash = SumCandToHash(\@cand);
-      my $nLo = scalar(grep {$_->{score} == 0} @gaps);
-      my $nMed = scalar(grep {$_->{score} == 1} @gaps);
+      my $nLo = scalar(grep {$_->{score} eq "0" || $_->{score} eq ""} @gaps);
+      my $nMed = scalar(grep {$_->{score} eq "1"} @gaps);
+      my $nTot = scalar(@gaps);
+      die unless $nTot == $nLo + $nMed;
       my $totals = "Found $nLo low-confidence and $nMed medium-confidence steps on the best paths for "
         . scalar(@pathInfo) . " pathways";
       $totals .= " x " . scalar(@orgs) . " genomes" if $orgId eq "";
-      print p($totals.".");
+      my $nCurated = 0;
+      foreach  my $row (@gaps) {
+        $nCurated++ if StepRowToCurated($row, \%curatedGaps);
+      }
+      $totals .= ".";
+      $totals .= " $nCurated of $nTot gaps have been manually classified."
+        if $nCurated > 0;
+      print p($totals);
       my @th = qw{Pathway Step Organism Best-candidate 2nd-candidate};
-      map s/-/ /, @th;
+      map s/-/ /g, @th;
+      push @th, "Class of gap" if $nCurated > 0;
       my @tr = ();
       push @tr, Tr(th({-valign => "top"}, \@th));
       foreach my $row (@gaps) {
@@ -396,18 +420,19 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
         my $p = $row->{pathway};
         my $s = $row->{step};
         my $o = $row->{orgId};
-        push @tr, Tr(td({-valign => "top" },
-                        [ a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$o&path=$p",
-                              -title => $pathDesc{$p},
-                              -style => ScoreToStyle($row->{score}) }, $p),
-                          a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$o&path=$p&step=$s",
-                              -title => ScoreToLabel($row->{score}),
-                              -style => ScoreToStyle($row->{score}) },
-                            "$s: " . GetStepsObj($stepPath, $p)->{steps}{$s}{desc}),
-                          a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$o" },
-                            $orgs{$o}{genomeName}),
-                          $show1, $show2 ]));
-
+        my @td = ( a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$o&path=$p",
+                       -title => $pathDesc{$p},
+                       -style => ScoreToStyle($row->{score}) }, $p),
+                   a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$o&path=$p&step=$s",
+                       -title => ScoreToLabel($row->{score}),
+                       -style => ScoreToStyle($row->{score}) },
+                     "$s: " . GetStepsObj($stepPath, $p)->{steps}{$s}{desc}),
+                   a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$o" },
+                     $orgs{$o}{genomeName}),
+                   $show1, $show2 );
+        push @td, StepRowToCuratedComment($row, \%curatedGaps)
+          if $nCurated > 0;
+        push @tr, Tr(td({-valign => "top" }, \@td));
       }
       print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
       print LegendForColorCoding();
@@ -455,9 +480,18 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
       my @show = ();
       foreach my $step (split / /, $all->{expandedPath}) {
         my $score = exists $orgStep{$orgId}{$step} ? $orgStep{$orgId}{$step}{score} : 0;
+        my $stepObj = $orgStep{$orgId}{$step} || die;
+        my $title = $steps->{$step}{desc};
+        my $id = $stepObj->{sysName} || $stepObj->{locusId} || "";
+        $title .= " $id" if $id ne "";
+        my $c = StepRowToCurated($stepObj, \%curatedGaps);
+        if ($c) {
+          $title .= " (" . $c->{class} . " gap)";
+        } else {
+          $title .= " (" . ScoreToLabel($score) . ")";
+        }
         push @show, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step",
-                        -style => ScoreToStyle($score),
-                        -title => "$steps->{$step}{desc} (" . ScoreToLabel($score) . ")" },
+                        -style => ScoreToStyle($score), -title => $title },
                       $step);
       }
       my $score = RuleToScore($all);
@@ -549,10 +583,19 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
       my $steps = $st->{steps};
       foreach my $step (split / /, $all->{expandedPath}) {
         die "Unknown step $step for $path\n" unless exists $steps->{$step};
-        my $score = exists $sumSteps{$path}{$step} ? $sumSteps{$path}{$step}{score} : 0;
+        my $stepObj = $sumSteps{$path}{$step};
+        my $score = $stepObj->{score};
+        my $title = $steps->{$step}{desc};
+        my $id = $stepObj->{sysName} || $stepObj->{locusId} || "";
+        $title .= " $id" if $id;
+        my $c = StepRowToCurated($stepObj, \%curatedGaps);
+        if ($c) {
+          $title .= " (" . $c->{class} . " gap)";
+        } else {
+          $title .= ScoreToLabel($score);
+        }
         push @show, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$path&step=$step",
-                        -style => ScoreToStyle($score),
-                        -title => "$steps->{$step}{desc} (" . ScoreToLabel($score) . ")" },
+                        -style => ScoreToStyle($score), -title => $title },
                       $step);
       }
       my $pathScore = RuleToScore($all);
@@ -579,24 +622,19 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     my @cand = ReadSumCand($sumpre, $pathSpec);
     @cand = grep { $_->{orgId} eq $orgId } @cand;
     my $candHash = SumCandToHash(\@cand);
+
+    my $gid = $orgs{$orgId}{gid};
+    my $curatedGapTop = exists $curatedGaps{$gid}{$pathSpec}{""} ?
+      $curatedGaps{$gid}{$pathSpec}{""} : undef;
+    print ShowCuratedLong($curatedGapTop);
+
     print h3(scalar(@sumRules), "rules"), "\n";
+
     print start_ul;
     foreach my $rule (reverse @sumRules) {
       my $hasSubRule = 0;
       my @stepList = split / /, $rule->{expandedPath};
-      my @parts = ();
-      foreach my $step (@stepList) {
-        my $stepDef = $steps->{$step} || die "Invalid step $step";
-        my $stepS = exists $sumSteps{$step} ? $sumSteps{$step} : {};
-        my $score = $stepS->{score} || 0;
-        my $label = ScoreToLabel($score);
-        my $id = $stepS->{sysName} || $stepS->{locusId} || "";
-        push @parts, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step",
-                         -style => ScoreToStyle($score),
-                         -title => "$stepDef->{desc} -- $id ($label)" },
-                       $step);
-      }
-      print li($rule->{rule}); #, "with best-scoring path:", @parts);
+      print li($rule->{rule});
       print start_ul;
       my $or = "";
       foreach my $list (@{ $rules->{ $rule->{rule} } }) {
@@ -604,7 +642,18 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
         foreach my $part (@$list) {
           if (exists $steps->{$part}) {
             my $score = exists $sumSteps{$part} ? $sumSteps{$part}{score} : 0;
-            push @parts, a({ -style => ScoreToStyle($score), -title => "$steps->{$part}{desc}",
+            my $title = $steps->{$part}{desc};
+            my $partObj = exists $sumSteps{$part} ? $sumSteps{$part} : {};
+            my $id = $partObj->{sysName} || $partObj->{locusId} || "";
+            $title .= " $id" if $id ne "";
+            my $curatedGap = $curatedGaps{$gid}{$pathSpec}{$part}
+              if exists $curatedGaps{$gid}{$pathSpec}{$part}; # do not look at ""
+            if ($curatedGap) {
+              $title .= " (" . $curatedGap->{class} . " gap)";
+            } else {
+              $title .= " (" . ScoreToLabel($score) . ")";
+            }
+            push @parts, a({ -style => ScoreToStyle($score), -title => $title,
                              -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$part" },
                            $part);
           } elsif (exists $rules->{$part}) {
@@ -618,28 +667,59 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
         print li("${or}steps: " . join(", ", @parts));
         $or = "or ";
       }
-      print li("best-scoring path:", @parts) if $hasSubRule || @{ $rules->{ $rule->{rule} } } > 1;
+      my @bestparts = ();
+      foreach my $step (@stepList) {
+        my $stepDef = $steps->{$step} || die "Invalid step $step";
+        my $stepS = exists $sumSteps{$step} ? $sumSteps{$step} : {};
+        my $score = $stepS->{score} || 0;
+        my $id = $stepS->{sysName} || $stepS->{locusId} || "";
+        my $title = $stepDef->{desc};
+        $title .= " $id" if $id ne "";
+        my $curatedGap = $curatedGaps{$gid}{$pathSpec}{$step}
+          if exists $curatedGaps{$gid}{$pathSpec}{$step}; # do not look at ""
+        if ($curatedGap) {
+          $title .= " (" . $curatedGap->{class} . " gap)";
+        } else {
+          $title .= " (" . ScoreToLabel($score) . ")";
+        }
+        push @bestparts, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step",
+                         -style => ScoreToStyle($score),
+                         -title => $title },
+                       $step);
+      }
+      print li("best-scoring path:", @bestparts) if $hasSubRule || @{ $rules->{ $rule->{rule} } } > 1;
       print end_ul, "\n";
     }
     print end_ul, "\n";
     my @stepsSorted = sort { $a->{i} <=> $b->{i} } (values %$steps);
-    print h3(scalar(@stepsSorted) . " steps (" . scalar(@sumSteps) . " with candidates)"), "\n";
+    my @stepWithCand = grep { $_->{locusId} ne "" } @sumSteps;
+    print h3(scalar(@stepsSorted) . " steps (" . scalar(@stepWithCand) . " with candidates)"), "\n";
+
+    my $nCurated = 0;
+    foreach  my $row (@sumSteps) {
+      $nCurated++ if $row->{score} ne "2"
+        && $row->{onBestPath}
+        && StepRowToCurated($row, \%curatedGaps);
+    }
+
     my @tr = ();
     my @header = qw{Step Description Best-candidate 2nd-candidate};
     foreach (@header) {
       s/-/ /;
     }
+    push @header, "Class of gap" if $nCurated > 0;
     push @tr, Tr(th(\@header));
     # For each step, show the step name and description, the best candidate (if any), and the 2nd best candidate(s) if any
-    # Use all of the steps that are defined, not just the ones in the rules file, as ones with no candidates are missing
     foreach my $stepS (@stepsSorted) {
       my $step = $stepS->{name};
       die "invalid step $step" unless exists $steps->{$step};
       my ($show1, $show2) = ShowCandidatesForStep($orgsSpec, $set, $sumSteps{$step}, $candHash);
-      push @tr, Tr(td({-valign => "top" },
-                      [ a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step"}, $step),
-                        $stepS->{desc},
-                        $show1, $show2 ]));
+      my @td = ( a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step"}, $step),
+                 $stepS->{desc},
+                 $show1, $show2 );
+      push @td, StepRowToCuratedComment($sumSteps{$step}, \%curatedGaps)
+        if $nCurated > 0;
+      push @tr, Tr(td({-valign => "top" }, \@td));
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
     print LegendForColorCoding();
@@ -647,12 +727,21 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     # mode: Overview of this step in this organism
     my $st = GetStepsObj($stepPath, $pathSpec);
     my $steps = $st->{steps};
+    my @sumSteps = ReadSumSteps($sumpre);
+    @sumSteps = grep { $_->{pathway} eq $pathSpec && $_->{orgId} eq $orgId && $_->{step} eq $step } @sumSteps;
+    die unless @sumSteps == 1;
+    my ($stepObj) = @sumSteps;
+
+    my $curatedGap = StepRowToCurated($stepObj, \%curatedGaps);
+    print ShowCuratedLong($curatedGap) if $stepObj->{score} ne "2" && $curatedGap;
+
     my @cand = ReadSumCand($sumpre,$pathSpec);
     @cand = grep { $_->{orgId} eq $orgId && $_->{step} eq $step } @cand;
     if (@cand == 0) {
       print h3("No candidates for $step: $steps->{$step}{desc}"), "\n";
     } else {
       print h3(scalar(@cand), "candidates for $step:", $steps->{$step}{desc}), "\n";
+
       my @header = qw{Score Gene Description Similar-to Id. Cov. Bits  Other-hit Other-id. Other-bits};
       $header[-1] = span({-title => "A characterized protein that is similar to the gene but is not associated with step $step"},
                          $header[-1]);
@@ -1277,7 +1366,7 @@ sub ShowCandidatesForStep($$$$) {
                        -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&locusId=$locus" },
                      $sysName || $locus );
     }
-    push @show, join(" with ", @parts);
+    push @show, join(" " . a({-title => "split protein"}, "with") . " ", @parts);
   }
   while (@show < 2) {
     push @show, "";
@@ -1294,12 +1383,37 @@ sub GetStepsObj($$) {
   return $stepsCache{$path};
 }
 
+sub StepRowToCurated($$) {
+  my ($stepRow, $curatedGaps) = @_;
+  my $p = $stepRow->{pathway};
+  return $curatedGaps->{ $stepRow->{gid} }{$p}{ $stepRow->{step} }
+    if exists $curatedGaps->{ $stepRow->{gid} }{$p}{ $stepRow->{step} };
+  return $curatedGaps->{ $stepRow->{gid} }{$p}{""}
+    if exists $curatedGaps->{ $stepRow->{gid} }{$p}{""} && $stepRow->{score} ne "2";
+  return undef;
+}
+
+sub StepRowToCuratedComment($$) {
+  my ($stepRow, $curatedGaps) = @_;
+  my $c = StepRowToCurated($stepRow, $curatedGaps);
+  return $c ? a({ -title => $c->{comment}, -style => "color: darkgreen;" },
+                $c->{class}) : "";
+}
+
+sub ShowCuratedLong($) {
+  my ($curatedGap) = @_;
+  return "" unless $curatedGap;
+  return p(i("Manual classification:"), $curatedGap->{class},
+           br(),
+           i("Rationale:"), $curatedGap->{comment});
+}
+
 sub LegendForColorCoding() {
   my @titles = ("Low confidence candidates are highly diverged, have low coverage of the characterized homolog, or are similar to proteins that have other functions.",
                 "Medium confidence candidates are less than 40% identical to a characterized protein; or the alignment (to either a characterized protein or an HMM) had under 80% coverage; or the candidate was found by similarity to a uncharacterized (but well-curated) protein.",
                 "High confidence candidates match an HMM or are over 40% similar to a characterized protein; and the alignment covers 80% of the characterized protein or the HMM; and the candidate is less similar to characterized proteins that have other functions.");
-
-  my @showScores = map span({ -style => ScoreToStyle($_), -title => $titles[$_] }, ScoreToLabel($_)), (2,1,0);
+  my @showScores = map span({ -style => ScoreToStyle($_), -title => $titles[$_] },
+                            ScoreToLabel($_)), (2,1,0);
   return p("Confidence:", @showScores)."\n";
 }
 
