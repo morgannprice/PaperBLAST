@@ -397,10 +397,10 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
         my $s = $row->{step};
         my $o = $row->{orgId};
         push @tr, Tr(td({-valign => "top" },
-                        [ a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$p",
+                        [ a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$o&path=$p",
                               -title => $pathDesc{$p},
                               -style => ScoreToStyle($row->{score}) }, $p),
-                          a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$p&step=$s",
+                          a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$o&path=$p&step=$s",
                               -title => ScoreToLabel($row->{score}),
                               -style => ScoreToStyle($row->{score}) },
                             "$s: " . GetStepsObj($stepPath, $p)->{steps}{$s}{desc}),
