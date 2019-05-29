@@ -592,7 +592,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
         if ($c) {
           $title .= " (" . $c->{class} . " gap)";
         } else {
-          $title .= ScoreToLabel($score);
+          $title .= " " . ScoreToLabel($score);
         }
         push @show, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$path&step=$step",
                         -style => ScoreToStyle($score), -title => $title },
