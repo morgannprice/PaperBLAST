@@ -8,7 +8,9 @@
 
 # The classical pathways, with either direct sulfuration or transsulfuration of activated homoserine
 # (metB requires cysteine)
-asp_kinase	aspartate kinase	EC:2.7.2.4
+# For BRENDA::O63067 -- the paper describes a monofunctional hom but the sequence of O63067 is
+# much longer and has a close homolog of functional aspartate kinase (due to alternative splicing?)
+asp_kinase	aspartate kinase	EC:2.7.2.4	ignore:BRENDA::O63067
 asd	asparate semi-aldehyde dehydrogenase	EC:1.2.1.11
 
 # Ga0059261_2711 from Sphingomonas koreensis DSMZ 15582 is distant from characterized homoserine dehydrogenases

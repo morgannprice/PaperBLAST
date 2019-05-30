@@ -37,11 +37,12 @@ cimA	(R)-citramalate synthase	EC:2.3.1.182	uniprot:Q8F3Q1_LEPIN
 # Synechococcus elongatus PCC 7942).
 # Also, ignore a 2,3-methylmalate dehydratase (Q0QLE2,Q0QLE1) which is >50% identical to
 # leuCD from DvH (DVU2982,DVU2983)
-# And ignore some BRENDA annotations without subunit information
+# And ignore some BRENDA annotations without subunit information,
+# and ignore CharProtDB::CH_122621 (leuCD fusion) which is not actually characterized
 # And, DvH leuC (DVU2982) has similarity to both LeuC and to homoaconitase, and fitness data confirms
 # its role in amino acid biosynthesis, so explicitly include it
-leuC	citramalate isomerase large subunit	term:citramalate isomerase large subunit	term:3-isopropylmalate dehydratase large subunit	term:3-isopropylmalate dehydratase%LeuC	hmm:TIGR00170	hmm:TIGR02083	hmm:TIGR02086	ignore:SwissProt::Q0QLE2	ignore_other:EC 4.2.1.33	ignore_other:EC 4.2.1.35	uniprot:LEUC_DESVH
-leuD	citramalate isomerase small subunit	term:citramalate isomerase small subunit	term:3-isopropylmalate dehydratase small subunit	term:3-isopropylmalate dehydratase%LeuD	hmm:TIGR00171	hmm:TIGR02084	hmm:TIGR02087	ignore:SwissProt::Q0QLE1	ignore_other:EC 4.2.1.33	ignore_other:EC 4.2.1.35
+leuC	citramalate isomerase large subunit	term:citramalate isomerase large subunit	term:3-isopropylmalate dehydratase large subunit	term:3-isopropylmalate dehydratase%LeuC	hmm:TIGR00170	hmm:TIGR02083	hmm:TIGR02086	ignore:SwissProt::Q0QLE2	ignore_other:EC 4.2.1.33	ignore_other:EC 4.2.1.35	uniprot:LEUC_DESVH	ignore:CharProtDB::CH_122621
+leuD	citramalate isomerase small subunit	term:citramalate isomerase small subunit	term:3-isopropylmalate dehydratase small subunit	term:3-isopropylmalate dehydratase%LeuD	hmm:TIGR00171	hmm:TIGR02084	hmm:TIGR02087	ignore:SwissProt::Q0QLE1	ignore_other:EC 4.2.1.33	ignore_other:EC 4.2.1.35	ignore:CharProtDB::CH_122621
 # The dehydrogenase is encoded by a leuB-type enzyme.
 # Similarly as for leuCD, any 3-isopropylmalate dehydrogenase should be assumed to be capable of this reaction
 leuB	3-methylmalate dehydrogenase	EC:1.1.1.85	EC:1.1.1.n5

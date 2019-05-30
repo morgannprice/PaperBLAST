@@ -24,12 +24,13 @@ ilvD	(R)-2,3-dihydroxy-3-methylbutanoate dehydratase	EC:4.2.1.9	ignore:metacyc::
 leuA	2-isopropylmalate synthase	EC:2.3.3.13	uniprot:L0G5E1_ECHVK	uniprot:A0A1X9Z750_9SPHI	ignore_other:isopropylmalate synthase
 
 # Ignore some BRENDA annotations without subunit information for LeuCD
+# and ignore CharProtDB::CH_122621 (leuCD fusion) which is not actually characterized
 # Ignore a 2,3-methylmalate dehydratase (Q0QLE2,Q0QLE1) which is >50% identical to leuCD from DvH (DVU2982,DVU2983)
 # And, DvH leuC (DVU2982) has similarity to both LeuC and to homoaconitase, and fitness data confirms
 # its role in amino acid biosynthesis, so explicitly include it
 # And similarly for leuD and DVU2983
-leuC	3-isopropylmalate dehydratase, large subunit	term:3-isopropylmalate dehydratase large subunit	term:3-isopropylmalate dehydratase%LeuC	hmm:TIGR00170	hmm:TIGR02083	hmm:TIGR02086	ignore:SwissProt::Q0QLE2	ignore_other:EC 4.2.1.33	ignore_other:EC 4.2.1.35	uniprot:LEUC_DESVH
-leuD	3-isopropylmalate dehydaratase, small subunit	term:3-isopropylmalate dehydratase small subunit	term:3-isopropylmalate dehydratase%LeuD	hmm:TIGR00171	hmm:TIGR02084	hmm:TIGR02087	ignore:SwissProt::Q0QLE1	ignore_other:EC 4.2.1.33	ignore_other:EC 4.2.1.35	uniprot:LEUD_DESVH
+leuC	3-isopropylmalate dehydratase, large subunit	term:3-isopropylmalate dehydratase large subunit	term:3-isopropylmalate dehydratase%LeuC	hmm:TIGR00170	hmm:TIGR02083	hmm:TIGR02086	ignore:SwissProt::Q0QLE2	ignore_other:EC 4.2.1.33	ignore_other:EC 4.2.1.35	uniprot:LEUC_DESVH	ignore:CharProtDB::CH_122621
+leuD	3-isopropylmalate dehydaratase, small subunit	term:3-isopropylmalate dehydratase small subunit	term:3-isopropylmalate dehydratase%LeuD	hmm:TIGR00171	hmm:TIGR02084	hmm:TIGR02087	ignore:SwissProt::Q0QLE1	ignore_other:EC 4.2.1.33	ignore_other:EC 4.2.1.35	uniprot:LEUD_DESVH	ignore:CharProtDB::CH_122621
 
 leuB	3-isopropylmalate dehydrogenase	EC:1.1.1.85
 ilvE	leucine transaminase	EC:2.6.1.6	EC:2.6.1.42

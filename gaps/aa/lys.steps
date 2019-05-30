@@ -1,7 +1,9 @@
 ### lysine biosynthesis I (via DAP and succinylated intermediates)
 # from aspartate and pyruvate (and glutamate as amino group donor)
 
-asp_kinase	aspartate kinase	EC:2.7.2.4
+# For BRENDA::O63067 -- the paper describes a monofunctional hom but the sequence of O63067 is
+# much longer and has a close homolog of functional aspartate kinase (due to alternative splicing?)
+asp_kinase	aspartate kinase	EC:2.7.2.4	ignore:BRENDA::O63067
 
 asd	asparate semi-aldehyde dehydrogenase	EC:1.2.1.11
 
@@ -60,7 +62,7 @@ DAPtransferase	L,L-diaminopimelate aminotransferase	EC:2.6.1.83
 hcs	homocitrate synthase	EC:2.3.3.14
 
 # (2R)-homocitrate to (1R,2S)-homoisocitrate via cis-homoaconitate
-lysT	homoaconitase large subunit	term:homoaconitase large subunit	ignore_other:EC 4.2.114	ignore_other:EC 4.2.1.36
+lysT	homoaconitase large subunit	term:homoaconitase large subunit	ignore_other:EC 4.2.1.114	ignore_other:EC 4.2.1.36
 lysU	homoaconitase small subunit	term:homoaconitase small subunit	ignore_other:EC 4.2.1.114	ignore_other:EC 4.2.1.36
 
 # to 2-oxoadipate. This rule also matches some isocitrate/homoisocitrate dehydrogenases (1.1.1.286)

@@ -6,8 +6,8 @@ hisG	ATP phosphoribosyltransferase	EC:2.4.2.17
 hisI	phosphoribosyl-ATP pyrophosphatase	EC:3.6.1.31	uniprot:Q72CU7_DESVH	ignore:CharProtDB::CH_123581
 hisE	phosphoribosyl-AMP cyclohydrolase	EC:3.5.4.19	hmm:PF01502	ignore:CharProtDB::CH_123581
 hisA	isomerase HisA	EC:5.3.1.16
-hisF	IGP synthase, cyclase subunit	term:hisF	hmm:TIGR00735
-hisH	IGP synthase, amidotransferase subunit	term:hisH	hmm:TIGR01855
+hisF	IGP synthase, cyclase subunit	term:hisF	hmm:TIGR00735	ignore_other:imidazole glycerol phosphate synthase
+hisH	IGP synthase, amidotransferase subunit	term:hisH	hmm:TIGR01855	ignore_other:imidazole glycerol phosphate synthase
 hisB	IGP dehydratase	EC:4.2.1.19
 
 # In Bacillus subtilis, the histidinol-phosphate aminotransferase activity is provided by a gene that is in a cluster of
