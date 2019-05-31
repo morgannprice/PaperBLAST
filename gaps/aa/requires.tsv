@@ -1,0 +1,11 @@
+rule	requires	comment
+cys:from_serine	ser	#
+cys:from_serine_homocysteine	ser	#
+cys:from_serine_homocysteine	met	Cysteine biosynthesis via reverse transsulfuration actually requires homocysteine, which is methionine without the methyl group, not methionine.
+cys:from_phosphoserine	ser:serA	#
+cys:from_phosphoserine	ser:serC	#
+met:transsulfuration	cys	#
+gly:from_serine	ser	#
+gly:from_threonine	thr	#
+cys:from_serine_homocysteine	!met:transsulfuration	Cannot make cysteine from homocysteine and also make homocysteine from cysteine.
+tyr:from_phe	phe	#
