@@ -459,7 +459,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
   } elsif ($orgId eq "" && $pathSpec ne "") {
     # mode: Overview of this pathway across organisms
     print p("Analysis of pathway $pathSpec in", scalar(@orgs), "genomes"), "\n";
-    my @sumRules = ReadTable("$sumpre.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
+    my @sumRules = ReadTable("$sumpre.rules", qw{orgId gdb gid pathway rule score nHi nMed nLo expandedPath});
     @sumRules = grep { $_->{pathway} eq $pathSpec && $_->{rule} eq "all" } @sumRules;
     my %orgAll = map { $_->{orgId} => $_ } @sumRules;
     my @sumSteps = ReadSumSteps($sumpre);
@@ -564,7 +564,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     my @hr = ("Pathway", span({-title=>"Best path"}, "Steps"));
     my @tr = ();
     push @tr, th({-valign => "top"}, \@hr);
-    my @sumRules = ReadTable("$sumpre.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
+    my @sumRules = ReadTable("$sumpre.rules", qw{orgId gdb gid pathway rule score nHi nMed nLo expandedPath});
     my @all = grep { $_->{orgId} eq $orgId && $_->{rule} eq "all" } @sumRules;
     my %all = map { $_->{pathway} => $_ } @all;
     my @sumSteps = ReadSumSteps($sumpre);
@@ -613,7 +613,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     my $st = GetStepsObj($stepPath, $pathSpec);
     my $steps = $st->{steps};
     my $rules = $st->{rules};
-    my @sumRules = ReadTable("$sumpre.rules", qw{orgId gdb gid rule score nHi nMed nLo expandedPath});
+    my @sumRules = ReadTable("$sumpre.rules", qw{orgId gdb gid pathway rule score nHi nMed nLo expandedPath});
     @sumRules = grep { $_->{orgId} eq $orgId && $_->{pathway} eq $pathSpec } @sumRules;
     my %sumRules = map { $_->{rule} => $_ } @sumRules;
     my @sumSteps = ReadSumSteps($sumpre);
