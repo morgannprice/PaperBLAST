@@ -5,7 +5,8 @@ our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
 @EXPORT = qw(ReadSteps FetchUniProtSequence AssemblyToProt
              WriteAssemblyAsOrgProteins WriteSixFrameAsOrgProteins
-             ReadOrgTable ReadOrgProtein ParseOrgLocus);
+             ReadOrgTable ReadOrgProtein ParseOrgLocus
+             ReadReqs CheckReqs);
 use LWP::Simple qw{get};
 use LWP::UserAgent;
 
@@ -357,4 +358,115 @@ sub ParseOrgLocus($) {
   my $locusId = join(":", @pieces);
   die "Invalid locus specifier $locusSpec" unless $orgId ne "" && $locusId ne "";
   return ($orgId, $locusId);
+}
+
+# Given a requirements file (requires.tsv) and a hash of pathwayId => step object,
+# returns a reference to a list of requirements, each of the form:
+#   pathway, rule, requiredPath, requiredRule (defaults to "all") or requiredStep
+#   not, comment, and reqSpec
+sub ReadReqs($$) {
+  my ($requiresFile, $pathways) = @_;
+  my @header = qw{rule requires comment};
+  my @requires = ReadTable($requiresFile, \@header);
+
+  my @out = ();
+  foreach my $req (@requires) {
+    my $ruleSpec = $req->{rule}; # pathway or pathway:rule
+    my ($pathwayId, $rule) = split /:/, $ruleSpec;
+    die "Unknown pathway $pathwayId in requirements $requiresFile\n"
+      unless exists $pathways->{$pathwayId};
+    die "Unknown rule $rule for pathway $pathwayId in requirements $requiresFile\n"
+      if defined $rule && !exists $pathways->{$pathwayId}{rules}{$rule};
+    my $reqSpec = $req->{requires};
+    my $not = $reqSpec =~ m/^[!]/ ? 1 : 0;
+    my $reqSpec2 = $reqSpec;
+    $reqSpec2 =~ s/^[!]//;
+    my ($reqPath, $reqPart) = split /:/, $reqSpec2;
+    my $out = { 'pathway' => $pathwayId, 'rule' => $rule,
+                'reqSpec' => $reqSpec, 'requiredPath' => $reqPath,
+                'not' => $not,
+                'comment' => $req->{comment}
+              };
+    $out->{comment} =~ s/^# *//;
+    $reqPart = "all" if !defined $reqPart;
+    if (exists $pathways->{$reqPath}{rules}{$reqPart}) {
+      $out->{requiredRule} = $reqPart;
+    } elsif (exists $pathways->{$reqPath}{steps}{$reqPart}) {
+      $out->{requiredStep} = $reqPart;
+      die "Not is not supported for required steps -- see $pathwayId $rule and $reqSpec\n"
+        if $not;
+    } else {
+      die "Unknown required part $reqPart for pathway $reqPath in requirements $requiresFile\n"
+    }
+    push @out, $out;
+  }
+  return \@out;
+}
+
+# Given the list of sum.rules and sum.steps rows for an organism,
+# and the requirements from ReadReqs, returns a list of warnings
+# that are relevant.
+sub CheckReqs($$$) {
+  my ($sumRules, $sumSteps, $reqs) = @_;
+  die unless $sumRules && $sumSteps && defined $reqs;
+
+  my %ruleScores = (); # pathway => rule => score row
+  foreach my $row (@$sumRules) {
+    die "Duplicate score for rule $row->{pathway} $row->{rule}\n"
+      if exists $ruleScores{ $row->{pathway} }{ $row->{rule} };
+    $ruleScores{ $row->{pathway} }{ $row->{rule} } = $row;
+  }
+
+  my %stepScores = (); # pathway => step => score row
+  foreach my $row (@$sumSteps) {
+    die "Duplicate score for step $row->{pathway} $row->{step}\n"
+      if exists $stepScores{ $row->{pathway} }{ $row->{step} };
+    $stepScores{ $row->{pathway} }{ $row->{step} } = $row;
+  }
+
+  # List all the rules that are on best paths, working down from all
+  my %onBestPath = (); # pathway => rule or step => 1
+  while (my ($pathway, $ruleHash) = each %ruleScores) {
+    my @work = ("all");
+    while (@work > 0) {
+      my $rule = shift @work;
+      next if exists $onBestPath{$pathway}{$rule};
+      $onBestPath{$pathway}{$rule} = 1;
+      if (exists $ruleHash->{$rule}) {
+        push @work, split / /, $ruleHash->{$rule}{path};
+      }
+    }
+  }
+  my @warn = ();
+  foreach my $req (@$reqs) {
+    my $pathway = $req->{pathway} || die;
+    my $rule = $req->{rule} || die;
+    # Ignore warnings that are not about the best path
+    next unless exists $onBestPath{$pathway}{$rule};
+
+    # Do not warn if already low confidence
+    my $ruleS = $ruleScores{$pathway}{$rule} || die;
+    next if $ruleS->{nLo} > 0;
+    my $reqPath = $req->{requiredPath};
+    if (exists $req->{requiredStep}) {
+      die if $req->{not}; # not supported
+      # Do not warn if the required step is high confidence
+      my $stepS = $stepScores{$reqPath}{ $req->{requiredStep} } || die;
+      next if $stepS->{score} eq "2";
+    } elsif (exists $req->{requiredRule}) {
+      my $reqRule = $req->{requiredRule};
+      my $reqS = $ruleScores{$reqPath}{$reqRule} || die;
+      if ($req->{not}) {
+        # ! means warn if requiredRule has no low-confidence steps and is on the best path for $reqPath
+        next unless $reqS->{nLo} == 0 && exists $onBestPath{$reqPath}{$reqRule};
+      } else {
+        # Warn if requiredRule has any low- or medium-confidence steps
+        next if $reqS->{nLo} == 0 && $reqS->{nMed} == 0;
+      }
+    } else {
+      die "No requiredStep or requiredRule";
+    }
+    push @warn, $req;
+  }
+  return \@warn;
 }
