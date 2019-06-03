@@ -1050,7 +1050,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
   if ($orgId ne "") {
     push @links, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId" },
                    "$setDesc in", $orgs{$orgId}{genomeName})
-      if $pathSpec ne "" || $locusSpec ne "" || $findgene ne "";
+      if $pathSpec ne "" || $locusSpec ne "" || $findgene ne "" || param('gaps');
     push @links, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec" },
                    "$pathDesc{$pathSpec} in $orgs{$orgId}{genomeName}")
       if $pathSpec ne "" && $step ne "";
