@@ -1089,7 +1089,11 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     li(a({-href => "$sumpre.rules"}, "Rules"), "(tab-delimited)"),
     li(a({-href => "$orgpre.faa"}, "Protein sequences"), "(fasta format)"),
     li(a({-href => "$orgpre.org"}, "Organisms"), "(tab-delimited)"),
-    end_ul;
+    li(a({-href => "$orgpre.org"}, "Organisms"), "(tab-delimited)");
+  print li(a({-href => "$queryPath/$set.resources.tar.gz" }, "Input databases"),
+           "(gzipped tar file)")
+    if NewerThan("$queryPath/$set.resources.tar.gz", "$queryPath/date");
+  print end_ul;
   Finish();
 }
 
