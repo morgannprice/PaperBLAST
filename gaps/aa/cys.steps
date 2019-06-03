@@ -33,7 +33,7 @@ Mt_cysM	CysO-thiocarboxylate-dependent cysteine synthase	EC:2.5.1.113
 mec	[CysO sulfur-carrier protein]-S-L-cysteine hydrolase	EC:3.13.1.6
 moeZ	[sulfur carrier protein CysO]--sulfur ligase	curated:metacyc::G185E-7476-MONOMER
 cysO	sulfur carrier protein CysO	curated:SwissProt::P9WP33
-from_phosphoserine: Mt_cysM mec moeZ cysO
+from_phosphoserine: cysO moeZ Mt_cysM mec 
 
 # L-cysteine biosynthesis VI from serine + methionine
 # is not (as far as I know) found in prototrophic bacteria, so ignore.
