@@ -362,7 +362,8 @@ sub ParseOrgLocus($) {
 
 # Given a requirements file (requires.tsv) and a hash of pathwayId => step object,
 # returns a reference to a list of requirements, each of the form:
-#   pathway, rule, requiredPath, requiredRule (defaults to "all") or requiredStep
+#   pathway, rule (defaults to "all"),
+#   requiredPath, requiredRule (defaults to "all") or requiredStep,
 #   not, comment, and reqSpec
 sub ReadReqs($$) {
   my ($requiresFile, $pathways) = @_;
@@ -373,10 +374,11 @@ sub ReadReqs($$) {
   foreach my $req (@requires) {
     my $ruleSpec = $req->{rule}; # pathway or pathway:rule
     my ($pathwayId, $rule) = split /:/, $ruleSpec;
+    $rule = "all" if !defined $rule;
     die "Unknown pathway $pathwayId in requirements $requiresFile\n"
       unless exists $pathways->{$pathwayId};
     die "Unknown rule $rule for pathway $pathwayId in requirements $requiresFile\n"
-      if defined $rule && !exists $pathways->{$pathwayId}{rules}{$rule};
+      if !exists $pathways->{$pathwayId}{rules}{$rule};
     my $reqSpec = $req->{requires};
     my $not = $reqSpec =~ m/^[!]/ ? 1 : 0;
     my $reqSpec2 = $reqSpec;
