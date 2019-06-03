@@ -1083,7 +1083,14 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
 
   print h3("Links"), start_ul(), li(\@links), end_ul
     if @links > 0;
-  print h3("Downloads"), start_ul(),
+  my $format = quotemeta("+%b %d %Y");
+  my $dateQuery = `date -r $queryPath/date $format`;
+  my $dateAnalysis = `date -r $sumpre.done $format`;
+  chomp $dateAnalysis;
+  chomp $dateQuery;
+  print p("This analysis was run on $dateAnalysis. The underlying query files were built on $dateQuery.");
+  print h3("Downloads"),
+    start_ul(),
     li(a({-href => "$sumpre.cand"}, "Candidates"), "(tab-delimited)"),
     li(a({-href => "$sumpre.steps"}, "Steps"), "(tab-delimited)"),
     li(a({-href => "$sumpre.rules"}, "Rules"), "(tab-delimited)"),
