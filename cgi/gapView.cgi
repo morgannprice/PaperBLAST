@@ -72,6 +72,7 @@ sub StepRowToCuratedComment($$);
 sub StepRowToCurated($$);
 sub ShowCuratedLong($);
 sub LegendForColorCoding();
+sub ShowWarnings($$$$);
 
 my $tmpDir = "../tmp"; # for CacheAssembly
 my %orgs = (); # orgId => hash including gdb, gid, genomeName
@@ -207,6 +208,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
   $orgsSpec =~ m/^[a-zA-Z0-9._-]+$/ || die "Invalid orgs $orgsSpec";
   my $orgpre = "../tmp/$orgsSpec/orgs";
   my $sumpre = "../tmp/$orgsSpec/$set.sum";
+  my $warningFile = "$sumpre.warn";
 
   my $alreadyBuilt = NewerThan("$sumpre.done", "$queryPath/date");
 
@@ -251,6 +253,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
       die "No such file: $qFile" unless -e $qFile;
     }
     system("touch", "$sumpre.begin");
+    unlink($warningFile);
     my $time = 15 * scalar(@orgs);
     print p("Analyzing $setDesc in", scalar(@orgs), "genomes. This should take around $time seconds."), "\n";
     my @cmds = ();
@@ -294,6 +297,16 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
   %orgs = map { $_->{orgId} => $_ } @orgs;
   my $faafile = "$orgpre.faa";
   die "No such file: $faafile" unless -e $faafile;
+
+  # Make sure the warnings file is up to date
+  unless (NewerThan($warningFile, "$stepPath/requires.tsv")) {
+    system("../bin/checkGapRequirements.pl -org ../tmp/$orgsSpec > $warningFile.$$.tmp") == 0
+      || die "checkGapRequirements.pl failed";
+    rename("$warningFile.$$.tmp", $warningFile)
+      || die "Failed to rename $warningFile.$$.tmp to $warningFile";
+  }
+  my @warn = ReadTable($warningFile,
+                       qw{orgId pathway rule requiredPath requiredRule requiredStep not comment});
 
   my $pathSpec = param("path");
   $pathSpec = "" if !defined $pathSpec;
@@ -436,6 +449,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
       }
       print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
       print LegendForColorCoding();
+      ShowWarnings(\@warn, $orgsSpec, $set, $orgId);
     }
   } elsif ($orgId eq "" && $pathSpec eq "") {
     # mode: List pathways & genomes
@@ -504,6 +518,8 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
     print LegendForColorCoding();
+    my @warnShow = grep { $_->{pathway} eq $pathSpec } @warn;
+    ShowWarnings(\@warnShow, $orgsSpec, $set, "");
   } elsif ($orgId ne "" && $findgene ne "") {
     # mode: Search for a gene
     print p(qq{Searching for "$findgeneShow" in}, $orgs{$orgId}{genomeName}), "\n";
@@ -607,9 +623,10 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
     print LegendForColorCoding();
+    ShowWarnings(\@warn, $orgsSpec, $set, $orgId);
   } elsif ($orgId ne "" && $pathSpec ne "" && $step eq "" && $locusSpec eq "") {
     # mode: Overview of this pathway in this organism
-    # First the rules, then all of the steps
+    # First the rules, then all of the steps, then the dependency warnings
     my $st = GetStepsObj($stepPath, $pathSpec);
     my $steps = $st->{steps};
     my $rules = $st->{rules};
@@ -723,6 +740,8 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
     print LegendForColorCoding();
+    my @warnShow = grep { $_->{pathway} eq $pathSpec && $_->{orgId} eq $orgId } @warn;
+    ShowWarnings(\@warnShow, $orgsSpec, $set, $orgId);
   } elsif ($orgId ne "" && $pathSpec ne "" && $step ne "" && $locusSpec eq "") {
     # mode: Overview of this step in this organism
     my $st = GetStepsObj($stepPath, $pathSpec);
@@ -1426,6 +1445,36 @@ sub LegendForColorCoding() {
   my @showScores = map span({ -style => ScoreToStyle($_), -title => $titles[$_] },
                             ScoreToLabel($_)), (2,1,0);
   return p("Confidence:", @showScores)."\n";
+}
+
+sub ShowWarnings($$$$) {
+  my ($warnings, $orgsSpec, $set, $orgIdFilter) = @_;
+  my @warnShow = @$warnings;
+  @warnShow = grep { $_->{orgId} eq $orgIdFilter } @warnShow if $orgIdFilter ne "";
+  return if @warnShow == 0;
+  print h3("Dependencies"), start_ul;
+  foreach my $warn (@warnShow) {
+    my $pathShow = a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=" . $warn->{pathway}
+                      . "&orgId=" . $warn->{orgId} }, $warn->{pathway});
+    my $gn = $orgs{ $warn->{orgId} }{genomeName};
+    my $out = scalar(keys %orgs) > 1 && $orgIdFilter eq "" ? "In $gn, $pathShow" : $pathShow;
+    $out .= " (using rule $warn->{rule})" if $warn->{rule} ne "all";
+    my $reqShow = $warn->{requiredPath};
+    my $reqPart = $warn->{requiredRule} || $warn->{requiredStep} || "";
+    $reqShow .= ":" . $reqPart unless $reqPart eq "all";
+    my $reqURL = "gapView.cgi?orgs=$orgsSpec&set=$set&path=" . $warn->{requiredPath}
+      . "&orgId=" . $warn->{orgId};
+    if ($warn->{not}) {
+      $out .= " is not allowed with " . a({-href => $reqURL}, $reqShow);
+    } else {
+      $out .= " also requires " . a({ -href => $reqURL }, $reqShow)
+        . ", which is not high-confidence";
+    }
+    $out .= ".";
+    $out .= start_ul . li($warn->{comment}) . end_ul if $warn->{comment} ne "";
+    print li($out);
+  }
+  print end_ul, "\n";
 }
 
 sub Finish() {
