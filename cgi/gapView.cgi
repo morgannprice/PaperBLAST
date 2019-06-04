@@ -186,7 +186,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
                'bannerURL' => "gapView.cgi");
     print
       p("View 'gaps' in",
-        a({-href => "gapView.cgi?set=$set&orgs=orgsFit"}, "35 bacteria"),
+        a({-href => "gapView.cgi?set=$set&orgs=orgsFit&gaps=1"}, "35 bacteria"),
         "that grow in minimal media, or choose a genome to analyze:"),
       start_form(-method => 'get', -action => "gapView.cgi", -autocomplete => 'on'),
       hidden(-name => 'set', -value => $set, -override => 1),
