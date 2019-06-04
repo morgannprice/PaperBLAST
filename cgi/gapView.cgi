@@ -1478,6 +1478,14 @@ sub ShowWarnings($$$$) {
 }
 
 sub Finish() {
+  print
+    h3("Related tools"),
+    start_ul(),
+    li(a({ -href => "litSearch.cgi" }, "PaperBLAST: Find papers about a protein or its homologs")),
+    li(a({ -href => "genomeSearch.cgi", -title => "Search a genome for proteins that are related to a query term" },
+         "Curated BLAST for Genomes")),
+    end_ul();
+
   my $email = 'funwithwords26@gmail.com';
   print <<END
 <h3>About GapMind</h3>

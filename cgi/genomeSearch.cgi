@@ -235,6 +235,8 @@ if ($gdb && $gquery) {
     start_ul(),
     li(a({ -href => "curatedSearch.cgi" }, "Search for curated proteins by keyword")),
     li(a({ -href => "litSearch.cgi" }, "PaperBLAST: Find papers about a protein or its homologs")),
+    li(a({ -href => 'gapView.cgi', -title => "Annotate the amino acid biosynthesis pathways in a genome" },
+         "GapMind for amino acid biosynthesis")),
     end_ul(),
     h3("How it works"),
     p("Curated BLAST finds curated proteins whose descriptions match the query",
