@@ -17,6 +17,9 @@ asd	asparate semi-aldehyde dehydrogenase	EC:1.2.1.11
 hom	homoserine dehydrogenase	EC:1.1.1.3	uniprot:A0A1L6J6Q3	uniprot:Q8A541_BACTN	uniprot:B8DRS3_DESVM
 
 thrB	homoserine kinase	EC:2.7.1.39
-thrC	threonine synthase	EC:4.2.3.1
+
+# A0A1I2JHD2_9GAMM is identical to N515DRAFT_0575 from strain UNC79MFTsu3.2, which is somewhat
+# diverged; mutants in this gene are auxotrophic.
+thrC	threonine synthase	EC:4.2.3.1	uniprot:A0A1I2JHD2_9GAMM
 
 all: asp_kinase asd hom thrB thrC

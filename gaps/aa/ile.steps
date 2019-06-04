@@ -9,7 +9,7 @@ ilvH	acetohydroxybutanoate synthase catalytic subunit	hmm:TIGR00118	term:acetohy
 
 # The isolated catalytic subunit has some activity so it's not clear if the regulatory
 # subunit should be required.
-ilvI	acetohydroxybutanoate synthase regulatory subunit 	hmm:TIGR00119	term:acetohydroxy-acid synthase%small	term:acetohydroxybutanoate synthase, regulatory subunit	ignore_other:EC 2.2.1.6
+ilvI	acetohydroxybutanoate synthase regulatory subunit 	hmm:TIGR00119	term:acetohydroxy-acid synthase%small	term:acetohydroxybutanoate synthase, regulatory subunit	term:small subunit of acetolactate synthase	ignore_other:EC 2.2.1.6
 # 
 # The three EC numbers correspond to different preferences for NAD(P)H as the cofactor;
 # the transformations to the carbon skeleton are the same.

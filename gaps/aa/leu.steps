@@ -10,7 +10,7 @@ ilvH	acetohydroxybutanoate synthase catalytic subunit	hmm:TIGR00118	term:acetohy
 
 # The isolated catalytic subunit has some activity so it's not clear if the regulatory
 # subunit should be required.
-ilvI	acetohydroxybutanoate synthase regulatory subunit 	hmm:TIGR00119	term:acetohydroxy-acid synthase%small	term:acetohydroxybutanoate synthase, regulatory subunit	ignore_other:EC 2.2.1.6
+ilvI	acetohydroxybutanoate synthase regulatory subunit 	hmm:TIGR00119	term:acetohydroxy-acid synthase%small	term:acetohydroxybutanoate synthase, regulatory subunit	term:small subunit of acetolactate synthase	ignore_other:EC 2.2.1.6
 
 # The various EC numbers vary in their preference for NAD(P)H
 ilvC	ketol-acid reductoisomerase	EC:1.1.1.86	EC:1.1.1.382	EC:1.1.1.383
