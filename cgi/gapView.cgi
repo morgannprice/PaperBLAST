@@ -181,7 +181,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     Finish();
   } elsif (!defined $orgsSpec) {
     # mode: Front page
-    start_page('title' => "Mind gaps in $setDesc",
+    start_page('title' => "GapMind: Automated annotation of $setDesc",
                'banner' => $banner,
                'bannerURL' => "gapView.cgi");
     print
