@@ -63,7 +63,7 @@ sub OrgIdToURL($);
 sub OrgToAssembly($);
 sub Finish(); # show "About GapMind" and exit
 sub CandToOtherColumns($);
-sub CuratedToLink($$);
+sub CuratedToLink($$$);
 sub ProcessUpload($);
 sub ShowCandidatesForStep($$$$);
 sub LoadStepObj($$);
@@ -787,7 +787,8 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
           push @tr, Tr(td({-valign => "top"},
                           [ ShowScoreShort($cand->{blastScore}),
                             $id, $desc,
-                            CuratedToLink($cand->{curatedIds}, $cand->{curatedDesc}),
+                            CuratedToLink($cand->{curatedIds}, $cand->{curatedDesc},
+                                          "gapView.cgi?orgs=$orgsSpec&set=$set&showdef=1&path=".$cand->{pathway}),
                             int(0.5 + $cand->{identity})."%",
                             a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step&locusId=$cand->{locusId}",
                                 -title => "View alignments" },
@@ -895,7 +896,8 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
           push @tr, Tr(td({-valign => "top"},
                           [ $pathLink, $stepLink,
                             ShowScoreShort($cand->{blastScore}),
-                            CuratedToLink($cand->{curatedIds}, $cand->{curatedDesc}),
+                            CuratedToLink($cand->{curatedIds}, $cand->{curatedDesc},
+                                         "gapView.cgi?orgs=$orgsSpec&set=$set&showdef=1&path=".$cand->{pathway}),
                             int(0.5 + $cand->{identity})."%",
                             a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$cand->{pathway}&step=$cand->{step}&locusId=$locusSpec",
                                 -title => "View alignments" },
@@ -994,14 +996,12 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
         foreach my $row (@loci) {
           my ($locusId, $sysName, $desc) = @$row;
           # Should move the descShowCurated/idShowHit code above to a subroutine for showing what it hits
-          my $curatedComment = "a characterized protein";
-          $curatedComment = "from UniProt"
-            if $cand->{curatedIds} =~ m/^uniprot:/;
-          $curatedComment = "a curated, but not characterized, protein from Swiss-Prot"
-            if $cand->{curatedIds} =~ m/^curated2:/;
-          print p("Align candidate (subject)", b("$locusId $sysName"), ":", $desc,
-                  "to curated sequence (query)", CuratedToLink($cand->{curatedIds}, $cand->{curatedDesc}),
-                  "($curatedComment)");
+          print p("Query:",
+                  CuratedToLink($cand->{curatedIds}, $cand->{curatedDesc},
+                               "gapView.cgi?orgs=$orgsSpec&set=$set&showdef=1&path=".$cand->{pathway}),
+                  br(),
+                  "Subject/candidate:", b("$locusId $sysName"), $desc
+                 );
           my $curatedSeq = $curatedSeq{ $cand->{curatedIds} };
           die "Unknown sequence for query " . $cand->{curatedIds}
             unless $curatedSeq;
@@ -1024,7 +1024,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
         # Arguably, should show alignments to "other" as well
       }
       if ($cand->{hmmBits} ne "" && $cand->{hmmBits} > 0) {
-        print p(b("Align locus",
+        print p(b("Align candidate",
                   HTML::Entities::encode($cand->{locusId}),
                   HTML::Entities::encode($cand->{sysName}),
                   HTML::Entities::encode("($cand->{desc})"),
@@ -1267,12 +1267,22 @@ sub CandToOtherColumns($) {
 }
 
 sub CuratedToLink($$) {
-  my ($curatedIds, $curatedDesc) = @_;
+  my ($curatedIds, $curatedDesc, $defURL) = @_;
   die "Undefined curatedIds" unless defined $curatedIds;
   die "Undefined curatedDesc" unless defined $curatedDesc;
   $curatedDesc =~ s/;;.*//;
   my ($first) = split /,/, $curatedIds;
-  if ($first =~ m/^uniprot:/) {
+  my $charLabel = "characterized";
+  my $idShowHit = $first;
+  $idShowHit =~ s/^.*://;
+  my $charTitle = "$idShowHit has been studied experimentally.";
+  if ($first =~ m/^curated2:/) {
+    $first =~ s/^curated2://;
+    $charLabel = "uncharacterized";
+    $charTitle = qq{$idShowHit has not been studied experimentally.
+                    It is included in GapMind's database because its annotation was manually curated.};
+    $charTitle =~ s/\s+/ /g;
+  } elsif ($first =~ m/^uniprot:/) {
     $first =~ s/^uniprot://;
     $curatedDesc =~ s/^(Sub|Rec)Name: Full=//;
     $curatedDesc =~ s/[{][A-Za-z0-9:|_. ;,-]+[}]//g;
@@ -1280,20 +1290,14 @@ sub CuratedToLink($$) {
     $curatedDesc =~ s/EC=/EC /g;
     $curatedDesc =~ s/ +;/;/g;
     $curatedDesc =~ s/;+ *$//;
+    $charTitle = qq{$idShowHit has been studied experimentally.
+                    It was manually added to GapMind's database and may not be in PaperBLAST.};
+    $charTitle =~ s/\s+/ /g;
+    $charLabel .= ", see " . a({-href => $defURL, -title => $charTitle}, "rationale");
   }
-  my $unchar = $first =~ m/^curated2:/;
-  my $uncharLabel = $unchar ? "(uncharacterized)" : "";
-  $first =~ s/^curated2://;
   my $URL = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=" . $first;
-  my $idShowHit = $first;
-  $idShowHit =~ s/^.*://;
-  my $link = a({-href => $URL, -title => "View $idShowHit $uncharLabel in PaperBLAST"}, $curatedDesc);
-  $link .= " (" . a({-title => join(" ",
-                                    "This protein has not been studied experimentally.",
-                                    "It is included in GapMind's database because its annotation",
-                                    "was manually curated.")
-                    }, "uncharacterized") . ")"
-    if $unchar;
+  my $link = a({-href => $URL, -title => "View $idShowHit in PaperBLAST"}, $curatedDesc);
+  $link .= " (" . a({-title => $charTitle}, $charLabel) . ")";
   return $link;
 }
 
