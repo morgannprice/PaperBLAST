@@ -801,7 +801,8 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
           my $hmmURL = HMMToURL($cand->{hmmId});
           push @tr, Tr(td({ -valign => "top" },
                           [ ShowScoreShort($cand->{hmmScore}), $id1, $desc1,
-                            a({-href => $hmmURL, }, $cand->{hmmDesc}, "(". $cand->{hmmId} . ")"),
+                            $cand->{hmmDesc} . " (" .
+                            a({-href => $hmmURL, -title => "curated family (HMM)"}, $cand->{hmmId}) . ")",
                             "",
                             a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step&locusId=$cand->{locusId}",
                                 -title => "View alignments" },
