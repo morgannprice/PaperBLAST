@@ -2,15 +2,19 @@ PaperBLAST is a tool to find papers about homologs of a protein of interest. For
 
 http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=VIMSS14484
 
+This code base also includes Curated BLAST for Genomes and GapMind.
+
 # System Requirements
 
 These scripts should work on any Linux system, and would probably work
-on other Unix or MacOS as well. All of the code is written in perl.
+on other Unix or MacOS as well. All of the code is written in perl. (I am using perl v5.10.1 or perl v5.16.3.)
 
 # Installation
 
-Please put the blast executables (formatdb,
-blastall, and fastacmd) in the bin/blast/ subdirectory.
+(These instructions are for PaperBLAST and Curated BLAST for Genomes. If you want to install GapMind, see the SETUP file in the gaps/ directory.)
+
+Please put the blast executables (formatdb, blastall, and fastacmd) in
+the bin/blast/ subdirectory. I am currently using NCBI BLAST 2.2.18.
 
 Please put the usearch executable in the bin/ subdirectory. I am
 currently using usearch 10.0.
