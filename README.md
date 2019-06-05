@@ -137,4 +137,4 @@ which is where the CGI scripts expect the database to be. (More
 precisely, the data should be in ../data/ relative to the directory
 that the CGI script is invoked from.)
 
--- Morgan Price, Arkin group, Lawrence Berkeley National Lab, February 2017
+-- Morgan Price, Arkin group, Lawrence Berkeley National Lab
