@@ -1494,21 +1494,23 @@ sub Finish() {
   my $email = 'funwithwords26@gmail.com';
   print <<END
 <h3>About GapMind</h3>
-<P>Each pathway is defined by a set of rules based on individual steps or genes. Candidates for each step are identified by using ublast against a database of characterized proteins or by using HMMer. Ublast hits may be split across two different proteins.
+<P>Each pathway is defined by a set of rules based on individual steps or genes. Candidates for each step are identified by using ublast against a database of manually-curated proteins (most of which are experimentally characterized) or by using HMMer. Ublast hits may be split across two different proteins.
 
 <P>A candidate for a step is "high confidence" if either:
 <UL>
-<LI>ublast finds a hit at above 40% identity and 80% coverage, and bits >= other bits+10
-<LI>HMMer finds a hit with 80% coverage of the model, and either other identity < 40 or other coverage < 0.75
+<LI>ublast finds a hit to a characterized protein at above 40% identity and 80% coverage, and bits >= other bits+10.
+<UL><LI>(Hits to curated proteins without experimental data as to their function are never considered high confidence.)</UL>
+<LI>HMMer finds a hit with 80% coverage of the model, and either other identity < 40 or other coverage < 0.75.
 </UL>
 where "other" refers to the best ublast hit to a sequence that is not annotated as performing this step (and is not "ignored").
 
 <P>Otherwise, a candidate is "medium confidence" if either:
 <UL>
-<LI>ublast finds a hit at above 40% identity and 70% coverage (ignoring otherBits)
-<LI>ublast finds a hit at above 30% identity and 80% coverage, and bits >= other bits
-<LI>HMMer finds a hit (regardless of coverage or other bits)
+<LI>ublast finds a hit at above 40% identity and 70% coverage (ignoring otherBits).
+<LI>ublast finds a hit at above 30% identity and 80% coverage, and bits >= other bits.
+<LI>HMMer finds a hit (regardless of coverage or other bits).
 </UL>
+
 <P>Other blast hits with at least 50% coverage are "low confidence."
 <P>Steps with no high- or medium-confidence candidates may be considered "gaps."
 For the typical bacterium that can make all 20 amino acids, there are 1-2 gaps in amino acid biosynthesis pathways.
