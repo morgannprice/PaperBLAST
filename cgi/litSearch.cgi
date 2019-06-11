@@ -231,6 +231,12 @@ END
 
 my $title = "PaperBLAST";
 start_page('title' => $title);
+print <<END
+<SCRIPT src="../static/pb.js"></SCRIPT>
+<SCRIPT src="http://fit.genomics.lbl.gov/d3js/d3.min.js"></SCRIPT>
+<SCRIPT src="http://fit.genomics.lbl.gov/images/fitblast.js"></SCRIPT>
+END
+  ;
 
 my $procId = $$;
 my $timestamp = int (gettimeofday() * 1000);
@@ -413,7 +419,7 @@ if (!defined $seq && ! $more_subjectId) {
       $initial = "$seqlen a.a., $initial" if $hasDef;
       print
         GetMotd(),
-        h3("PaperBLAST Hits for $def ($initial)");
+        h3("PaperBLAST Hits for", HTML::Entities::encode($def), "($initial)");
 
       my @nt = $seq =~ m/[ACGTUN]/g;
       my $fACGTUN = scalar(@nt) / $seqlen;
@@ -421,6 +427,24 @@ if (!defined $seq && ! $more_subjectId) {
         printf("<P><font color='red'>Warning: sequence is %.1f%% nucleotide characters -- are you sure this is a protein query?</font>",
                100 * $fACGTUN);
       }
+
+      my $newline = "%0A";
+      my $cdd_url = "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=>"
+        . HTML::Entities::encode($def) . $newline . $seq;
+      print qq{ <DIV style="float:right; padding-left: 10px; width:25%; background-color: #EEEEEE;">
+                <P>Also see
+                <A HREF="$cdd_url" TITLE="Compare your sequence to NCBI's Conserved Domains Database">Conserved Domains</A>
+                or
+                <A TITLE="Fitness BLAST compares your sequence to bacterial proteins that have mutant phenotypes"
+                   NAME="#fitness">Fitness BLAST:</A>
+                <SPAN ID="fitblast_short"><SMALL>loading...</SMALL></SPAN>
+                <SCRIPT>
+                var server_root = "http://fit.genomics.lbl.gov/";
+                var seq = "$seq";
+                fitblast_load_short("fitblast_short", server_root, seq);
+                </SCRIPT>
+                </DIV>
+             };
     }
 
     autoflush STDOUT 1; # show preliminary results
@@ -472,21 +496,10 @@ if (!defined $seq && ! $more_subjectId) {
       }
     }
 
-    print qq{<script src="http://fit.genomics.lbl.gov/d3js/d3.min.js"></script>
-             <script src="http://fit.genomics.lbl.gov/images/fitblast.js"></script>
-             <H3><A title="Fitness BLAST searches for similarity to bacterial proteins that have mutant phenotypes" HREF="http://fit.genomics.lbl.gov/" NAME="#fitness">Fitness Blast Results</A></H3>
-             <P><DIV ID="fitblast_short"></DIV></P>
-             <script>
-             var server_root = "http://fit.genomics.lbl.gov/";
-             var seq = "$seq";
-             fitblast_load_short("fitblast_short", server_root, seq);
-             </script>
-    } unless $more_subjectId;
-
     if (! $more_subjectId) {
       my @pieces = $seq =~ /.{1,60}/g;
       print h3("Query Sequence"),
-        p({-style => "font-family: monospace;"}, small(join(br(), ">$def", @pieces)));
+        p({-style => "font-family: monospace;"}, small(join(br(), ">" . HTML::Entities::encode($def), @pieces)));
     }
     print h3(a({-href => "litSearch.cgi"}, "New Search")),
       $documentation;
