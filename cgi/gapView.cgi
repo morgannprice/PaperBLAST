@@ -1267,7 +1267,7 @@ sub CandToOtherColumns($) {
   return (small($linkOther), small($otherIdentity), small($cand->{otherBits}));
 }
 
-sub CuratedToLink($$) {
+sub CuratedToLink($$$) {
   my ($curatedIds, $curatedDesc, $defURL) = @_;
   die "Undefined curatedIds" unless defined $curatedIds;
   die "Undefined curatedDesc" unless defined $curatedDesc;
