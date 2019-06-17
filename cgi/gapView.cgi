@@ -366,7 +366,8 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
   print "\n";
 
   my @curatedGaps = ReadTable("$stepPath/$set.curated.gaps.tsv",
-                              qw{gdb gid pathway step class comment});
+                              qw{gdb gid pathway step class comment})
+    if -e "$stepPath/$set.curated.gaps.tsv";
   @curatedGaps = grep { $_->{class} ne "" } @curatedGaps;
   my %curatedGaps = (); # gid => pathway => step => row; step may be ""
   foreach my $c (@curatedGaps) {
