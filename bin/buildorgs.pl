@@ -133,5 +133,5 @@ foreach my $assembly (@assemblies) {
   print $fhOrg join("\t", $assembly->{orgId}, $assembly->{gdb}, $assembly->{gid},
                     $assembly->{genomeName}, $nSeq)."\n";
 }
-close($fhOrg) || die "Error writing to $prefix.faa\n";
+close($fhOrg) || die "Error writing to $prefix.org\n";
 print STDERR "Wrote $prefix.org\n";
