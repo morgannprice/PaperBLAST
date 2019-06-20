@@ -49,6 +49,7 @@ use pbutils;
 use pbweb qw{start_page};
 use FetchAssembly qw{CacheAssembly AASeqToAssembly GetMatchingAssemblies GetMaxNAssemblies};
 use File::stat;
+use DB_File;
 
 sub ScoreToStyle($);
 sub ScoreToLabel($);
@@ -73,6 +74,12 @@ sub StepRowToCurated($$);
 sub ShowCuratedLong($);
 sub LegendForColorCoding();
 sub ShowWarnings($$$$);
+
+# This uses the DB_File in $org.faa.db if that exists,
+# or else tries to use fastacmd against the blast database.
+# (Added DB_File because fastacmd fails for some uploaded fasta files.)
+sub GetOrgSequence($$$$);
+sub FaaToDb($$); # fasta file to db (from DB_File)
 
 my $tmpDir = "../tmp"; # for CacheAssembly
 my %orgs = (); # orgId => hash including gdb, gid, genomeName
@@ -246,6 +253,7 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
       my @cmd = ("../bin/buildorgs.pl", "-out", $orgpre, "-orgs", $gdb.":".$gid);
       system(@cmd) == 0
         || die "command @cmd\nfailed with error: $!";
+      FaaToDb("$orgpre.faa", "$orgpre.faa.db");
     }
     my @orgs = ReadOrgTable("$orgpre.org");
     die "No organisms for $orgpre.org" unless @orgs > 0;
@@ -863,7 +871,7 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
     # First fetch its header and sequence
     my $tmp = "/tmp/gapView.$locusSpec.$$";
     my $faaCand = "$tmp.genome.faa";
-    FetchSeqs("../bin/blast", $faafile, [$orgId.":".$locusSpec], $faaCand);
+    GetOrgSequence($faafile, $orgId, $locusSpec, $faaCand);
     my %fasta = ReadFastaDesc($faaCand);
     unlink($faaCand);
     my $descs = $fasta{desc};
@@ -1019,7 +1027,7 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
           print $fhC ">$hitIds[0]\n$curatedSeq\n";
           close($fhC) || die "Error writing to $faaCurated";
           my $faaCand = "$tmp.genome.faa";
-          FetchSeqs("../bin/blast", $faafile, [$orgId.":".$locusId], $faaCand);
+          GetOrgSequence($faafile, $orgId, $locusId, $faaCand);
           my $bl2seq = "../bin/blast/bl2seq";
           die "No such executable: $bl2seq\n" unless -x $bl2seq;
           print "<pre>";
@@ -1489,6 +1497,42 @@ sub ShowWarnings($$$$) {
     print li($out);
   }
   print end_ul, "\n";
+}
+
+sub GetOrgSequence($$$$) {
+  my ($faaIn, $orgId, $locusSpec, $faaOut) = @_;
+  my $db = "$faaIn.db";
+  my $id = $orgId.":".$locusSpec;
+  if (-e $db) {
+    # use DB_File -- faster and more reliable than fastacmd
+    my %seqs;
+    tie %seqs, "DB_File", $db, O_RDONLY, 0666, $DB_HASH
+      || die "Cannot open file $db -- $!";
+    my $seq = $seqs{$id};
+    untie %seqs;
+    die "No sequence for $id in $db" unless defined $seq;
+    open(my $fh, ">", $faaOut) || die "Cannot write to $faaOut";
+    print $fh ">$id\n$seq\n";
+    close($fh) || die "Error writing to $faaOut";
+  } else {
+    # older builds -- this uses fastacmd
+    FetchSeqs("../bin/blast", $faaIn, [$id], $faaOut);
+  }
+}
+
+sub FaaToDb($$) {
+  my ($faaIn, $db) = @_;
+  my %seqs;
+  tie %seqs, "DB_File", $db, O_CREAT|O_RDWR, 0666, $DB_HASH
+    || die "Cannot write to file $db -- $!";
+  open (my $fh, "<", $faaIn) || die "Cannot read $faaIn";
+  my $state = {};
+  while (my ($header, $seq) = ReadFastaEntry($fh, $state)) {
+    $header =~ s/ .*//;
+    $seqs{$header} = $seq;
+  }
+  close($fh) || die "Error reading $faaIn";
+  untie %seqs;
 }
 
 sub Finish() {
