@@ -83,7 +83,10 @@ my $maxMB = 100;
 $CGI::POST_MAX = $maxMB*1024*1024;
 my $maxNSeqsK = 100;
 my $maxNSeqs = $maxNSeqsK * 1000;
-my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein ids
+my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein ids
+# (Some other characters, like "|", break fastacmd, and
+# ";" could creates issues with links because it affects CGI parameter parsing
+# and the ids are currently not quoted)
 
 {
   FetchAssembly::SetFitnessBrowserPath("../fbrowse_data");
@@ -199,8 +202,7 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
       start_form(-method => 'post', -action => "gapView.cgi", -autocomplete => 'on'),
       hidden(-name => 'set', -value => $set, -override => 1),
       p("Or upload a proteome in fasta format:",
-        filefield(-name=>'file', -size=>40)),
-      p(submit('Upload')),
+        filefield(-name=>'file', -size=>40), br(), submit('Upload')),
       end_form;
     Finish();
   }
@@ -871,7 +873,11 @@ my $charsInId = "a-zA-Z90-9:_.-"; # only these characters are allowed in protein
     my ($seq) = values %$seqs;
     print p("Annotation:", $desc);
     print p("Length:", length($seq), "amino acids");
-    print p("Source:", $orgs{$orgId}{gid}, "in", $orgs{$orgId}{gdb});
+    if ($orgs{$orgId}{gdb} eq "local") {
+      print p("Source: uploaded fasta file", small("(hash $orgs{$orgId}{gid})"));
+    } else {
+      print p("Source:", $orgs{$orgId}{gid}, "in", $orgs{$orgId}{gdb});
+    }
 
     my @cand = ReadSumCand($sumpre,"");
     @cand = grep { $_->{locusId} eq $locusSpec || $_->{locusId2} eq $locusSpec} @cand;
@@ -1336,6 +1342,8 @@ sub ProcessUpload($) {
       unless defined $id && $id ne "";
     return ('error' => "Duplicate sequence for identifier $id")
       if exists $ids{$id};
+    return ('error' => qq{Sorry, '$id' is an invalid protein identifier. The only characters allowed in the first word of each header line are any of: $charsInId})
+      unless $id =~ m/^[$charsInId]+$/;
     $ids{$id} = 1;
     $seq{$header} = $seq;
   }
@@ -1535,4 +1543,5 @@ END
     ;
   print end_html;
   exit(0);
+
 }
