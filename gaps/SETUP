@@ -55,6 +55,8 @@ between pathways.
 
 To run the analysis using the CGI scripts:
 
+Make sure the perl module DB_File is installed. (This depends on BerkeleyDB)
+
 Make sure that the tmp directory is writable by apache (or by
 everyone). Then visit cgi/gapView.cgi
 
