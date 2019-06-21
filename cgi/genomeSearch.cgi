@@ -78,6 +78,7 @@ my $cgi=CGI->new;
 
 my $gdb = $cgi->param('gdb');
 my $gid = $cgi->param('gid');
+die "Invalid genome identifier $gid\n" if defined $gid && $gid !~ m/^[0-9A-Za-z_:.-]*$/;
 my $gquery = $cgi->param('gquery');
 
 my $upfile = $gid ? undef : $cgi->param('file');
@@ -116,7 +117,7 @@ my $genomeName;
 my $fh_up;
 
 if ($gdb && $gquery) {
-  print p("Searching", $gdb_labels{$gdb}, "for", "'" . $gquery . "'"), "\n";
+  print p("Searching", $gdb_labels{$gdb}, "for", "'" . HTML::Entities::encode($gquery) . "'"), "\n";
   my @rows = GetMatchingAssemblies($gdb, $gquery);
   my $limit = GetMaxNAssemblies();
   if (@rows > 0) {
