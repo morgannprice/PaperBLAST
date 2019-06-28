@@ -20,7 +20,7 @@ aroE	shikimate dehydrogenase	EC:1.1.1.25	EC:1.1.1.282	uniprot:Q8A006_BACTN
 # In E. coli, AroL and AroK are isozymes
 # In Bacillus subtilis, this gene was known as AroI, and it was cloned by complementation
 # (see A. Nakane et al, J. Fermentation and Bioengineering 1994, 77:312-314)
-#  That sequence is identical to AROK_BACSU
+# That sequence is identical to AROK_BACSU
 # Manually add BT3393 from B. thetaiotaomicron because it is diverged, is the only good candidate,
 # and is essential in various Bacteroidetes.
 # Similarly Echvi_0140 from Echinicola vietnamensis
