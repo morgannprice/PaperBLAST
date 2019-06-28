@@ -37,7 +37,7 @@ argD	N-acetylornithine aminotransferase	EC:2.6.1.11	ignore_other:EC 2.6.1.81
 # N515DRAFT_3767 (A0A1I2DJB5_9GAMM) is a putative argE, quite diverged (the closest characterized protein is 25% identity to E. coli argE)
 # Mutants are auxotrophic and rescued by arginine.
 # (Unfortunately this EC number also includes N-acetylcitrulline deacetylase)
-argE	N-acetylornithine deacetylase	EC:3.5.1.16	uniprot:A0A1I2DJB5_9GAMM	uniprot:Q8A1V9_BACTN	uniprot:A0A1X9Z8E1_9SPHI	uniprot:L0G443_ECHVK
+argE	N-acetylornithine deacetylase	EC:3.5.1.16	uniprot:A0A1I2DJB5_9GAMM
 
 # CH_122594 lacks an EC number (not fully characterized), although it is likely to be ArgJ (50% identity to O94346)
 argJ	ornithine acetyltransferase	EC:2.3.1.35	ignore:CharProtDB::CH_122594
