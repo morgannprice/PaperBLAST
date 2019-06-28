@@ -7,9 +7,9 @@ cmutase	chorismate mutase	EC:5.4.99.5	hmm:PF01817
 
 # prephenate dehydrogenase and arogenate dehydrogenase are difficult to distinguish
 # 1.3.1.12 and 1.3.1.13 vary by NAD(P)H cofactor
-# BT3933 (Q8A0T8_BACTN), DVU0464 (Q72EV4_DESVH), BPHYT_RS14900 (B2T631_PARPJ), and Ga0059261_2298 (A0A1L6J750) are auxotrophic
+# BT3933 (Q8A0T8_BACTN), DVU0464 (Q72EV4_DESVH), HSERO_RS18425 (D8IR44_HERSS), and Ga0059261_2298 (A0A1L6J750) are auxotrophic
 # and have prephenate dehydrogenase domains (PF02153), but their specificity is unclear
-predehyd	prephenate dehydrogenase	EC:1.3.1.12	EC:1.3.1.13	uniprot:Q8A0T8_BACTN	uniprot:Q72EV4_DESVH	uniprot:B2T631_PARPJ	uniprot:A0A1L6J750	ignore_other:EC 1.3.1.78	ignore_other:EC 1.3.1.43	ignore_other:EC 1.3.1.78
+predehyd	prephenate dehydrogenase	EC:1.3.1.12	EC:1.3.1.13	uniprot:Q8A0T8_BACTN	uniprot:Q72EV4_DESVH	uniprot:D8IR44_HERSS	uniprot:A0A1L6J750	ignore_other:EC 1.3.1.78	ignore_other:EC 1.3.1.43	ignore_other:EC 1.3.1.78
 
 # specificity of the aminotransferase is difficult to predict
 # Include 2.6.1.1 (aspartate amnotransferase) because reported to act on aromatic amino acids including tyrosine
@@ -21,8 +21,8 @@ tyrB	tyrosine aminotransferase	EC:2.6.1.5	EC:2.6.1.27	EC:2.6.1.57	EC:2.6.1.1	ign
 ptransferase	prephenate aminotransferase	EC:2.6.1.79	EC:2.6.1.78	ignore_other:EC 2.6.1.5	ignore_other:EC 2.6.1.27	ignore_other:EC 2.6.1.57	ignore_other:EC 2.6.1.1
 
 # Multiple EC numbers for varying use of NAD(P)H
-# BT3933 and DVU0464 and BPHYT_RS14900 are included but their specificity is uncertain
-arodehyd	arogenate dehydrogenase	EC:1.3.1.78	EC:1.3.1.43	EC:1.3.1.78	uniprot:Q8A0T8_BACTN	uniprot:Q72EV4_DESVH	uniprot:B2T631_PARPJ	uniprot:A0A1L6J750	ignore_other:EC 1.3.1.12	ignore_other:EC 1.3.1.13
+# BT3933 and DVU0464 and HSERO_RS18425 are included but their specificity is uncertain
+arodehyd	arogenate dehydrogenase	EC:1.3.1.78	EC:1.3.1.43	EC:1.3.1.78	uniprot:Q8A0T8_BACTN	uniprot:Q72EV4_DESVH	uniprot:D8IR44_HERSS	uniprot:A0A1L6J750	ignore_other:EC 1.3.1.12	ignore_other:EC 1.3.1.13
 
 # tyrosine biosynthesis III is like I but with NADH as the cofactor for the dehydrogenase
 # (EC 1.3.1.43), so is included above
