@@ -341,8 +341,8 @@ if ($query ne "" && $query !~ m/\n/ && $query !~ m/ / && $query =~ m/[^A-Z*]/) {
   if (!defined $query) {
     $query = &RefSeqToQuery($short);
   }
-
-  &fail("Sorry -- we were not able to find a protein sequence for the identifier <b>$short</b>. We checked it against our database of proteins that are linked to papers, against UniProt (including their ID mapping service), against MicrobesOnline, and against the NCBI protein database (RefSeq and Genbank). Please use the sequence as a query instead.")
+  my $shortSafe = HTML::Entities::encode($short);
+  &fail("Sorry -- we were not able to find a protein sequence for the identifier <b>$shortSafe</b>. We checked it against our database of proteins that are linked to papers, against UniProt (including their ID mapping service), against MicrobesOnline, and against the NCBI protein database (RefSeq and Genbank). Please use the sequence as a query instead.")
     if !defined $query;
 }
 
