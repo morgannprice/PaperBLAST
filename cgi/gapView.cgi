@@ -656,8 +656,30 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
       $curatedGaps{$gid}{$pathSpec}{""} : undef;
     print ShowCuratedLong($curatedGapTop);
 
-    print h3(scalar(@sumRules), "rules"), "\n";
+    print h3(scalar("Best path")), "\n";
+    my @bestparts = ();
+    foreach my $step (split / /, $sumRules{all}{expandedPath}) {
+      my $stepDef = $steps->{$step} || die "Invalid step $step";
+      my $stepS = exists $sumSteps{$step} ? $sumSteps{$step} : {};
+      my $score = $stepS->{score} || 0;
+      my $id = $stepS->{sysName} || $stepS->{locusId} || "";
+      my $title = $stepDef->{desc};
+      $title .= " $id" if $id ne "";
+      my $curatedGap = $curatedGaps{$gid}{$pathSpec}{$step}
+        if exists $curatedGaps{$gid}{$pathSpec}{$step}; # do not look at ""
+      if ($curatedGap) {
+        $title .= " (" . $curatedGap->{class} . " gap)";
+      } else {
+        $title .= " (" . ScoreToLabel($score) . ")";
+      }
+      push @bestparts, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step",
+                           -style => ScoreToStyle($score),
+                           -title => $title },
+                         $step);
+    }
+    print p(@bestparts), "\n";
 
+    print h3("Rules"), "\n";
     print start_ul;
     foreach my $rule (reverse @sumRules) {
       my $hasSubRule = 0;
@@ -695,31 +717,12 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
         print li("${or}steps: " . join(", ", @parts));
         $or = "or ";
       }
-      my @bestparts = ();
-      foreach my $step (@stepList) {
-        my $stepDef = $steps->{$step} || die "Invalid step $step";
-        my $stepS = exists $sumSteps{$step} ? $sumSteps{$step} : {};
-        my $score = $stepS->{score} || 0;
-        my $id = $stepS->{sysName} || $stepS->{locusId} || "";
-        my $title = $stepDef->{desc};
-        $title .= " $id" if $id ne "";
-        my $curatedGap = $curatedGaps{$gid}{$pathSpec}{$step}
-          if exists $curatedGaps{$gid}{$pathSpec}{$step}; # do not look at ""
-        if ($curatedGap) {
-          $title .= " (" . $curatedGap->{class} . " gap)";
-        } else {
-          $title .= " (" . ScoreToLabel($score) . ")";
-        }
-        push @bestparts, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step",
-                         -style => ScoreToStyle($score),
-                         -title => $title },
-                       $step);
-      }
-      print li("best-scoring path:", @bestparts) if $hasSubRule || @{ $rules->{ $rule->{rule} } } > 1;
       print end_ul, "\n";
     }
     print end_ul, "\n";
-    my @stepsSorted = sort { $a->{i} <=> $b->{i} } (values %$steps);
+    # Show the steps on the best path, and then the other steps
+    my @stepsSorted = sort { $sumSteps{ $b->{name} }{onBestPath} <=> $sumSteps{ $a->{name} }{onBestPath}
+                               || $a->{i} <=> $b->{i} } (values %$steps);
     my @stepWithCand = grep { $_->{locusId} ne "" } @sumSteps;
     print h3(scalar(@stepsSorted) . " steps (" . scalar(@stepWithCand) . " with candidates)"), "\n";
 
@@ -738,11 +741,17 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
     push @header, "Class of gap" if $nCurated > 0;
     push @tr, Tr(th(\@header));
     # For each step, show the step name and description, the best candidate (if any), and the 2nd best candidate(s) if any
+    my $alternativeShown = 0;
     foreach my $stepS (@stepsSorted) {
       my $step = $stepS->{name};
       die "invalid step $step" unless exists $steps->{$step};
+      if (!$sumSteps{$step}{onBestPath} && ! $alternativeShown) {
+        push @tr, Tr(td({ -colspan => scalar(@header) }, "Alternative steps:"));
+        $alternativeShown = 1;
+      }
       my ($show1, $show2) = ShowCandidatesForStep($orgsSpec, $set, $sumSteps{$step}, $candHash);
-      my @td = ( a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step"}, $step),
+      my @td = ( a({-style => ScoreToStyle($sumSteps{$step}{score}),
+                    -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$step"}, $step),
                  $stepS->{desc},
                  $show1, $show2 );
       push @td, StepRowToCuratedComment($sumSteps{$step}, \%curatedGaps)
