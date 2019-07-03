@@ -658,6 +658,7 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
 
     print h3(scalar("Best path")), "\n";
     my @bestparts = ();
+    my @bestcand = (); # the best candidate per step
     foreach my $step (split / /, $sumRules{all}{expandedPath}) {
       my $stepDef = $steps->{$step} || die "Invalid step $step";
       my $stepS = exists $sumSteps{$step} ? $sumSteps{$step} : {};
@@ -676,8 +677,22 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
                            -style => ScoreToStyle($score),
                            -title => $title },
                          $step);
+      push @bestcand, $stepS->{locusId} if $stepS->{locusId};
     }
     print p(@bestparts), "\n";
+    if ($orgs{$orgId}{gdb} eq "FitnessBrowser" && @bestcand > 0) {
+      # split the split ORFs
+      my @bestcand2 = ();
+      foreach my $cand (@bestcand) {
+        push @bestcand2, split /,/, $cand;
+      }
+      # remove duplicates
+      my %seen = ();
+      my @bestcand3 = grep { my $keep = !exists $seen{$_}; $seen{$_} = 1; $keep; } @bestcand2;
+      my $URL = "http://fit.genomics.lbl.gov/cgi-bin/genesFit.cgi?orgId=${gid}&"
+        . join("&", map { "locusId=$_" } @bestcand3);
+      print p(a({ -href => $URL }, "Fitness data for top candidates"));
+    }
 
     print h3("Rules"), "\n";
     print start_ul;
