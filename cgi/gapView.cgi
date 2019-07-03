@@ -1004,6 +1004,16 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
       p("Check the SEED with",
       a({-href => "http://pubseed.theseed.org/FIG/seedviewer.cgi?page=FigFamViewer&fasta_seq=>${locusSpec}$newline$seq"},
         "FIGfam search")),
+      p(a({-title => "Fitness BLAST compares a sequence to bacterial proteins that have mutant phenotypes"},
+          "Fitness BLAST:"),
+        span({-id => "fitblast_short"}, small("loading..."))),
+      qq{<SCRIPT src="http://fit.genomics.lbl.gov/d3js/d3.min.js"></SCRIPT>
+         <SCRIPT src="http://fit.genomics.lbl.gov/images/fitblast.js"></SCRIPT>
+         <SCRIPT>
+         var server_root = "http://fit.genomics.lbl.gov/";
+         var seq = "$seq";
+         fitblast_load_short("fitblast_short", server_root, seq);
+         </SCRIPT>},
       h3("Sequence"),
       join("\n", "<pre>", @seqparts, "</pre>"), "\n";
   } elsif ($locusSpec ne "" && $step ne "") {
