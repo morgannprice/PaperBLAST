@@ -10,7 +10,11 @@ my $minNMarkers = 10;
 my $minMedian = 75.0;
 my $minIdentity = 50;
 my $usage = <<END
-Usage: orgsVsMarkers.pl -orgs orgs -vs markers.faa -out out.tab
+Usage: orgsVsMarkers.pl -orgs orgs -vs markers.faa -out out.tsv
+
+The output table includes orgId (from orgs), orgId2 (from the marker
+file), identity (up to 100), and nMarkers (the number of protein
+alignments used to compute the median identity)
 
 Optional arguments:
  -nCPU $nCPU -- number of CPUs to use (defaults to the MC_CORES
@@ -20,6 +24,10 @@ Optional arguments:
  -minMedian $minMedian -- lowest median identity to report
  -minIdentity $minIdentity -- minimum pairwise identity of marker
 	proteins to consider
+
+Limitations -- the use of usearch with maxaccepts may cause all hits
+to be missed if the reference database includes many strains that are
+at about the same distance from the query genome.
 END
 ;
 
