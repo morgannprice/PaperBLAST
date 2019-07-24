@@ -1573,7 +1573,7 @@ sub StepToShortHTML($$$$$$$) {
     $title .= " (" . $curatedGap->{class} . " gap)";
   } elsif ($knownGap) {
     my $idShow = int($knownGap->{identity})."%";
-    $title .= " (a known gap in $knownGap->{genomeName}, which is $idShow identical across $knownGap->{n} ribosomal proteins)";
+    $title .= " (a known gap in $knownGap->{genomeName}, which is $idShow identical across $knownGap->{nMarkers} ribosomal proteins)";
   } else {
     $title .= " (" . ScoreToLabel($score) . ")";
   }
