@@ -72,9 +72,13 @@ sub GetStepsObj($$);
 sub StepRowToCuratedComment($$);
 sub StepRowToCurated($$);
 sub ShowCuratedLong($);
+sub StepRowToKnownComment($$$$$);
+sub StepRowToKnown($$$);
+sub ShowKnownLong($$$$$);
 sub LegendForColorCoding();
-sub PathToHTML($$$$$$);
-sub StepToShortHTML($$$$$);
+sub PathToHTML($$$$$$$$);
+sub StepToShortHTML($$$$$$$);
+sub GetMarkerSimilarity($$);
 sub ShowWarnings($$$$);
 
 # This uses the DB_File in $org.faa.db if that exists,
@@ -295,6 +299,7 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
       print p($label{$show})."\n" if exists $label{$show};
       system(@$cmd) == 0 || die "Command failed\n@$cmd\nError code: $!";
     }
+    GetMarkerSimilarity($orgsSpec, $set);
     unlink("$sumpre.begin");
     print "</pre>\n",
       p("Analysis succeeded, please",
@@ -377,6 +382,23 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
              'bannerURL' => "gapView.cgi");
   print "\n";
 
+  # Fetch the marker comparisons and known gaps
+  my @markerSim = GetMarkerSimilarity($orgsSpec, $set);
+  my @knownGaps = ();
+  @knownGaps = ReadTable("../gaps/$set/$set.known.gaps.tsv", qw{gdb gid pathway step genomeName})
+    if @markerSim > 0;
+  my %markerSim = (); # orgId => orgId2 => hash including identity, nMarkers
+  foreach my $row (@markerSim) {
+    $markerSim{ $row->{orgId} }{ $row->{orgId2} } = $row;
+  }
+  my %knownGaps = (); # orgId => pathway => step => hash including genomeName, gdb, gid
+  foreach my $row (@knownGaps) {
+    # Add orgId -- it only has gid and gdb
+    # Note all the "known gaps" have score=0
+    $row->{orgId} = join("__", $row->{gdb}, $row->{gid});
+    $knownGaps{$row->{orgId}}{ $row->{pathway} }{ $row->{step} } = $row;
+  }
+
   my @curatedGaps = ReadTable("$stepPath/$set.curated.gaps.tsv",
                               qw{gdb gid pathway step class comment})
     if -e "$stepPath/$set.curated.gaps.tsv";
@@ -429,16 +451,26 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
         . scalar(@pathInfo) . " pathways";
       $totals .= " x " . scalar(@orgs) . " genomes" if $orgId eq "";
       my $nCurated = 0;
-      foreach  my $row (@gaps) {
-        $nCurated++ if StepRowToCurated($row, \%curatedGaps);
+      my $nKnown = 0;
+      foreach  my $gap (@gaps) {
+        if (StepRowToCurated($gap, \%curatedGaps)) {
+          $nCurated++;
+        } elsif ($gap->{score} ne "1") {
+          $nKnown++ if defined StepRowToKnown($gap, \%markerSim, \%knownGaps);
+        }
       }
       $totals .= ".";
       $totals .= " $nCurated of $nTot gaps have been manually classified."
         if $nCurated > 0;
+      $totals .= " $nKnown of $nLo low-confidence gaps are known gaps in related organisms."
+        if $nKnown > 0;
       print p($totals);
       my @th = qw{Pathway Step Organism Best-candidate 2nd-candidate};
+      my $showOrg = $orgId eq "" && scalar(@orgs) > 1;
+      @th = grep { $_ ne "Organism" } @th unless $showOrg;
       map s/-/ /g, @th;
       push @th, "Class of gap" if $nCurated > 0;
+      push @th, "Known?" if $nKnown > 0;
       my @tr = ();
       push @tr, Tr(th({-valign => "top"}, \@th));
       foreach my $row (@gaps) {
@@ -452,12 +484,14 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
                    a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$o&path=$p&step=$s",
                        -title => ScoreToLabel($row->{score}),
                        -style => ScoreToStyle($row->{score}) },
-                     "$s: " . GetStepsObj($stepPath, $p)->{steps}{$s}{desc}),
-                   a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$o" },
-                     $orgs{$o}{genomeName}),
-                   $show1, $show2 );
+                     "$s: " . GetStepsObj($stepPath, $p)->{steps}{$s}{desc}) );
+        push @td, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$o" }, $orgs{$o}{genomeName})
+          if $showOrg;
+        push @td, ( $show1, $show2 );
         push @td, StepRowToCuratedComment($row, \%curatedGaps)
           if $nCurated > 0;
+        push @td, StepRowToKnownComment($row, \%markerSim, \%knownGaps, \%pathDesc, $set)
+          if $nKnown > 0;
         push @tr, Tr(td({-valign => "top" }, \@td));
       }
       print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
@@ -511,7 +545,8 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
                             -style => ScoreToStyle($score),
                             -title => "$pathSpec $ruleScoreLabels[$score]" },
                           $orgs{$orgId}{genomeName}),
-                        PathToHTML(\@expandedPath, $steps, $orgStep{$orgId}, \%curatedGaps, $orgsSpec, $set) ]));
+                        PathToHTML(\@expandedPath, $steps, $orgStep{$orgId}, \%curatedGaps, $orgsSpec, $set,
+                                  \%markerSim, \%knownGaps) ]));
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
     print LegendForColorCoding();
@@ -600,7 +635,8 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
                    td([ a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$path",
                             -style => ScoreToStyle($pathScore),
                             -title => $pathDesc{$path } . " - " . $ruleScoreLabels[$pathScore] }, $path),
-                        PathToHTML(\@expandedPath, $steps, $sumSteps{$path}, \%curatedGaps, $orgsSpec, $set) ]));
+                        PathToHTML(\@expandedPath, $steps, $sumSteps{$path}, \%curatedGaps, $orgsSpec, $set,
+                                   \%markerSim, \%knownGaps) ]));
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
     print LegendForColorCoding();
@@ -628,7 +664,8 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
 
     my @expandedPath = split / /, $sumRules{all}{expandedPath};
     print h3(scalar("Best path")),
-      p(PathToHTML(\@expandedPath, $steps, \%sumSteps, \%curatedGaps, $orgsSpec, $set)),
+      p(PathToHTML(\@expandedPath, $steps, \%sumSteps, \%curatedGaps, $orgsSpec, $set,
+                   \%markerSim, \%knownGaps)),
       "\n";
 
     my @bestcand = (); # the best candidate per step
@@ -661,7 +698,7 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
         my @parts = ();
         foreach my $part (@$list) {
           if (exists $steps->{$part}) {
-            push @parts, StepToShortHTML($steps->{$part}, $sumSteps{$part}, \%curatedGaps, $orgsSpec, $set);
+            push @parts, StepToShortHTML($steps->{$part}, $sumSteps{$part}, \%curatedGaps, $orgsSpec, $set, \%markerSim, \%knownGaps);
           } elsif (exists $rules->{$part}) {
             my $score = RuleToScore($sumRules{$part});
             push @parts, span({ -style => ScoreToStyle($score), -title => "see rule for $part below" }, $part);
@@ -683,10 +720,15 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
     print h3(scalar(@stepsSorted) . " steps (" . scalar(@stepWithCand) . " with candidates)"), "\n";
 
     my $nCurated = 0;
+    my $nKnown = 0;
     foreach  my $row (@sumSteps) {
-      $nCurated++ if $row->{score} ne "2"
-        && $row->{onBestPath}
-        && StepRowToCurated($row, \%curatedGaps);
+      if ($row->{score} ne "2" && $row->{onBestPath}) {
+        if (StepRowToCurated($row, \%curatedGaps)) {
+          $nCurated++;
+        } elsif (StepRowToKnown($row, \%markerSim, \%knownGaps)) {
+          $nKnown++;
+        }
+      }
     }
 
     my @tr = ();
@@ -695,6 +737,7 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
       s/-/ /;
     }
     push @header, "Class of gap" if $nCurated > 0;
+    push @header, "Known gap?" if $nKnown > 0;
     push @tr, Tr(th(\@header));
     # For each step, show the step name and description, the best candidate (if any), and the 2nd best candidate(s) if any
     my $alternativeShown = 0;
@@ -712,6 +755,8 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
                  $show1, $show2 );
       push @td, StepRowToCuratedComment($sumSteps{$step}, \%curatedGaps)
         if $nCurated > 0;
+        push @td, StepRowToKnownComment($sumSteps{$step}, \%markerSim, \%knownGaps, \%pathDesc, $set)
+          if $nKnown > 0;
       push @tr, Tr(td({-valign => "top" }, \@td));
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
@@ -728,7 +773,13 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
     my ($stepObj) = @sumSteps;
 
     my $curatedGap = StepRowToCurated($stepObj, \%curatedGaps);
-    print ShowCuratedLong($curatedGap) if $stepObj->{score} ne "2" && $curatedGap;
+    if ($stepObj->{score} ne "2") {
+      if ($curatedGap) {
+        print ShowCuratedLong($curatedGap);
+      } elsif ($stepObj->{score} ne "1") {
+        print ShowKnownLong($stepObj, \%markerSim, \%knownGaps, \%pathDesc, $set);
+      }
+    }
 
     my @cand = ReadSumCand($sumpre,$pathSpec);
     @cand = grep { $_->{orgId} eq $orgId && $_->{step} eq $step } @cand;
@@ -1434,6 +1485,50 @@ sub ShowCuratedLong($) {
            i("Rationale:"), $curatedGap->{comment});
 }
 
+# Returns a hash describing the highest-identity organism that is missing this step, or undef
+# If known, the returned hash includes orgId, gdb, and gid (of the similar organism), genomeName, identity, and n
+sub StepRowToKnown($$$) {
+  my ($stepRow, $markerSim, $knownGaps) = @_;
+  return undef if $stepRow->{score} eq "2" || $stepRow->{score} eq "1";
+  return undef unless exists $markerSim->{ $stepRow->{orgId} };
+  my @rows = ();
+  foreach my $orgId2 (keys %{ $markerSim->{ $stepRow->{orgId} } }) {
+    if (exists $knownGaps->{$orgId2}{ $stepRow->{pathway} }{ $stepRow->{step} }) {
+      my $k = $knownGaps->{$orgId2}{ $stepRow->{pathway} }{ $stepRow->{step} };
+      my $sim = $markerSim->{ $stepRow->{orgId} }{ $orgId2 };
+      push @rows, { 'orgId' => $orgId2, 'gdb' => $k->{gdb}, 'gid' => $k->{gid},
+                    'genomeName' => $k->{genomeName}, 'nMarkers' => $sim->{nMarkers}, 'identity' => $sim->{identity} };
+    }
+  }
+  @rows = sort { $b->{identity} <=> $a->{identity} } @rows;
+  return $rows[0] if @rows > 0;
+}
+
+sub StepRowToKnownComment($$$$$) {
+  my ($stepRow, $markerSim, $knownGaps, $pathDesc, $set) = @_;
+  my $k = StepRowToKnown($stepRow, $markerSim, $knownGaps);
+  return "" unless defined $k;
+  my $idShow = int($k->{identity}) . "%";
+  return join(" ",
+              a({-title => "A related organism ($k->{genomeName}) performs $pathDesc->{$stepRow->{pathway}} and has a gap at $stepRow->{step}",
+                 -href => "gapView.cgi?gid=$k->{gid}&gdb=$k->{gdb}&set=$set"},
+                $k->{genomeName}),
+              a({-title => "$k->{genomeName} is $idShow identical across $k->{nMarkers} ribosomal proteins"},
+                 "($idShow)"));
+}
+
+sub ShowKnownLong($$$$$) {
+  my ($stepRow, $markerSim, $knownGaps, $pathDesc, $set) = @_;
+  my $k = StepRowToKnown($stepRow, $markerSim, $knownGaps);
+  return "" unless defined $k;
+  my $idShow = int($k->{identity}) . "%";
+  return p(i("Known gap:"), "The related organism",
+           a({-href => "gapView.cgi?gid=$k->{gid}&gdb=$k->{gdb}&set=$set"}, $k->{genomeName}),
+           "performs $pathDesc->{$stepRow->{pathway}}",
+           "and has a gap at $stepRow->{step}.",
+           "Across $k->{nMarkers} ribosomal proteins, the two organisms share $idShow amino acid identity.");
+}
+
 sub LegendForColorCoding() {
   my @titles = ("Low confidence candidates are highly diverged, have low coverage of the characterized homolog, or are similar to proteins that have other functions.",
                 "Medium confidence candidates are less than 40% identical to a characterized protein; or the alignment (to either a characterized protein or an HMM) had under 80% coverage; or the candidate was found by similarity to a uncharacterized (but well-curated) protein.",
@@ -1446,19 +1541,19 @@ sub LegendForColorCoding() {
 # stepList is a reference to a list of step names
 # stepDefs is a hash of step name to the step definition
 # stepScores is a hash of step to rows in the steps scoring table
-sub PathToHTML($$$$$$) {
-  my ($stepList, $stepDefs, $stepScores, $curatedGaps, $orgsSpec, $set) = @_;
+sub PathToHTML($$$$$$$$) {
+  my ($stepList, $stepDefs, $stepScores, $curatedGaps, $orgsSpec, $set, $markerSim, $knownGaps) = @_;
   my @out = ();
   foreach my $step (@$stepList) {
     my $stepDef = $stepDefs->{$step} || die "Invalid step $step";
     my $stepScore = $stepScores->{$step} || die "No scoring for step $step";
-    push @out, StepToShortHTML($stepDef, $stepScore, $curatedGaps, $orgsSpec, $set);
+    push @out, StepToShortHTML($stepDef, $stepScore, $curatedGaps, $orgsSpec, $set, $markerSim, $knownGaps);
   }
   return join(", ", @out);
 }
 
-sub StepToShortHTML($$$$$) {
-  my ($stepDef, $stepScore, $curatedGaps, $orgsSpec, $set) = @_;
+sub StepToShortHTML($$$$$$$) {
+  my ($stepDef, $stepScore, $curatedGaps, $orgsSpec, $set, $markerSim, $knownGaps) = @_;
   my $orgId = $stepScore->{orgId} || die;
   my $gid = $stepScore->{gid} || die;
   my $pathway = $stepScore->{pathway} || die;
@@ -1472,11 +1567,17 @@ sub StepToShortHTML($$$$$) {
   $title .= " $id" if $id ne "";
   my $curatedGap = $curatedGaps->{$gid}{$pathway}{$step}
     if exists $curatedGaps->{$gid}{$pathway}{$step};
+  my $knownGap = StepRowToKnown($stepScore, $markerSim, $knownGaps)
+    if !defined $curatedGap && $score == 0;
   if ($curatedGap) {
     $title .= " (" . $curatedGap->{class} . " gap)";
+  } elsif ($knownGap) {
+    my $idShow = int($knownGap->{identity})."%";
+    $title .= " (a known gap in $knownGap->{genomeName}, which is $idShow identical across $knownGap->{n} ribosomal proteins)";
   } else {
     $title .= " (" . ScoreToLabel($score) . ")";
   }
+  my $showMaybe = $curatedGap || $knownGap ? a({-title => $title }, small("?")) : "";
   my $showSplit = "";
   if ($stepScore->{locusId} =~ m/,/) {
     my $ids = $id;
@@ -1488,7 +1589,7 @@ sub StepToShortHTML($$$$$) {
   return a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathway&step=$step",
              -style => ScoreToStyle($score),
              -title => $title },
-           $step) . $showSplit;
+           $step) . $showMaybe . $showSplit;
 }
 
 sub ShowWarnings($$$$) {
@@ -1540,6 +1641,20 @@ sub GetOrgSequence($$$$) {
     # older builds -- this uses fastacmd
     FetchSeqs("../bin/blast", $faaIn, [$id], $faaOut);
   }
+}
+
+sub GetMarkerSimilarity($$) {
+  my ($orgsSpec, $set) = @_;
+  my $orgpre = "../tmp/$orgsSpec/orgs";
+  my $simFile = "../tmp/$orgsSpec/$set.known.sim";
+  my $markerFaa = "../gaps/$set/$set.known.gaps.markers.faa";
+  return () unless -e $markerFaa;
+  unless (NewerThan($simFile, $markerFaa)) {
+    print p("Comparing the genome(s) to ribosomal proteins from organisms with known gaps"), "\n";
+    system("../bin/orgsVsMarkers.pl", "-orgs", $orgpre, "-vs", $markerFaa, "-out", $simFile) == 0
+      || die "orgsVsMarkers.pl failed: $!";
+  }
+  return ReadTable($simFile, qw{orgId orgId2 identity nMarkers});
 }
 
 sub FaaToDb($$) {
