@@ -223,9 +223,31 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
   $orgsSpec =~ m/^[a-zA-Z0-9._-]+$/ || die "Invalid orgs $orgsSpec";
   my $orgpre = "../tmp/$orgsSpec/orgs";
   my $sumpre = "../tmp/$orgsSpec/$set.sum";
-  my $warningFile = "$sumpre.warn";
 
   my $alreadyBuilt = NewerThan("$sumpre.done", "$queryPath/date");
+  my $orgSetsFile = "../tmp/path.$set/orgSets.tsv";
+  if (! $alreadyBuilt && -e $orgSetsFile
+      && ! param("orgId")
+      && param("gdb") && param("gid")) {
+    # try to find this organism in a standard set
+    my @orgsInSets = ReadTable($orgSetsFile, qw{orgId gdb gid orgSet});
+    my $orgId = join("__", param("gdb"), param("gid"));
+    @orgsInSets = grep { $_->{orgId} eq $orgId } @orgsInSets;
+    if (@orgsInSets > 0) {
+      my $orgSet = $orgsInSets[0]{orgSet};
+      my $orgpre2 = "../tmp/$orgSet/orgs";
+      my $sumpre2 = "../tmp/$orgSet/$set.sum";
+      if (-e "$orgpre2.org" && NewerThan("$sumpre2.done", "$queryPath/date")) {
+        # Use this set instead
+        $orgsSpec = $orgSet;
+        $orgpre = $orgpre2;
+        $sumpre = $sumpre2;
+        $alreadyBuilt = 1;
+        param("orgId", $orgId); # orgId is initialized below
+      }
+    }
+  }
+  my $warningFile = "$sumpre.warn";
 
   # Wait up to 5 minutes for a previously running job to finish
   if (! $alreadyBuilt
@@ -270,8 +292,9 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
     }
     system("touch", "$sumpre.begin");
     unlink($warningFile);
-    my $time = 15 * scalar(@orgs);
-    print p("Analyzing $setDesc in", scalar(@orgs), "genomes. This should take around $time seconds."), "\n";
+    my $timeExpect = 15 * scalar(@orgs);
+    my $timeStart = time();
+    print p("Analyzing $setDesc in", scalar(@orgs), "genomes. This should take around $timeExpect seconds."), "\n";
     my @cmds = ();
     push @cmds, ["../bin/gapsearch.pl", "-orgs", $orgpre, "-query", @qFiles,
                  "-nCPU", $nCPU, "-out", "$tmpDir/$orgsSpec/$set.hits"];
@@ -301,8 +324,9 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
     }
     GetMarkerSimilarity($orgsSpec, $set);
     unlink("$sumpre.begin");
+    my $timeDiff = time() - $timeStart;
     print "</pre>\n",
-      p("Analysis succeeded, please",
+      p("Analysis succeeded in $timeDiff seconds, please",
       a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set"}, "view results")),
       end_html;
     exit(0);
@@ -1502,6 +1526,7 @@ sub StepRowToKnown($$$) {
   }
   @rows = sort { $b->{identity} <=> $a->{identity} } @rows;
   return $rows[0] if @rows > 0;
+  return undef;
 }
 
 sub StepRowToKnownComment($$$$$) {
