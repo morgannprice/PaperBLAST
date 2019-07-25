@@ -910,6 +910,26 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
       print li($show);
     }
     print end_ul(), "\n";
+
+    # Show similar gaps
+    my $known = StepRowToKnown($stepObj, \%markerSim, \%knownGaps);
+    if ($known) {
+      my @all = grep { $_->{orgId} ne $stepObj->{orgId} } @{ $known->{all} };
+      if (@all > 0) {
+        print h3("Known gaps in related organisms");
+        print start_ul();
+        foreach my $sim (@all) {
+          my $idShow = int($sim->{identity}) . "%";
+          print li(a({-href => "gapView.cgi?gid=$sim->{gid}&gdb=$sim->{gdb}&set=$set",
+                      -title => "Despite the apparent lack of $step,"
+                      . " $sim->{genomeName}"
+                      . " performs $pathDesc{$pathSpec}" },
+                     $sim->{genomeName}),
+                   "(" . a({-title => "$idShow identity across $sim->{nMarkers} ribosomal proteins"}, $idShow) . ")");
+        }
+        print end_ul();
+      }
+    }
   } elsif ($orgId ne "" && $step eq "" && $locusSpec ne "") {
     # mode: Show a gene
     # First fetch its header and sequence
@@ -1545,14 +1565,14 @@ sub StepRowToKnownComment($$$$$) {
   my $k = StepRowToKnown($stepRow, $markerSim, $knownGaps);
   return "" unless defined $k;
   return a({-title => "Despite the apparent lack of $stepRow->{step},"
-            . " $k->{genomeName} can perform $pathDesc->{$stepRow->{pathway}}" }, "Known gap")
+            . " $k->{genomeName} performs $pathDesc->{$stepRow->{pathway}}" }, "known gap")
     if $k->{orgId} eq $stepRow->{orgId};
   my $idShow = int($k->{identity}) . "%";
-  return a({-title => "$k->{genomeName} performs $pathDesc->{$stepRow->{pathway}} and has a gap at $stepRow->{step}."
+  return a({-title => "Despite the apparent lack of $stepRow->{step}, $k->{genomeName} performs $pathDesc->{$stepRow->{pathway}}."
             . " Across $k->{nMarkers} ribosomal proteins, it is $idShow identical to $orgs{$stepRow->{orgId}}{genomeName}.",
             -href => "gapView.cgi?gid=$k->{gid}&gdb=$k->{gdb}&set=$set",
             -style => "color: black;" },
-           "Known gap ($idShow id.)");
+           "known gap ($idShow id.)");
 }
 
 sub ShowKnownLong($$$$$) {
@@ -1562,13 +1582,12 @@ sub ShowKnownLong($$$$$) {
   my $idShow = int($k->{identity}) . "%";
   return p(i("Known gap:"),
            "Despite the apparent lack of $stepRow->{step},",
-           "growth experiments indicate that $k->{genomeName} can perform",
-           $pathDesc->{$stepRow->{pathway}})
+           "$k->{genomeName} performs $pathDesc->{$stepRow->{pathway}}.")
     if $k->{orgId} eq $stepRow->{orgId};
   return p(i("Known gap:"), "The related organism",
            a({-href => "gapView.cgi?gid=$k->{gid}&gdb=$k->{gdb}&set=$set"}, $k->{genomeName}),
            "performs $pathDesc->{$stepRow->{pathway}}",
-           "and has a gap at $stepRow->{step}.",
+           "and has an apparent gap at $stepRow->{step}.",
            "Across $k->{nMarkers} ribosomal proteins, the two organisms share $idShow amino acid identity.");
 }
 
@@ -1618,7 +1637,7 @@ sub StepToShortHTML($$$$$$$) {
     $title .= " (a known gap)";
   } elsif ($knownGap) {
     my $idShow = int($knownGap->{identity})."%";
-    $title .= " (a known gap in $knownGap->{genomeName}, which is $idShow identical across $knownGap->{nMarkers} ribosomal proteins)";
+    $title .= " (this is a known gap in $knownGap->{genomeName}, which is $idShow identical across $knownGap->{nMarkers} ribosomal proteins)";
   } else {
     $title .= " (" . ScoreToLabel($score) . ")";
   }
