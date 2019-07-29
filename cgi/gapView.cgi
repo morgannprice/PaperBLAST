@@ -1597,7 +1597,11 @@ sub LegendForColorCoding() {
                 "High confidence candidates match an HMM or are over 40% similar to a characterized protein; and the alignment covers 80% of the characterized protein or the HMM; and the candidate is less similar to characterized proteins that have other functions.");
   my @showScores = map span({ -style => ScoreToStyle($_), -title => $titles[$_] },
                             ScoreToLabel($_)), (2,1,0);
-  return p("Confidence:", @showScores)."\n";
+  return p("Confidence:", @showScores, br(),
+           "?", "&ndash;", "known gap:",
+           "despite the lack of a good candidate for this step,",
+           "this organism (or a related organism) performs the pathway"
+          )."\n";
 }
 
 # stepList is a reference to a list of step names
