@@ -50,6 +50,7 @@ use pbweb qw{start_page};
 use FetchAssembly qw{CacheAssembly AASeqToAssembly GetMatchingAssemblies GetMaxNAssemblies};
 use File::stat;
 use DB_File;
+use URI::Escape;
 
 sub ScoreToStyle($);
 sub ScoreToLabel($);
@@ -885,7 +886,7 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
         my $URL = "http://papers.genomics.lbl.gov/cgi-bin/genomeSearch.cgi?gdb=" . $orgs{$orgId}{gdb}
           . "&gid=" . $orgs{$orgId}{gid}
             . "&word=1"
-              . "&query=" . encode_entities($value);
+              . "&query=" . uri_escape($value); # need uri_escape because it may contain %
         $show = "Curated proteins matching " . a({-href => $URL, -title => "Run Curated BLAST"}, $value);
       } elsif ($type eq "curated") {
         my $URL = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=".$value;
@@ -896,7 +897,7 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
         $show = "UniProt sequence " . a({-href => $URL, -title => "View in UniProt"}, $value);
       } elsif ($type eq "ignore_other") {
         my $URL = "http://papers.genomics.lbl.gov/cgi-bin/curatedSearch.cgi?word=1"
-          . "&query=" . encode_entities($value);
+          . "&query=" . uri_escape($value); # value could contain %
         $show = "Ignore hits to items matching "
           . a({-href => $URL}, $value)
             . " when looking for 'other' hits";
