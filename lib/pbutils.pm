@@ -353,8 +353,9 @@ sub FetchSeqs($$$$) {
     print $fh "$uniqid\n";
   }
   close($fh) || die "Error writing to $listFile";
-  system("$fastacmd -i $listFile -d $blastdb -p T > $outfile") == 0
-    || die "fastacmd failed: $!";
+  my $cmd = "$fastacmd -i $listFile -d $blastdb -p T > $outfile";
+  system($cmd) == 0
+    || die "$cmd failed: $!";
   unlink($listFile);
 }
 
