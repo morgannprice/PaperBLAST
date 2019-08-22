@@ -1783,6 +1783,8 @@ Gaps may be due to:
 
 <P>GapMind relies on the predicted proteins in the genome and does not search the six-frame translation. In most cases, you can search the six-frame translation by clicking on links to Curated BLAST for each step definition (in the per-step page).
 
+<P>For more information, see the <A HREF="https://www.biorxiv.org/content/10.1101/741918v1" title="GapMind: Automated annotation of amino acid biosynthesis">preprint</A>.
+
 <P>If you notice any errors or omissions in the step descriptions, or any questionable results, please
 <A HREF="mailto:$email">let us know</A>.
 
