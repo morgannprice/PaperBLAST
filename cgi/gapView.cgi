@@ -593,6 +593,8 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
         next unless $row->{class} eq "with_protein";
         next unless $row->{name} =~ m/$regexp/i
           || $row->{locus_tag} =~ m/^$regexp/i
+          || $row->{product_accession} =~ m/^$regexp/i
+          || $row->{"non-redundant_refseq"} =~ m/^$regexp/i
           || (exists $assembly->{oldid}{$row->{locus_tag}} && $assembly->{oldid}{$row->{locus_tag}} =~ m/^$regexp/i);
         my $id = $row->{product_accession} || $row->{"non-redundant_refseq"};
         die "Invalid identifier $id in feature file\n"
