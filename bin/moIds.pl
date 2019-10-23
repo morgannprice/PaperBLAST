@@ -7,7 +7,7 @@ die "Usage: moIds.pl < words > words.filtered\n"
     unless @ARGV==0;
 
 {
-    GenomicsUtils::connect('-host' => 'pub.microbesonline.org',
+    GenomicsUtils::connect('-host' => $ENV{MO_HOST} || 'pub.microbesonline.org',
                            '-user' => 'guest',
                            '-pass' => 'guest',
                            '-dbname' => 'genomics')

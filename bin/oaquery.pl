@@ -8,7 +8,7 @@ die "Run as a filter\n" unless @ARGV==0;
 
 my %seen = ();
 
-GenomicsUtils::connect('-host' => 'pub.microbesonline.org',
+GenomicsUtils::connect('-host' => $ENV{MO_HOST} || 'pub.microbesonline.org',
                        '-user' => 'guest',
                        '-pass' => 'guest',
                        '-dbname' => 'genomics')

@@ -8,7 +8,7 @@ use Gene;
 die "Run as a filter on a tab-delimited file with organism names\n"
   unless @ARGV == 0;
 
-GenomicsUtils::connect('-host' => 'pub.microbesonline.org',
+GenomicsUtils::connect('-host' => $ENV{MO_HOST} || 'pub.microbesonline.org',
                        '-user' => 'guest',
                        '-pass' => 'guest',
                        '-dbname' => 'genomics')
