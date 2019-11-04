@@ -167,7 +167,7 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
     start_page('title' => "GapMind for $setDesc",
                'banner' => $banner,
                'bannerURL' => "gapView.cgi");
-    print p("Searching", $gdb_labels{$gdb}, "for", "'" . $gquery . "'"), "\n";
+    print p("Searching", $gdb_labels{$gdb}, "for", "'" . uri_escape($gquery) . "'"), "\n";
     my @rows = GetMatchingAssemblies($gdb, $gquery);
     my $limit = GetMaxNAssemblies();
     if (@rows > 0) {
