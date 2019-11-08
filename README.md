@@ -84,7 +84,7 @@ http://papers.genomics.lbl.gov/data/stats
 
 Place all of these files in the data/ subdirectory of the main PaperBLAST directory and format the BLAST database with
 
-	formatdb -p T -i uniq.faa
+	formatdb -p T -o T -i data/uniq.faa
 
 # Building the Database
 
