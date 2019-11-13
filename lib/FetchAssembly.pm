@@ -501,9 +501,12 @@ sub CacheAssembly($$$) {
     $header =~ s/^>//;
     my $id = $header; $id =~ s/ .*//;
     close($fh) || die "Error reading $faaFile";
-    return { 'gdb' => $gdb, 'gid' => $gid,
-             'faafile' => $faaFile, 'URL' => "",
-             'genomeName' => "Proteome with $id..." };
+    my $assembly = { 'gdb' => $gdb, 'gid' => $gid,
+                     'faafile' => $faaFile, 'URL' => "",
+                     'genomeName' => "Proteome with $id..." };
+    my $fnaFile = "$dir/$gid/fna";
+    $assembly->{fnafile} = $fnaFile if -e $fnaFile;
+    return $assembly;
   } elsif ($gdb eq "NCBI") {
     my @hits = FetchNCBIInfo($gid);
     fail("Do not recognize NCBI assembly $gid")
@@ -735,6 +738,7 @@ sub CacheAssembly($$$) {
 }
 
 # Given a hash of header to protein sequence, compute the CRC, and save it as an assembly
+# Note that "local" also supports fna files, but that is not supported
 sub AASeqToAssembly($$) {
   my ($aaseq, $dir) = @_;
   my $n = scalar(keys %$aaseq);
