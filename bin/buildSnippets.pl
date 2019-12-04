@@ -112,7 +112,16 @@ sub ProcessArticle($$$);
       }
       my $firstline = <IN>;
       chomp $firstline;
-      die "First line of $file should be: <articles> or <!DOCTYPE ...>\n"
+      # firstline  should begin and end with ">" if it does not, keep reading lines until it does
+      die "xml file $file does not begin with <\n"
+        unless $firstline =~ m/^</;
+      while ($firstline !~ m/>$/) {
+        my $line = <IN>;
+        die "Cannot read successor line from $file -- bad header?" unless $line;
+        chomp $line;
+        $firstline .= " $line";
+      }
+      die "First line(s) of $file should be: <articles> or <!DOCTYPE ...>\n"
         unless $firstline eq "<articles>" || $firstline =~ m/^<!DOCTYPE.*>/;
       while(my $line = <IN>) {
         chomp $line;
