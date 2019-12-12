@@ -3,6 +3,7 @@
 use strict;
 use lib "SWISS/lib";
 use SWISS::Entry;
+use SWISS::Ref;
 
 # If an entry has experimental evidence for only these ignored types,
 #   ignore it.
@@ -21,7 +22,8 @@ my $usage = <<END
 Run as a filter on swiss-prot entries.
 Output is tab-delimited with fields
   accession, id, description,
-  feature type, feature begin, feature end, feature comment
+  feature type, feature begin, feature end, feature comment,
+  pubmedIds (comma delimited)
 
 Only features with experimental evidence (ECO:0000269) are included.
 
@@ -61,11 +63,16 @@ while(<>) {
   push @desc, @ec;
   my $desc = join("; ", @desc);
   foreach my $ft (@ftEvidence) {
-    my ($ftKey, $ftFrom, $ftTo, $ftDesc) = @$ft;
+    my ($ftKey, $ftFrom, $ftTo, $ftDesc, undef, undef, $evidence) = @$ft;
+
+    my @pmIds = $evidence =~ m!ECO:0000269[|]PubMed:(\d+)!g;
+    my %pmId = map { $_ => 1 } @pmIds;
+    @pmIds = sort {$a <=> $b} keys %pmId;
     print join("\t",
                $entry->AC,
                @{ $entry->IDs->list }[0] || "",
                $desc,
-               $ftKey, $ftFrom, $ftTo, $ftDesc)."\n";
+               $ftKey, $ftFrom, $ftTo, $ftDesc,
+              join(",",@pmIds))."\n";
   }
 }
