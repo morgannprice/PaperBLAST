@@ -39,6 +39,7 @@ my $base = "../data";
 my $blastdb = "$base/uniq.faa";
 my $sqldb = "$base/litsearch.db";
 my $fastacmd = "../bin/blast/fastacmd";
+
 die "No such executable: $blastall" unless -x $blastall;
 die "No such executable: $fastacmd" unless -x $fastacmd;
 die "No such file: $blastdb" unless -e $blastdb;
@@ -298,32 +299,8 @@ if ($query ne "" && $query !~ m/\n/ && $query !~ m/ / && $query =~ m/[^A-Z*]/) {
   }
 
   # is it a fitness browser locus tag?
-  if (!defined $query && $short =~ m/^[0-9a-zA-Z_]+$/ && -e $fbdata ) {
-    my $fbdbh = DBI->connect("dbi:SQLite:dbname=$fbdata/feba.db","","",{ RaiseError => 1 }) || die $DBI::errstr;
-    my $gene = $fbdbh->selectrow_hashref("SELECT * FROM Gene WHERE locusId = ? OR sysName = ? OR gene = ? LIMIT 1",
-                                         {}, $short, $short, $short);
-    if ($gene) {
-      my $seqId = $gene->{orgId} . ":" . $gene->{locusId};
-      die "Missing aaseqs file for fitness browser: $fbdata/aaseqs\n"
-        unless -e "$fbdata/aaseqs";
-      if (system($fastacmd, "-s", $seqId, "-o", $seqFile, "-d", "$fbdata/aaseqs") == 0) {
-        open(SEQ, "<", $seqFile) || die "Cannot read $seqFile";
-        my $seq = "";
-        while (my $line = <SEQ>) {
-          next if $line =~ m/^>/;
-          chomp $line;
-          die "Invalid output from fastacmd" unless $line =~ m/^[A-Z*]+$/;
-          $seq .= $line;
-        }
-        close(SEQ) || die "Error reading $seqFile";
-        my $showId = $gene->{sysName} || $gene->{locusId};
-        my $org = $fbdbh->selectrow_hashref("SELECT * FROM Organism WHERE orgId = ?",
-                                            {}, $gene->{orgId})
-          || die "No such organism in $fbdata/feba.db: $gene->{orgId}";
-        my $orgdesc = join(" ", $org->{genus}, $org->{species}, $org->{strain});
-        $query = ">$showId $gene->{gene} $gene->{desc} ($orgdesc)\n$seq\n";
-      }
-    }
+  if (!defined $query && $short =~ m/^[0-9a-zA-Z_]+$/) {
+    $query = &FBrowseToFasta($fbdata, $short);
   }
 
   # is it a UniProt id or gene name or protein name?

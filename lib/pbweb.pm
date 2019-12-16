@@ -11,7 +11,8 @@ our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
 @EXPORT = qw(UniqToGenes SubjectToGene AddCuratedInfo GenesToHtml
              GetMotd FetchFasta HmmToFile loggerjs start_page finish_page
-             VIMSSToFasta RefSeqToFasta UniProtToFasta commify
+             VIMSSToFasta RefSeqToFasta UniProtToFasta FBrowseToFasta
+ commify
 );
 
 # Returns a list of entries from SubjectToGene, 1 for each duplicate (if any),
@@ -584,6 +585,51 @@ sub UniProtToFasta($) {
   }
   # else
   return undef;
+}
+
+# The first argument is the Fitness Browser data directory
+sub FBrowseToFasta($$) {
+  my ($fbdata, $short) = @_;
+  return undef unless -d $fbdata;
+  my $fastacmd = "../bin/blast/fastacmd";
+  die "No such executable: $fastacmd" unless -x $fastacmd;
+
+  my $fbdbh = DBI->connect("dbi:SQLite:dbname=$fbdata/feba.db","","",{ RaiseError => 1 }) || die $DBI::errstr;
+  my $gene = $fbdbh->selectrow_hashref("SELECT * FROM Gene WHERE locusId = ? OR sysName = ? OR gene = ? LIMIT 1",
+                                       {}, $short, $short, $short);
+  my $fasta;
+  if ($gene) {
+    my $seqId = $gene->{orgId} . ":" . $gene->{locusId};
+    die "Missing aaseqs file for fitness browser: $fbdata/aaseqs\n"
+      unless -e "$fbdata/aaseqs";
+
+    my $procId = $$;
+    my $timestamp = int (gettimeofday() * 1000);
+    my $filename = $procId . $timestamp;
+    my $seqFile = "/tmp/$filename.fasta";
+
+    if (system($fastacmd, "-s", $seqId, "-o", $seqFile, "-d", "$fbdata/aaseqs") == 0) {
+      open(SEQ, "<", $seqFile) || die "Cannot read $seqFile";
+      my $seq = "";
+      while (my $line = <SEQ>) {
+        next if $line =~ m/^>/;
+        chomp $line;
+        die "Invalid output from fastacmd" unless $line =~ m/^[A-Z*]+$/;
+        $seq .= $line;
+      }
+      close(SEQ) || die "Error reading $seqFile";
+      unlink($seqFile);
+
+      my $showId = $gene->{sysName} || $gene->{locusId};
+      my $org = $fbdbh->selectrow_hashref("SELECT * FROM Organism WHERE orgId = ?",
+                                          {}, $gene->{orgId})
+        || die "No such organism in $fbdata/feba.db: $gene->{orgId}";
+      my $orgdesc = join(" ", $org->{genus}, $org->{species}, $org->{strain});
+      $fasta = ">$showId $gene->{gene} $gene->{desc} ($orgdesc)\n$seq\n";
+    }
+  }
+  $fbdbh->disconnect();
+  return $fasta;
 }
 
 sub commify($) {
