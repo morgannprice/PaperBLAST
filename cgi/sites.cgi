@@ -141,6 +141,43 @@ unless ($query) {
     my $sites = $dbh->selectall_arrayref("SELECT * FROM Sites WHERE db = ? AND id = ? AND chain = ? ORDER BY posFrom",
                                   { Slice => {} }, $db, $id, $chain);
 
+    # Save alignment of positions
+    my %sposToAlnPos = ();
+    my %alnPosToQpos = ();
+    my $atQ = $queryBeg;
+    my $atS = $hitBeg;
+    my $numpos = $aln->length();
+    foreach my $alnPos (1..$numpos) {
+      my $valQ = substr($alnQ, $alnPos-1, 1);
+      if ($valQ ne "-") {
+        $alnPosToQpos{$alnPos} = $atQ;
+        $atQ++;
+      }
+      my $valS = substr($alnS, $alnPos-1, 1);
+      if ($valS ne "-") {
+        $sposToAlnPos{$atS} = $alnPos;
+        $atS++;
+      }
+    }
+
+    # Save posAlnFrom and posAlnTo, with 0 for off-the-left and -1 for off-the-right
+    foreach my $site (@$sites) {
+      foreach my $at ("From","To") {
+        my $pos = $site->{"pos".$at};
+        my $posAln;
+        if ($pos < $hitBeg) {
+          $posAln = 0;
+        } elsif ($pos > $hitEnd) {
+          $posAln = -1;
+        } else {
+          $posAln = $sposToAlnPos{$pos};
+          die "Alignment error: no position for $pos in subject $hitId"
+            unless defined $posAln;
+        }
+        $site->{"posAln".$at} = $posAln;
+      }
+    }
+
     # Header region (2 lines)
     my $hitURL = "";
     $hitURL = "https://www.rcsb.org/structure/" . $id if $db eq "PDB";
@@ -156,7 +193,7 @@ unless ($query) {
             small(a({-title => "$bits bits, E = $eval"},
                     "${identityString}% identity")
                   . ", "
-                  . a({"-title" => "${queryBeg}:${queryEnd}/${queryLen} of query aligns to ${hitBeg}:${hitEnd} of ${id}${chain}" },
+                  . a({"-title" => "${queryBeg}:${queryEnd}/${queryLen} of query (${coverageString}%) aligns to ${hitBeg}:${hitEnd} of ${id}${chain}" },
                       "${coverageString}% coverage")));
 
     # Alignment region (no-wrap, fixed font, 1 extra space at beginning and end for sequences outside the bounds of the query)
@@ -170,8 +207,18 @@ unless ($query) {
     print "\n";
     my @siteShow = ();
     foreach my $site (@$sites) {
+      my $showLigand = $site->{ligandId};
+      $showLigand = a({-href => "http://www.rcsb.org/ligand/".$site->{ligandId} },
+                      $site->{ligandId}) if $site->{ligandId};
       my @parts = ($site->{posFrom} . ":" . $site->{posTo},
-                   $site->{type}, $site->{ligandId}, $site->{comment});
+                   $site->{type}, $showLigand, $site->{comment});
+      if ($site->{posAlnFrom} > 0
+          && $site->{posAlnTo} > 0
+          && $site->{posAlnTo} - $site->{posAlnFrom} + 1 <= 10) {
+        push @parts, "(" . substr($alnS, $site->{posAlnFrom}-1, $site->{posAlnTo}-$site->{posAlnFrom}+1)
+          . " vs. " . substr($alnQ, $site->{posAlnFrom}-1, $site->{posAlnTo}-$site->{posAlnFrom}+1)
+            . ")";
+      }
       my @pmIds = split /,/, $site->{pmIds};
       my $note = @pmIds > 1 ? scalar(@pmIds) . " papers" : "paper";
       push @parts,
