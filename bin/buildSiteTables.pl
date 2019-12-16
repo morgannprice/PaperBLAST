@@ -212,6 +212,7 @@ close($fhFt) || die "Error reading $sprotFtFile\n";
 my %pdbSeq = (); # pdbId => chain => sequence
 foreach my $biolipAnnoFile (@biolipAnnoFiles) {
   open(my $fhAnno, "<", $biolipAnnoFile) || die "Cannot read $biolipAnnoFile\n";
+  my %seenActive = (); # pdbId => chain => position => 1
   while (my $line = <$fhAnno>) {
     chomp $line;
     my ($pdbId, $chain, $resolution, $siteId, $ligandId, $ligandChain, $ligandNo,
@@ -241,13 +242,10 @@ foreach my $biolipAnnoFile (@biolipAnnoFiles) {
       print STDERR "Warning: Mismatched lengths of $type residues for $pdbId:$chain\n"
         unless $lenAgree;
       next if scalar(@$list) == 0;
-      my %seen = (); # residue => 1
       foreach my $i (0..(scalar(@$list)-1)) {
         my $pos = $list->[$i];
         $pos =~ s/^[A-Z]//;
         $pos =~ m/^\d+$/ || die "Invalid $type residue $pos in " . join(" ",@$list) . " from \n$line";
-        next if exists $seen{$pos};
-        $seen{$pos} = 1;
         my $posPDB = ""; # not reported if there are mismatches
         if ($lenAgree) {
           my $posPDB = $listPDB->[$i];
@@ -255,7 +253,15 @@ foreach my $biolipAnnoFile (@biolipAnnoFiles) {
           # Occasionally, PDB residue numbers have suffixes like A or D or a, I'm not sure why
           $posPDB =~ m/^-?\d+[A-Za-z]*$/ || die "Invalid PDB $type residue $posPDB in " . join(" ",@$listPDB) . " from \n$line";
         }
-        print $fhSites join("\t", "PDB", $pdbId, $chain, $ligandId, $ligandChain, $type,
+        if ($type eq "functional") {
+          # prevent the same active site from being reported more than once (with different ligands)
+          next if exists $seenActive{$pdbId}{$chain}{$pos};
+          $seenActive{$pdbId}{$chain}{$pos} = 1;
+        }
+        print $fhSites join("\t", "PDB", $pdbId, $chain,
+                            $type eq "functional" ? "" : $ligandId,
+                            $type eq "functional" ? "" : $ligandChain,
+                            $type,
                             $pos, $pos, $posPDB, $posPDB, "", $pubmedIds)."\n";
       }
     }
