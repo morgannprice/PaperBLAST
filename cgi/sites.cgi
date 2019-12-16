@@ -17,7 +17,7 @@ use LWP::Simple qw{get};
 use HTML::Entities;
 use IO::Handle; # for autoflush
 use lib "../lib";
-use pbweb qw{start_page finish_page GetMotd loggerjs};
+use pbweb qw{start_page finish_page GetMotd loggerjs UniProtToFasta RefSeqToFasta VIMSSToFasta FBrowseToFasta};
 use Bio::SearchIO;
 
 sub fail($);
@@ -27,6 +27,7 @@ my $nCPU = 4;
 my $base = "../data";
 my $blastdb = "$base/hassites.faa";
 my $sqldb = "$base/sites.db";
+my $fbdata = "../fbrowse_data"; # path relative to the cgi directory
 
 my $procId = $$;
 my $timestamp = int (gettimeofday() * 1000);
@@ -62,7 +63,7 @@ unless ($query) {
     GetMotd(),
     start_form( -name => 'input', -method => 'GET', -action => 'sites.cgi'),
     p(br(),
-      b("Enter a protein sequence in FASTA format"),
+      b("Enter a protein sequence in FASTA format, or an identifier from UniProt, RefSeq, or MicrobesOnline"),
       br(),
       textarea( -name  => 'query', -value => '', -cols  => 70, -rows  => 10 )),
     p(submit('Search'), reset()),
@@ -70,10 +71,32 @@ unless ($query) {
   finish_page();
 } else {
   my ($header, $seq);
+
+  # Single-line query sequence
   if ($query !~ m/\n/ && $query =~ m/^[A-Z*]+$/) {
     $header = substr($seq, 0, 10) . "..." . "(" . length($query) . " amino acids)";
     $seq = $query;
-  } elsif ($query =~ m/^>/) {
+  } elsif ($query !~ m/\n/) {
+    # single-line, identifier only
+    my $short = $query;
+    $query = undef;
+
+    # Is it a VIMSS id?
+    $query = &VIMSSToFasta($short)
+      if $short =~ m/^VIMSS\d+$/i;
+    $query = &FBrowseToFasta($fbdata, $short)
+      if !defined $query && $short =~ m/^[0-9a-zA-Z_]+$/;
+    $query = &UniProtToFasta($short)
+      if !defined $query && $short =~ m/^[A-Z0-9_]+$/;
+    $query = &RefSeqToFasta($short)
+      if !defined $query && $short =~ m/^[A-Z0-9._]+$/;
+    my $shortSafe = HTML::Entities::encode($short);
+    &fail("Sorry -- we were not able to find a protein sequence for the identifier <b>$shortSafe</b>. We checked it against MicrobesOnline, UniProt, and the NCBI protein database (RefSeq and Genbank). Please use the sequence as a query instead.")
+      unless defined $query;
+  }
+
+  if (!defined $header) {
+    fail("Not in fasta format") unless $query =~ m/^>/;
     my @lines = split /\n/, $query;
     $header = shift @lines;
     $header =~ s/^>//;
@@ -81,10 +104,9 @@ unless ($query) {
     $seq =~ s/\s//g;
     fail("Invalid sequence") unless $seq =~ m/^[A-Z*]+$/;
     $seq =~ s/[*]//g;
-    fail("Sequence is too short") unless length($seq) >= 10;
-  } else {
-    fail("Not in fasta format");
   }
+  fail("Sequence is too short") unless length($seq) >= 10;
+
   my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
   autoflush STDOUT 1; # show preliminary results
   print p("Comparing $header to proteins with known functional sites using BLASTp with E &le; $maxE"), "\n";
@@ -92,7 +114,8 @@ unless ($query) {
   print $fhFaa ">$header\n$seq\n";
   close($fhFaa) || die "Error writing to $seqFile\n";
   die "No such executable: $blastall\n" unless -x $blastall;
-  system("$blastall -p blastp -i $seqFile -d $blastdb -e $maxE -a $nCPU -o $seqFile.out -b $maxHits -v $maxHits >& /dev/null") == 0
+  # m S means mask complex sequences for lookup but not for alignment
+  system("$blastall -F 'm S' -p blastp -i $seqFile -d $blastdb -e $maxE -a $nCPU -o $seqFile.out -b $maxHits -v $maxHits >& /dev/null") == 0
     || die "$blastall failed: $!\n";
   unlink($seqFile);
   my $searchio = Bio::SearchIO->new(-format => 'blast', -file => "$seqFile.out")
@@ -120,7 +143,8 @@ unless ($query) {
     my $alnQ = $aln->get_seq_by_pos(1)->seq;
     my $alnS = $aln->get_seq_by_pos(2)->seq;
     my $seqQ = $alnQ; $seqQ =~ s/-//g;
-    die "BLAST parsing error, query sequences do not line up"
+    die "BLAST parsing error, query sequences do not line up:\n$seqQ\n"
+      . substr($seq,$queryBeg-1,$queryEnd-$queryBeg+1)
       unless $seqQ eq substr($seq, $queryBeg-1, $queryEnd-$queryBeg+1);
 
     # Get information about the subject
@@ -236,8 +260,12 @@ unless ($query) {
     my @siteShow = ();
     foreach my $site (@$sites) {
       my $showLigand = $site->{ligandId};
-      $showLigand = a({-href => "http://www.rcsb.org/ligand/".$site->{ligandId} },
-                      $site->{ligandId}) if $site->{ligandId};
+      if ($site->{ligandId} eq "NUC") {
+        $showLigand = "DNA or RNA";
+      } else {
+        $showLigand = a({-href => "http://www.rcsb.org/ligand/".$site->{ligandId} },
+                        $site->{ligandId}) if $site->{ligandId};
+      }
       my @parts = ($site->{posFrom} . ":" . $site->{posTo},
                    $site->{type}, $showLigand, $site->{comment});
       if ($site->{posAlnFrom} >= 1
@@ -263,6 +291,12 @@ unless ($query) {
     }
     print start_ul(), @siteShow, end_ul(), "\n";
   }
+  my @pieces = $seq =~ /.{1,60}/g;
+  print
+    h3("Query Sequence"),
+    p({-style => "font-family: monospace;"}, small(join(br(), ">" . HTML::Entities::encode($header), @pieces))),
+    h3(a({-href => "sites.cgi"}, "New Search"));
+
   finish_page();
 }
 
