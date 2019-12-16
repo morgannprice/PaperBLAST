@@ -13,7 +13,8 @@ our (@ISA,@EXPORT);
              NewerThan
              CuratedMatch CuratedWordMatch
              IdToUniqId FetchSeqs UniqIdToSeq
-             FetchCuratedInfo!;
+             FetchCuratedInfo
+             SQLiteLine!;
 
 sub read_list($) {
   my ($file) = @_;
@@ -390,6 +391,19 @@ sub FetchCuratedInfo($$) {
   }
   @out = sort { $a->[0] cmp $b->[0] || $a->[1] cmp $b->[1] } @out;
   return \@out;
+}
+
+sub SQLiteLine {
+  my @F = @_;
+  my @out = ();
+  foreach my $val (@F) {
+    if ($val =~ m/"/) {
+      $val =~ s/"/""/g;
+      $val = '"' . $val . '"';
+    }
+    push @out, $val;
+  }
+  return join("\t", @out) . "\n";
 }
 
 1;
