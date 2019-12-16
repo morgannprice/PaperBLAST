@@ -4,11 +4,15 @@ use strict;
 use CGI qw(:standard Vars);
 use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
 use Time::HiRes qw{gettimeofday};
+use LWP::Simple qw{get};
+use DBI;
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
 @EXPORT = qw(UniqToGenes SubjectToGene AddCuratedInfo GenesToHtml
-             GetMotd FetchFasta HmmToFile loggerjs start_page finish_page);
+             GetMotd FetchFasta HmmToFile loggerjs start_page finish_page
+             VIMSSToFasta RefSeqToFasta UniProtToFasta commify
+);
 
 # Returns a list of entries from SubjectToGene, 1 for each duplicate (if any),
 # sorted by priority
@@ -521,3 +525,70 @@ END
   print end_html;
   exit(0);
 }
+
+
+# Given a locus tag or VIMSSnnnn query, get it in FASTA format
+sub VIMSSToFasta($) {
+  my ($short) = @_;
+  die unless defined $short;
+  my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
+    || die $DBI::errstr;
+  my $locusId;
+  if ($short =~ m/^VIMSS(\d+)$/i) {
+    $locusId = $1;
+  } else {
+    # try to find the locus tag
+    ($locusId) = $mo_dbh->selectrow_array( qq{SELECT locusId FROM Synonym JOIN Locus USING (locusId,version)
+						WHERE name = ? AND priority = 1 },
+                                              {}, $short );
+  }
+  return undef unless $locusId;
+  my ($aaseq) = $mo_dbh->selectrow_array( qq{SELECT sequence FROM Locus JOIN AASeq USING (locusId,version)
+                                             WHERE locusId = ? AND priority=1 },
+                                          {}, $locusId);
+
+  &fail("Sorry, VIMSS$locusId is not a protein in MicrobesOnline") unless defined $aaseq;
+  my ($desc) = $mo_dbh->selectrow_array( qq{SELECT description FROM Locus JOIN Description USING (locusId,version)
+                                             WHERE locusId = ? AND priority=1 },
+                                          {}, $locusId);
+  return ">$short $desc\n$aaseq\n" if $desc;
+  return ">$short\n$aaseq\n" if $desc;
+}
+
+sub RefSeqToFasta($) {
+  my ($short) = @_;
+  die unless defined $short;
+  return undef unless $short =~ m/_/;
+  my $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.cgi?db=Protein&rettype=fasta&id=$short";
+  my $results = get($url);
+  return $results if defined $results && $results =~ m/^>/;
+  return undef;
+}
+
+sub UniProtToFasta($) {
+  my ($short) = @_;
+  die unless defined $short;
+  # include=no -- no isoforms
+  my $url = "http://www.uniprot.org/uniprot/?query=${short}&format=fasta&sort=score&include=no&limit=2";
+  my $results = get($url);
+  if (defined $results && $results =~ m/^>/) {
+    # select the first hit only
+    my @lines = split /\n/, $results;
+    my @out = ();
+    my $nHeader = 0;
+    foreach my $line (@lines) {
+      $nHeader++ if substr($line, 0, 1) eq ">";
+      push @out, $line if $nHeader <= 1;
+    }
+    return join("\n", @out)."\n";
+  }
+  # else
+  return undef;
+}
+
+sub commify($) {
+    local $_  = shift;
+    1 while s/^(-?\d+)(\d{3})/$1,$2/;
+    return $_;
+}
+

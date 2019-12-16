@@ -27,11 +27,10 @@ use LWP::Simple qw{get};
 use HTML::Entities;
 use IO::Handle; # for autoflush
 use lib "../lib";
-use pbweb; # for SubjectToGene()
+use pbweb;
 
 sub fail($);
 sub simstring($$$$$$$$$$$$$);
-sub commify($);
 
 my $tmpDir = "../tmp";
 my $blastall = "../bin/blast/blastall";
@@ -255,7 +254,7 @@ if ($query ne "" && $query !~ m/\n/ && $query !~ m/ / && $query =~ m/[^A-Z*]/) {
   fail("Sorry, query has a FASTA header but no sequence") if $short =~ m/^>/;
 
   # Is it a VIMSS id?
-  $query = &VIMSSToQuery($short) if $short =~ m/^VIMSS\d+$/i;
+  $query = &VIMSSToFasta($short) if $short =~ m/^VIMSS\d+$/i;
 
   # Is it in the database?
   if (!defined $query) {
@@ -329,17 +328,17 @@ if ($query ne "" && $query !~ m/\n/ && $query !~ m/ / && $query =~ m/[^A-Z*]/) {
 
   # is it a UniProt id or gene name or protein name?
   if (!defined $query) {
-    $query = &UniProtToQuery($short);
+    $query = &UniProtToFasta($short);
   }
 
   # is it in VIMSS as a locus tag or other synonym?
   if (!defined $query) {
-    $query = &VIMSSToQuery($short);
+    $query = &VIMSSToFasta($short);
   }
 
   # is it in RefSeq?
   if (!defined $query) {
-    $query = &RefSeqToQuery($short);
+    $query = &RefSeqToFasta($short);
   }
   my $shortSafe = HTML::Entities::encode($short);
   &fail("Sorry -- we were not able to find a protein sequence for the identifier <b>$shortSafe</b>. We checked it against our database of proteins that are linked to papers, against UniProt (including their ID mapping service), against MicrobesOnline, and against the NCBI protein database (RefSeq and Genbank). Please use the sequence as a query instead.")
@@ -528,69 +527,3 @@ sub simstring($$$$$$$$$$$$$) {
                -style => "font-family: sans-serif; font-size: smaller;" },
              "$percIdentity% identity, $percentCov% coverage");
 }
-
-# Given a locus tag or VIMSSnnnn query, get it in FASTA format
-sub VIMSSToQuery($) {
-  my ($short) = @_;
-  die unless defined $short;
-  my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
-    || die $DBI::errstr;
-  my $locusId;
-  if ($short =~ m/^VIMSS(\d+)$/i) {
-    $locusId = $1;
-  } else {
-    # try to find the locus tag
-    ($locusId) = $mo_dbh->selectrow_array( qq{SELECT locusId FROM Synonym JOIN Locus USING (locusId,version)
-						WHERE name = ? AND priority = 1 },
-                                              {}, $short );
-  }
-  return undef unless $locusId;
-  my ($aaseq) = $mo_dbh->selectrow_array( qq{SELECT sequence FROM Locus JOIN AASeq USING (locusId,version)
-                                             WHERE locusId = ? AND priority=1 },
-                                          {}, $locusId);
-
-  &fail("Sorry, VIMSS$locusId is not a protein in MicrobesOnline") unless defined $aaseq;
-  my ($desc) = $mo_dbh->selectrow_array( qq{SELECT description FROM Locus JOIN Description USING (locusId,version)
-                                             WHERE locusId = ? AND priority=1 },
-                                          {}, $locusId);
-  return ">$short $desc\n$aaseq\n" if $desc;
-  return ">$short\n$aaseq\n" if $desc;
-}
-
-sub RefSeqToQuery($) {
-  my ($short) = @_;
-  die unless defined $short;
-  return undef unless $short =~ m/_/;
-  my $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.cgi?db=Protein&rettype=fasta&id=$short";
-  my $results = get($url);
-  return $results if defined $results && $results =~ m/^>/;
-  return undef;
-}
-
-sub UniProtToQuery($) {
-  my ($short) = @_;
-  die unless defined $short;
-  # include=no -- no isoforms
-  my $url = "http://www.uniprot.org/uniprot/?query=${short}&format=fasta&sort=score&include=no&limit=2";
-  my $results = get($url);
-  if (defined $results && $results =~ m/^>/) {
-    # select the first hit only
-    my @lines = split /\n/, $results;
-    my @out = ();
-    my $nHeader = 0;
-    foreach my $line (@lines) {
-      $nHeader++ if substr($line, 0, 1) eq ">";
-      push @out, $line if $nHeader <= 1;
-    }
-    return join("\n", @out)."\n";
-  }
-  # else
-  return undef;
-}
-
-sub commify($) {
-    local $_  = shift;
-    1 while s/^(-?\d+)(\d{3})/$1,$2/;
-    return $_;
-}
-
