@@ -146,8 +146,8 @@ unless ($query) {
     my %alnPosToQpos = ();
     my $atQ = $queryBeg;
     my $atS = $hitBeg;
-    my $numpos = $aln->length();
-    foreach my $alnPos (1..$numpos) {
+    my $alnLen = $aln->length();
+    foreach my $alnPos (1..$alnLen) {
       my $valQ = substr($alnQ, $alnPos-1, 1);
       if ($valQ ne "-") {
         $alnPosToQpos{$alnPos} = $atQ;
@@ -160,7 +160,7 @@ unless ($query) {
       }
     }
 
-    # Save posAlnFrom and posAlnTo, with 0 for off-the-left and -1 for off-the-right
+    # Save posAlnFrom and posAlnTo, with 0 for off-the-left and alnLen+1 for off-the-right
     foreach my $site (@$sites) {
       foreach my $at ("From","To") {
         my $pos = $site->{"pos".$at};
@@ -168,7 +168,7 @@ unless ($query) {
         if ($pos < $hitBeg) {
           $posAln = 0;
         } elsif ($pos > $hitEnd) {
-          $posAln = -1;
+          $posAln = $alnLen+1;
         } else {
           $posAln = $sposToAlnPos{$pos};
           die "Alignment error: no position for $pos in subject $hitId"
@@ -176,6 +176,33 @@ unless ($query) {
         }
         $site->{"posAln".$at} = $posAln;
       }
+    }
+
+    my @rows = ();
+    foreach my $site (@$sites) {
+      my $okRow;
+      foreach my $iRow (0 .. (scalar(@rows) - 1)) {
+        next unless $iRow >= 0 && @rows > $iRow;
+        my $ok = 1;
+        my $row = $rows[$iRow];
+        foreach my $site2 (@$row) {
+          if ($site2->{posAlnFrom} <= $site->{posAlnTo}
+              && $site2->{posAlnTo} >= $site->{posAlnFrom}) {
+            $ok = 0;
+            last;
+          }
+        }
+        if ($ok) {
+          $okRow = $iRow;
+          last;
+        }
+      }
+      if (!defined $okRow) {
+        push @rows, [];
+        $okRow = scalar(@rows)-1;
+      }
+      push @{ $rows[$okRow] }, $site;
+      $site->{iRow} = $okRow;
     }
 
     # Header region (2 lines)
@@ -205,6 +232,7 @@ unless ($query) {
               pre({-style => "margin-top: 0em; margin-bottom: 2em;"},
                 join(br(), @lines)));
     print "\n";
+
     my @siteShow = ();
     foreach my $site (@$sites) {
       my $showLigand = $site->{ligandId};
@@ -212,12 +240,16 @@ unless ($query) {
                       $site->{ligandId}) if $site->{ligandId};
       my @parts = ($site->{posFrom} . ":" . $site->{posTo},
                    $site->{type}, $showLigand, $site->{comment});
-      if ($site->{posAlnFrom} > 0
-          && $site->{posAlnTo} > 0
-          && $site->{posAlnTo} - $site->{posAlnFrom} + 1 <= 10) {
+      if ($site->{posAlnFrom} >= 1
+          && $site->{posAlnFrom} <= $alnLen
+          && $site->{posAlnTo} >= 1
+          && $site->{posAlnTo} <= $alnLen) {
         push @parts, "(" . substr($alnS, $site->{posAlnFrom}-1, $site->{posAlnTo}-$site->{posAlnFrom}+1)
           . " vs. " . substr($alnQ, $site->{posAlnFrom}-1, $site->{posAlnTo}-$site->{posAlnFrom}+1)
-            . ")";
+            . ")"
+              if $site->{posAlnTo} - $site->{posAlnFrom} + 1 <= 10;
+      } else {
+        push @parts, "(outside the alignment)";
       }
       my @pmIds = split /,/, $site->{pmIds};
       my $note = @pmIds > 1 ? scalar(@pmIds) . " papers" : "paper";
