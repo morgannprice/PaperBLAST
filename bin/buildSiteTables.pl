@@ -18,12 +18,14 @@ Optional arguments:
 Builds the Sites.tab, HasSites.tab, and hassites.faa files in the
 output directory, and formats hassites.faa as a BLAST database
 
-Sites.tab has the fields db, id, chain, ligandId, ligandChain, type,
-posFrom, posTo, pdbFrom, pdbTo, comment, pmIds,
-  where db is SwissProt or PDB and type is one of
-  @outtypes
+Sites.tab has the fields db, id, chain,
+   ligandId, ligandChain, type,
+   posFrom, posTo, pdbFrom, pdbTo, comment, pmIds,
+where db is SwissProt or PDB and type is one of
+@outtypes
 
-HasSites.tab has the fields db, id, chain (optional), id2 (optional), desc
+HasSites.tab has the fields db, id, chain (optional),
+  id2 (optional), seqLen, desc
 
 hassites.faa has identifiers of the form db:id or db:id:chain
 END
@@ -283,7 +285,7 @@ if ($sprotFastaFile =~ m/[.]gz$/) {
 }
 open(my $fhFaaOut, ">", "$outdir/hassites.faa")
   || die "Cannot write to $outdir/hassites.faa\n";
-my %sprotFound = (); # hash of ids whose sequence was found
+my %sprotLen = (); # hash of ids whose sequence was found => length
 my $state = {};
 while (my ($header, $seq) = ReadFastaEntry($fhFaaIn, $state)) {
   $header =~ m/sp[|]([A-Z0-9]+)[|]/
@@ -291,8 +293,8 @@ while (my ($header, $seq) = ReadFastaEntry($fhFaaIn, $state)) {
   my $id = $1;
   if (exists $sprotIds{$id}) {
     die "Duplicate sequence for $id in $sprotFastaFile\n"
-      if exists $sprotFound{$id};
-    $sprotFound{$id} = 1;
+      if exists $sprotLen{$id};
+    $sprotLen{$id} = length($seq);
     print $fhFaaOut ">SwissProt:$id\n$seq\n";
   }
 }
@@ -306,9 +308,9 @@ foreach my $pdbId (sort keys %pdbSeq) {
 
 close($fhFaaOut) || die "Error writing to $outdir/hassites.faa\n";
 print STDERR "Wrote $outdir/hassites.faa\n";
-print STDERR "Warning: found sequences of " . scalar(keys %sprotFound)
+print STDERR "Warning: found sequences of " . scalar(keys %sprotLen)
   . "SwissProt identifiers, out of " . scalar(keys %sprotIds) . "\n"
-  if scalar(keys %sprotFound) != scalar(keys %sprotIds);
+  if scalar(keys %sprotLen) != scalar(keys %sprotIds);
 
 system($formatdb,"-p","T","-o","T","-i","$outdir/hassites.faa") == 0
   || die "$formatdb failed -- $!";
@@ -335,7 +337,7 @@ close($fhPdbSeq) || die "Error reading $pdbSeqFile\n";
 open(my $fhHasSites, ">", "$outdir/HasSites.tab") || die "Cannot write to $outdir/HasSites.tab";
 foreach my $sprotId (sort keys %sprotIds) {
   my ($acc,$desc) = @{ $sprotIds{$sprotId} };
-  print $fhHasSites SQLiteLine("SwissProt", $sprotId, "", $acc, $desc);
+  print $fhHasSites SQLiteLine("SwissProt", $sprotId, "", $acc, $sprotLen{$sprotId} || "", $desc);
 }
 
 foreach my $pdbId (sort keys %pdbSeq) {
@@ -344,7 +346,9 @@ foreach my $pdbId (sort keys %pdbSeq) {
     if (!exists $pdbDesc{$pdbId}{$chain}) {
       print STDERR "Warning, no description for ${pdbId}_${chain}\n";
     } else {
-      print $fhHasSites SQLiteLine("PDB", $pdbId, $chain, "", $pdbDesc{$pdbId}{$chain});
+      print $fhHasSites SQLiteLine("PDB", $pdbId, $chain, "",
+                                   exists $pdbSeq{$pdbId}{$chain} ? length($pdbSeq{$pdbId}{$chain}) : "",
+                                          $pdbDesc{$pdbId}{$chain});
     }
   }
 }
