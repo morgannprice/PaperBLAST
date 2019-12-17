@@ -220,6 +220,22 @@ unless ($query) {
       }
     }
 
+    # Compute union of pubmed ids
+    my %pmIds = ();
+    foreach my $site (@$sites) {
+      foreach my $pmId (split /,/, $site->{pmIds}) {
+        $pmIds{$pmId} = 1 unless $pmId eq "";
+      }
+    }
+    my @pmIds = sort { $b <=> $a } keys %pmIds;
+    my $paperLink = "";
+    $paperLink = "(" . a({ -href => "http://www.ncbi.nlm.nih.gov/pubmed/" . join(",",@pmIds),
+                          -onmousedown => loggerjs($db eq "PDB" ? "PDB" : "curatedsite", $hitId) },
+                         "see",
+                         @pmIds > 1 ? scalar(@pmIds) . " papers" : "paper")
+               . ")"
+      if @pmIds > 0;
+
     # Header region (2 lines)
     my $hitURL = "";
     $hitURL = "https://www.rcsb.org/structure/" . $id if $db eq "PDB";
@@ -231,6 +247,7 @@ unless ($query) {
                -href => $hitURL},
               $id.$chain),
             $desc,
+            $paperLink,
             br(),
             small(a({-title => "$bits bits, E = $eval"},
                     "${identityString}% identity")
@@ -258,40 +275,69 @@ unless ($query) {
                 join(br(), @lines)));
     print "\n";
 
-    my @siteShow = ();
+    # First, remove the features that do not fully align, these will be rendered separately
     foreach my $site (@$sites) {
-      my $showLigand = $site->{ligandId};
-      if ($site->{ligandId} eq "NUC") {
-        $showLigand = "DNA or RNA";
-      } else {
-        $showLigand = a({-href => "http://www.rcsb.org/ligand/".$site->{ligandId} },
-                        $site->{ligandId}) if $site->{ligandId};
-      }
-      my @parts = ($site->{posFrom} . ":" . $site->{posTo},
-                   $site->{type}, $showLigand, $site->{comment});
-      if ($site->{posAlnFrom} >= 1
-          && $site->{posAlnFrom} <= $alnLen
-          && $site->{posAlnTo} >= 1
-          && $site->{posAlnTo} <= $alnLen) {
-        push @parts, "(" . substr($alnS, $site->{posAlnFrom}-1, $site->{posAlnTo}-$site->{posAlnFrom}+1)
-          . " vs. " . substr($alnQ, $site->{posAlnFrom}-1, $site->{posAlnTo}-$site->{posAlnFrom}+1)
-            . ")"
-              if $site->{posAlnTo} - $site->{posAlnFrom} + 1 <= 10;
-      } else {
-        push @parts, "(outside the alignment)";
-      }
-      my @pmIds = split /,/, $site->{pmIds};
-      my $note = @pmIds > 1 ? scalar(@pmIds) . " papers" : "paper";
-      push @parts,
-        small("see",
-              a({ -href => "http://www.ncbi.nlm.nih.gov/pubmed/" . join(",",@pmIds),
-            -onmousedown => loggerjs($db eq "PDB" ? "PDB" : "curatedsite", $hitId) },
-          $note))
-          if @pmIds > 0;
-      push @siteShow, li(@parts);
+      $site->{isAligned} = $site->{posAlnFrom} >= 1 && $site->{posAlnFrom} <= $alnLen
+        && $site->{posAlnTo} >= 1 && $site->{posAlnTo} <= $alnLen;
     }
-    print start_ul(), @siteShow, end_ul(), "\n";
-  }
+    my @alignedSites = grep $_->{isAligned}, @$sites;
+    my @unalignedSites = grep ! $_->{isAligned}, @$sites;
+
+    foreach my $isAligned (1,0) {
+      my $sitesThisAlign = $isAligned ? \@alignedSites : \@unalignedSites;
+      next unless @$sitesThisAlign > 0;
+      print p("Sites not aligning to the query:") if !$isAligned;
+      my @bullets = ();
+
+      if ($db eq "PDB") {
+        my %byLigand = ();
+        foreach my $site (@$sitesThisAlign) {
+          push @{ $byLigand{$site->{ligandId} } }, $site;
+        }
+        foreach my $ligandId (sort keys %byLigand) {
+          my $ligSites = $byLigand{$ligandId};
+          my $ligShow;
+          if ($ligandId eq "") {
+            $ligShow = "Active site:";
+          } else {
+            $ligShow = "Binding " . a({-href => "http://www.rcsb.org/ligand/".$ligandId },
+                                      $ligandId) . ":";
+          }
+          my @posShow = ();
+          foreach my $site (@$ligSites) {
+            my $hitChar = substr($alnS, $site->{posAlnFrom}-1, 1);
+            my $posShow = $hitChar . $site->{posFrom};
+            if ($site->{isAligned}) {
+              my $posQ = $alnPosToQpos{ $site->{posAlnFrom} };
+              $posShow .= " (vs. " . substr($alnQ, $site->{posAlnFrom}-1, 1) . $posQ . ")";
+            }
+            push @posShow, $posShow;
+          }
+          push @bullets, li($ligShow, join(", ", @posShow));
+        }
+      } elsif ($db eq "SwissProt") {
+        my @siteShow = ();
+        foreach my $site (@$sitesThisAlign) {
+          my @parts = ();
+          # XXX group by position, for those linking to a specific residue
+          # XXX summarize conservation
+          push @parts, $site->{posTo} ne $site->{posFrom} ? $site->{posFrom} . ":" . $site->{posTo}
+            : $site->{posFrom};
+          push @parts, $site->{type}, $site->{comment};
+          if ($isAligned) {
+            push @parts, "(" . substr($alnS, $site->{posAlnFrom}-1, $site->{posAlnTo}-$site->{posAlnFrom}+1)
+              . " vs. " . substr($alnQ, $site->{posAlnFrom}-1, $site->{posAlnTo}-$site->{posAlnFrom}+1)
+                . ")"
+                  if $site->{posAlnTo} - $site->{posAlnFrom} + 1 <= 10;
+          }
+          push @bullets, li(@parts);
+        }
+      } else {
+        die "Unknown db $db";
+      }
+      print start_ul(), @bullets, end_ul(), "\n";
+    }
+  } # end loop over hits
   my @pieces = $seq =~ /.{1,60}/g;
   print
     h3("Query Sequence"),
