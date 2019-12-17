@@ -21,6 +21,24 @@ use pbweb qw{start_page finish_page GetMotd loggerjs UniProtToFasta RefSeqToFast
 use Bio::SearchIO;
 
 sub fail($);
+sub FormatAlnString($$$$);
+
+my %charToLong = ("A" => "Ala", "C" => "Cys", "D" => "Asp", "E" => "Glu",
+                  "F" => "Phe", "G" => "Gly", "H" => "His", "I" => "Ile",
+                  "K" => "Lys", "L" => "Leu", "M" => "Met", "N" => "Asn",
+                  "P" => "Pro", "Q" => "Gln", "R" => "Arg", "S" => "Ser",
+                  "T" => "Thr", "V" => "Val", "W" => "Trp", "Y" => "Tyr",
+                  "O" => "Pyrrolysine", "U" => "Selenocysteine");
+my %charColSets = ("lightblue" => "AILMFWV",
+                   "red" => "KR",
+                   "magenta" => "ED",
+                   "lightgreen" => "NQST",
+                   "pink" => "C",
+                   "orange" => "G",
+                   "yellow" => "P",
+                   "cyan" => "HY");
+my %charToColor = ();
+
 my $tmpDir = "../tmp";
 my $blastall = "../bin/blast/blastall";
 my $nCPU = 4;
@@ -202,33 +220,6 @@ unless ($query) {
       }
     }
 
-    my @rows = ();
-    foreach my $site (@$sites) {
-      my $okRow;
-      foreach my $iRow (0 .. (scalar(@rows) - 1)) {
-        next unless $iRow >= 0 && @rows > $iRow;
-        my $ok = 1;
-        my $row = $rows[$iRow];
-        foreach my $site2 (@$row) {
-          if ($site2->{posAlnFrom} <= $site->{posAlnTo}
-              && $site2->{posAlnTo} >= $site->{posAlnFrom}) {
-            $ok = 0;
-            last;
-          }
-        }
-        if ($ok) {
-          $okRow = $iRow;
-          last;
-        }
-      }
-      if (!defined $okRow) {
-        push @rows, [];
-        $okRow = scalar(@rows)-1;
-      }
-      push @{ $rows[$okRow] }, $site;
-      $site->{iRow} = $okRow;
-    }
-
     # Header region (2 lines)
     my $hitURL = "";
     $hitURL = "https://www.rcsb.org/structure/" . $id if $db eq "PDB";
@@ -247,13 +238,23 @@ unless ($query) {
                   . a({"-title" => "${queryBeg}:${queryEnd}/${queryLen} of query (${coverageString}%) aligns to ${hitBeg}:${hitEnd} of ${id}${chain}" },
                       "${coverageString}% coverage")));
 
-    # Alignment region (no-wrap, fixed font, 1 extra space at beginning and end for sequences outside the bounds of the query)
-    my $formatQ = $alnQ;
-    my $formatS = $alnS;
-    my @lines = (i("Query:   ") . " " . $formatQ . " ",
-                 i("Subject: ") . " " . $formatS . " ");
+    my %sposToSite = ();
+    foreach my $site (@$sites) {
+      foreach my $i ($site->{posFrom} .. $site->{posTo}) {
+        push @{ $sposToSite{$i} }, $site;
+      }
+    }
+
+    # Alignment region (no-wrap, fixed font, 1 extra space at beginning and end
+    # for sequences outside the bounds of the query)
+    my @lines = (i(a({-title => "$queryBeg to $queryEnd/$queryLen of query"}, "Query:"))
+                 . " "
+                 . FormatAlnString($alnQ, $queryBeg, {}, "query"),
+                 i(a({-title => "$hitBeg to $hitEnd of $id$chain"}, "Sbjct:"))
+                 . " "
+                 . FormatAlnString($alnS, $hitBeg, \%sposToSite, $id.$chain) . " ");
     print div({-style => "font-family: monospace; white-space:nowrap;" },
-              pre({-style => "margin-top: 0em; margin-bottom: 2em;"},
+              p({-style => "margin-top: 0em; margin-bottom: 2em;"},
                 join(br(), @lines)));
     print "\n";
 
@@ -300,3 +301,37 @@ unless ($query) {
   finish_page();
 }
 
+sub FormatAlnString($$$$) {
+  my ($alnSeq, $beg, $posToSite, $seqName) = @_;
+
+  if (keys(%charToColor) == 0) {
+    while (my ($color, $chars) = each %charColSets) {
+      foreach my $char (split //, $chars) {
+        $charToColor{$char} = $color;
+      }
+    }
+  }
+
+  my @out = ();
+  my $at = $beg;
+  for (my $i = 0; $i < length($alnSeq); $i++) {
+    my $char = substr($alnSeq, $i, 1);
+    if ($char eq "-") {
+      push @out, "-";
+    } else {
+      my @styleparts = ();
+      push @styleparts, "background-color: " . $charToColor{$char} . ";"
+        if exists $charToColor{$char};
+      if (exists $posToSite->{$at}) {
+        my $n = @{ $posToSite-> {$at} };
+        push @styleparts, "font-weight: bold; text-decoration-line: underline; text-decoration-style: "
+          . ($n > 1 ? "double" : "solid") . ";";
+      }
+      my $longAA = exists $charToLong{$char} ? $charToLong{$char} : $char;
+      push @out, a({-title => "${longAA}${at} in $seqName",
+                    -style => join(" ",@styleparts)}, $char);
+      $at++;
+    }
+  }
+  return join("", @out);
+}
