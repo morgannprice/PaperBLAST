@@ -248,9 +248,10 @@ foreach my $biolipAnnoFile (@biolipAnnoFiles) {
         $pos =~ m/^\d+$/ || die "Invalid $type residue $pos in " . join(" ",@$list) . " from \n$line";
         my $posPDB = ""; # not reported if there are mismatches
         if ($lenAgree) {
-          my $posPDB = $listPDB->[$i];
+          $posPDB = $listPDB->[$i];
           $posPDB =~ s/^[A-Z]//;
           # Occasionally, PDB residue numbers have suffixes like A or D or a, I'm not sure why
+
           $posPDB =~ m/^-?\d+[A-Za-z]*$/ || die "Invalid PDB $type residue $posPDB in " . join(" ",@$listPDB) . " from \n$line";
         }
         if ($type eq "functional") {
