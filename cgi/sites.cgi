@@ -240,14 +240,14 @@ unless ($query) {
     my $hitURL = "";
     $hitURL = "https://www.rcsb.org/structure/" . $id if $db eq "PDB";
     $hitURL = "https://www.uniprot.org/uniprot/" . $id if $db eq "SwissProt";
-    my $identityString = int(100 * $hsp->frac_identical);
-    my $coverageString = int(100 * ($queryEnd-$queryBeg+1) / length($seq));
+    my $identityString = int(0.5 + 100 * $hsp->frac_identical);
+    my $coverageString = int(0.5 + 100 * ($queryEnd-$queryBeg+1) / length($seq));
     print p({-style => "margin-bottom: 0.5em;"},
             a({-title => $db eq "PDB" ? "entry $id chain $chain" : $id2,
                -href => $hitURL},
               $id.$chain),
             $desc,
-            $paperLink,
+            small($paperLink),
             br(),
             small(a({-title => "$bits bits, E = $eval"},
                     "${identityString}% identity")
@@ -298,15 +298,20 @@ unless ($query) {
           my $ligSites = $byLigand{$ligandId};
           my $ligShow;
           if ($ligandId eq "") {
-            $ligShow = "Active site:";
-          } else {
-            $ligShow = "Binding " . a({-href => "http://www.rcsb.org/ligand/".$ligandId },
+            $ligShow = "active site:";
+          } elsif ($ligandId ne "NUC") {
+            $ligShow = "binding " . a({-href => "http://www.rcsb.org/ligand/".$ligandId },
                                       $ligandId) . ":";
+          } else {
+            $ligShow = "binding DNA/RNA:";
           }
           my @posShow = ();
           foreach my $site (@$ligSites) {
             my $hitChar = substr($alnS, $site->{posAlnFrom}-1, 1);
             my $posShow = $hitChar . $site->{posFrom};
+            $posShow = a({-title => "$site->{pdbFrom} in PDB numbering for $id$chain"},
+                         $posShow)
+              if $site->{pdbFrom} ne "";
             if ($site->{isAligned}) {
               my $posQ = $alnPosToQpos{ $site->{posAlnFrom} };
               $posShow .= " (vs. " . substr($alnQ, $site->{posAlnFrom}-1, 1) . $posQ . ")";
@@ -316,27 +321,91 @@ unless ($query) {
           push @bullets, li($ligShow, join(", ", @posShow));
         }
       } elsif ($db eq "SwissProt") {
-        my @siteShow = ();
+        # Sometimes have multiple indications for a single position, so, try to collapse
+        my %byPos = (); # from => to => sites
         foreach my $site (@$sitesThisAlign) {
-          my @parts = ();
-          # XXX group by position, for those linking to a specific residue
-          # XXX summarize conservation
-          push @parts, $site->{posTo} ne $site->{posFrom} ? $site->{posFrom} . ":" . $site->{posTo}
-            : $site->{posFrom};
-          push @parts, $site->{type}, $site->{comment};
-          if ($isAligned) {
-            push @parts, "(" . substr($alnS, $site->{posAlnFrom}-1, $site->{posAlnTo}-$site->{posAlnFrom}+1)
-              . " vs. " . substr($alnQ, $site->{posAlnFrom}-1, $site->{posAlnTo}-$site->{posAlnFrom}+1)
-                . ")"
-                  if $site->{posAlnTo} - $site->{posAlnFrom} + 1 <= 10;
-          }
-          push @bullets, li(@parts);
+          push @{ $byPos{ $site->{posFrom} }{ $site->{posTo} } }, $site;
         }
-      } else {
+        my @typeOrder = qw{functional binding modified mutagenesis};
+        my %typeOrder = map { $typeOrder[$_] => $_ } 0..(scalar(@typeOrder)-1);
+        foreach my $posFrom (sort {$a<=>$b} keys %byPos) {
+          my $hashTo = $byPos{$posFrom};
+          foreach my $posTo (sort {$a<=>$b} keys %$hashTo) {
+            my $sitesHere = $hashTo->{$posTo};
+            foreach my $site (@$sitesHere) {
+              my $type = $site->{type};
+              $site->{orderScore} = exists $typeOrder{$type} ? $typeOrder{$type} : scalar(@typeOrder);
+            }
+            my @sitesHere = sort { $a->{orderScore} <=> $b->{orderScore} } @$sitesHere;
+            die unless @sitesHere > 0;
+            my $site1 = $sitesHere[0];
+            my $showPos = "";
+            if ($posTo - $posFrom <= 5) {
+              $showPos .= substr($alnS, $site1->{posAlnFrom}-1, $site1->{posAlnTo}-$site1->{posAlnFrom}+1)
+                if $isAligned;
+              $showPos .= $posFrom eq $posTo ? $posFrom : " $posFrom:$posTo";
+              if ($isAligned) {
+                $showPos .= " (vs. " . substr($alnQ, $site1->{posAlnFrom}-1, $site1->{posAlnTo}-$site1->{posAlnFrom}+1);
+                $showPos .= " " if $posTo ne $posFrom;
+                $showPos .= $alnPosToQpos{$site1->{posAlnFrom}};
+                $showPos .= ":".$alnPosToQpos{$site1->{posAlnTo}}
+                  if $posTo ne $posFrom;
+                $showPos .= ")";
+              }
+            } else {
+              # large region, report %conserved if aligned
+              $showPos .= "$posFrom:$posTo";
+              if ($isAligned) {
+                # compute %conservation and then
+                my $regionQ = substr($alnQ, $site1->{posAlnFrom}-1, $site1->{posAlnTo}-$site1->{posAlnFrom}+1);
+                my $regionS = substr($alnS, $site1->{posAlnFrom}-1, $site1->{posAlnTo}-$site1->{posAlnFrom}+1);
+                die unless length($regionQ) == length($regionS);
+                my $n = length($regionQ);
+                die if $n < 1;
+                my $nMatch = 0;
+                for (my $i = 0; $i < $n; $i++) {
+                  $nMatch++ if substr($regionQ,$i,1) eq substr($regionS,$i,1);
+                }
+                my $percMatch = int(0.5 + 100 * $nMatch/$n);
+                $showPos .= " (vs. " . $alnPosToQpos{$site1->{posAlnFrom}}
+                  . ":" . $alnPosToQpos{$site1->{posAlnTo}}
+                    . ", ${percMatch}% identical)";
+              }
+            }
+            my @siteDesc = ();
+            foreach my $site (@sitesHere) {
+              my $type = $site->{type};
+              my $comment = $site->{comment};
+              my $desc = "$type $comment";
+              if ($type eq "mutagenesis") {
+                if ($comment =~ m/^([A-Z]+)->([A-Z]+): (.*)$/) {
+                  if ($isAligned) {
+                    $desc = "mutation to $2: $3";
+                  } else {
+                    $desc = "$1->$2: $3";
+                  }
+                } else {
+                  $desc = "mutation $comment";
+                }
+              } elsif ($type eq "functional") {
+                $desc = $comment;
+              } elsif ($type eq "modified") {
+                if ($comment =~ m/^signal peptide/i || $comment =~ m/^disulfide link/) {
+                  $desc = $comment;
+                } else {
+                  $desc = "modified: $comment";
+                }
+              }
+              push @siteDesc, $desc;
+            }
+            push @bullets, li($showPos, join("; ", @siteDesc));
+          } # end loop over PosTo
+        } # end loop over PosFrom
+      } else { # not PDB or SwissProt
         die "Unknown db $db";
       }
       print start_ul(), @bullets, end_ul(), "\n";
-    }
+    } # end loop over isAligned
   } # end loop over hits
   my @pieces = $seq =~ /.{1,60}/g;
   print
