@@ -382,7 +382,7 @@ unless ($query) {
                   if ($isAligned) {
                     $desc = "mutation to $2: $3";
                   } else {
-                    $desc = "$1->$2: $3";
+                    $desc = "$1&rightarrow;$2: $3";
                   }
                 } else {
                   $desc = "mutation $comment";
@@ -390,15 +390,28 @@ unless ($query) {
               } elsif ($type eq "functional") {
                 $desc = $comment;
               } elsif ($type eq "modified") {
-                if ($comment =~ m/^signal peptide/i || $comment =~ m/^disulfide link/) {
+                if ($comment =~ m/^signal peptide/i
+                    || $comment =~ m/^disulfide link/) {
                   $desc = $comment;
+                } elsif ($comment =~ m/^natural variant/) {
+                  $desc = $comment;
+                  if ($desc =~ m/^natural variant: ([A-Z]) *-> *([A-Z]) (.*)$/) {
+                    my ($original, $variant, $comment2) = ($1, $2,$3);
+                    $comment2 =~ s/^[(]//;
+                    $comment2 =~ s/[)]$//;
+                    if ($isAligned) {
+                      $desc = "to $variant: $comment2";
+                    } else {
+                      $desc = "$original &rightarrow; $variant: $comment2";
+                    }
+                  }
                 } else {
                   $desc = "modified: $comment";
                 }
               }
               push @siteDesc, $desc;
             }
-            push @bullets, li($showPos, join("; ", @siteDesc));
+            push @bullets, li($showPos, join(br(), @siteDesc));
           } # end loop over PosTo
         } # end loop over PosFrom
       } else { # not PDB or SwissProt
