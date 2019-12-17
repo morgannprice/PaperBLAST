@@ -155,7 +155,6 @@ unless ($query) {
     my $hsp = $hit->hsp; # will consider only the best one
     my ($queryBeg, $hitBeg) = $hsp->start('list');
     my ($queryEnd, $hitEnd) = $hsp->end('list');
-    my $queryLen = length($seq);
     my $aln = $hsp->get_aln();
     # The aligned sequences for query and subject over the given range, with dashes
     my $alnQ = $aln->get_seq_by_pos(1)->seq;
@@ -179,6 +178,9 @@ unless ($query) {
       $desc = $info->{desc};
       $id2 = $info->{id2};
     }
+
+    my $queryLen = length($seq);
+    my $subjectLen = $info->{length};
 
     my $sites = $dbh->selectall_arrayref("SELECT * FROM Sites WHERE db = ? AND id = ? AND chain = ? ORDER BY posFrom",
                                   { Slice => {} }, $db, $id, $chain);
@@ -242,6 +244,8 @@ unless ($query) {
     $hitURL = "https://www.uniprot.org/uniprot/" . $id if $db eq "SwissProt";
     my $identityString = int(0.5 + 100 * $hsp->frac_identical);
     my $coverageString = int(0.5 + 100 * ($queryEnd-$queryBeg+1) / length($seq));
+    # subject length is always known right now, but not 100% sure this will always be the case
+    my $fromSubjectString = $subjectLen ne "" ? "/" . $subjectLen : "";
     print p({-style => "margin-bottom: 0.5em;"},
             a({-title => $db eq "PDB" ? "entry $id chain $chain" : $id2,
                -href => $hitURL},
@@ -250,10 +254,9 @@ unless ($query) {
             small($paperLink),
             br(),
             small(a({-title => "$bits bits, E = $eval"},
-                    "${identityString}% identity")
-                  . ", "
-                  . a({"-title" => "${queryBeg}:${queryEnd}/${queryLen} of query (${coverageString}%) aligns to ${hitBeg}:${hitEnd} of ${id}${chain}" },
-                      "${coverageString}% coverage")));
+                    "${identityString}% identity",
+                      "${coverageString}% coverage:",
+                    "${queryBeg}:${queryEnd}/${queryLen} of query aligns to ${hitBeg}:${hitEnd}${fromSubjectString} of ${id}${chain}")));
 
     my %sposToSite = ();
     foreach my $site (@$sites) {
