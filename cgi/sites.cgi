@@ -21,7 +21,7 @@ use pbweb qw{start_page finish_page GetMotd loggerjs UniProtToFasta RefSeqToFast
 use Bio::SearchIO;
 
 sub fail($);
-sub FormatAlnString($$$$);
+sub FormatAlnString($$$$$$$);
 
 my %charToLong = ("A" => "Ala", "C" => "Cys", "D" => "Asp", "E" => "Glu",
                   "F" => "Phe", "G" => "Gly", "H" => "His", "I" => "Ile",
@@ -266,10 +266,10 @@ unless ($query) {
     # for sequences outside the bounds of the query)
     my @lines = (i(a({-title => "$queryBeg to $queryEnd/$queryLen of query"}, "Query:"))
                  . " "
-                 . FormatAlnString($alnQ, $queryBeg, {}, "query"),
+                 . FormatAlnString($alnQ, $queryBeg, {}, "query", $hitBeg, $alnS, $id.$chain),
                  i(a({-title => "$hitBeg to $hitEnd of $id$chain"}, "Sbjct:"))
                  . " "
-                 . FormatAlnString($alnS, $hitBeg, \%sposToSite, $id.$chain) . " ");
+                 . FormatAlnString($alnS, $hitBeg, \%sposToSite, $id.$chain, $queryBeg, $alnQ, "query"));
     print div({-style => "font-family: monospace; white-space:nowrap;" },
               p({-style => "margin-top: 0em; margin-bottom: 2em;"},
                 join(br(), @lines)));
@@ -430,7 +430,7 @@ unless ($query) {
 }
 
 sub FormatAlnString($$$$) {
-  my ($alnSeq, $beg, $posToSite, $seqName) = @_;
+  my ($alnSeq, $beg, $posToSite, $seqName, $begOther, $alnOther, $nameOther) = @_;
 
   if (keys(%charToColor) == 0) {
     while (my ($color, $chars) = each %charColSets) {
@@ -442,8 +442,11 @@ sub FormatAlnString($$$$) {
 
   my @out = ();
   my $at = $beg;
+  my $atOther = $begOther;
   for (my $i = 0; $i < length($alnSeq); $i++) {
     my $char = substr($alnSeq, $i, 1);
+    my $charOther = substr($alnOther, $i, 1) if defined $alnOther;
+
     if ($char eq "-") {
       push @out, "-";
     } else {
@@ -456,10 +459,17 @@ sub FormatAlnString($$$$) {
           . ($n > 1 ? "double" : "solid") . ";";
       }
       my $longAA = exists $charToLong{$char} ? $charToLong{$char} : $char;
-      push @out, a({-title => "${longAA}${at} in $seqName",
+      my $title = "${longAA}${at} in $seqName";
+      if (defined $charOther && $charOther ne "-") {
+        my $longOther = exists $charToLong{$charOther} ? $charToLong{$charOther} : $char;
+        $title .= " (${longOther}${atOther} in $nameOther)";
+      }
+
+      push @out, a({-title => $title,
                     -style => join(" ",@styleparts)}, $char);
       $at++;
     }
+    $atOther++ if defined $charOther && $charOther ne "-";
   }
   return join("", @out);
 }
