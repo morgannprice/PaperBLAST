@@ -21,7 +21,7 @@ my %ignoreTypes = map { $_=> 1 } @ignoreTypes;
 my $usage = <<END
 Run as a filter on swiss-prot entries.
 Output is tab-delimited with fields
-  accession, id, description,
+  accession, id, description, organism
   feature type, feature begin, feature end, feature comment,
   pubmedIds (comma delimited)
 
@@ -72,6 +72,7 @@ while(<>) {
                $entry->AC,
                @{ $entry->IDs->list }[0] || "",
                $desc,
+               join ("; ", map { $_->text } $entry->OSs->elements),
                $ftKey, $ftFrom, $ftTo, $ftDesc,
               join(",",@pmIds))."\n";
   }
