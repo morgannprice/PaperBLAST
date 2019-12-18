@@ -401,6 +401,8 @@ sub SQLiteLine {
       $val =~ s/"/""/g;
       $val = '"' . $val . '"';
     }
+    die "Invalid whitespace within fields for SQLite3 (shown here as 1 per line):\n" . join("\n",@F) . "\n..."
+      if $val =~ m/[\t\n\r]/;
     push @out, $val;
   }
   return join("\t", @out) . "\n";
