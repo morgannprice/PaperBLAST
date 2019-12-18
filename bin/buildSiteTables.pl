@@ -69,7 +69,19 @@ open(my $fhSites, ">", "$outdir/Sites.tab") || die "Cannot write to $outdir/Site
 open(my $fhFt, "<", $sprotFtFile) || die "Cannot read $sprotFtFile\n";
 while(my $line = <$fhFt>) {
   chomp $line;
-  my ($id, $acc, $desc, $type, $from, $to, $comment, $pmIds) = split /\t/, $line, -1;
+  my ($id, $acc, $desc, $organisms, $type, $from, $to, $comment, $pmIds) = split /\t/, $line, -1;
+  die "Not enough fields in line from $sprotFtFile:\n$line" unless defined $pmIds;
+  # if extent of feature is uncertain, shrink it to the confident part
+  $from =~ s/^<//;
+  $to =~ s/^>//;
+  # Some sites have missing to or from, marked as "?", just represent as 1-a.a. sites
+  $from = $to if $from eq "?";
+  $to = $from if $to eq "?";
+  # Some sites are marked as low-confidence by leading ? -- ignore that
+  $from =~ s/^[?]//;
+  $to =~ s/^[?]//;
+  die "Invalid from $from to $to"
+    unless $from =~ m/^\d+$/ && $to =~ m/^\d+$/ && $to >= $from;
   my ($from2, $comment2); # for the second line, for disulfides
   my $outtype;
 
@@ -211,7 +223,7 @@ while(my $line = <$fhFt>) {
                               $comment2, $pmIds);
   }
   # save this identifier
-  $sprotIds{$id} = [$acc, $desc];
+  $sprotIds{$id} = [$acc, $desc . " from $organisms"];
 }
 close($fhFt) || die "Error reading $sprotFtFile\n";
 
