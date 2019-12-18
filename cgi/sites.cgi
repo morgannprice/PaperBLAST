@@ -303,8 +303,19 @@ unless ($query) {
           if ($ligandId eq "") {
             $ligShow = "active site:";
           } elsif ($ligandId ne "NUC") {
-            $ligShow = "binding " . a({-href => "http://www.rcsb.org/ligand/".$ligandId },
-                                      $ligandId) . ":";
+            my $ligInfo = $dbh->selectrow_hashref("SELECT * FROM PdbLigand WHERE ligandId = ?",
+                                                  {}, $ligandId);
+            if (defined $ligInfo) {
+              my $ligName = $ligInfo->{ligandName};
+              $ligName = lc($ligName) unless $ligName =~ m/[a-z]/;
+              $ligShow = a({-href => "http://www.rcsb.org/ligand/".$ligandId,
+                            -title => "PDB ligand id $ligandId" },
+                           $ligName);
+            } else {
+              $ligShow = a({-href => "http://www.rcsb.org/ligand/".$ligandId },
+                                      $ligandId);
+            }
+            $ligShow = "binding ${ligShow}:";
           } else {
             $ligShow = "binding DNA/RNA:";
           }
