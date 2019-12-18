@@ -11,6 +11,7 @@ my %outtypes = map { $_ => 1 } @outtypes;
 my $usage = <<END
 Usage: buildSiteTables.pl -sprot sprotFt.tab -biolip anno_nr.txt
        -seqres pdb_seqres.txt -sprotFasta uniprot_sprot.fasta.gz
+       -pdbnames protnames.lst
   (-biolip may have multiple arguments)
 Optional arguments:
   -outdir $outdir -- directory to put the output files in
@@ -35,24 +36,27 @@ my $sprotFtFile;
 my $sprotFastaFile;
 my @biolipAnnoFiles;
 my $pdbSeqFile;
+my $pdbNameFile;
 
 die $usage
   unless GetOptions('sprot=s' => \$sprotFtFile,
                     'biolip=s{1,}' => \@biolipAnnoFiles,
                     'seqres=s' => \$pdbSeqFile,
                     'sprotFasta=s' => \$sprotFastaFile,
-                    'outdir=s' => \$outdir)
+                    'outdir=s' => \$outdir,
+                    'pdbnames=s' => \$pdbNameFile)
   && @ARGV == 0;
 die "Not a directory: $outdir\n" unless -d $outdir;
 die "Must specify 1 or more biolip annotation files:\n$usage" unless @biolipAnnoFiles;
 die "Must use -sprotFt:\n$usage" unless defined $sprotFtFile;
 die "Must use -seqres:\n$usage" unless defined $pdbSeqFile;
 die "Must use -sprotFasta:\n$usage" unless defined $sprotFastaFile;
+die "Must use -pdbnames:\n$usage" unless defined $pdbNameFile;
 
 my $formatdb = "$Bin/blast/formatdb";
 die "No such executable: $formatdb\n" unless -x $formatdb;
 
-foreach my $file ($pdbSeqFile,$sprotFastaFile,$sprotFtFile,@biolipAnnoFiles) {
+foreach my $file ($pdbSeqFile,$sprotFastaFile,$sprotFtFile,$pdbNameFile,@biolipAnnoFiles) {
   die "No such file: $file\n" unless -e $file;
 }
 
@@ -317,7 +321,7 @@ system($formatdb,"-p","T","-o","T","-i","$outdir/hassites.faa") == 0
 print STDERR "Formatted $outdir/hassites.faa\n";
 
 # Parse $pdbSeqFile
-my %pdbDesc;
+my %pdbDesc; # pdbId => desc (no chain information)
 open(my $fhPdbSeq, "<", $pdbSeqFile) || die "Cannot read $pdbSeqFile\n";
 $state = {};
 while (my ($header,$seq) = ReadFastaEntry($fhPdbSeq, $state)) {
@@ -328,10 +332,27 @@ while (my ($header,$seq) = ReadFastaEntry($fhPdbSeq, $state)) {
     unless $seqlen == length($seq);
   if (exists $pdbSeq{$pdbId}{$chain}) {
     # Do not check that sequences match -- having a few extra a.a at beginning or end is very common
-    $pdbDesc{$pdbId}{$chain} = $desc;
+    $desc = lc($desc) unless $desc =~ m/[a-z]/;
+    $pdbDesc{$pdbId} = $desc;
   }
 }
 close($fhPdbSeq) || die "Error reading $pdbSeqFile\n";
+
+# Parse PDB names file from PDBSum
+open(my $fhName, "<", $pdbNameFile) || die "cannot read $pdbNameFile\n";
+while (my $line = <$fhName>) {
+  chomp $line;
+  # example input line:
+  # 100d - 31-Mar-95 X-ray   1.900 Crystal structure of the highly distorted chimeric decamer r(c)d(cggcgccg)r(g)-spermine complex-spermine binding to phosphate only and minor groove tertiary base-pairing
+  my @parts = split /\s+/, $line;
+  if (@parts < 6) {
+    print STDERR "Warning: cannot parse pdb names from $line\n"
+      unless $line =~ m/^[a-z0-9]+ +[*-] +[-] +[-] *$/; # no name
+    next;
+  }
+  my $id = $parts[0];
+  $pdbDesc{$id} = join(" ", splice(@parts, 5));
+}
 
 # And write HasSites.tab
 open(my $fhHasSites, ">", "$outdir/HasSites.tab") || die "Cannot write to $outdir/HasSites.tab";
@@ -343,12 +364,12 @@ foreach my $sprotId (sort keys %sprotIds) {
 foreach my $pdbId (sort keys %pdbSeq) {
   my $hash = $pdbSeq{$pdbId};
   foreach my $chain (sort keys %$hash) {
-    if (!exists $pdbDesc{$pdbId}{$chain}) {
-      print STDERR "Warning, no description for ${pdbId}_${chain}\n";
+    if (!exists $pdbDesc{$pdbId}) {
+      print STDERR "Warning, no description for ${pdbId} (chain_${chain})\n";
     } else {
       print $fhHasSites SQLiteLine("PDB", $pdbId, $chain, "",
                                    exists $pdbSeq{$pdbId}{$chain} ? length($pdbSeq{$pdbId}{$chain}) : "",
-                                          $pdbDesc{$pdbId}{$chain});
+                                          $pdbDesc{$pdbId});
     }
   }
 }
