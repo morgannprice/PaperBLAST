@@ -22,6 +22,7 @@ use Bio::SearchIO;
 
 sub fail($);
 sub FormatAlnString($$$$$$$);
+sub FormatAlnSites($$$$$$);
 
 my %charToLong = ("A" => "Ala", "C" => "Cys", "D" => "Asp", "E" => "Glu",
                   "F" => "Phe", "G" => "Gly", "H" => "His", "I" => "Ile",
@@ -91,10 +92,10 @@ unless ($query) {
   my ($header, $seq);
 
   # Single-line query sequence
-  if ($query !~ m/\n/ && $query =~ m/^[A-Z*]+$/) {
+  if ($query !~ m/\n/ && $query =~ m/^[A-Z*]+$/ && length($query) >= 5) {
     $header = substr($seq, 0, 10) . "..." . "(" . length($query) . " amino acids)";
     $seq = $query;
-  } elsif ($query !~ m/\n/) {
+  } elsif ($query !~ m/\n/ && $query =~ m/^[a-zA-Z][a-zA-Z90-9_.]+$/) {
     # single-line, identifier only
     my $short = $query;
     $query = undef;
@@ -114,13 +115,13 @@ unless ($query) {
   }
 
   if (!defined $header) {
-    fail("Not in fasta format") unless $query =~ m/^>/;
+    fail("Sorry, input is not in fasta format") unless $query =~ m/^>/;
     my @lines = split /\n/, $query;
     $header = shift @lines;
     $header =~ s/^>//;
     $seq = join("", @lines);
     $seq =~ s/\s//g;
-    fail("Invalid sequence") unless $seq =~ m/^[A-Z*]+$/;
+    fail("Invalid sequence, only uppercase letters and * (for stop codons) are allowed") unless $seq =~ m/^[A-Z*]+$/;
     $seq =~ s/[*]//g;
   }
   fail("Sequence is too short") unless length($seq) >= 10;
@@ -258,6 +259,20 @@ unless ($query) {
                       "${coverageString}% coverage:",
                     "${queryBeg}:${queryEnd}/${queryLen} of query aligns to ${hitBeg}:${hitEnd}${fromSubjectString} of ${id}${chain}")));
 
+    # Fetch relevant ligand information
+    my %ligands = map { $_->{ligandId} => 1 } @$sites;
+    my %ligandName = (); # only if it is information in the table
+    foreach my $ligandId (keys %ligands) {
+      next if $ligandId eq "" || $ligandId eq "NUC";
+      my $ligInfo = $dbh->selectrow_hashref("SELECT * FROM PdbLigand WHERE ligandId = ?",
+                                              {}, $ligandId);
+      if (defined $ligInfo) {
+        my $name = $ligInfo->{ligandName};
+        $name = lc($name) unless $name =~ m/[a-z]/;
+        $ligandName{$ligandId} = $name;
+      }
+    }
+
     my %sposToSite = ();
     foreach my $site (@$sites) {
       foreach my $i ($site->{posFrom} .. $site->{posTo}) {
@@ -265,27 +280,86 @@ unless ($query) {
       }
     }
 
+    # For each site, compute isAligned, shortDesc, and longDesc
+    # (the descriptions do not include anything about the position)
+    foreach my $site (@$sites) {
+      $site->{isAligned} = $site->{posAlnFrom} >= 1 && $site->{posAlnFrom} <= $alnLen
+        && $site->{posAlnTo} >= 1 && $site->{posAlnTo} <= $alnLen;
+      if ($db eq "PDB") {
+        if ($site->{ligandId} eq "") {
+          $site->{shortDesc} = "active site";
+        } elsif ($site->{ligandId} eq "NUC") {
+          $site->{shortDesc} = "binding DNA/RNA";
+        } elsif (exists $ligandName{$site->{ligandId}}) {
+          $site->{shortDesc} = "binding " . $ligandName{$site->{ligandId}};
+        } else {
+          $site->{shortDesc} = "binding " . $site->{ligandId};
+        }
+        $site->{longDesc} = $site->{shortDesc};
+      } elsif ($db eq "SwissProt") {
+        my $type = $site->{type};
+        my $comment = $site->{comment};
+        my $desc = "$type $comment";
+        if ($type eq "mutagenesis") {
+          if ($comment =~ m/^([A-Z]+)->([A-Z]+): (.*)$/) {
+            if ($site->{isAligned}) {
+              $desc = "mutation to $2: $3";
+            } else {
+              $desc = "$1&rightarrow;$2: $3";
+            }
+          } else {
+            $desc = "mutation $comment";
+          }
+        } elsif ($type eq "functional") {
+          $desc = $comment;
+        } elsif ($type eq "modified") {
+          if ($comment =~ m/^signal peptide/i
+              || $comment =~ m/^disulfide link/) {
+            $desc = $comment;
+          } elsif ($comment =~ m/^natural variant/) {
+            $desc = $comment;
+            if ($desc =~ m/^natural variant: ([A-Z]) *-> *([A-Z]) (.*)$/) {
+              my ($original, $variant, $comment2) = ($1, $2,$3);
+              $comment2 =~ s/^[(]//;
+              $comment2 =~ s/[)]$//;
+              if ($site->{isAligned}) {
+                $desc = "to $variant: $comment2";
+              } else {
+                $desc = "$original &rightarrow; $variant: $comment2";
+              }
+            }
+          } else {
+            $desc = "modified: $comment";
+          }
+        }
+        $site->{longDesc} = $desc;
+        my @words = split / /, $desc;
+        my $maxWords = 9;
+        if (@words > $maxWords) {
+          $site->{shortDesc} = join(" ", splice(@words, 0, $maxWords)) . "...";
+        } else {
+          $site->{shortDesc} = $desc;
+        }
+      } else {
+        die "Unknown db $db";
+      }
+    }
+
     # Alignment region (no-wrap, fixed font, 1 extra space at beginning and end
     # for sequences outside the bounds of the query)
-    my @lines = (i(a({-title => "$queryBeg to $queryEnd/$queryLen of query"}, "Query:"))
-                 . " "
-                 . FormatAlnString($alnQ, $queryBeg, {}, "query", $hitBeg, $alnS, $id.$chain),
-                 i(a({-title => "$hitBeg to $hitEnd of $id$chain"}, "Sbjct:"))
-                 . " "
+    my @lines = (i(a({-title => "$queryBeg to $queryEnd/$queryLen of query"}, "Query: "))
+                 . FormatAlnString($alnQ, $queryBeg, {}, "query", $hitBeg, $alnS, $id.$chain) . " ",
+                 "&nbsp;" x 7
+                 . FormatAlnSites($alnQ, $alnS, $queryBeg, $hitBeg, $id.$chain, \%sposToSite) . " ",
+                 i(a({-title => "$hitBeg to $hitEnd of $id$chain"}, "Sbjct: "))
                  . FormatAlnString($alnS, $hitBeg, \%sposToSite, $id.$chain, $queryBeg, $alnQ, "query"));
     print div({-style => "font-family: monospace; white-space:nowrap;" },
               p({-style => "margin-top: 0em; margin-bottom: 2em;"},
                 join(br(), @lines)));
     print "\n";
 
-    # First, remove the features that do not fully align, these will be rendered separately
-    foreach my $site (@$sites) {
-      $site->{isAligned} = $site->{posAlnFrom} >= 1 && $site->{posAlnFrom} <= $alnLen
-        && $site->{posAlnTo} >= 1 && $site->{posAlnTo} <= $alnLen;
-    }
     my @alignedSites = grep $_->{isAligned}, @$sites;
     my @unalignedSites = grep ! $_->{isAligned}, @$sites;
-
     foreach my $isAligned (1,0) {
       my $sitesThisAlign = $isAligned ? \@alignedSites : \@unalignedSites;
       next unless @$sitesThisAlign > 0;
@@ -302,22 +376,14 @@ unless ($query) {
           my $ligShow;
           if ($ligandId eq "") {
             $ligShow = "active site:";
-          } elsif ($ligandId ne "NUC") {
-            my $ligInfo = $dbh->selectrow_hashref("SELECT * FROM PdbLigand WHERE ligandId = ?",
-                                                  {}, $ligandId);
-            if (defined $ligInfo) {
-              my $ligName = $ligInfo->{ligandName};
-              $ligName = lc($ligName) unless $ligName =~ m/[a-z]/;
-              $ligShow = a({-href => "http://www.rcsb.org/ligand/".$ligandId,
-                            -title => "PDB ligand id $ligandId" },
-                           $ligName);
-            } else {
-              $ligShow = a({-href => "http://www.rcsb.org/ligand/".$ligandId },
-                                      $ligandId);
-            }
-            $ligShow = "binding ${ligShow}:";
-          } else {
+          } elsif ($ligandId eq "NUC") {
             $ligShow = "binding DNA/RNA:";
+          } elsif (exists $ligandName{$ligandId}) {
+            $ligShow = a({ -href => "http://www.rcsb.org/ligand/".$ligandId,
+                           -title => "PDB ligand id " . $ligandId },
+                         "binding " . $ligandName{$ligandId} . ":");
+          } else {
+            $ligShow = "binding ${ligShow}:";
           }
           my @posShow = ();
           foreach my $site (@$ligSites) {
@@ -386,45 +452,7 @@ unless ($query) {
                     . ", ${percMatch}% identical)";
               }
             }
-            my @siteDesc = ();
-            foreach my $site (@sitesHere) {
-              my $type = $site->{type};
-              my $comment = $site->{comment};
-              my $desc = "$type $comment";
-              if ($type eq "mutagenesis") {
-                if ($comment =~ m/^([A-Z]+)->([A-Z]+): (.*)$/) {
-                  if ($isAligned) {
-                    $desc = "mutation to $2: $3";
-                  } else {
-                    $desc = "$1&rightarrow;$2: $3";
-                  }
-                } else {
-                  $desc = "mutation $comment";
-                }
-              } elsif ($type eq "functional") {
-                $desc = $comment;
-              } elsif ($type eq "modified") {
-                if ($comment =~ m/^signal peptide/i
-                    || $comment =~ m/^disulfide link/) {
-                  $desc = $comment;
-                } elsif ($comment =~ m/^natural variant/) {
-                  $desc = $comment;
-                  if ($desc =~ m/^natural variant: ([A-Z]) *-> *([A-Z]) (.*)$/) {
-                    my ($original, $variant, $comment2) = ($1, $2,$3);
-                    $comment2 =~ s/^[(]//;
-                    $comment2 =~ s/[)]$//;
-                    if ($isAligned) {
-                      $desc = "to $variant: $comment2";
-                    } else {
-                      $desc = "$original &rightarrow; $variant: $comment2";
-                    }
-                  }
-                } else {
-                  $desc = "modified: $comment";
-                }
-              }
-              push @siteDesc, $desc;
-            }
+            my @siteDesc = map $_->{longDesc}, @sitesHere;
             push @bullets, li($showPos, join(br(), @siteDesc));
           } # end loop over PosTo
         } # end loop over PosFrom
@@ -441,6 +469,41 @@ unless ($query) {
     h3(a({-href => "sites.cgi"}, "New Search"));
 
   finish_page();
+}
+
+sub FormatAlnSites {
+  my ($queryAln, $hitAln, $queryBeg, $hitBeg, $hitName, $hposSite) = @_;
+  my @out = ();
+  my $queryAt = $queryBeg;
+  my $hitAt = $hitBeg;
+  die unless length($hitAln) == length($queryAln);
+  my @out = ();
+  for(my $i = 0; $i < length($hitAln); $i++) {
+    my $queryChar = substr($queryAln, $i, 1);
+    my $hitChar = substr($hitAln, $i, 1);
+    my $string = "&nbsp;";
+    if ($hitChar ne "-" && exists $hposSite->{$hitAt}) {
+      my $sitesHere = $hposSite->{$hitAt};
+      my $style = "";
+      if ($queryChar eq $hitChar) {
+        $string = "|";
+        $style = "font-weight: bola; color: darkgreen;";
+      } else {
+        $string = "&#10799;"; # x or cross product
+        $style = "font-weight: bold; color: darkred;";
+      }
+      my $queryLong = exists $charToLong{$queryChar} ? $charToLong{$queryChar} : $queryChar;
+      my $hitLong = exists $charToLong{$hitChar} ? $charToLong{$hitChar} : $hitChar;
+      my $title = "${hitLong}${hitAt} in $hitName";
+      $title .= " (${queryLong}${queryAt} in query)" if $queryChar ne "-";
+      $title .= ": " . join("; ", map $_->{shortDesc}, @$sitesHere);
+      $string = a({-title => $title, -style => $style}, $string);
+    }
+    push @out, $string;
+    $queryAt++ unless $queryChar eq "-";
+    $hitAt++ unless $hitChar eq "-";
+  }
+  return join("",@out);
 }
 
 sub FormatAlnString($$$$) {
@@ -469,8 +532,9 @@ sub FormatAlnString($$$$) {
         if exists $charToColor{$char};
       if (exists $posToSite->{$at}) {
         my $n = @{ $posToSite-> {$at} };
-        push @styleparts, "font-weight: bold; text-decoration-line: underline; text-decoration-style: "
-          . ($n > 1 ? "double" : "solid") . ";";
+        # Was using underlines before I added the alignment line
+        #push @styleparts, "font-weight: bold; text-decoration-line: underline; text-decoration-style: "
+        #  . ($n > 1 ? "double" : "solid") . ";";
       }
       my $longAA = exists $charToLong{$char} ? $charToLong{$char} : $char;
       my $title = "${longAA}${at} in $seqName";
