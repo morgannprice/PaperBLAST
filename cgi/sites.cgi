@@ -149,7 +149,9 @@ unless ($query) {
   $nHits .= " (the maximum)" if $nHits eq $maxHits;
   print p("Found $nHits hits to proteins with known functional sites"),"\n";
   unlink("$seqFile.out");
+  my $nHit = 0;
   foreach my $hit (@hits) {
+    $nHit++;
     my $hitId = $hit->name;
     my $bits = $hit->bits;
     my $eval = $hit->significance;
@@ -345,24 +347,35 @@ unless ($query) {
       }
     }
 
-    # Alignment region (no-wrap, fixed font, 1 extra space at beginning and end
+    # Alignment region -- there's 3 lines, for the query, to highlight functional sites, and for the subject
+    # There's a header at the left, and then 1 column for each alignment position
+    # Each column (or header) is a floating div with 3 lines (implemented using br()) and
+    # with a 1em margin at top. This is necessary so that there is some space if the
+    # alignment wraps (as it usually does)
+    # The div for that column has id = Aln${nHit}P${i}
+    # Setting the main div to be display:flex would cause it to be on one line with scrolling,
+    # but would not work in opera and perhaps some other common browsers, not sure.
+
     # for sequences outside the bounds of the query)
     my $queryColumns = FormatAlnString($alnQ, $queryBeg, {}, "query", $hitBeg, $alnS, $id.$chain);
     my $siteColumns = FormatAlnSites($alnQ, $alnS, $queryBeg, $hitBeg, $id.$chain, \%sposToSite);
     my $hitColumns = FormatAlnString($alnS, $hitBeg, \%sposToSite, $id.$chain, $queryBeg, $alnQ, "query");
     my @alnColumns = ();
     foreach my $i (0..($alnLen-1)) {
-      push @alnColumns, div({-style => "vertical-align:top; float:left; display:inline-block;"},
-                            br() . $queryColumns->[$i] . br() .
-                            span({-style => "background-color: #EEEEEE;"},$siteColumns->[$i])
-                            . br() . $hitColumns->[$i]);
+      push @alnColumns, div({-style => qq{vertical-align:top; float:left; display:inline-block;
+                                          margin-top: 1em;},
+                             -id => "Aln${nHit}P${i}" },
+                            join(br(),
+                                 $queryColumns->[$i],
+                                 span({-style => "background-color: #EEEEEE;"},$siteColumns->[$i]),
+                                 $hitColumns->[$i]));
     }
     my @alnLabels = (a({-title => "$queryBeg to $queryEnd/$queryLen of query"}, "Query:"),
                      "Sites:",
                      a({-title => "$hitBeg to $hitEnd$fromSubjectString of $id$chain"}, "Subject:"));
-    print div({-style => qq{display:inline; font-family:"Courier New",monospace;} },
-              div({-style => "vertical-align: top; float:left; display:inline-block; margin-right: 0.5em;  font-style: italic;"},
-                  br() . join(br(), @alnLabels)),
+    print div({-style => qq{display:inline; font-family:"Courier New",monospace; } },
+              div({-style => "vertical-align: top; float:left; display:inline-block; font-style: italic; margin-top: 1em;"},
+                  join(br(), @alnLabels)),
               @alnColumns);
     print div({-style => "clear:both;"}, "");
     print "\n";
