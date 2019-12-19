@@ -87,3 +87,45 @@ CREATE TABLE SeqToDuplicate(
         PRIMARY KEY (sequence_id, duplicate_id)
 );
 CREATE INDEX 'DupToId' ON SeqToDuplicate ('duplicate_id' ASC, 'sequence_id' ASC);
+
+/* These tables describe characterized sequences with functional features
+   such as active site residues, substrate binding residues, or
+   other functional residues from mutagenesis experiments.    
+
+   These sequences are stored in a separate BLAST database,
+   with ids like db:protId or db:protId:chain
+   (and without removal of any redundant sequences)
+*/
+
+CREATE TABLE Site(
+  db TEXT, /* either SwissProt or PDB */
+  id TEXT,
+  chain TEXT,
+  ligandId TEXT,
+  ligandChain TEXT,
+  type TEXT,
+  posFrom INT,
+  posTo INT,
+  pdbFrom TEXT,
+  pdbTo TEXT,
+  comment TEXT,
+  pmIds TEXT
+);
+
+CREATE INDEX 'IdToSite' ON Site (db,id,chain,ligandId);
+
+CREATE TABLE HasSites(
+  db TEXT,
+  id TEXT,
+  chain TEXT,
+  id2 TEXT,
+  length INT,
+  desc TEXT,
+  PRIMARY KEY(db,id,chain)
+);
+
+CREATE TABLE PdbLigand(
+  ligandId TEXT,
+  ligandName TEXT,
+  PRIMARY KEY (ligandId)
+);
