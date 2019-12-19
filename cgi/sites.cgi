@@ -347,15 +347,24 @@ unless ($query) {
 
     # Alignment region (no-wrap, fixed font, 1 extra space at beginning and end
     # for sequences outside the bounds of the query)
-    my @lines = (i(a({-title => "$queryBeg to $queryEnd/$queryLen of query"}, "Query: "))
-                 . FormatAlnString($alnQ, $queryBeg, {}, "query", $hitBeg, $alnS, $id.$chain) . " ",
-                 "&nbsp;" x 7
-                 . FormatAlnSites($alnQ, $alnS, $queryBeg, $hitBeg, $id.$chain, \%sposToSite) . " ",
-                 i(a({-title => "$hitBeg to $hitEnd of $id$chain"}, "Sbjct: "))
-                 . FormatAlnString($alnS, $hitBeg, \%sposToSite, $id.$chain, $queryBeg, $alnQ, "query"));
-    print div({-style => "font-family: monospace; white-space:nowrap;" },
-              p({-style => "margin-top: 0em; margin-bottom: 2em;"},
-                join(br(), @lines)));
+    my $queryColumns = FormatAlnString($alnQ, $queryBeg, {}, "query", $hitBeg, $alnS, $id.$chain);
+    my $siteColumns = FormatAlnSites($alnQ, $alnS, $queryBeg, $hitBeg, $id.$chain, \%sposToSite);
+    my $hitColumns = FormatAlnString($alnS, $hitBeg, \%sposToSite, $id.$chain, $queryBeg, $alnQ, "query");
+    my @alnColumns = ();
+    foreach my $i (0..($alnLen-1)) {
+      push @alnColumns, div({-style => "vertical-align:top; float:left; display:inline-block;"},
+                            br() . $queryColumns->[$i] . br() .
+                            span({-style => "background-color: #EEEEEE;"},$siteColumns->[$i])
+                            . br() . $hitColumns->[$i]);
+    }
+    my @alnLabels = (a({-title => "$queryBeg to $queryEnd/$queryLen of query"}, "Query:"),
+                     "Sites:",
+                     a({-title => "$hitBeg to $hitEnd$fromSubjectString of $id$chain"}, "Subject:"));
+    print div({-style => qq{display:inline; font-family:"Courier New",monospace;} },
+              div({-style => "vertical-align: top; float:left; display:inline-block; margin-right: 0.5em;  font-style: italic;"},
+                  br() . join(br(), @alnLabels)),
+              @alnColumns);
+    print div({-style => "clear:both;"}, "");
     print "\n";
 
     my @alignedSites = grep $_->{isAligned}, @$sites;
@@ -486,24 +495,24 @@ sub FormatAlnSites {
       my $sitesHere = $hposSite->{$hitAt};
       my $style = "";
       if ($queryChar eq $hitChar) {
-        $string = "|";
-        $style = "font-weight: bola; color: darkgreen;";
+        $string = "&vert;";
+        $style = "font-weight: bold; color: darkgreen;";
       } else {
-        $string = "&#10799;"; # x or cross product
+        $string = "x";
         $style = "font-weight: bold; color: darkred;";
       }
       my $queryLong = exists $charToLong{$queryChar} ? $charToLong{$queryChar} : $queryChar;
       my $hitLong = exists $charToLong{$hitChar} ? $charToLong{$hitChar} : $hitChar;
-      my $title = "${hitLong}${hitAt} in $hitName";
+      my $title = "${hitLong}${hitAt} in $hitName: "
+        .  join("; ", map $_->{shortDesc}, @$sitesHere);
       $title .= " (${queryLong}${queryAt} in query)" if $queryChar ne "-";
-      $title .= ": " . join("; ", map $_->{shortDesc}, @$sitesHere);
       $string = a({-title => $title, -style => $style}, $string);
     }
     push @out, $string;
     $queryAt++ unless $queryChar eq "-";
     $hitAt++ unless $hitChar eq "-";
   }
-  return join("",@out);
+  return \@out;
 }
 
 sub FormatAlnString($$$$) {
@@ -549,5 +558,5 @@ sub FormatAlnString($$$$) {
     }
     $atOther++ if defined $charOther && $charOther ne "-";
   }
-  return join("", @out);
+  return \@out;
 }
