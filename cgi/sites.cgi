@@ -182,7 +182,7 @@ unless ($query) {
     my $queryLen = length($seq);
     my $subjectLen = $info->{length};
 
-    my $sites = $dbh->selectall_arrayref("SELECT * FROM Sites WHERE db = ? AND id = ? AND chain = ? ORDER BY posFrom",
+    my $sites = $dbh->selectall_arrayref("SELECT * FROM Site WHERE db = ? AND id = ? AND chain = ? ORDER BY posFrom",
                                   { Slice => {} }, $db, $id, $chain);
 
     # Save alignment of positions
