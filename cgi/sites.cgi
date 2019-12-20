@@ -393,15 +393,14 @@ unless ($query) {
                                  $siteColumns->[$i],
                                  $hitColumns->[$i]));
     }
-    my @alnLabels = (a({-title => "$queryBeg to $queryEnd/$queryLen of query"}, "Query:"),
-                     "Sites:",
-                     a({-title => "$hitBeg to $hitEnd$fromSubjectString of $id$chain"}, "Subject:"));
+    my @alnLabels = (a({-title => "$queryBeg to $queryEnd/$queryLen of query"}, "query"),
+                     "sites",
+                     a({-title => "$hitBeg to $hitEnd$fromSubjectString of $id$chain"}, "subject"));
     print "\n",
-      div({-style => qq{display:inline; font-family:"Courier New",monospace; } },
-      div({-style => "vertical-align: top; float:left; display:inline-block; font-style: italic; margin-top: 1em;"},
-          join(br(), @alnLabels)),
-          "\n",
-          @alnColumns),
+      div( div({-class => "alnLabel"},
+               join(br(), @alnLabels)),
+           "\n",
+           @alnColumns),
       "\n",
       div({-style => "clear:both;"}, ""),
       "\n";
@@ -539,6 +538,8 @@ sub FormatAlnSites($$$$$$) {
     my $queryChar = substr($queryAln, $i, 1);
     my $hitChar = substr($hitAln, $i, 1);
     my $string = "&nbsp;";
+    my $class = "alnS";
+    my $title;
     if ($hitChar ne "-" && exists $hposSite->{$hitAt}) {
       my $sitesHere = $hposSite->{$hitAt};
       my $color = "black";
@@ -559,15 +560,18 @@ sub FormatAlnSites($$$$$$) {
         $string = "x";
         $color = "darkred" if $hasSite1;
       }
-      my $class = $hasSite1 ? ($agree ? "alnS1" : "alnS0") : "alnS";
+      $class = $agree ? "alnS1" : "alnS0" if $hasSite1;
       my $queryLong = exists $charToLong{$queryChar} ? $charToLong{$queryChar} : $queryChar;
       my $hitLong = exists $charToLong{$hitChar} ? $charToLong{$hitChar} : $hitChar;
-      my $title = "${hitLong}${hitAt} in $hitName: "
+      $title = "${hitLong}${hitAt} in $hitName: "
         .  join("; ", map $_->{shortDesc}, @$sitesHere);
       $title .= " (${queryLong}${queryAt} in query)" if $queryChar ne "-";
-      $string = a({-title => $title, -class => $class}, $string);
     }
-    push @out, $string;
+    if (defined $title) {
+      push @out, a({-title => $title, -class => $class}, $string);
+    } else {
+      push @out, a({-class => $class}, $string);
+    }
     $queryAt++ unless $queryChar eq "-";
     $hitAt++ unless $hitChar eq "-";
   }
@@ -592,20 +596,22 @@ sub FormatAlnString($$$$$$$) {
     my $char = substr($alnSeq, $i, 1);
     my $charOther = substr($alnOther, $i, 1) if defined $alnOther;
 
-    if ($char eq "-") {
-      push @out, "-";
-    } else {
-      my $class = exists $charToSet{$char} ? "aa" . $charToSet{$char} : "aa";
-      my $longAA = exists $charToLong{$char} ? $charToLong{$char} : $char;
-      my $title = "${longAA}${at} in $seqName";
+    my $class = exists $charToSet{$char} ? "aa" . $charToSet{$char} : "aa";
+    my $longAA = exists $charToLong{$char} ? $charToLong{$char} : $char;
+    my $title;
+
+    if ($char ne "-") {
+      $title = "${longAA}${at} in $seqName";
       if (defined $charOther && $charOther ne "-") {
         my $longOther = exists $charToLong{$charOther} ? $charToLong{$charOther} : $char;
         $title .= " (${longOther}${atOther} in $nameOther)";
       }
-
-      push @out, span({-title => $title, -class => $class }, $char);
-      $at++;
     }
+    my %attrs = ( -class => $class );
+    $attrs{title} = $title if defined $title;
+    push @out, span(\%attrs, $char);
+
+    $at++ if $char ne "-";
     $atOther++ if defined $charOther && $charOther ne "-";
   }
   return \@out;
