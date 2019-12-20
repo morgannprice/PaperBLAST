@@ -24,6 +24,8 @@ sub fail($);
 sub FormatAlnString($$$$$$$);
 sub FormatAlnSites($$$$$$);
 
+sub AddMouseOver($$$);
+
 my %charToLong = ("A" => "Ala", "C" => "Cys", "D" => "Asp", "E" => "Glu",
                   "F" => "Phe", "G" => "Gly", "H" => "His", "I" => "Ile",
                   "K" => "Lys", "L" => "Leu", "M" => "Met", "N" => "Asn",
@@ -39,6 +41,8 @@ my %charColSets = ("lightblue" => "AILMFWV",
                    "yellow" => "P",
                    "cyan" => "HY");
 my %charToColor = ();
+
+my $mygrey = "#EEEEEE";
 
 my $tmpDir = "../tmp";
 my $blastall = "../bin/blast/blastall";
@@ -362,12 +366,13 @@ unless ($query) {
     my $hitColumns = FormatAlnString($alnS, $hitBeg, \%sposToSite, $id.$chain, $queryBeg, $alnQ, "query");
     my @alnColumns = ();
     foreach my $i (0..($alnLen-1)) {
+      # use i+1 in the id because posAlnFrom and such are 1-based, with 0 for off-to-the-left
       push @alnColumns, div({-style => qq{vertical-align:top; float:left; display:inline-block;
-                                          margin-top: 1em;},
-                             -id => "Aln${nHit}P${i}" },
+                                          margin-top: 1em; border: solid 1px $mygrey;},
+                             -id => "Aln${nHit}P" . ($i+1) },
                             join(br(),
                                  $queryColumns->[$i],
-                                 span({-style => "background-color: #EEEEEE;"},$siteColumns->[$i]),
+                                 span({-style => "background-color: $mygrey;"},$siteColumns->[$i]),
                                  $hitColumns->[$i]));
     }
     my @alnLabels = (a({-title => "$queryBeg to $queryEnd/$queryLen of query"}, "Query:"),
@@ -418,6 +423,7 @@ unless ($query) {
               my $posQ = $alnPosToQpos{ $site->{posAlnFrom} };
               $posShow .= " (vs. " . substr($alnQ, $site->{posAlnFrom}-1, 1) . $posQ . ")";
             }
+            $posShow = AddMouseOver($posShow, $nHit, $site->{posAlnFrom}) if $isAligned;
             push @posShow, $posShow;
           }
           push @bullets, li($ligShow, join(", ", @posShow));
@@ -450,7 +456,7 @@ unless ($query) {
                 $showPos .= " (vs. " . substr($alnQ, $site1->{posAlnFrom}-1, $site1->{posAlnTo}-$site1->{posAlnFrom}+1);
                 $showPos .= " " if $posTo ne $posFrom;
                 $showPos .= $alnPosToQpos{$site1->{posAlnFrom}};
-                $showPos .= ":".$alnPosToQpos{$site1->{posAlnTo}}
+                $showPos .= ":" . $alnPosToQpos{$site1->{posAlnTo}}
                   if $posTo ne $posFrom;
                 $showPos .= ")";
               }
@@ -474,6 +480,8 @@ unless ($query) {
                     . ", ${percMatch}% identical)";
               }
             }
+            $showPos = AddMouseOver($showPos, $nHit, $site1->{posAlnFrom})
+              if $isAligned;
             my @siteDesc = map $_->{longDesc}, @sitesHere;
             push @bullets, li($showPos, join(br(), @siteDesc));
           } # end loop over PosTo
@@ -573,3 +581,13 @@ sub FormatAlnString($$$$) {
   }
   return \@out;
 }
+
+sub AddMouseOver($$$) {
+  my ($html, $nHit, $iAln) = @_;
+  return $html unless $iAln >= 0;
+  my $id = "Aln${nHit}P${iAln}";
+  return span({ -onmouseover => qq{document.getElementById("$id").style.borderColor = "black"},
+                -onmouseout => qq{document.getElementById("$id").style.borderColor = "$mygrey"} },
+              $html);
+}
+
