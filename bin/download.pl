@@ -232,12 +232,12 @@ if (exists $dosteps{biolip}) {
   my $biolipCacheDir = "BioLiP_updated_set";
   mkdir($biolipCacheDir);
   die "Not a directory: $biolipCacheDir\n" unless -d $biolipCacheDir;
-  my $mainFile = "$biolipCacheDir/BioLiP_2013-03-6_nr.txt";
+  my $mainFile = "$dir/BioLiP_2013-03-6_nr.txt";
   unless (-s $mainFile) {
     my $tarfile = "$dir/BioLiP_nr.tar";
     &maybe_wget("https://zhanglab.ccmb.med.umich.edu/BioLiP/download/BioLiP_nr.tar.bz2",
                 "$tarfile.bz2");
-    &maybe_run("bunzip2 -c $tarfile.bz2 | (cd $biolipCacheDir; tar xf -)");
+    &maybe_run("bunzip2 -c $tarfile.bz2 | (cd $dir; tar xf -)");
     unless (defined $test) {
       die "Failed to create $mainFile from $tarfile.bz2 in the biolip step of download.pl\n"
         unless -s $mainFile;
@@ -251,6 +251,8 @@ if (exists $dosteps{biolip}) {
       unless -s "$biolipCacheDir/BioLiP_UP_nr.txt";
     print STDERR "Assembled $biolipCacheDir/BioLiP_UP_nr.txt\n";
   }
+  # Save those in the data directory
+  &maybe_run("cp $biolipCacheDir/BioLiP_UP_nr.txt $dir/");
 }
 
 unlink($listfile);
