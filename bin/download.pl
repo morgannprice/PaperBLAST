@@ -6,7 +6,7 @@ use FindBin qw($Bin);
 use lib "$Bin/../lib";
 use pbutils;
 
-my @allsteps = qw{ecocyc oa am pmclinks refseq generif pubmed uniprot};
+my @allsteps = qw{ecocyc oa am pmclinks refseq generif pubmed uniprot pdb biolip};
 my $dosteps = join(",", @allsteps);
 
 my $usage = <<END
@@ -55,7 +55,17 @@ From EcoCyc: ecoli.tar.gz (158 MB)
 	or you can put the URL in the file ecocyc.URL
 	or you can download the tar ball manually into ecoli.tar.gz
 
-(All sizes for downloads are as of January 2017)
+PDB metadata (300 MB):
+  http://www.ebi.ac.uk/thornton-srv/databases/pdbsum/data/protnames.lst
+  ftp://ftp.wwpdb.org/pub/pdb/data/monomers/components.cif.gz
+
+BioLiP annotation files (364 MB):
+  https://zhanglab.ccmb.med.umich.edu/BioLiP/download/BioLiP_nr.tar.bz2
+  (extract BioLiP_2013-03-6_nr.txt)
+  BioLiP_updated_set/*txt
+  (see download_BioLip_updates.pl)
+
+(Most sizes for downloads are as of January 2017; PDB/BioLip sizes are from December 2019)
 
 You can set the environment variable PB_DOWNLOAD_PASS = 1 to avoid
 re-downloading files that already exist (as non-empty files) due to a
@@ -159,7 +169,7 @@ if (exists $dosteps{"am"}) {
 
 if (exists $dosteps{"pmclinks"}) {
   print STDERR "Step pmclinks\n";
-  foreach my $file qw(UniProt_PMC.csv RefSeq_PMC.csv) {
+  foreach my $file (qw{UniProt_PMC.csv RefSeq_PMC.csv}) {
     &maybe_wget("ftp://ftp.ebi.ac.uk/pub/databases/pmc/TextMinedTerms/$file", "$dir/$file");
   }
 }
@@ -209,6 +219,38 @@ if (exists $dosteps{"uniprot"}) {
         &maybe_wget("ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/$file",
                     "$dir/$file");
     }
+}
+
+if (exists $dosteps{"pdb"}) {
+  &maybe_wget("http://www.ebi.ac.uk/thornton-srv/databases/pdbsum/data/protnames.lst",
+              "$dir/protnames.lst");
+  &maybe_wget("ftp://ftp.wwpdb.org/pub/pdb/data/monomers/components.cif.gz",
+              "$dir/components.cif.gz");
+}
+
+if (exists $dosteps{biolip}) {
+  my $biolipCacheDir = "BioLiP_updated_set";
+  mkdir($biolipCacheDir);
+  die "Not a directory: $biolipCacheDir\n" unless -d $biolipCacheDir;
+  my $mainFile = "$biolipCacheDir/BioLiP_2013-03-6_nr.txt";
+  unless (-s $mainFile) {
+    my $tarfile = "$dir/BioLiP_nr.tar";
+    &maybe_wget("https://zhanglab.ccmb.med.umich.edu/BioLiP/download/BioLiP_nr.tar.bz2",
+                "$tarfile.bz2");
+    &maybe_run("bunzip2 -c $tarfile.bz2 | (cd $biolipCacheDir; tar xf -)");
+    unless (defined $test) {
+      die "Failed to create $mainFile from $tarfile.bz2 in the biolip step of download.pl\n"
+        unless -s $mainFile;
+      print STDERR "Successfully created $mainFile\n";
+    }
+  }
+  # Fetch all the weekly updates and combine into BioLiP_UP_nr.txt
+  &maybe_run("$Bin/download_BioLip_updates.pl");
+  unless (defined $test) {
+    die "Failed to assemble $biolipCacheDir/BioLiP_UP_nr.txt\n"
+      unless -s "$biolipCacheDir/BioLiP_UP_nr.txt";
+    print STDERR "Assembled $biolipCacheDir/BioLiP_UP_nr.txt\n";
+  }
 }
 
 unlink($listfile);
