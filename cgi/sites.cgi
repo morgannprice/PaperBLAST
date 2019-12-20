@@ -59,6 +59,15 @@ my $timestamp = int (gettimeofday() * 1000);
 my $filename = $procId . $timestamp;
 my $seqFile = "$tmpDir/$filename.fasta";
 
+my $docstring = <<END
+SitesBLAST's database includes
+(1) <A HREF="https://web.expasy.org/docs/swiss-prot_guideline.html">SwissProt</A>
+entries with experimentally-supported functional features;
+and (2) protein structures with bound ligands, from the
+<A HREF="https://zhanglab.ccmb.med.umich.edu/BioLiP">BioLip</A> database.
+END
+;
+
 sub fail($) {
     my ($notice) = @_;
     print
@@ -86,6 +95,10 @@ $query =~ s/\s+$//;
 unless ($query) {
   print
     GetMotd(),
+    p("Given a protein sequence, SitesBLAST finds homologs that have known functional residues and",
+      "shows whether the functional residues are conserved.",
+      small("(" . a({-href => "sites.cgi?query=VIMSS590795"}, "example" ) . ")")),
+    p($docstring),
     start_form( -name => 'input', -method => 'GET', -action => 'sites.cgi'),
     p(br(),
       b("Enter a protein sequence in FASTA format, or an identifier from UniProt, RefSeq, or MicrobesOnline"),
@@ -137,7 +150,8 @@ unless ($query) {
   fail("Sequence is too short") unless length($seq) >= $minLen;
 
   autoflush STDOUT 1; # show preliminary results
-  print p("Comparing $header to proteins with known functional sites using BLASTp with E &le; $maxE"), "\n";
+  print p("Comparing $header to proteins with known functional sites using BLASTp with E &le; $maxE."),
+    "\n";
   open(my $fhFaa, ">", $seqFile) || die "Cannot write to $seqFile\n";
   print $fhFaa ">$header\n$seq\n";
   close($fhFaa) || die "Error writing to $seqFile\n";
@@ -528,6 +542,8 @@ unless ($query) {
   print
     h3("Query Sequence"),
     p({-style => "font-family: monospace;"}, small(join(br(), ">" . HTML::Entities::encode($header), @pieces))),
+    h3("SitesBLAST's Database"),
+    p($docstring),
     h3(a({-href => "litSearch.cgi?query=" . uri_escape($query) }, "Run PaperBLAST on this query")),
     h3(a({-href => "sites.cgi"}, "New SitesBLAST search"));
 
