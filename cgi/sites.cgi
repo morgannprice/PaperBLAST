@@ -542,11 +542,10 @@ unless ($query) {
   print
     h3("Query Sequence"),
     p({-style => "font-family: monospace;"}, small(join(br(), ">" . HTML::Entities::encode($header), @pieces))),
+    p(a({-href => "litSearch.cgi?query=" . uri_escape($query) }, "Run PaperBLAST on this query")),
+    p("Or try a", a({-href => "sites.cgi"}, "new SitesBLAST search")),
     h3("SitesBLAST's Database"),
-    p($docstring),
-    h3(a({-href => "litSearch.cgi?query=" . uri_escape($query) }, "Run PaperBLAST on this query")),
-    h3(a({-href => "sites.cgi"}, "New SitesBLAST search"));
-
+    p($docstring);
   finish_page();
 }
 
