@@ -435,13 +435,15 @@ unless ($query) {
           }
           my @posShow = ();
           foreach my $site (@$ligSites) {
-            my $hitChar = substr($alnS, $site->{posAlnFrom}-1, 1);
-            my $posShow = $hitChar . $site->{posFrom};
+            my $posShow = "";
+            my $qChar = substr($alnS, $site->{posAlnFrom}-1, 1) if $isAligned;
+            $posShow .= $qChar if $isAligned;
+            $posShow .= $site->{posFrom};
             $posShow = a({-title => "$site->{pdbFrom} in PDB numbering for $id$chain"},
                          $posShow)
               if $site->{pdbFrom} ne "";
             if ($isAligned) {
-              my $qChar = substr($alnQ, $site->{posAlnFrom}-1);
+              my $qChar = substr($alnQ, $site->{posAlnFrom}-1, 1);
               $posShow .= " (vs. $qChar"
                 . ($qChar eq "-" ? $alnPosToQpos{ $site->{posAlnFrom} } : "")
                 . ")";
