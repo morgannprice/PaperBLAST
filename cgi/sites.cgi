@@ -138,7 +138,7 @@ unless ($query) {
   close($fhFaa) || die "Error writing to $seqFile\n";
   die "No such executable: $blastall\n" unless -x $blastall;
   # m S means mask complex sequences for lookup but not for alignment
-  system("$blastall -F 'm S' -p blastp -i $seqFile -d $blastdb -e $maxE -a $nCPU -o $seqFile.out -b $maxHits -v $maxHits >& /dev/null") == 0
+  system("$blastall -F 'm S' -p blastp -i $seqFile -d $blastdb -e $maxE -a $nCPU -o $seqFile.out -b $maxHits -v $maxHits -a $nCPU >& /dev/null") == 0
     || die "$blastall failed: $!\n";
   unlink($seqFile);
   my $searchio = Bio::SearchIO->new(-format => 'blast', -file => "$seqFile.out")
@@ -284,7 +284,8 @@ unless ($query) {
     foreach my $site (@$sites) {
       foreach my $i ($site->{posFrom} .. $site->{posTo}) {
         push @{ $sposToSite{$i} }, $site;
-        push @{ $alnposToSite{$sposToAlnPos{$i}} }, $site;
+        push @{ $alnposToSite{$sposToAlnPos{$i}} }, $site
+          if exists $sposToAlnPos{$i};
       }
     }
     my $iSite = 0;
@@ -436,11 +437,13 @@ unless ($query) {
             $posShow = a({-title => "$site->{pdbFrom} in PDB numbering for $id$chain"},
                          $posShow)
               if $site->{pdbFrom} ne "";
-            if ($site->{isAligned}) {
-              my $posQ = $alnPosToQpos{ $site->{posAlnFrom} };
-              $posShow .= " (vs. " . substr($alnQ, $site->{posAlnFrom}-1, 1) . $posQ . ")";
+            if ($isAligned) {
+              my $qChar = substr($alnQ, $site->{posAlnFrom}-1);
+              $posShow .= " (vs. $qChar"
+                . ($qChar eq "-" ? $alnPosToQpos{ $site->{posAlnFrom} } : "")
+                . ")";
+              $posShow = AddMouseOver($posShow, $nHit, $site->{posAlnFrom});
             }
-            $posShow = AddMouseOver($posShow, $nHit, $site->{posAlnFrom}) if $isAligned;
             $posShow = span({-id => "Site${nHit}S" . $site->{iSite} }, $posShow);
             push @posShow, $posShow;
           }
@@ -473,9 +476,11 @@ unless ($query) {
               if ($isAligned) {
                 $showPos .= " (vs. " . substr($alnQ, $site1->{posAlnFrom}-1, $site1->{posAlnTo}-$site1->{posAlnFrom}+1);
                 $showPos .= " " if $posTo ne $posFrom;
-                $showPos .= $alnPosToQpos{$site1->{posAlnFrom}};
-                $showPos .= ":" . $alnPosToQpos{$site1->{posAlnTo}}
-                  if $posTo ne $posFrom;
+                if (exists $alnPosToQpos{$site1->{posAlnFrom}} && exists $alnPosToQpos{$site1->{posAlnFrom}}) {
+                  $showPos .= $alnPosToQpos{$site1->{posAlnFrom}};
+                  $showPos .= ":" . $alnPosToQpos{$site1->{posAlnFrom}}
+                    if $posTo ne $posFrom;
+                }
                 $showPos .= ")";
               }
             } else {
@@ -519,13 +524,12 @@ unless ($query) {
   finish_page();
 }
 
-sub FormatAlnSites {
+sub FormatAlnSites($$$$$$) {
   my ($queryAln, $hitAln, $queryBeg, $hitBeg, $hitName, $hposSite) = @_;
   my @out = ();
   my $queryAt = $queryBeg;
   my $hitAt = $hitBeg;
   die unless length($hitAln) == length($queryAln);
-  my @out = ();
   for(my $i = 0; $i < length($hitAln); $i++) {
     my $queryChar = substr($queryAln, $i, 1);
     my $hitChar = substr($hitAln, $i, 1);
@@ -565,7 +569,7 @@ sub FormatAlnSites {
   return \@out;
 }
 
-sub FormatAlnString($$$$) {
+sub FormatAlnString($$$$$$$) {
   my ($alnSeq, $beg, $posToSite, $seqName, $begOther, $alnOther, $nameOther) = @_;
 
   if (keys(%charToColor) == 0) {
