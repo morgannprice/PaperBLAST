@@ -17,7 +17,7 @@ use LWP::Simple qw{get};
 use HTML::Entities;
 use IO::Handle; # for autoflush
 use lib "../lib";
-use pbweb qw{start_page finish_page GetMotd loggerjs UniProtToFasta RefSeqToFasta VIMSSToFasta FBrowseToFasta};
+use pbweb qw{start_page finish_page GetMotd loggerjs UniProtToFasta RefSeqToFasta VIMSSToFasta FBrowseToFasta DBToFasta};
 use Bio::SearchIO;
 
 sub fail($);
@@ -50,7 +50,7 @@ my $blastall = "../bin/blast/blastall";
 my $nCPU = 4;
 my $base = "../data";
 my $blastdb = "$base/hassites.faa";
-my $sqldb = "$base/sites.db";
+my $sqldb = "$base/litsearch.db";
 my $fbdata = "../fbrowse_data"; # path relative to the cgi directory
 
 my $procId = $$;
@@ -62,7 +62,7 @@ sub fail($) {
     my ($notice) = @_;
     print
         p($notice),
-        p(a({-href => "litSearch.cgi"}, "New search")),
+        p(a({-href => "sites.cgi"}, "New search")),
         end_html;
     exit(0);
 }
@@ -96,18 +96,22 @@ unless ($query) {
 } else {
   my ($header, $seq);
 
+  my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
+
   # Single-line query sequence
-  if ($query !~ m/\n/ && $query =~ m/^[A-Z*]+$/ && length($query) >= 5) {
-    $header = substr($seq, 0, 10) . "..." . "(" . length($query) . " amino acids)";
+  my $minLen = 10;
+  if ($query !~ m/\n/ && $query =~ m/^[A-Z*]+$/ && length($query) >= $minLen) {
+    $header = substr($query, 0, 10) . "..." . "(" . length($query) . " amino acids)";
     $seq = $query;
-  } elsif ($query !~ m/\n/ && $query =~ m/^[a-zA-Z][a-zA-Z90-9_.]+$/) {
+  } elsif ($query !~ m/\n/ && $query =~ m/^[a-zA-Z][a-zA-Z90-9_.:]+$/) {
     # single-line, identifier only
     my $short = $query;
     $query = undef;
 
-    # Is it a VIMSS id?
+    $query = &DBToFasta($dbh, "$base/uniq.faa", $short)
+      if !defined $query;
     $query = &VIMSSToFasta($short)
-      if $short =~ m/^VIMSS\d+$/i;
+      if !defined $query && $short =~ m/^VIMSS\d+$/i;
     $query = &FBrowseToFasta($fbdata, $short)
       if !defined $query && $short =~ m/^[0-9a-zA-Z_]+$/;
     $query = &UniProtToFasta($short)
@@ -129,9 +133,8 @@ unless ($query) {
     fail("Invalid sequence, only uppercase letters and * (for stop codons) are allowed") unless $seq =~ m/^[A-Z*]+$/;
     $seq =~ s/[*]//g;
   }
-  fail("Sequence is too short") unless length($seq) >= 10;
+  fail("Sequence is too short") unless length($seq) >= $minLen;
 
-  my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
   autoflush STDOUT 1; # show preliminary results
   print p("Comparing $header to proteins with known functional sites using BLASTp with E &le; $maxE"), "\n";
   open(my $fhFaa, ">", $seqFile) || die "Cannot write to $seqFile\n";
