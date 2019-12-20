@@ -280,10 +280,16 @@ unless ($query) {
     }
 
     my %sposToSite = ();
+    my %alnposToSite = ();
     foreach my $site (@$sites) {
       foreach my $i ($site->{posFrom} .. $site->{posTo}) {
         push @{ $sposToSite{$i} }, $site;
+        push @{ $alnposToSite{$sposToAlnPos{$i}} }, $site;
       }
+    }
+    my $iSite = 0;
+    foreach my $site (@$sites) {
+      $site->{iSite} = $iSite++;
     }
 
     # For each site, compute isAligned, shortDesc, and longDesc
@@ -366,9 +372,20 @@ unless ($query) {
     my $hitColumns = FormatAlnString($alnS, $hitBeg, \%sposToSite, $id.$chain, $queryBeg, $alnQ, "query");
     my @alnColumns = ();
     foreach my $i (0..($alnLen-1)) {
+      my @onMouseOver = ();
+      my @onMouseOut = ();
       # use i+1 in the id because posAlnFrom and such are 1-based, with 0 for off-to-the-left
+      if (exists $alnposToSite{$i+1}) {
+        foreach my $site (@{ $alnposToSite{$i+1} }) {
+          my $iSite = $site->{iSite};
+          push @onMouseOver, qq{document.getElementById("Site${nHit}S${iSite}").style.backgroundColor="lightgrey";};
+          push @onMouseOut, qq{document.getElementById("Site${nHit}S${iSite}").style.backgroundColor="white";};
+        }
+      }
       push @alnColumns, div({-style => qq{vertical-align:top; float:left; display:inline-block;
                                           margin-top: 1em; border: solid 1px $mygrey;},
+                             -onmouseover => join("", @onMouseOver),
+                             -onmouseout => join("", @onMouseOut),
                              -id => "Aln${nHit}P" . ($i+1) },
                             join(br(),
                                  $queryColumns->[$i],
@@ -424,6 +441,7 @@ unless ($query) {
               $posShow .= " (vs. " . substr($alnQ, $site->{posAlnFrom}-1, 1) . $posQ . ")";
             }
             $posShow = AddMouseOver($posShow, $nHit, $site->{posAlnFrom}) if $isAligned;
+            $posShow = span({-id => "Site${nHit}S" . $site->{iSite} }, $posShow);
             push @posShow, $posShow;
           }
           push @bullets, li($ligShow, join(", ", @posShow));
@@ -482,7 +500,7 @@ unless ($query) {
             }
             $showPos = AddMouseOver($showPos, $nHit, $site1->{posAlnFrom})
               if $isAligned;
-            my @siteDesc = map $_->{longDesc}, @sitesHere;
+            my @siteDesc = map span({-id => "Site${nHit}S" . $_->{iSite} }, $_->{longDesc}), @sitesHere;
             push @bullets, li($showPos, join(br(), @siteDesc));
           } # end loop over PosTo
         } # end loop over PosFrom
@@ -514,14 +532,25 @@ sub FormatAlnSites {
     my $string = "&nbsp;";
     if ($hitChar ne "-" && exists $hposSite->{$hitAt}) {
       my $sitesHere = $hposSite->{$hitAt};
-      my $style = "";
+      my $color = "black";
+
+      my $hasSite1 = 0;
+      if (exists $hposSite->{$hitAt}) {
+        foreach my $site (@{ $hposSite->{$hitAt} }) {
+          if ($site->{posFrom} eq $site->{posTo}) {
+            $hasSite1 = 1;
+          }
+        }
+      }
       if ($queryChar eq $hitChar) {
         $string = "&vert;";
-        $style = "font-weight: bold; color: darkgreen;";
+        $color = "green" if $hasSite1;
       } else {
         $string = "x";
-        $style = "font-weight: bold; color: darkred;";
+        $color = "darkred" if $hasSite1;
       }
+      my $weight = $hasSite1 ? "bold" : "normal";
+      my $style = "font-weight: $weight; color: $color;";
       my $queryLong = exists $charToLong{$queryChar} ? $charToLong{$queryChar} : $queryChar;
       my $hitLong = exists $charToLong{$hitChar} ? $charToLong{$hitChar} : $hitChar;
       my $title = "${hitLong}${hitAt} in $hitName: "
@@ -560,12 +589,6 @@ sub FormatAlnString($$$$) {
       my @styleparts = ();
       push @styleparts, "background-color: " . $charToColor{$char} . ";"
         if exists $charToColor{$char};
-      if (exists $posToSite->{$at}) {
-        my $n = @{ $posToSite-> {$at} };
-        # Was using underlines before I added the alignment line
-        #push @styleparts, "font-weight: bold; text-decoration-line: underline; text-decoration-style: "
-        #  . ($n > 1 ? "double" : "solid") . ";";
-      }
       my $longAA = exists $charToLong{$char} ? $charToLong{$char} : $char;
       my $title = "${longAA}${at} in $seqName";
       if (defined $charOther && $charOther ne "-") {
