@@ -274,7 +274,7 @@ unless ($query) {
     # subject length is always known right now, but not 100% sure this will always be the case
     my $fromSubjectString = $subjectLen ne "" ? "/" . $subjectLen : "";
     print p({-style => "margin-bottom: 0.5em;"},
-            a({-title => $db eq "PDB" ? "entry $id chain $chain" : $id2,
+            a({-title => $db eq "PDB" ? "PDB entry $id chain $chain" : "Swiss-Prot identifier $id2",
                -href => $hitURL},
               $id.$chain),
             $desc,
