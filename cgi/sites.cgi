@@ -393,9 +393,9 @@ unless ($query) {
                                  $siteColumns->[$i],
                                  $hitColumns->[$i]));
     }
-    my @alnLabels = (a({-title => "$queryBeg to $queryEnd/$queryLen of query"}, "query"),
+    my @alnLabels = (a({-title => "amino acids $queryBeg to $queryEnd/$queryLen"}, "query"),
                      "sites",
-                     a({-title => "$hitBeg to $hitEnd$fromSubjectString of $id$chain"}, "subject"));
+                     a({-title => "amino acids $hitBeg to $hitEnd$fromSubjectString"}, $id.$chain ));
     print "\n",
       div( div({-class => "alnLabel"},
                join(br(), @alnLabels)),

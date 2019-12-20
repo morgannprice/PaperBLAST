@@ -518,8 +518,10 @@ sub start_page {
   margin-top: 1em;
   font-family: "Courier New", monospace;
 }
-.alnCol { background-color: #EEEEEE; border: solid 1px #EEEEEE }
-.alnLabel { margin-right: 0.5em; }
+.alnCol { background-color: #EEEEEE; border: solid 1px #EEEEEE; }
+/* In many browsers, the label prevents the columns from wrapping all the way to the left,
+   so, make it subtly smaller */
+.alnLabel { margin-right: 0.5em; padding-top: 0.04em; border: none; font-size: 95% }
 
 END
 ;
