@@ -495,6 +495,28 @@ sub start_page {
   background-color: DodgerBlue !important;
   color: #ffffff;
 }
+/* for showing protein sequences */
+/* base style, and for unusual items */
+.aa  {
+}
+.aa1 { background-color: lightblue; } /* for AILMFWV */
+.aa2 { background-color: red; } /* for KR */
+.aa3 { background-color: magenta; } /* for ED */
+.aa4 { background-color: lightgreen; } /* for NQST */
+.aa5 { background-color: pink; } /* for C */
+.aa6 { background-color: orange; } /* for G */
+.aa7 { background-color: yellow; } /* for P */
+.aa8 { background-color: cyan; } /* for HY */
+
+/* for showing the alignment line */
+.alnS, .alnS1, .alnS0 { background-color: #EEEEEE; }
+.alnS1 { font-weight: bold; color: darkgreen; } /* site, matching */
+.alnS0 { font-weight: bold; color: darkred; } /* site, not matching */
+
+/* for an alignment column */
+.alnCol { vertical-align:top; float:left; display:inline-block;
+          margin-top: 1em;
+          border: solid 1px #EEEEEE; }
 END
 ;
 

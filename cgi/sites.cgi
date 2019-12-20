@@ -32,15 +32,16 @@ my %charToLong = ("A" => "Ala", "C" => "Cys", "D" => "Asp", "E" => "Glu",
                   "P" => "Pro", "Q" => "Gln", "R" => "Arg", "S" => "Ser",
                   "T" => "Thr", "V" => "Val", "W" => "Trp", "Y" => "Tyr",
                   "O" => "Pyrrolysine", "U" => "Selenocysteine");
-my %charColSets = ("lightblue" => "AILMFWV",
-                   "red" => "KR",
-                   "magenta" => "ED",
-                   "lightgreen" => "NQST",
-                   "pink" => "C",
-                   "orange" => "G",
-                   "yellow" => "P",
-                   "cyan" => "HY");
-my %charToColor = ();
+# These indicate which amino acid goes with which style, i.e. see .aa1 in pbweb::start_page
+my %charSets = ("AILMFWV" => 1,
+                "KR" => 2,
+                "ED" => 3,
+                "NQST" => 4,
+                "C" => 5,
+                "G" => 6,
+                "P" => 7,
+                "HY" => 8);
+my %charToSet = ();
 
 my $mygrey = "#EEEEEE";
 
@@ -261,7 +262,7 @@ unless ($query) {
             small($paperLink),
             br(),
             small(a({-title => "$bits bits, E = $eval"},
-                    "${identityString}% identity",
+                    "${identityString}% identity,",
                       "${coverageString}% coverage:",
                     "${queryBeg}:${queryEnd}/${queryLen} of query aligns to ${hitBeg}:${hitEnd}${fromSubjectString} of ${id}${chain}")));
 
@@ -383,25 +384,27 @@ unless ($query) {
           push @onMouseOut, qq{document.getElementById("Site${nHit}S${iSite}").style.backgroundColor="white";};
         }
       }
-      push @alnColumns, div({-style => qq{vertical-align:top; float:left; display:inline-block;
-                                          margin-top: 1em; border: solid 1px $mygrey;},
-                             -onmouseover => join("", @onMouseOver),
-                             -onmouseout => join("", @onMouseOut),
-                             -id => "Aln${nHit}P" . ($i+1) },
+      my %colArgs = (-class => "alnCol", -id => "Aln${nHit}P" . ($i+1) );
+      $colArgs{"-onmouseover"} = join("", @onMouseOver) if @onMouseOver > 0;
+      $colArgs{"-onmouseout"} = join("", @onMouseOut) if @onMouseOut > 0;
+      push @alnColumns, div(\%colArgs,
                             join(br(),
                                  $queryColumns->[$i],
-                                 span({-style => "background-color: $mygrey;"},$siteColumns->[$i]),
+                                 $siteColumns->[$i],
                                  $hitColumns->[$i]));
     }
     my @alnLabels = (a({-title => "$queryBeg to $queryEnd/$queryLen of query"}, "Query:"),
                      "Sites:",
                      a({-title => "$hitBeg to $hitEnd$fromSubjectString of $id$chain"}, "Subject:"));
-    print div({-style => qq{display:inline; font-family:"Courier New",monospace; } },
-              div({-style => "vertical-align: top; float:left; display:inline-block; font-style: italic; margin-top: 1em;"},
-                  join(br(), @alnLabels)),
-              @alnColumns);
-    print div({-style => "clear:both;"}, "");
-    print "\n";
+    print "\n",
+      div({-style => qq{display:inline; font-family:"Courier New",monospace; } },
+      div({-style => "vertical-align: top; float:left; display:inline-block; font-style: italic; margin-top: 1em;"},
+          join(br(), @alnLabels)),
+          "\n",
+          @alnColumns),
+      "\n",
+      div({-style => "clear:both;"}, ""),
+      "\n";
 
     my @alignedSites = grep $_->{isAligned}, @$sites;
     my @unalignedSites = grep ! $_->{isAligned}, @$sites;
@@ -546,21 +549,21 @@ sub FormatAlnSites($$$$$$) {
           }
         }
       }
+      my $agree;
       if ($queryChar eq $hitChar) {
         $string = "&vert;";
-        $color = "green" if $hasSite1;
+        $agree = 1;
       } else {
         $string = "x";
         $color = "darkred" if $hasSite1;
       }
-      my $weight = $hasSite1 ? "bold" : "normal";
-      my $style = "font-weight: $weight; color: $color;";
+      my $class = $hasSite1 ? ($agree ? "alnS1" : "alnS0") : "alnS";
       my $queryLong = exists $charToLong{$queryChar} ? $charToLong{$queryChar} : $queryChar;
       my $hitLong = exists $charToLong{$hitChar} ? $charToLong{$hitChar} : $hitChar;
       my $title = "${hitLong}${hitAt} in $hitName: "
         .  join("; ", map $_->{shortDesc}, @$sitesHere);
       $title .= " (${queryLong}${queryAt} in query)" if $queryChar ne "-";
-      $string = a({-title => $title, -style => $style}, $string);
+      $string = a({-title => $title, -class => $class}, $string);
     }
     push @out, $string;
     $queryAt++ unless $queryChar eq "-";
@@ -572,10 +575,10 @@ sub FormatAlnSites($$$$$$) {
 sub FormatAlnString($$$$$$$) {
   my ($alnSeq, $beg, $posToSite, $seqName, $begOther, $alnOther, $nameOther) = @_;
 
-  if (keys(%charToColor) == 0) {
-    while (my ($color, $chars) = each %charColSets) {
+  if (keys(%charToSet) == 0) {
+    while (my ($chars, $setno) = each %charSets) {
       foreach my $char (split //, $chars) {
-        $charToColor{$char} = $color;
+        $charToSet{$char} = $setno;
       }
     }
   }
@@ -590,9 +593,7 @@ sub FormatAlnString($$$$$$$) {
     if ($char eq "-") {
       push @out, "-";
     } else {
-      my @styleparts = ();
-      push @styleparts, "background-color: " . $charToColor{$char} . ";"
-        if exists $charToColor{$char};
+      my $class = exists $charToSet{$char} ? "aa" . $charToSet{$char} : "aa";
       my $longAA = exists $charToLong{$char} ? $charToLong{$char} : $char;
       my $title = "${longAA}${at} in $seqName";
       if (defined $charOther && $charOther ne "-") {
@@ -600,8 +601,7 @@ sub FormatAlnString($$$$$$$) {
         $title .= " (${longOther}${atOther} in $nameOther)";
       }
 
-      push @out, a({-title => $title,
-                    -style => join(" ",@styleparts)}, $char);
+      push @out, span({-title => $title, -class => $class }, $char);
       $at++;
     }
     $atOther++ if defined $charOther && $charOther ne "-";
