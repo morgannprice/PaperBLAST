@@ -28,6 +28,7 @@ use HTML::Entities;
 use IO::Handle; # for autoflush
 use lib "../lib";
 use pbweb;
+use URI::Escape;
 
 sub fail($);
 sub simstring($$$$$$$$$$$$$);
@@ -371,9 +372,11 @@ if (!defined $seq && ! $more_subjectId) {
       my $newline = "%0A";
       my $cdd_url = "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=>"
         . HTML::Entities::encode($def) . $newline . $seq;
+      my $sblastURL = "sites.cgi?query=" . uri_escape($query);
       print qq{ <DIV style="float:right; padding-left: 10px; width:25%; background-color: #EEEEEE;">
                 <P>Also see
-                <A HREF="$cdd_url" TITLE="Compare your sequence to NCBI's Conserved Domains Database">Conserved Domains</A>
+                <A HREF="$cdd_url" TITLE="Compare your sequence to NCBI's Conserved Domains Database">Conserved Domains</A>,
+                <A HREF="$sblastURL" TITLE="Compare to proteins with known functional residues">SitesBLAST</A>,
                 or
                 <A TITLE="Fitness BLAST compares your sequence to bacterial proteins that have mutant phenotypes"
                    NAME="#fitness">Fitness BLAST:</A>

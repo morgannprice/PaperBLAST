@@ -19,6 +19,7 @@ use IO::Handle; # for autoflush
 use lib "../lib";
 use pbweb qw{start_page finish_page GetMotd loggerjs UniProtToFasta RefSeqToFasta VIMSSToFasta FBrowseToFasta DBToFasta};
 use Bio::SearchIO;
+use URI::Escape;
 
 sub fail($);
 sub FormatAlnString($$$$$$$);
@@ -157,6 +158,7 @@ unless ($query) {
   $nHits .= " (the maximum)" if $nHits eq $maxHits;
   print p("Found $nHits hits to proteins with known functional sites"),"\n";
   unlink("$seqFile.out");
+
   my $nHit = 0;
   foreach my $hit (@hits) {
     $nHit++;
@@ -526,7 +528,8 @@ unless ($query) {
   print
     h3("Query Sequence"),
     p({-style => "font-family: monospace;"}, small(join(br(), ">" . HTML::Entities::encode($header), @pieces))),
-    h3(a({-href => "sites.cgi"}, "New Search"));
+    h3(a({-href => "litSearch.cgi?query=" . uri_escape($query) }, "Run PaperBLAST on this query")),
+    h3(a({-href => "sites.cgi"}, "New SitesBLAST search"));
 
   finish_page();
 }
