@@ -259,43 +259,7 @@ if ($query ne "" && $query !~ m/\n/ && $query !~ m/ / && $query =~ m/[^A-Z*]/) {
 
   # Is it in the database?
   if (!defined $query) {
-    my ($gene, $geneId);
-    $gene = $dbh->selectrow_hashref("SELECT * from Gene WHERE geneId = ?", {}, $short);
-    $geneId = $gene->{geneId} if $gene;
-    if (! $gene) {
-      $gene = $dbh->selectrow_hashref("SELECT * from CuratedGene WHERE db = 'SwissProt' AND protId = ?",
-                                               {}, $short);
-      $geneId = "SwissProt::".$short if $gene;
-    }
-    if (! $gene && $short =~ m/^(.*)::(.*)$/) {
-      my ($db,$protId) = ($1,$2);
-      $gene = $dbh->selectrow_hashref("SELECT * from CuratedGene WHERE db = ? AND protId = ?",
-                                      {}, $db, $protId);
-      $geneId = "${db}::${protId}" if $gene;
-    }
-
-    if (defined $geneId) {
-      # look for the duplicate
-      my $desc = $gene->{desc};
-      my $org = $gene->{organism};
-      my $dup = $dbh->selectrow_hashref("SELECT * from SeqToDuplicate WHERE duplicate_id = ?", {}, $geneId);
-      my $seqId = $dup ? $dup->{sequence_id} : $geneId;
-      die "No such executable: $fastacmd" unless -x $fastacmd;
-      # Note some genes are dropped from the database during construction so it
-      # may fail to find it
-      if (system($fastacmd, "-s", $seqId, "-o", $seqFile, "-d", $blastdb) == 0) {
-        open(SEQ, "<", $seqFile) || die "Cannot read $seqFile";
-        my $seq = "";
-        while (my $line = <SEQ>) {
-          next if $line =~ m/^>/;
-          chomp $line;
-          die "Invalid output from fastacmd" unless $line =~ m/^[A-Z*]+$/;
-          $seq .= $line;
-        }
-        close(SEQ) || die "Error reading $seqFile";
-        $query = ">$geneId $desc ($org)\n$seq\n";
-      }
-    }
+    $query = &DBToFasta($dbh, $blastdb, $short);
   }
 
   # is it a fitness browser locus tag?

@@ -11,7 +11,7 @@ our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
 @EXPORT = qw(UniqToGenes SubjectToGene AddCuratedInfo GenesToHtml
              GetMotd FetchFasta HmmToFile loggerjs start_page finish_page
-             VIMSSToFasta RefSeqToFasta UniProtToFasta FBrowseToFasta
+             VIMSSToFasta RefSeqToFasta UniProtToFasta FBrowseToFasta DBToFasta
  commify
 );
 
@@ -658,6 +658,55 @@ sub FBrowseToFasta($$) {
   }
   $fbdbh->disconnect();
   return $fasta;
+}
+
+sub DBToFasta($$$) {
+  my ($dbh, $blastdb, $query) = @_;
+  my ($gene, $geneId);
+  $gene = $dbh->selectrow_hashref("SELECT * from Gene WHERE geneId = ?", {}, $query);
+  $geneId = $gene->{geneId} if $gene;
+  if (! $gene) {
+    $gene = $dbh->selectrow_hashref("SELECT * from CuratedGene WHERE db = 'SwissProt' AND protId = ?",
+                                    {}, $query);
+    $geneId = "SwissProt::".$query if $gene;
+  }
+  if (! $gene && $query =~ m/^(.*)::(.*)$/) {
+    my ($db,$protId) = ($1,$2);
+    $gene = $dbh->selectrow_hashref("SELECT * from CuratedGene WHERE db = ? AND protId = ?",
+                                    {}, $db, $protId);
+    $geneId = "${db}::${protId}" if $gene;
+  }
+
+  if (defined $geneId) {
+    # look for the duplicate
+    my $desc = $gene->{desc};
+    my $org = $gene->{organism};
+    my $dup = $dbh->selectrow_hashref("SELECT * from SeqToDuplicate WHERE duplicate_id = ?", {}, $geneId);
+    my $seqId = $dup ? $dup->{sequence_id} : $geneId;
+    my $fastacmd = "../bin/blast/fastacmd";
+    die "No such executable: $fastacmd" unless -x $fastacmd;
+    # Note some genes are dropped from the database during construction so it
+    # may fail to find it
+
+    my $procId = $$;
+    my $timestamp = int (gettimeofday() * 1000);
+    my $filename = $procId . $timestamp;
+    my $seqFile = "/tmp/$filename.fasta";
+
+    if (system($fastacmd, "-s", $seqId, "-o", $seqFile, "-d", $blastdb) == 0) {
+      open(SEQ, "<", $seqFile) || die "Cannot read $seqFile";
+      my $seq = "";
+      while (my $line = <SEQ>) {
+        next if $line =~ m/^>/;
+        chomp $line;
+        die "Invalid output from fastacmd" unless $line =~ m/^[A-Z*]+$/;
+        $seq .= $line;
+      }
+      close(SEQ) || die "Error reading $seqFile";
+      return ">$geneId $desc ($org)\n$seq\n";
+    }
+  }
+  return undef;
 }
 
 sub commify($) {
