@@ -60,10 +60,12 @@ URI::Escape
 CGI
 DBI
 
-and the functional residues part of the alignment page (at bottom of
+The functional residues part of the alignment page (at bottom of
 showAlign.cgi) requires BioPerl. (See alnreport.pl) The page should
 work correctly without bioperl but would not report the conservation
 of functional residues.
+
+SitesBLAST (sites.cgi) also requires BioPerl.
 
 # <a name="download"></a>Downloading the database
 
@@ -82,9 +84,14 @@ If you want to run the CGI scripts, you will also need
 
 http://papers.genomics.lbl.gov/data/stats
 
-Place all of these files in the data/ subdirectory of the main PaperBLAST directory and format the BLAST database with
+If you want to run SitesBLAST, you will also need
+
+http://papers.genomics.lbl.gov/data/hassites.faa
+
+Place all of these files in the data/ subdirectory of the main PaperBLAST directory and format the BLAST databases with
 
 	formatdb -p T -o T -i data/uniq.faa
+	formatdb -p T -o T -i data/hassites.faa
 
 # Building the Database
 
@@ -94,7 +101,7 @@ space and takes around a week to run. The majority of the time is for
 querying EuropePMC.
 
 Download information from RefSeq, UniProt, EcoCyc, EuropePMC,
-EcoCyc, and PubMed:
+EcoCyc, PubMed, PDBSum, wwPDB, BioLiP:
 
 	mkdir indata
 	nice bin/download.pl -dir indata >& download.log
