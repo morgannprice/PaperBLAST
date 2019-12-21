@@ -226,6 +226,9 @@ if (exists $dosteps{"pdb"}) {
               "$dir/protnames.lst");
   &maybe_wget("ftp://ftp.wwpdb.org/pub/pdb/data/monomers/components.cif.gz",
               "$dir/components.cif.gz");
+  &maybe_wget("ftp://ftp.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt.gz",
+              "$dir/pdb_seqres.txt.gz");
+  &maybe_run("gunzip $dir/pdb_seqres.txt.gz");
 }
 
 if (exists $dosteps{biolip}) {
