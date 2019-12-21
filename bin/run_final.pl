@@ -66,6 +66,7 @@ if (exists $dosteps{sprot}) {
   my $sprot = "$indir/uniprot_sprot.dat.gz";
   die "No such file: $sprot\n" unless -e $sprot;
   &maybe_run("zcat $sprot | bin/sprotCharacterized.pl > $workdir/sprot.curated_parsed");
+  &maybe_run("zcat $sprot | bin/parse_SwissProt_features.pl > $workdir/sprotFt.tab");
 }
 
 if (exists $dosteps{ecocyc}) {
@@ -80,20 +81,33 @@ if (exists $dosteps{db}) {
   foreach my $file (qw{snippets_comb hits.papers pmclinks.papers generif_tab.rif sprot.curated_parsed ecocyc.curated_parsed}) {
     die "No such file: $workdir/$file" unless -e "$workdir/$file" || defined $test;
   }
-  my @cmd = ("$Bin/buildLitDb.pl",
-             "-dir", $outdir,
-             "-snippets", "$workdir/snippets_comb",
-             "-rif", "$workdir/generif_tab.rif",
-             "-curated",
-             "$workdir/sprot.curated_parsed", "$workdir/ecocyc.curated_parsed",
-             "static/CAZy.curated_parsed", "static/CharProtDB.curated_parsed",
-             "static/metacyc.curated_parsed", "static/reanno.curated_parsed",
-             "static/REBASE.curated_parsed", "static/BRENDA.curated_parsed",
-            "-prefix",
-            "$workdir/hits",
-             "$workdir/pmclinks",
-             "$workdir/generif_tab");
+  my @cmd = ();
+  @cmd = ("$Bin/buildSiteTables.pl",
+          "-sprot", "$workdir/sprotFt.tab",
+          "-BioLiP", "$indir/BioLiP_2013-03-6_nr.txt", "$indir/BioLiP_UP_nr.txt",
+          "-seqres", "$indir/pdb_seqres.txt",
+          "-sprotFasta", "$indir/uniprot_sprot.fasta.gz",
+          "-pdbnames", "$indir/protnames.lst",
+          "-outdir", $workdir);
   &maybe_run(join(" ", @cmd));
+  @cmd = ("$Bin/buildLitDb.pl",
+          "-dir", $outdir,
+          "-snippets", "$workdir/snippets_comb",
+          "-rif", "$workdir/generif_tab.rif",
+          "-curated",
+          "$workdir/sprot.curated_parsed", "$workdir/ecocyc.curated_parsed",
+          "static/CAZy.curated_parsed", "static/CharProtDB.curated_parsed",
+          "static/metacyc.curated_parsed", "static/reanno.curated_parsed",
+          "static/REBASE.curated_parsed", "static/BRENDA.curated_parsed",
+          "-prefix",
+          "$workdir/hits",
+          "$workdir/pmclinks",
+          "$workdir/generif_tab");
+  &maybe_run(join(" ", @cmd));
+  &maybe_run("zcat $indir/components.cif.gz | $Bin/parsePdbCdd.pl > $workdir/PDBLigands.tab");
+  &maybe_run("$Bin/loadSiteTables.pl -db $outdir/litsearch.db -indir $workdir");
+  &maybe_run("cp $workdir/hassites.faa $outdir/");
+  &maybe_run("$Bin/blast/formatdb -p T -o T -i $outdir/hassites.faa");
 }
 
 if (exists $dosteps{stats}) {
