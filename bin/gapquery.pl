@@ -62,7 +62,7 @@ The hmm directory must contain these files:
 
 Optional arguments:
 -curated curated.faa -- the file of characterized
-  sequences. curated.faa.desc must also exist. By default, it looks
+  sequences. curated.faa.info must also exist. By default, it looks
   for this in dir/curated.faa
 -curated2 curated2.faa -- the file of curated sequences. By default,
   it looks for this in dir/curated.faa
@@ -311,7 +311,7 @@ END
     my $id = $header; $id =~ s/ .*//;
     next unless exists $curatedFetch{$id};
     die "Duplicate sequence for $id in $curatedFaa" if exists $curatedSeq{$id};
-    die "Non-matching legnths for $id -- $curatedFaa vs. $curatedFaa.info"
+    die "Non-matching lengths for $id -- $curatedFaa vs. $curatedFaa.info"
       unless length($sequence) == $curatedInfo{$id}{length};
     $curatedSeq{$id} = $sequence;
   }
