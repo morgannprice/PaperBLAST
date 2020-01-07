@@ -60,17 +60,34 @@ foreach my $ft (@ft) {
 
 my %ft = (); # type => list of [ begin, end, comment ]
 foreach my $ft (@ft2) {
-  $ft =~ m/^FT +([A-Z_]+) +([0-9<>]+) +([0-9<>]+) *(.*)$/
-    || die "Invalid FT\n$ft\nin UniProt entry for $subjectId";
-  my ($type,$begin,$end,$comment) = ($1,$2,$3,$4);
+  my ($type, $begin, $end, $comment);
+  if ($ft =~ m/^FT +([A-Z_]+) +([0-9<>]+) +([0-9<>]+) *(.*)$/) {
+    # older style with the begin and end as separate fields
+    ($type,$begin,$end,$comment) = ($1,$2,$3,$4);
+  } elsif ($ft =~ m!^FT +([A-Z_]+) +([0-9<>.]+) +(/.*)$!) {
+    my $range;
+    ($type, $range, $comment) = ($1,$2,$3);
+    if ($range =~ m/^([0-9<>]+)[.]+([0-9<>]+)/) {
+      ($begin, $end) = ($1,$2);
+    } elsif ($range =~ m/^([0-9<>]+)$/) {
+      $begin = $1;
+      $end = $begin;
+    } else {
+      die "Cannot parse range from FT $ft UniProt entry for $subjectId";
+    }
+  } else {
+    die "Invalid FT\n$ft\nin UniProt entry for $subjectId";
+  }
   # remove evidence codes from comments. The top two are curated; the remainder are not;
   # but decided not to distinguish them.
-  $comment .= " (by similarity)"
-    if $comment =~ m/ECO:0000250/ || $comment =~ m/ECO:0000255/
-      || $comment =~ m/ECO:0000256/ || $comment =~ m/ECO:0000259/
-        || $comment =~ m/ECO:0000259/ || $comment =~ m/ECO:0000213/;
+  my $bySimilarity = $comment =~ m/ECO:0000250/ || $comment =~ m/ECO:0000255/
+    || $comment =~ m/ECO:0000256/ || $comment =~ m/ECO:0000259/
+      || $comment =~ m/ECO:0000259/ || $comment =~ m/ECO:0000213/;
   $comment =~ s/[{]ECO:\d+[^}]+[}][.]?//g;
   $comment =~ s/ +/ /g;
+  $comment =~ s!/evidence=".*!!;
+  $comment =~ s!/note="(.*)"!$1!; # turn note field into the comment
+  $comment .= " <small>by similarity</small>" if $bySimilarity;
   push @{ $ft{$type} }, [ $begin, $end, $comment ]
     if $begin =~ m/^\d+$/ && $end =~ m/^\d+$/;
 }
