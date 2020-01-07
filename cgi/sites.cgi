@@ -463,7 +463,7 @@ unless ($query) {
             if ($isAligned) {
               my $qChar = substr($alnQ, $site->{posAlnFrom}-1, 1);
               $posShow .= " (vs. $qChar"
-                . ($qChar eq "-" ? $alnPosToQpos{ $site->{posAlnFrom} } : "")
+                . ($qChar ne "-" ? $alnPosToQpos{ $site->{posAlnFrom} } : "")
                 . ")";
               $posShow = AddMouseOver($posShow, $nHit, $site->{posAlnFrom});
             }
