@@ -61,6 +61,7 @@ foreach my $ft (@ft) {
 my %ft = (); # type => list of [ begin, end, comment ]
 foreach my $ft (@ft2) {
   my ($type, $begin, $end, $comment);
+  next if $ft =~ m/^FT +CONFLICT/;
   if ($ft =~ m/^FT +([A-Z_]+) +([0-9<>]+) +([0-9<>]+) *(.*)$/) {
     # older style with the begin and end as separate fields
     ($type,$begin,$end,$comment) = ($1,$2,$3,$4);
