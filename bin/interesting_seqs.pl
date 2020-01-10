@@ -22,7 +22,7 @@ END
 
 my $dir;
 die $usage
-  unless GetOptions('-n' => \$minN, 'dir=s' => \$dir)
+  unless GetOptions('-n=i' => \$minN, 'dir=s' => \$dir)
   && @ARGV == 0
   && defined $dir;
 die "Not a directory: $dir\n" unless -d $dir;
