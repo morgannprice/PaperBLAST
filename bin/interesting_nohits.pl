@@ -47,6 +47,7 @@ my %ranges = (); # sequence id to list of [qBeg,qEnd]
 open(my $fhHits, "<", $hitsfile) || die "Cannot read $hitsfile";
 while (my $line = <$fhHits>) {
   chomp $line;
+  next if $line =~ m/^#/; # header lines if using rapsearch
   my ($query, $subject, $identity, $alen, $mismatch, $gap, $qBeg, $qEnd, $sBeg, $sEnd, $evalue, $bits) = split /\t/, $line;
   die $line unless defined $bits;
   die "Unknown query $query" unless exists $seqlen{$query};
