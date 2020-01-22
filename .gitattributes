@@ -3,4 +3,6 @@ static/uniprot_proteomes.db binary
 data/* binary
 static/geneId_proteinId binary
 static/*.curated_parsed binary
+static/BRENDA.* binary
+static/metacyc.*
 vspdb/unhit.tsv binary
