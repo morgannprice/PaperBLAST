@@ -52,7 +52,7 @@ foreach my $faa (@faaFiles) {
 # A list of hashes, one per protein. Each entry must include UNIQUE-ID and may include:
 # ABBREV-NAME, COMMON-NAME, CATALYZES (as a list of enzrxnIds),
 # UNIPROT, CITATIONS (as a list of pmIds),
-# COMPONENT-OF, COMPONENTS (as a list of identifiers)
+# COMPONENT-OF, COMPONENTS (as a list of identifiers), GENE
 #
 # Unlike in earlier versions of this code, @prot includes every protein
 # object (even if it has no pmIds or no link to sequence)
@@ -118,7 +118,7 @@ while (my $prot = ParsePTools($fhProt)) {
   my @pmIds = sort { $a <=> $b } keys %pmIds;
   $obj->{CITATIONS} = \@pmIds;
 
-  foreach my $key (qw/ABBREV-NAME COMMON-NAME COMPONENT-OF/) {
+  foreach my $key (qw/ABBREV-NAME COMMON-NAME COMPONENT-OF GENE/) {
     $obj->{$key} = $prot->{$key}[0]{"value"} || "";
   }
   my @components = ();
@@ -245,6 +245,19 @@ foreach my $faafile (@faaFiles) {
   close($fh) || die "Error reading $faafile";
 }
 
+# Fetch gene names from genes.dat
+my %geneName = ();
+my $genesfile = "$metadir/genes.dat";
+open(my $fhGenes, "<", $genesfile) || die "Cannot read $genesfile";
+while(my $gene = ParsePTools($fhGenes)) {
+  my $geneId = $gene->{"UNIQUE-ID"}[0]{value};
+  die unless $geneId;
+  my $geneName = $gene->{"COMMON-NAME"}[0]{value};
+  $geneName{$geneId} = $geneName if $geneName;
+}
+close($fhGenes) || die "Error reading $genesfile";
+print STDERR "Read names for " . scalar(keys %geneName) . " genes\n";
+
 open(my $fhCP, ">", "$outpre.curated_parsed")
   || die "Cannot write to $outpre.curated_parsed\n";
 my %protWritten = (); # UNIQUE-ID => 1 if monomer saved to $outpre.curated_parsed
@@ -276,9 +289,12 @@ foreach my $prot (@protNamed) {
         $desc .= " (" . join("; ", @parts) . ")";
       }
       $protWritten{ $prot->{"UNIQUE-ID"} } = 1;
+      my $id2 = $prot->{"ABBREV-NAME"} || "";
+      $id2 = $geneName{$prot->{GENE}} if
+        $id2 eq "" && exists $geneName{$prot->{GENE}};
       print $fhCP join("\t",
                        "metacyc", $prot->{"UNIQUE-ID"}, $uniprotId,
-                       $prot->{"ABBREV-NAME"}, $desc, $org,
+                       $id2, $desc, $org,
                        $seq, "", join(",", @$cit)
                       )."\n";
     }
