@@ -81,7 +81,7 @@ while (my $prot = ParsePTools($fhProt)) {
   my @uniprot = grep m/UNIPROT/, @dblinks;
   if (@uniprot > 0) {
     my $uniprotLine = $uniprot[0];
-    if ($uniprotLine =~ m/[(]UNIPROT "([0-9A-Z_]+)"/) {
+    if ($uniprotLine =~ m/[(]UNIPROT "([0-9A-Z_]+)-?\d*"/) {
       $obj->{UNIPROT} = $1;
     } else {
       print STDERR "Cannot parse uniprot id from DBLINKS entry: $uniprotLine\n";
