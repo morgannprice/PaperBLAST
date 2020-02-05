@@ -9,7 +9,8 @@ use DBI;
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw(UniqToGenes SubjectToGene AddCuratedInfo GenesToHtml
+@EXPORT = qw(UniqToGenes SubjectToGene AddCuratedInfo
+             GeneToHtmlLine GenesToHtml
              GetMotd FetchFasta HmmToFile loggerjs start_page finish_page
              VIMSSToFasta RefSeqToFasta UniProtToFasta FBrowseToFasta DBToFasta
  commify
@@ -177,6 +178,54 @@ sub SubjectToGene($$) {
 my $li_with_style = qq{<LI style="list-style-type: none;" margin-left: 6em; >};
 my $ul_with_style = qq{<UL style="margin-top: 0em; margin-bottom: 0em;">};
 
+sub GeneToHtmlLine($$) {
+  my ($dbh, $gene) = @_;
+
+  die "No subjectId" unless $gene->{subjectId};
+  $gene->{desc} = "No description" unless $gene->{desc}; # could be missing in MicrobesOnline or EcoCyc
+  foreach my $field (qw{showName priority subjectId desc protein_length source}) {
+    die "No $field for $gene->{subjectId}" unless $gene->{$field};
+  }
+  die "URL not set for $gene->{subjectId}" unless exists $gene->{URL};
+  my $fromText = $gene->{organism} ? " from " . i($gene->{organism}) : "";
+  my @pieces = ( a({ -href => $gene->{URL}, -title => $gene->{source},
+                     -onmousedown => loggerjs("curated", $gene->{showName}) },
+                   $gene->{showName}),
+                 ($gene->{curated} ? b($gene->{desc}) : $gene->{desc}) . $fromText);
+
+  # Formerly showed the coverage on the 1st line, but decided this was a bit wierd
+  #push @pieces, $coverage_html if $gene == $genes->[0];
+
+  # The alignment to show is always the one reported, not necessarily the one for this gene
+  # (They are all identical, but only $subjectId is guaranteed to be in the blast database
+  # and to be a valid argument for showAlign.cgi)
+  if (exists $gene->{pmIds} && @{ $gene->{pmIds} } > 0) {
+    my @pmIds = @{ $gene->{pmIds} };
+    my %seen = ();
+    @pmIds = grep { my $keep = !exists $seen{$_}; $seen{$_} = 1; $keep; } @pmIds;
+    my $note = @pmIds > 1 ? scalar(@pmIds) . " papers" : "paper";
+    push @pieces, "(see " .
+      a({ -href => "http://www.ncbi.nlm.nih.gov/pubmed/" . join(",",@pmIds),
+          -onmousedown => loggerjs("curatedpaper", $gene->{showName})},
+        $note)
+        . ")";
+  }
+  # For CAZy entries, add a link to the actual genbank entry because the CAZy entry is a bit mysterious
+  if ($gene->{source} =~ m/^CAZy/) {
+    my $id = $gene->{showName};
+    $id =~ s/[.]\d+$//;
+    if ($id =~ m/^[A-Z0-9_]+/) {
+      push @pieces, "(see " .
+        a({ -href => "https://www.ncbi.nlm.nih.gov/protein/$id",
+            -title => "NCBI protein entry",
+            -onmousedown => loggerjs("cazygenbank", $gene->{showName}) },
+          "protein")
+          . ")";
+    }
+  }
+  return join(" ", @pieces);
+}
+
 # Given the HTML for the coverage string, format the list of genes
 sub GenesToHtml($$$$$) {
   my ($dbh, $uniqId, $genes, $coverage_html, $maxPapers) = @_;
@@ -193,49 +242,12 @@ sub GenesToHtml($$$$$) {
   # (But, a paper could show up twice with two different terms, instead of the snippets
   # being merged...)
   foreach my $gene (@$genes) {
-    die "No subjectId" unless $gene->{subjectId};
-    $gene->{desc} = "No description" unless $gene->{desc}; # could be missing in MicrobesOnline or EcoCyc
-    foreach my $field (qw{showName priority subjectId desc protein_length source}) {
-      die "No $field for $gene->{subjectId}" unless $gene->{$field};
-    }
-    die "URL not set for $gene->{subjectId}" unless exists $gene->{URL};
-    my $fromText = $gene->{organism} ? " from " . i($gene->{organism}) : "";
-    my @pieces = ( a({ -href => $gene->{URL}, -title => $gene->{source},
-                       -onmousedown => loggerjs("curated", $gene->{showName}) },
-                     $gene->{showName}),
-                   ($gene->{curated} ? b($gene->{desc}) : $gene->{desc}) . $fromText);
-    # Formerly showed the coverage on the 1st line, but decided this was a bit wierd
-    #push @pieces, $coverage_html if $gene == $genes->[0];
-    # The alignment to show is always the one reported, not necessarily the one for this gene
-    # (They are all identical, but only $subjectId is guaranteed to be in the blast database
-    # and to be a valid argument for showAlign.cgi)
-    if (exists $gene->{pmIds} && @{ $gene->{pmIds} } > 0) {
-      my @pmIds = @{ $gene->{pmIds} };
-      my %seen = ();
-      @pmIds = grep { my $keep = !exists $seen{$_}; $seen{$_} = 1; $keep; } @pmIds;
-      my $note = @pmIds > 1 ? scalar(@pmIds) . " papers" : "paper";
-      push @pieces, "(see " .
-        a({ -href => "http://www.ncbi.nlm.nih.gov/pubmed/" . join(",",@pmIds),
-            -onmousedown => loggerjs("curatedpaper", $gene->{showName})},
-          $note)
-          . ")";
-    }
-    # For CAZy entries, add a link to the actual genbank entry because the CAZy entry is a bit mysterious
-    if ($gene->{source} =~ m/^CAZy/) {
-      my $id = $gene->{showName};
-      $id =~ s/[.]\d+$//;
-      if ($id =~ m/^[A-Z0-9_]+/) {
-        push @pieces, "(see " .
-          a({ -href => "https://www.ncbi.nlm.nih.gov/protein/$id",
-              -title => "NCBI protein entry",
-              -onmousedown => loggerjs("cazygenbank", $gene->{showName}) },
-            "protein")
-            . ")";
-      }
-    }
+    my $line = GeneToHtmlLine($dbh, $gene);
+    my (@pieces) = $line;
+
     # Skip the header if this is a UniProt entry that is redundant with a curated
     # (Swiss-Prot) entry
-    push @headers, join(" ", @pieces)
+    push @headers, $line
       unless exists $seen_uniprot{$gene->{showName}} && !exists $gene->{curated};
     $seen_uniprot{ $gene->{curatedId} } = 1
       if exists $gene->{curatedId};
