@@ -15,7 +15,7 @@ use Time::HiRes qw{gettimeofday};
 use DBI;
 use lib "../lib";
 use pbutils;
-use pbweb qw{start_page};
+use pbweb qw{start_page AddCuratedInfo GeneToHtmlLine};
 use DB_File;
 use URI::Escape;
 use HTML::Entities;
@@ -23,6 +23,7 @@ use IO::Handle qw{autoflush};
 
 sub MatchRows($$$);
 sub FaaToDb($$);
+sub CompoundInfoToHtml($$);
 
 my $maxHits = 250;
 
@@ -189,19 +190,19 @@ if ($query eq "") {
         $nCluster++;
 	my ($seed) = grep $cluster->{$_}, @ids;
 	die unless defined $seed;
-        print h3("Cluster $nCluster (seed $seed)");
+        print h3("Cluster $nCluster");
+        print small("The first sequence in each cluster is the seed.") if $nCluster == 1; 
 	my @other = grep ! $cluster->{$_}, @ids;
         foreach my $id ($seed, @other) {
-          print p($id, $curatedInfo{$id}{descs}, small("(" . $curatedInfo{$id}{length}, "a.a.)"));
+          print CompoundInfoToHtml($id, $curatedInfo{$id}), "\n";
         }
-        print "\n";
       }
     }
     if (@singletons > 0) {
       print h3("Singletons");
       my @singletonIds = map { (keys %{ $_ })[0] } @singletons;
       foreach my $id (sort @singletonIds) {
-        print p($id, $curatedInfo{$id}{descs}, small("(" . $curatedInfo{$id}{length}, "a.a.)"));
+        print CompoundInfoToHtml($id, $curatedInfo{$id}), "\n";
       }
     }
   }
@@ -234,3 +235,28 @@ sub FaaToDb($$) {
   untie %seqs;
   die "Error writing to file $db" unless NewerThan($db, $faaIn);
 }
+
+sub CompoundInfoToHtml($$) {
+  my ($compoundId, $info) = @_;
+  die unless $compoundId;
+  die "No info for $compoundId" unless $info;
+  my @ids = split /,/, $compoundId;
+  my @descs = split /;; /, $info->{descs};
+  die "Mismatched length of ids and descs" unless scalar(@ids) == scalar(@descs);
+  my $len = $info->{length};
+  die unless $len;
+  my @pieces = ();
+  for (my $i = 0; $i < @ids; $i++) {
+    my $id = $ids[$i];
+    my $desc = $descs[$i];
+    my ($db, $protId) = split /::/, $id;
+    die "Cannot parse id $id" unless $protId;
+    my $gene = { 'db' => $db, 'protId' => $protId, 'desc' => $desc,
+                 'protein_length' => $len,
+                 'comment' => '', 'name' => '', id2 => '' };
+    AddCuratedInfo($gene);
+    push @pieces, GeneToHtmlLine($gene);
+  }
+  return p(join("<BR>", @pieces, small("$len amino acids"))); 
+}
+
