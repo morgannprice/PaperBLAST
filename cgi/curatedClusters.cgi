@@ -24,7 +24,7 @@ use IO::Handle qw{autoflush};
 sub MatchRows($$$);
 sub FaaToDb($$);
 
-my $maxHits = 1000;
+my $maxHits = 250;
 
 my $set = param('set') || "gaps2";
 my $query = param('query') || "";
@@ -47,8 +47,9 @@ my $curatedFaa = "$queryPath/curated.faa";
 die "No such file: $curatedFaa" unless -e $curatedFaa;
 
 my $fastacmd = "../bin/blast/fastacmd";
-my $usearch = "../bin/usearch";
-foreach my $x ($fastacmd,$usearch) {
+my $blastall = "../bin/blast/blastall";
+my $formatdb = "../bin/blast/formatdb";
+foreach my $x ($fastacmd,$blastall,$formatdb) {
   die "No such executable: $x" unless -x $x;
 }
 
@@ -87,9 +88,9 @@ if ($query eq "") {
   my %curatedInfo = map { $_->{ids} => $_ } @curatedInfo;
   my $hits = MatchRows(\@curatedInfo, $query, $word);
   if (@$hits > $maxHits) {
-    print p("Found " . scalar(@$hits) . " characterized proteins with matching descriptions. This was reduced to the limit of $maxHits.");
-    my @hits = splice(@$hits, 0, $maxHits);
-    $hits = \@hits;
+    print p("Found over $maxHits proteins with matching descriptions. Please try a different query.");
+    print end_html;
+    exit(0);
   } elsif (@$hits == 0) {
     print p("Sorry, no hits were found");
   } else {
@@ -114,46 +115,60 @@ if ($query eq "") {
       print $fhFaa ">$id\n$seqs{$id}\n";
     }
     close($fhFaa) || die "Error writing to $tmpPre.faa";
-    print p("Running usearch's ublast"), "\n";
-    my $idFrac = $minIdentity / 100;
+    print p("Running BLASTp"), "\n";
     my $covFrac = $minCoverage / 100;
-    my $uCmd = "$usearch -ublast $tmpPre.faa -db $tmpPre.faa -evalue 0.001 -id $idFrac -query_cov $covFrac -target_cov $covFrac -blast6out $tmpPre.hits -quiet";
-    system($uCmd) == 0 || die "usearch failed -- $uCmd -- !";
+    my $formatCmd = "$formatdb -i $tmpPre.faa -p T";
+    system($formatCmd) == 0 || die "formatdb failed -- $formatCmd -- $!";
+    my $blastCmd = qq{$blastall -p blastp -i $tmpPre.faa -d $tmpPre.faa -F "m S" -e 0.001 -m 8 -a 8 -o $tmpPre.hits >& /dev/null};
+    system($blastCmd) == 0 || die "blastall failed -- $blastCmd -- $!";
     unlink("$tmpPre.faa");
-    my %hit = (); # id => id => bits if hit (removed self hits)
-    my @hits = (); # list of [id1, id2, bits]
-    open (my $fhHit, "<", "$tmpPre.hits") || die "Cannot read $tmpPre.hits";
-    while(my $line = <$fhHit>) {
+    foreach my $suffix (qw{phr pin psq}) {
+      unlink("$tmpPre.faa.$suffix");
+    }
+    my %sim = (); # id => id => bits if hit (removed self hits)
+    my @sims = (); # list of [id1, id2, bits]
+    open (my $fhsim, "<", "$tmpPre.hits") || die "Cannot read $tmpPre.hits";
+    while(my $line = <$fhsim>) {
       my ($id1, $id2, $identity, $alnlen, $mm, $gap, $qbeg, $qend, $sbeg, $send, $eval, $bits) = split /\t/, $line;
-      unless ($id1 eq $id2 || exists $hit{$id1}{$id2}) {
-        $hit{$id1}{$id2} = $bits;
-        push @hits, [$id1,$id2,$bits];
+      die $id1 unless exists $seqs{$id1};
+      die $id2 unless exists $seqs{$id2};
+      my $cov1 = $alnlen / length($seqs{$id1});
+      my $cov2 = $alnlen / length($seqs{$id2});
+      if ($id1 ne $id2 && $identity >= $minIdentity && $cov1 >= $covFrac && $cov2 >= $covFrac) {
+        $sim{$id1}{$id2} = $bits;
+        push @sims, [$id1,$id2,$bits];
       }
     }
-    close($fhHit) || die "Error reading $tmpPre.hits";
+    close($fhsim) || die "Error reading $tmpPre.hits";
     unlink("$tmpPre.hits");
     print p("Found similarities, at above ${minIdentity}% identity and ${minCoverage}% coverage, for",
-            scalar(keys %hit), "of these sequences"), "\n";
+            scalar(keys %sim), "of these sequences"), "\n";
 
-    # Sort the hits by bits and the greedily form complete clusters
-    my %clust = map { $_ => { $_ => 1 } } (keys %seqs); # id to hash of members
-    @hits = sort { $b->[2] <=> $a->[2] } @hits;
-    foreach my $row (@hits) {
-      my ($id1,$id2) = @$row;
-      if (!exists $clust{$id1}{$id2}) {
-        # not already clustered together, should they be?
-        # need to verify that all existing members of the cluster hit id2
-        my $chash = $clust{$id1};
-        my $ok = 1;
-        foreach my $id3 (keys %$chash) {
-          $ok = 0 if $id3 ne $id2 && !exists $hit{$id2}{$id3};
-        }
-        if ($ok) {
-          $chash->{$id2} = 1;
-          $clust{$id2} = $chash;
-        }
+    # Try to find a small number of seed sequences that hit all of the members
+    # Don't try to be optimal, just start with the seeds that have the most hits above the threshold
+    my %nSims = map { $_ => scalar(keys %{ $sim{$_} }) } (keys %sim);
+    my @seeds = sort { $nSims{$b} <=> $nSims{$a} || $a <=> $b } (keys %nSims);
+    my %clust = (); # sequence to cluster, which is a hash of ids with the seed having a value of 1
+    foreach my $seed (@seeds) {
+       if (!exists $clust{$seed}) {
+         my $chash = { $seed => 1 };
+         $clust{$seed} = $chash;
+         foreach my $id2 (keys %{ $sim{$seed} }) {
+           if (!exists $clust{$id2}) {
+             $clust{$id2} = $chash;
+	     $chash->{$id2} = 0;
+           }
+         }
       }
     }
+
+    # And, add the singletons
+    foreach my $id (keys %seqs) {
+      if (!exists $clust{$id}) {
+        $clust{$id} = { $id => 1 };
+      }
+    }
+
     # Report the clusters
     # First identify the unique ones
     my %clustByIds = ();
@@ -162,7 +177,7 @@ if ($query eq "") {
     }
     my @clusters = values %clustByIds;
     my @singletons = grep { scalar(keys %$_) == 1 } @clusters;
-    my $clustReport = "Found " . (scalar(@clusters) - scalar(@singletons)) . " fully-connected clusters of similar sequences.";
+    my $clustReport = "Found " . (scalar(@clusters) - scalar(@singletons)) . " clusters of similar sequences.";
     $clustReport .= " Another " . scalar(@singletons) . " sequences are not clustered" if @singletons > 0;
     print p($clustReport), "\n";
 
@@ -172,8 +187,11 @@ if ($query eq "") {
       my @ids = sort keys %$cluster;
       if (@ids > 1) {
         $nCluster++;
-        print h3("Cluster $nCluster");
-        foreach my $id (@ids) {
+	my ($seed) = grep $cluster->{$_}, @ids;
+	die unless defined $seed;
+        print h3("Cluster $nCluster (seed $seed)");
+	my @other = grep ! $cluster->{$_}, @ids;
+        foreach my $id ($seed, @other) {
           print p($id, $curatedInfo{$id}{descs}, small("(" . $curatedInfo{$id}{length}, "a.a.)"));
         }
         print "\n";
@@ -181,12 +199,9 @@ if ($query eq "") {
     }
     if (@singletons > 0) {
       print h3("Singletons");
-      foreach my $cluster (@clustBySize) {
-        my @ids = sort keys %$cluster;
-        if (@ids == 1) {
-          my ($id) = @ids;
-          print p($id, $curatedInfo{$id}{descs}, small("(" . $curatedInfo{$id}{length}, "a.a.)"));
-        }
+      my @singletonIds = map { (keys %{ $_ })[0] } @singletons;
+      foreach my $id (sort @singletonIds) {
+        print p($id, $curatedInfo{$id}{descs}, small("(" . $curatedInfo{$id}{length}, "a.a.)"));
       }
     }
   }
@@ -201,7 +216,6 @@ sub MatchRows($$$) {
   my $regexp = quotemeta($query);
   $regexp =~ s/\\%/.*/g;
   my @match = grep { $_->{descs} =~ m/$regexp/i } @$curatedInfo;
-  @match = splice(@match, 0, $maxHits) if @match > $maxHits;
   return $word ? CuratedWordMatch(\@match, $query, "descs") : \@match;
 }
 
