@@ -178,8 +178,8 @@ sub SubjectToGene($$) {
 my $li_with_style = qq{<LI style="list-style-type: none;" margin-left: 6em; >};
 my $ul_with_style = qq{<UL style="margin-top: 0em; margin-bottom: 0em;">};
 
-sub GeneToHtmlLine($$) {
-  my ($dbh, $gene) = @_;
+sub GeneToHtmlLine($) {
+  my ($gene) = @_;
 
   die "No subjectId" unless $gene->{subjectId};
   $gene->{desc} = "No description" unless $gene->{desc}; # could be missing in MicrobesOnline or EcoCyc
@@ -242,7 +242,7 @@ sub GenesToHtml($$$$$) {
   # (But, a paper could show up twice with two different terms, instead of the snippets
   # being merged...)
   foreach my $gene (@$genes) {
-    my $line = GeneToHtmlLine($dbh, $gene);
+    my $line = GeneToHtmlLine($gene);
     my (@pieces) = $line;
 
     # Skip the header if this is a UniProt entry that is redundant with a curated
