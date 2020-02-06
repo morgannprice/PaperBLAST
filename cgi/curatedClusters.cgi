@@ -23,7 +23,7 @@ use IO::Handle qw{autoflush};
 
 sub MatchRows($$$);
 sub FaaToDb($$);
-sub CompoundInfoToHtml($$);
+sub CompoundInfoToHtml($$$);
 
 my $maxHits = 250;
 
@@ -194,7 +194,7 @@ if ($query eq "") {
         print small("The first sequence in each cluster is the seed.") if $nCluster == 1; 
 	my @other = grep ! $cluster->{$_}, @ids;
         foreach my $id ($seed, @other) {
-          print CompoundInfoToHtml($id, $curatedInfo{$id}), "\n";
+          print CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id}), "\n";
         }
       }
     }
@@ -202,7 +202,7 @@ if ($query eq "") {
       print h3("Singletons");
       my @singletonIds = map { (keys %{ $_ })[0] } @singletons;
       foreach my $id (sort @singletonIds) {
-        print CompoundInfoToHtml($id, $curatedInfo{$id}), "\n";
+        print CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id}), "\n";
       }
     }
   }
@@ -236,10 +236,11 @@ sub FaaToDb($$) {
   die "Error writing to file $db" unless NewerThan($db, $faaIn);
 }
 
-sub CompoundInfoToHtml($$) {
-  my ($compoundId, $info) = @_;
+sub CompoundInfoToHtml($$$) {
+  my ($compoundId, $info, $seq) = @_;
   die unless $compoundId;
   die "No info for $compoundId" unless $info;
+  die "no seq for $compoundId" unless $seq;
   my @ids = split /,/, $compoundId;
   my @descs = split /;; /, $info->{descs};
   die "Mismatched length of ids and descs" unless scalar(@ids) == scalar(@descs);
@@ -257,6 +258,11 @@ sub CompoundInfoToHtml($$) {
     AddCuratedInfo($gene);
     push @pieces, GeneToHtmlLine($gene);
   }
-  return p(join("<BR>", @pieces, small("$len amino acids"))); 
+  my $newline = "%0A";
+  my $query = ">$ids[0]$newline$seq";
+  my @links = ();
+  push @links, a({-href => "litSearch.cgi?query=$query"}, "PaperBLAST");
+  push @links, a({-href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=$query"}, "CDD");
+  return p(join("<BR>", @pieces,
+                small($len, "amino acids: ", join(", ", @links))));
 }
-
