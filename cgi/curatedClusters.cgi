@@ -242,11 +242,12 @@ sub CompoundInfoToHtml($$$) {
   die "No info for $compoundId" unless $info;
   die "no seq for $compoundId" unless $seq;
   my @ids = split /,/, $compoundId;
+  die unless @ids > 0;
   my @descs = split /;; /, $info->{descs};
   die "Mismatched length of ids and descs" unless scalar(@ids) == scalar(@descs);
   my $len = $info->{length};
   die unless $len;
-  my @pieces = ();
+  my @genes;
   for (my $i = 0; $i < @ids; $i++) {
     my $id = $ids[$i];
     my $desc = $descs[$i];
@@ -256,10 +257,14 @@ sub CompoundInfoToHtml($$$) {
                  'protein_length' => $len,
                  'comment' => '', 'name' => '', id2 => '' };
     AddCuratedInfo($gene);
-    push @pieces, GeneToHtmlLine($gene);
+    $gene->{HTML} = GeneToHtmlLine($gene);
+    push @genes, $gene;
   }
+  @genes = sort { $a->{priority} <=> $b->{priority} } @genes;
+  my @pieces = map $_->{HTML}, @genes;
+  my $id1 = $genes[0]->{db} . "::" . $genes[0]->{protId};
   my $newline = "%0A";
-  my $query = ">$ids[0]$newline$seq";
+  my $query = ">$id1$newline$seq";
   my @links = ();
   push @links, a({-href => "litSearch.cgi?query=$query"}, "PaperBLAST");
   push @links, a({-href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=$query"}, "CDD");
