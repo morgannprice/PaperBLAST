@@ -45,6 +45,8 @@ the *.pm files are in SWISS/lib/SWISS/). It is available at
 http://swissknife.sourceforge.net/docs/
 https://sourceforge.net/projects/swissknife/files/latest/download
 
+As of February 2020, we are using swissknife version 1.79.
+
 Finally, PaperBLAST uses these standard Perl libraries:
 
 Getopt::Long
