@@ -4,6 +4,8 @@ use strict;
 use lib "SWISS/lib";
 use SWISS::Entry;
 use SWISS::Ref;
+use SWISS::FTs;
+use SWISS::TextFunc;
 
 # If an entry has experimental evidence for only these ignored types,
 #   ignore it.
@@ -32,7 +34,11 @@ following types are ignored:
   @ignoreTypes
 END
 ;
-
+my $debug;
+if (@ARGV > 0 && $ARGV[0] eq "-debug") {
+  $debug = 1;
+  shift @ARGV;
+}
 die $usage unless @ARGV == 0;
 
 # Read an entire record at a time
@@ -45,7 +51,10 @@ while(<>) {
   # each entry is an array of: feature type or "key", from_position, to_position,
   # description, qualifier, FTid, evidence tag
 
-  my @ftEvidence = grep { $_->[6] =~ m/ECO:0000269/ } $entry->FTs->elements;
+  my $fts = $entry->FTs->list;
+  # Older UniProt files had evidence information in [6] vs. [7]
+  my @ftEvidence = grep { $_->[6] =~ m/ECO:0000269/ || $_->[7] =~ m/ECO:0000269/ } @$fts;
+  print join("\t", $entry->AC, scalar(@$fts), scalar(@ftEvidence))."\n" if $debug;
   next unless @ftEvidence > 0;
   my @ftEvidence2 = grep { !exists $ignoreTypes{$_->[0]} } @ftEvidence;
   next unless @ftEvidence2 > 0;
@@ -63,8 +72,12 @@ while(<>) {
   push @desc, @ec;
   my $desc = join("; ", @desc);
   foreach my $ft (@ftEvidence) {
-    my ($ftKey, $ftFrom, $ftTo, $ftDesc, undef, undef, $evidence) = @$ft;
-
+    # Swiss-Prot files from 2019, parsed with Swisskinfe 1.73, had the
+    # evidence code in [6] ($ev)
+    # As of February 2020, need to use Swisskinfe 1.79 to parse the
+    # evidence code, and it is in [7] ($ev2)
+    my ($ftKey, $ftFrom, $ftTo, $ftDesc, undef, undef, $ev, $ev2) = @$ft;
+    my $evidence = $ev2 || $ev;
     my @pmIds = $evidence =~ m!ECO:0000269[|]PubMed:(\d+)!g;
     my %pmId = map { $_ => 1 } @pmIds;
     @pmIds = sort {$a <=> $b} keys %pmId;
