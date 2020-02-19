@@ -2,15 +2,17 @@
 use strict;
 use Getopt::Long;
 use FindBin qw{$Bin};
+use lib "$Bin/../lib";
+use pbutils qw{ReadTable};
 sub ReportProtId($);
 
 my $staticDir = "$Bin/../static";
 
 my $usage = <<END
-findHeteromers.pl -sprot work/sprot.rhea.tab > work/hetero.tab
+findHeteromers.pl -sprot sprot.subunits > work/hetero.tab
 
 Compiles heteromer information from BRENDA.subunits,
-metacyc.reaction_links, and sprot.rhea.tab.
+metacyc.reaction_links, and sprot.subunits
 
 BRENDA.subunits should have fields EC, organism, and one or more
 protein identifiers (of the form db::protId)
@@ -18,10 +20,8 @@ protein identifiers (of the form db::protId)
 metacyc.reaction_links should have fields reactionId, reaction name,
 and one or more protein identifiers
 
-sprot.rhea.tab should have fields rheaId, swissprot accession,
-secondary id, protein description, organism, sequence, pubmed ids, and
-the subunit field. The subunit field is a free-text field, and this
-script uses various patterns to identify likely heteromers.
+sprot.subunits should include the fields db, id, isHetero, and
+subunit.
 
 Outputs a tab-delimited file with the fields db, protId, and comment
 (which has the first sentence of the SUBUNIT field from SwissProt).
@@ -32,11 +32,11 @@ Use -static static to change this.
 END
 ;
 
-my $sprotRheaFile;
+my $sprotSubunitsFile;
 die $usage
-  unless GetOptions('sprot=s' => \$sprotRheaFile,
+  unless GetOptions('sprot=s' => \$sprotSubunitsFile,
                     'static=s' => \$staticDir)
-  && defined $sprotRheaFile;
+  && defined $sprotSubunitsFile;
 die "Not a directory: $staticDir\n" unless -d $staticDir;
 my $brendaFile = "$staticDir/BRENDA.subunits";
 my $metacycFile = "$staticDir/metacyc.reaction_links";
@@ -78,30 +78,26 @@ while (my $line = <$fhM>) {
 }
 close($fhM) || die "Error reading $metacycFile";
 
-open(my $fhS, "<", $sprotRheaFile) || die "Cannot read $sprotRheaFile";
-while(my $line = <$fhS>) {
-  chomp $line;
-  my ($rheaId, $id, $id2, $desc, $organism, $seq, $pmIds, $subunit) = split /\t/, $line;
-  die unless defined $subunit;
-  next unless $subunit =~ m/^SUBUNIT:/; # a monomer
-  $subunit =~ s/^SUBUNIT: *//;
-  $subunit =~ s/[.] .*//; # keep the first sentence
+# When this was parsing subunit itself, the logic was:
+# next unless $subunit =~ m/^SUBUNIT:/; # a monomer
+# $subunit =~ s/^SUBUNIT: *//;
+# $subunit =~ s/[.] .*//; # keep the first sentence
+# my $startHetero = $subunit =~ m/^hetero[a-z-]*mer/i
+#    || $subunit =~ m/^Forms a hetero[a-z-]*mer/i;
+# if ($startHetero
+#      || !($subunit eq ""
+#           || $subunit =~ m/monomer/i
+#           || $subunit =~ m/homo[a-z]+mer/i
+#           || $subunit =~ m/^interacts/i
+#           || $subunit =~ m/^dimer$/i
+#           || $subunit =~ m/^dimer of (identical|homo|dimer|trimer|tetramer)/i
+#           || $subunit =~ m/^binds/i)) {
 
-  # matching any of these indicates is a heteromer
-  my $startHetero = $subunit =~ m/^hetero[a-z-]*mer/i
-    || $subunit =~ m/^Forms a hetero[a-z-]*mer/i;
-  if ($startHetero
-      || !($subunit eq ""
-           || $subunit =~ m/monomer/i
-           || $subunit =~ m/homo[a-z]+mer/i
-           || $subunit =~ m/^interacts/i
-           || $subunit =~ m/^dimer$/i
-           || $subunit =~ m/^dimer of (identical|homo|dimer|trimer|tetramer)/i
-           || $subunit =~ m/^binds/i)) {
-    print join("\t", "SwissProt", $id, $subunit)."\n";
-  }
+my @sprot = ReadTable($sprotSubunitsFile, ["db","id","subunit","isHetero"]);
+foreach my $sprot (@sprot) {
+  print join("\t", $sprot->{db}, $sprot->{id}, $sprot->{subunit})."\n"
+    if $sprot->{isHetero};
 }
-close($fhS) || die "Error reading $sprotRheaFile";
 
 sub ReportProtId($) {
   my $protId = shift;
