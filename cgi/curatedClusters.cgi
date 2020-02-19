@@ -1,5 +1,6 @@
 #!/usr/bin/perl -w
 use strict;
+sub IsHetero($);
 
 # Optional parameters:
 # set -- which database of curated proteins (defaults to gaps2, i.e. using ../tmp/gaps2.aa)
@@ -47,6 +48,11 @@ die "Invalid set $set: no $queryPath directory" unless -d $queryPath;
 my $curatedFaa = "$queryPath/curated.faa";
 die "No such file: $curatedFaa" unless -e $curatedFaa;
 
+my $hetFile = "$queryPath/hetero.tab";
+die "No such file: $hetFile" unless -e $hetFile;
+my @het = ReadTable($hetFile, ["db","protId","comment"]);
+my %hetComment = map { $_->{db} . "::" . $_->{protId} => $_->{comment} } @het;
+
 my $fastacmd = "../bin/blast/fastacmd";
 my $blastall = "../bin/blast/blastall";
 my $formatdb = "../bin/blast/formatdb";
@@ -82,7 +88,8 @@ if ($query eq "") {
     p(submit(-name => 'Search')),
     end_form;
 } else {
-  print p("Searching for", HTML::Entities::encode($query)),
+  my $wordStatement = $word ? " as complete word(s)" : "";
+  print p("Searching for", HTML::Entities::encode($query), $wordStatement),
     p("Or try", a({-href => "curatedClusters.cgi?set=${set}"}, "another search")),
     "\n";
   my @curatedInfo = ReadTable("$curatedFaa.info", ["ids","length","descs"]);
@@ -95,7 +102,8 @@ if ($query eq "") {
   } elsif (@$hits == 0) {
     print p("Sorry, no hits were found");
   } else {
-    print p("Found " . scalar(@$hits) . " characterized proteins with matching descriptions.");
+    my $nHetero = scalar(grep IsHetero($_), map { $_->{ids} } @$hits);
+    print p("Found " . scalar(@$hits) . " characterized proteins with matching descriptions. $nHetero of these are heteromeric.");
   }
   print "\n";
   if (@$hits > 0) {
@@ -179,7 +187,7 @@ if ($query eq "") {
     my @clusters = values %clustByIds;
     my @singletons = grep { scalar(keys %$_) == 1 } @clusters;
     my $clustReport = "Found " . (scalar(@clusters) - scalar(@singletons)) . " clusters of similar sequences.";
-    $clustReport .= " Another " . scalar(@singletons) . " sequences are not clustered" if @singletons > 0;
+    $clustReport .= " Another " . scalar(@singletons) . " sequences are not clustered." if @singletons > 0;
     print p($clustReport), "\n";
 
     my @clustBySize = sort { scalar(keys %$b) <=> scalar(keys %$a) } @clusters;
@@ -190,7 +198,17 @@ if ($query eq "") {
         $nCluster++;
 	my ($seed) = grep $cluster->{$_}, @ids;
 	die unless defined $seed;
-        print h3("Cluster $nCluster");
+        my $nHetero = scalar(grep IsHetero($_), @ids);
+        my $sz = scalar(@ids);
+        my @clusterHeader = ("Cluster $nCluster");
+        if ($nHetero ==  $sz) {
+          push @clusterHeader, "(heteromeric)";
+        } elsif ($nHetero > 0) {
+          push @clusterHeader, "($nHetero/$sz heteromeric)";
+        } else {
+          push @clusterHeader, "(homomeric)";
+        }
+        print h3(@clusterHeader);
         print small("The first sequence in each cluster is the seed.") if $nCluster == 1; 
 	my @other = grep ! $cluster->{$_}, @ids;
         foreach my $id ($seed, @other) {
@@ -199,8 +217,10 @@ if ($query eq "") {
       }
     }
     if (@singletons > 0) {
-      print h3("Singletons");
       my @singletonIds = map { (keys %{ $_ })[0] } @singletons;
+      my $nHetero = scalar(grep IsHetero($_), @singletonIds);
+      my $nSingle = scalar(@singletonIds);
+      print h3("Singletons ($nHetero/$nSingle heteromeric)");
       foreach my $id (sort @singletonIds) {
         print CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id}), "\n";
       }
@@ -258,6 +278,8 @@ sub CompoundInfoToHtml($$$) {
                  'comment' => '', 'name' => '', id2 => '' };
     AddCuratedInfo($gene);
     $gene->{HTML} = GeneToHtmlLine($gene);
+    $gene->{HTML} .= " (" . i(a({ -title => $hetComment{$id} }, "heteromeric")) . ")"
+      if exists $hetComment{$id};
     push @genes, $gene;
   }
   @genes = sort { $a->{priority} <=> $b->{priority} } @genes;
@@ -270,4 +292,13 @@ sub CompoundInfoToHtml($$$) {
   push @links, a({-href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=$query"}, "CDD");
   return p(join("<BR>", @pieces,
                 small($len, "amino acids: ", join(", ", @links))));
+}
+
+sub IsHetero($) {
+  my ($ids) = @_;
+  my @ids = split /,/, $ids;
+  foreach my $id (@ids) {
+    return 1 if exists $hetComment{$id};
+  }
+  return 0;
 }
