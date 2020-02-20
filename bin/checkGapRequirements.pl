@@ -12,10 +12,15 @@ my $set = "aa";
 my ($stepDir, $queryDir);
 
 my $usage = <<END
-checkCuratedGaps.pl -org orgsNif > warnings.tab
+checkGapRequirements.pl -org orgsNif > warnings.tab
 
 Given a pathway set and an org directory with computed results,
 check against the dependency requirements and output a table of warnings.
+
+Optional arguments:
+-set -- default $set
+-stepDir -- defaults to $stepBase/set
+-results -- defaults to $resultsDir
 END
 ;
 
@@ -45,7 +50,7 @@ my $reqs = ReadReqs("$stepDir/requires.tsv", \%stepObj);
 
 my $doneFile = "$resultsDir/$orgDir/$set.sum.done";
 my $dateFile = "$queryDir/date";
-die "Organisms in $orgDir are not up to date\n"
+die "Organisms in $orgDir are not up to date:\n$doneFile\nshould be newer than\n$dateFile\n"
   unless NewerThan($doneFile, $dateFile);
 
 my @orgs = ReadOrgTable("$resultsDir/$orgDir/orgs.org");
