@@ -1,11 +1,18 @@
 #!/usr/bin/perl -w
-use strict;
-sub IsHetero($);
 
-# Optional parameters:
+# All parameters are optional. Without parameters, shows a query input page.
+#
+# Parameters:
 # set -- which database of curated proteins (defaults to gaps2, i.e. using ../tmp/gaps2.aa)
-# query -- what term to search for
-# word -- report whole word matches only (like a perl boolean)
+#
+# Specify which proteins to cluster using a query:
+#	query -- what term to search for
+#	word -- report whole word matches only (like a perl boolean)
+# or using a step definition:
+#	path -- which pathway the step is in
+#	step -- which step
+#
+# Clustering options:
 # identity -- %identity threshold for clustering, default 30
 # coverage -- %coverage threshold for clustering, default 75
 
@@ -15,22 +22,26 @@ use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
 use Time::HiRes qw{gettimeofday};
 use DBI;
 use lib "../lib";
-use pbutils;
+use pbutils qw{ReadTable NewerThan CuratedWordMatch};
 use pbweb qw{start_page AddCuratedInfo GeneToHtmlLine};
 use DB_File;
 use URI::Escape;
 use HTML::Entities;
 use IO::Handle qw{autoflush};
 
+sub IsHetero($);
 sub MatchRows($$$);
 sub FaaToDb($$);
 sub CompoundInfoToHtml($$$);
 
 my $maxHits = 250;
+my $nCPU = 8;
 
 my $set = param('set') || "gaps2";
 my $query = param('query') || "";
 my $word = param('word') || 0;
+my $pathSpec = param('path') || "";
+my $step = param('step') || "";
 
 my $minIdentity = param('identity');
 $minIdentity = 30 unless defined $minIdentity && $minIdentity =~ m/^\d+$/;
@@ -72,7 +83,7 @@ unless (NewerThan("$curatedFaa.db", $curatedFaa)) {
 
 $query =~ s/^\s+//;
 $query =~ s/\s+$//;
-if ($query eq "") {
+if ($query eq "" && $pathSpec eq "") {
   print
     start_form(-method => 'get', -action => 'curatedClusters.cgi'),
     hidden(-name => 'set', -value => $set, -override => 1),
@@ -86,14 +97,33 @@ if ($query eq "") {
       textfield(-name => "coverage", -value => $minCoverage, -size => 3, -maxlemgth => 3),
       '%coverage'),
     p(submit(-name => 'Search')),
-    end_form;
-} else {
+    end_form,
+    end_html;
+  exit(0);
+}
+
+# Fetch curated sequences
+my @curatedInfo = ReadTable("$curatedFaa.info", ["ids","length","descs"]);
+my %curatedInfo = map { $_->{ids} => $_ } @curatedInfo;
+my %seqsAll;
+tie %seqsAll, "DB_File", "$curatedFaa.db", O_RDONLY, 0666, $DB_HASH
+  || die "Cannot open file $curatedFaa.db -- $!";
+# Some sequences are in the query file, and not from curated.faa
+my %uniprotSeq = ();
+my @hitIds = ();
+
+my %idToIds = ();
+foreach my $ids (keys %curatedInfo) {
+  foreach my $id (split /,/, $ids) {
+    $idToIds{$id} = $ids;
+  }
+}
+
+if ($query ne "") {
   my $wordStatement = $word ? " as complete word(s)" : "";
-  print p("Searching for", HTML::Entities::encode($query), $wordStatement),
+  print p("Searching for", b(HTML::Entities::encode($query)), $wordStatement),
     p("Or try", a({-href => "curatedClusters.cgi?set=${set}"}, "another search")),
     "\n";
-  my @curatedInfo = ReadTable("$curatedFaa.info", ["ids","length","descs"]);
-  my %curatedInfo = map { $_->{ids} => $_ } @curatedInfo;
   my $hits = MatchRows(\@curatedInfo, $query, $word);
   if (@$hits > $maxHits) {
     print p("Found over $maxHits proteins with matching descriptions. Please try a different query.");
@@ -105,128 +135,202 @@ if ($query eq "") {
     my $nHetero = scalar(grep IsHetero($_), map { $_->{ids} } @$hits);
     print p("Found " . scalar(@$hits) . " characterized proteins with matching descriptions. $nHetero of these are heteromeric.");
   }
-  print "\n";
-  if (@$hits > 0) {
-    # Fetch their sequences
-    my %seqsAll;
-    tie %seqsAll, "DB_File", "$curatedFaa.db", O_RDONLY, 0666, $DB_HASH
-      || die "Cannot open file $curatedFaa.db -- $!";
-    my %seqs = ();
-    foreach my $id (map $_->{ids}, @$hits) {
-      $seqs{$id} = $seqsAll{$id} || die "No or empty sequence for $id in $curatedFaa.db";
-    }
-    untie %seqsAll;
-    die unless scalar(keys %seqs) == scalar(@$hits);
-    print p("Fetched " . scalar(keys %seqs) . " sequences");
+  @hitIds = map $_->{ids}, @$hits;
+} elsif ($pathSpec ne "" && $step ne "") {
+  my $stepPath = "../gaps/$set";
+  die "No such directory: $stepPath" unless -d $stepPath;
+  my @pathInfo = ReadTable("$stepPath/$set.table", ["pathwayId","desc"]);
+  my %pathInfo = map { $_->{pathwayId} => $_ } @pathInfo;
+  die "Unknown pathway $pathSpec" unless exists $pathInfo{$pathSpec};
 
-    open(my $fhFaa, ">", "$tmpPre.faa") || die "Error writing to $tmpPre.faa";
-    foreach my $id (sort keys %seqs) {
-      print $fhFaa ">$id\n$seqs{$id}\n";
-    }
-    close($fhFaa) || die "Error writing to $tmpPre.faa";
-    print p("Running BLASTp"), "\n";
-    my $covFrac = $minCoverage / 100;
-    my $formatCmd = "$formatdb -i $tmpPre.faa -p T";
-    system($formatCmd) == 0 || die "formatdb failed -- $formatCmd -- $!";
-    my $blastCmd = qq{$blastall -p blastp -i $tmpPre.faa -d $tmpPre.faa -F "m S" -e 0.001 -m 8 -a 8 -o $tmpPre.hits >& /dev/null};
-    system($blastCmd) == 0 || die "blastall failed -- $blastCmd -- $!";
-    unlink("$tmpPre.faa");
-    foreach my $suffix (qw{phr pin psq}) {
-      unlink("$tmpPre.faa.$suffix");
-    }
-    my %sim = (); # id => id => bits if hit (removed self hits)
-    my @sims = (); # list of [id1, id2, bits]
-    open (my $fhsim, "<", "$tmpPre.hits") || die "Cannot read $tmpPre.hits";
-    while(my $line = <$fhsim>) {
-      my ($id1, $id2, $identity, $alnlen, $mm, $gap, $qbeg, $qend, $sbeg, $send, $eval, $bits) = split /\t/, $line;
-      die $id1 unless exists $seqs{$id1};
-      die $id2 unless exists $seqs{$id2};
-      my $cov1 = $alnlen / length($seqs{$id1});
-      my $cov2 = $alnlen / length($seqs{$id2});
-      if ($id1 ne $id2 && $identity >= $minIdentity && $cov1 >= $covFrac && $cov2 >= $covFrac) {
-        $sim{$id1}{$id2} = $bits;
-        push @sims, [$id1,$id2,$bits];
+  my @querycol = qw{step type query desc file sequence};
+  my @queries = ReadTable("$queryPath/$pathSpec.query", \@querycol);
+  @queries = grep { $_->{step} eq $step } @queries;
+  die "Unknown step $step" unless @queries > 0;
+  print p("Clustering the characterized proteins for", i($step), "in $pathInfo{$pathSpec}{desc}");
+
+  foreach my $query (@queries) {
+    if ($query->{type} eq "curated") {
+      my $ids = $query->{query};
+      die "Unknown identifier $ids in query for $step" unless exists $seqsAll{$ids};
+      push @hitIds, $ids;
+    } elsif ($query->{type} eq "hmm") {
+      my $hmm = $query->{query};
+      my $hmmFile = $queryPath. "/" . $query->{file};
+      die "No such hmm file: $hmmFile" unless -e $hmmFile;
+      my $hitsFile = "$hmmFile.curatedhits";
+      unless (NewerThan($hitsFile, $hmmFile) && NewerThan($hitsFile, $curatedFaa)) {
+        my $hmmsearch = "../bin/hmmsearch";
+        die "No such executable: $hmmsearch" unless -x $hmmsearch;
+        my $cmd = "$hmmsearch --cpu $nCPU --cut_tc -o /dev/null --domtblout $hitsFile $hmmFile $curatedFaa";
+        system($cmd) == 0 || die "Failed running $cmd -- $!";
       }
-    }
-    close($fhsim) || die "Error reading $tmpPre.hits";
-    unlink("$tmpPre.hits");
-    print p("Found similarities, at above ${minIdentity}% identity and ${minCoverage}% coverage, for",
-            scalar(keys %sim), "of these sequences"), "\n";
-
-    # Try to find a small number of seed sequences that hit all of the members
-    # Don't try to be optimal, just start with the seeds that have the most hits above the threshold
-    my %nSims = map { $_ => scalar(keys %{ $sim{$_} }) } (keys %sim);
-    my @seeds = sort { $nSims{$b} <=> $nSims{$a} || $a <=> $b } (keys %nSims);
-    my %clust = (); # sequence to cluster, which is a hash of ids with the seed having a value of 1
-    foreach my $seed (@seeds) {
-       if (!exists $clust{$seed}) {
-         my $chash = { $seed => 1 };
-         $clust{$seed} = $chash;
-         foreach my $id2 (keys %{ $sim{$seed} }) {
-           if (!exists $clust{$id2}) {
-             $clust{$id2} = $chash;
-	     $chash->{$id2} = 0;
-           }
-         }
+      open(my $fhHits, "<", $hitsFile) || die "Cannot read $hitsFile";
+      while(my $line = <$fhHits>) {
+        chomp $line;
+        next if $line =~ m/^#/;
+        $line =~ s/ .*//;
+        die "Cannot find id in line beginning with $line" unless $line ne "" && exists $curatedInfo{$line};
+        push @hitIds, $line;
       }
-    }
-
-    # And, add the singletons
-    foreach my $id (keys %seqs) {
-      if (!exists $clust{$id}) {
-        $clust{$id} = { $id => 1 };
+      close($fhHits) || die "Error reading $hitsFile";
+    } elsif ($query->{type} eq "uniprot") {
+      my $id = "SwissProt::" . $query->{query};
+      if (exists $idToIds{$id}) {
+        print p("Warning: uniprot rule $query->{query} is already in curated"), "\n";
+        push @hitIds, $idToIds{$id};
+      } else {
+        $id =~ s/SwissProt/UniProt/;
+        my $desc = $query->{desc};
+        $desc =~ s/^(rec|sub)name: full=//i;
+        $desc =~ s/ *[{][A-Z0-9:|.-]+[}] *//g;
+        $desc =~ s/altname: full=//i;
+        $desc =~ s/;? *$//;
+        $curatedInfo{$id} = { 'ids' => $id, 'descs' => $desc,
+                              'length' => length($query->{sequence}) };
+        $uniprotSeq{$id} = $query->{sequence};
+        push @hitIds, $id;
       }
+    } elsif ($query->{type} eq "curated2" || $query->{type} eq "ignore") {
+      ; # curated2 means not actually characterized, so skip that too
+    } else {
+      die "Unknown query type $query->{type} for step $step in $queryPath/$pathSpec.query";
     }
+  }
+  print p("Sorry, no curated sequences were found matching any of", scalar(@queries),
+          "rules for step $step") if @hitIds == 0;
+} else {
+  die "Invalid mode for curatedClusters.cgi";
+}
 
-    # Report the clusters
-    # First identify the unique ones
-    my %clustByIds = ();
-    foreach my $chash (values %clust) {
-      $clustByIds{ join(":::", sort keys %$chash) } = $chash;
-    }
-    my @clusters = values %clustByIds;
-    my @singletons = grep { scalar(keys %$_) == 1 } @clusters;
-    my $clustReport = "Found " . (scalar(@clusters) - scalar(@singletons)) . " clusters of similar sequences.";
-    $clustReport .= " Another " . scalar(@singletons) . " sequences are not clustered." if @singletons > 0;
-    print p($clustReport), "\n";
+if (@hitIds == 0) {
+  print end_html;
+  exit(0);
+}
 
-    my @clustBySize = sort { scalar(keys %$b) <=> scalar(keys %$a) } @clusters;
-    my $nCluster = 0;
-    foreach my $cluster (@clustBySize) {
-      my @ids = sort keys %$cluster;
-      if (@ids > 1) {
-        $nCluster++;
-	my ($seed) = grep $cluster->{$_}, @ids;
-	die unless defined $seed;
-        my $nHetero = scalar(grep IsHetero($_), @ids);
-        my $sz = scalar(@ids);
-        my @clusterHeader = ("Cluster $nCluster");
-        if ($nHetero ==  $sz) {
-          push @clusterHeader, "(heteromeric)";
-        } elsif ($nHetero > 0) {
-          push @clusterHeader, "($nHetero/$sz heteromeric)";
-        } else {
-          push @clusterHeader, "(homomeric)";
-        }
-        print h3(@clusterHeader);
-        print small("The first sequence in each cluster is the seed.") if $nCluster == 1; 
-	my @other = grep ! $cluster->{$_}, @ids;
-        foreach my $id ($seed, @other) {
-          print CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id}), "\n";
-        }
-      }
-    }
-    if (@singletons > 0) {
-      my @singletonIds = map { (keys %{ $_ })[0] } @singletons;
-      my $nHetero = scalar(grep IsHetero($_), @singletonIds);
-      my $nSingle = scalar(@singletonIds);
-      print h3("Singletons ($nHetero/$nSingle heteromeric)");
-      foreach my $id (sort @singletonIds) {
-        print CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id}), "\n";
+# Fetch the hits' sequences
+my %seqs = ();
+foreach my $id (@hitIds) {
+  if (exists $seqsAll{$id}) {
+    $seqs{$id} = $seqsAll{$id};
+  } elsif (exists $uniprotSeq{$id}) {
+    $seqs{$id} = $uniprotSeq{$id};
+  } else {
+    die "No sequence for $id in $curatedFaa.db";
+  }
+}
+my %hitsUniq = map { $_ => 1 } @hitIds;
+die unless scalar(keys %seqs) == scalar(keys %hitsUniq);
+print p("Fetched " . scalar(keys %seqs) . " sequences"), "\n";
+
+open(my $fhFaa, ">", "$tmpPre.faa") || die "Error writing to $tmpPre.faa";
+foreach my $id (sort keys %seqs) {
+  print $fhFaa ">$id\n$seqs{$id}\n";
+}
+close($fhFaa) || die "Error writing to $tmpPre.faa";
+print p("Running BLASTp"), "\n";
+my $covFrac = $minCoverage / 100;
+my $formatCmd = "$formatdb -i $tmpPre.faa -p T";
+system($formatCmd) == 0 || die "formatdb failed -- $formatCmd -- $!";
+my $blastCmd = qq{$blastall -p blastp -i $tmpPre.faa -d $tmpPre.faa -F "m S" -e 0.001 -m 8 -a $nCPU -o $tmpPre.hits >& /dev/null};
+system($blastCmd) == 0 || die "blastall failed -- $blastCmd -- $!";
+unlink("$tmpPre.faa");
+foreach my $suffix (qw{phr pin psq}) {
+  unlink("$tmpPre.faa.$suffix");
+}
+my %sim = (); # id => id => bits if hit (removed self hits)
+my @sims = (); # list of [id1, id2, bits]
+open (my $fhsim, "<", "$tmpPre.hits") || die "Cannot read $tmpPre.hits";
+while(my $line = <$fhsim>) {
+  my ($id1, $id2, $identity, $alnlen, $mm, $gap, $qbeg, $qend, $sbeg, $send, $eval, $bits) = split /\t/, $line;
+  die $id1 unless exists $seqs{$id1};
+  die $id2 unless exists $seqs{$id2};
+  my $cov1 = $alnlen / length($seqs{$id1});
+  my $cov2 = $alnlen / length($seqs{$id2});
+  if ($id1 ne $id2 && $identity >= $minIdentity && $cov1 >= $covFrac && $cov2 >= $covFrac) {
+    $sim{$id1}{$id2} = $bits;
+    push @sims, [$id1,$id2,$bits];
+  }
+}
+close($fhsim) || die "Error reading $tmpPre.hits";
+unlink("$tmpPre.hits");
+print p("Found similarities, at above ${minIdentity}% identity and ${minCoverage}% coverage, for",
+        scalar(keys %sim), "of these sequences"), "\n";
+
+# Try to find a small number of seed sequences that hit all of the members
+# Don't try to be optimal, just start with the seeds that have the most hits above the threshold
+my %nSims = map { $_ => scalar(keys %{ $sim{$_} }) } (keys %sim);
+my @seeds = sort { $nSims{$b} <=> $nSims{$a} || $a <=> $b } (keys %nSims);
+my %clust = (); # sequence to cluster, which is a hash of ids with the seed having a value of 1
+foreach my $seed (@seeds) {
+  if (!exists $clust{$seed}) {
+    my $chash = { $seed => 1 };
+    $clust{$seed} = $chash;
+    foreach my $id2 (keys %{ $sim{$seed} }) {
+      if (!exists $clust{$id2}) {
+        $clust{$id2} = $chash;
+        $chash->{$id2} = 0;
       }
     }
   }
 }
+
+# And, add the singletons
+foreach my $id (keys %seqs) {
+  if (!exists $clust{$id}) {
+    $clust{$id} = { $id => 1 };
+  }
+}
+
+# Report the clusters
+# First identify the unique ones
+my %clustByIds = ();
+foreach my $chash (values %clust) {
+  $clustByIds{ join(":::", sort keys %$chash) } = $chash;
+}
+my @clusters = values %clustByIds;
+my @singletons = grep { scalar(keys %$_) == 1 } @clusters;
+my $clustReport = "Found " . (scalar(@clusters) - scalar(@singletons)) . " clusters of similar sequences.";
+$clustReport .= " Another " . scalar(@singletons) . " sequences are not clustered." if @singletons > 0;
+print p($clustReport), "\n";
+
+my @clustBySize = sort { scalar(keys %$b) <=> scalar(keys %$a) } @clusters;
+my $nCluster = 0;
+foreach my $cluster (@clustBySize) {
+  my @ids = sort keys %$cluster;
+  if (@ids > 1) {
+    $nCluster++;
+    my ($seed) = grep $cluster->{$_}, @ids;
+    die unless defined $seed;
+    my $nHetero = scalar(grep IsHetero($_), @ids);
+    my $sz = scalar(@ids);
+    my @clusterHeader = ("Cluster $nCluster");
+    if ($nHetero ==  $sz) {
+      push @clusterHeader, "(heteromeric)";
+    } elsif ($nHetero > 0) {
+      push @clusterHeader, "($nHetero/$sz heteromeric)";
+    } else {
+      push @clusterHeader, "(not heteromeric)";
+    }
+    print h3(@clusterHeader);
+    print small("The first sequence in each cluster is the seed.") if $nCluster == 1; 
+    my @other = grep ! $cluster->{$_}, @ids;
+    foreach my $id ($seed, @other) {
+      print CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id}), "\n";
+    }
+  }
+}
+if (@singletons > 0) {
+  my @singletonIds = map { (keys %{ $_ })[0] } @singletons;
+  my $nHetero = scalar(grep IsHetero($_), @singletonIds);
+  my $nSingle = scalar(@singletonIds);
+  print h3("Singletons ($nHetero/$nSingle heteromeric)");
+  foreach my $id (sort @singletonIds) {
+    print CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id}), "\n";
+  }
+}
+
+
 print end_html;
 exit(0);
 
