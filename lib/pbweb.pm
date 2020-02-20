@@ -115,6 +115,10 @@ sub AddCuratedInfo($) {
     $gene->{priority} = 2.5; # just behind Swiss-Prot
     $gene->{source} = "BRENDA";
     $gene->{URL} = "http://www.brenda-enzymes.org/sequences.php?AC=" . $protId;
+  } elsif ($db eq "UniProt") { # used in GapMind, i.e. see curatedClusters.cgi
+    $gene->{priority} = 6;
+    $gene->{source} = "UniProt";
+    $gene->{URL} = "http://www.uniprot.org/uniprot/$protId";
   } else {
     die "Unexpected curated database $db";
   }
