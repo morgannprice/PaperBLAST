@@ -102,7 +102,7 @@ foreach my $x ($fastacmd,$blastall,$formatdb,$usearch) {
 
 my $tmpPre = "/tmp/cluratedClusters.$$";
 
-start_page('title' => $closeMode ? "Proteins Close to $step"
+start_page('title' => $closeMode ? "Other Proteins Similar to $step"
            : "Clusters of Characterized Proteins",
            'banner' => $banner, 'bannerURL' => $bannerURL);
 autoflush STDOUT 1; # show preliminary results
@@ -201,8 +201,7 @@ if ($query ne "") { # find similar proteins
   } else {
     print p("Or see",
             a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec&step=$step&close=1"},
-              "close other proteins"),
-            "for step $step");
+              "other proteins similar to $step"));
   }
   print p("Or see all steps for",
           a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec"}, $pathInfo{$pathSpec}{desc}));
@@ -324,14 +323,14 @@ close($fhFaa) || die "Error writing to $tmpPre.faa";
 
 if ($closeMode && $pathSpec && $step) {
   die "No such file: $curatedFaa.udb" unless -e "$curatedFaa.udb";
-  my $minId = 0.35;
-  my $minCov = 0.7;
+  my $minIdClose = 0.4;
+  my $minCovClose = 0.7;
   print p("Running ublast to find other characterized proteins with",
-          ($minId*100)."%",
+          ($minIdClose*100)."%",
           "identity and",
-          ($minCov*100)."%",
+          ($minCovClose*100)."%",
           "coverage"), "\n";
-  my $cmd = "$usearch -ublast $tmpPre.faa -db $curatedFaa.udb -evalue 0.001 -blast6out $tmpPre.close -threads $nCPU -quiet -id $minId -query_cov $minCov";
+  my $cmd = "$usearch -ublast $tmpPre.faa -db $curatedFaa.udb -evalue 0.001 -blast6out $tmpPre.close -threads $nCPU -quiet -id $minIdClose -query_cov $minCovClose";
   system($cmd) == 0 || die "Error running\n$cmd\n-- $!";
   my @close = ();
   open (my $fhClose, "<", "$tmpPre.close") || die "Cannot read $tmpPre.close";
@@ -474,7 +473,7 @@ foreach my $cluster (@clustBySize) {
     print small("The first sequence in each cluster is the seed.") if $nCluster == 1; 
     my @other = grep ! $cluster->{$_}, @ids;
     foreach my $id ($seed, @other) {
-      print CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id}), "\n";
+      print p(CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id})), "\n";
     }
   }
 }
@@ -484,7 +483,7 @@ if (@singletons > 0) {
   my $nSingle = scalar(@singletonIds);
   print h3("Singletons ($nHetero/$nSingle heteromeric)");
   foreach my $id (sort @singletonIds) {
-    print CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id}), "\n";
+    print p(CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id})), "\n";
   }
 }
 
