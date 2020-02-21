@@ -3,7 +3,7 @@
 # All parameters are optional. Without parameters, shows a query input page.
 #
 # Parameters:
-# set -- which database of curated proteins (defaults to gaps2, i.e. using ../tmp/gaps2.aa)
+# set -- which database of curated proteins (defaults to gaps2, i.e. using ../tmp/path.gaps2/curated.faa*)
 #
 # Specify which proteins to cluster using a query:
 #	query -- what term to search for
@@ -14,6 +14,8 @@
 # Alternatively, browse the pathways or steps, use
 #	path=all to list the pathways, or
 #	set path but not step to list the steps in a pathway
+# Can also find similar but non-matching characterized proteins, using
+#	path, step, and close=1
 #
 # Clustering options:
 # identity -- %identity threshold for clustering, default 30
@@ -37,6 +39,7 @@ use List::Util qw{min max};
 sub IsHetero($);
 sub MatchRows($$$);
 sub FaaToDb($$);
+# The first argument is a "compound" id which is a list of ids
 sub CompoundInfoToHtml($$$);
 
 my $maxHits = 250;
@@ -48,9 +51,12 @@ my $set = param('set') || "gaps2";
 $set =~ m/^[a-zA-Z0-9._-]+$/ || die "Invalid set $set";
 
 my $query = param('query') || "";
-my $word = param('word') || 0;
+my $wordMode = param('word') || 0;
 my $pathSpec = param('path') || "";
 my $step = param('step') || "";
+my $closeMode = param('close') || 0;
+die "Can only use close if path and step is set"
+  if $closeMode && !($pathSpec && $step);
 
 my $minIdentity = param('identity');
 $minIdentity = 30 unless defined $minIdentity && $minIdentity =~ m/^\d+$/;
@@ -89,13 +95,15 @@ my %hetComment = map { $_->{db} . "::" . $_->{protId} => $_->{comment} } @het;
 my $fastacmd = "../bin/blast/fastacmd";
 my $blastall = "../bin/blast/blastall";
 my $formatdb = "../bin/blast/formatdb";
-foreach my $x ($fastacmd,$blastall,$formatdb) {
+my $usearch = "../bin/usearch";
+foreach my $x ($fastacmd,$blastall,$formatdb,$usearch) {
   die "No such executable: $x" unless -x $x;
 }
 
 my $tmpPre = "/tmp/cluratedClusters.$$";
 
-start_page('title' => 'Clusters of Characterized Proteins',
+start_page('title' => $closeMode ? "Proteins Close to $step"
+           : "Clusters of Characterized Proteins",
            'banner' => $banner, 'bannerURL' => $bannerURL);
 autoflush STDOUT 1; # show preliminary results
 
@@ -145,12 +153,14 @@ foreach my $ids (keys %curatedInfo) {
   }
 }
 
-if ($query ne "") {
-  my $wordStatement = $word ? " as complete word(s)" : "";
+my %ignore = (); # ids to ignore similarity to (used in $closeMode)
+
+if ($query ne "") { # find similar proteins
+  my $wordStatement = $wordMode ? " as complete word(s)" : "";
   print p("Searching for", b(HTML::Entities::encode($query)), $wordStatement),
     p("Or try", a({-href => "curatedClusters.cgi?set=${set}"}, "another search")),
     "\n";
-  my $hits = MatchRows(\@curatedInfo, $query, $word);
+  my $hits = MatchRows(\@curatedInfo, $query, $wordMode);
   if (@$hits > $maxHits) {
     print p("Found over $maxHits proteins with matching descriptions. Please try a different query.");
     print end_html;
@@ -174,14 +184,26 @@ if ($query ne "") {
   }
   print end_ul(),
     p("Or",a({-href => "curatedClusters.cgi?set=$set"}, "search by keyword"));
-} elsif ($pathSpec ne "" && $step ne "") {
+} elsif ($pathSpec ne "" && $step ne "") { # find proteins for this step
   my $stepDesc = $steps->{steps}{$step}{desc} || die "Unknown step $step in gaps/$set/$pathSpec.steps";
 
   my @querycol = qw{step type query desc file sequence};
   my @queries = ReadTable("$queryPath/$pathSpec.query", \@querycol);
   @queries = grep { $_->{step} eq $step } @queries;
   die "Unknown step $step, not in the $pathSpec.query file" unless @queries > 0;
-  print p("Clustering the characterized proteins for", i($step), "($stepDesc) in $pathInfo{$pathSpec}{desc}");
+  print p($closeMode ? "Finding" : "Clustering",
+          "the characterized proteins for", i($step), "($stepDesc) in $pathInfo{$pathSpec}{desc}");
+  if ($closeMode) {
+    print p("Or see",
+            a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec&step=$step"},
+                        "clustering"),
+            "for step $step");
+  } else {
+    print p("Or see",
+            a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec&step=$step&close=1"},
+              "close other proteins"),
+            "for step $step");
+  }
   print p("Or see all steps for",
           a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec"}, $pathInfo{$pathSpec}{desc}));
 
@@ -202,8 +224,9 @@ if ($query ne "") {
       unless (NewerThan($hitsFile, $hmmFile) && NewerThan($hitsFile, $curatedFaa)) {
         my $hmmsearch = "../bin/hmmsearch";
         die "No such executable: $hmmsearch" unless -x $hmmsearch;
-        my $cmd = "$hmmsearch --cpu $nCPU --cut_tc -o /dev/null --domtblout $hitsFile $hmmFile $curatedFaa";
+        my $cmd = "$hmmsearch --cpu $nCPU --cut_tc -o /dev/null --domtblout $hitsFile.$$.tmp $hmmFile $curatedFaa";
         system($cmd) == 0 || die "Failed running $cmd -- $!";
+        rename("$hitsFile.$$.tmp",$hitsFile) || die "Cannot rename $hitsFile.$$.tmp to $hitsFile";
       }
       open(my $fhHits, "<", $hitsFile) || die "Cannot read $hitsFile";
       while(my $line = <$fhHits>) {
@@ -214,9 +237,13 @@ if ($query ne "") {
         die "Cannot parse hmmsearch line $line"
           unless defined $hitend && $hitend > 0 && $hmmLen > 0 && $ids ne "";
         die "Unknown id $ids reported by hmmsearch" unless exists $curatedInfo{$ids};
-        push @hitIds, $ids;
-        $hitHmm{$ids} = 1;
-        $hitHmmGood{$ids} = 1 if ($qend-$qbeg+1)/$hmmLen >= $minHmmCoverageGood;
+        my $highCoverage = ($qend-$qbeg+1)/$hmmLen >= $minHmmCoverageGood;
+        $hitHmmGood{$ids} = 1 if $highCoverage;
+        # if in close mode, ignore low-coverage HMM-only hits
+        if ($highCoverage || ! $closeMode) {
+          $hitHmm{$ids} = 1;
+          push @hitIds, $ids;
+        }
       }
       close($fhHits) || die "Error reading $hitsFile";
     } elsif ($query->{type} eq "uniprot") {
@@ -237,15 +264,17 @@ if ($query ne "") {
         $uniprotSeq{$id} = $query->{sequence};
         push @hitIds, $id;
       }
-    } elsif ($query->{type} eq "curated2" || $query->{type} eq "ignore") {
-      ; # curated2 means not actually characterized, so skip that too
+    } elsif ($query->{type} eq "curated2") {
+      ; # curated2 means not actually characterized, so skip that
+    } elsif ($query->{type} eq "ignore") {
+      $ignore{ $query->{query} } = 1;
     } else {
       die "Unknown query type $query->{type} for step $step in $queryPath/$pathSpec.query";
     }
-    # hits from Hmm only get marked
   }
   print p("Sorry, no curated sequences were found matching any of", scalar(@queries),
           "rules for step $step") if @hitIds == 0;
+  # mark hits from Hmm only
   foreach my $ids (keys %hitHmm) {
     if (!exists $hitRule{$ids}) {
       $curatedInfo{$ids}{descs} .= exists $hitHmmGood{$ids} ?
@@ -292,6 +321,70 @@ foreach my $id (sort keys %seqs) {
   print $fhFaa ">$id\n$seqs{$id}\n";
 }
 close($fhFaa) || die "Error writing to $tmpPre.faa";
+
+if ($closeMode && $pathSpec && $step) {
+  die "No such file: $curatedFaa.udb" unless -e "$curatedFaa.udb";
+  my $minId = 0.35;
+  my $minCov = 0.7;
+  print p("Running ublast to find other characterized proteins with",
+          ($minId*100)."%",
+          "identity and",
+          ($minCov*100)."%",
+          "coverage"), "\n";
+  my $cmd = "$usearch -ublast $tmpPre.faa -db $curatedFaa.udb -evalue 0.001 -blast6out $tmpPre.close -threads $nCPU -quiet -id $minId -query_cov $minCov";
+  system($cmd) == 0 || die "Error running\n$cmd\n-- $!";
+  my @close = ();
+  open (my $fhClose, "<", "$tmpPre.close") || die "Cannot read $tmpPre.close";
+  while(my $line = <$fhClose>) {
+    chomp $line;
+    my ($query, $subject, $identity, $alen, $mm, $gap, $qbeg, $qend, $sbeg, $send, $eval, $bits) = split /\t/, $line;
+    die "Cannot parse blast6out line $line" unless $bits > 0;
+    push @close, { 'query' => $query, 'subject' => $subject, 'identity' => $identity,
+                   'qbeg' => $qbeg, 'qend' => $qend, 'sbeg' => $sbeg, 'send' => $send,
+                   'eval' => $eval, 'bits' => $bits };
+    die "Unknown subject $subject" unless exists $curatedInfo{$subject};
+  }
+  close($fhClose) || die "Error reading $tmpPre.close";
+  unlink("$tmpPre.faa");
+  unlink("$tmpPre.close");
+  @close = sort { $b->{bits} <=> $a->{bits} } @close;
+  my %subjectSeen = ();
+  @close = grep { my $subject = $_->{subject};
+                  my $seen = exists $subjectSeen{$subject};
+                  $subjectSeen{$subject} = 1;
+                  $seen; } @close;
+  my $nHitsAll = scalar(@close);
+  @close = grep !exists $hitsUniq{ $_->{subject} }, @close;
+  my $nPreIgnore = scalar(@close);
+  @close = grep !exists $ignore{ $_->{subject} }, @close;
+  print p("Found hits to $nPreIgnore  other characterized sequences.",
+          "(Found $nHitsAll hits including self hits.)");
+  print p("Removing ignored items reduces this to", scalar(@close), "close sequences.")
+    if scalar(@close) < $nPreIgnore;
+  foreach my $close (@close) {
+    my $subject = $close->{subject};
+    my $query = $close->{query};
+    my $queryDesc = CompoundInfoToHtml($query, $curatedInfo{$query}, $seqs{$query});
+
+    my $idString = int($close->{identity})."%";
+    my $covString =   "Amino acids $close->{sbeg}:$close->{send}/$curatedInfo{$subject}{length}"
+      . " are $idString identical to $close->{qbeg}:$close->{qend}/$curatedInfo{$query}{length}"
+        . " of the $step protein";
+
+    print p({ -style => 'margin-bottom: 0em;' },
+            CompoundInfoToHtml($subject, $curatedInfo{$subject}, $seqsAll{$subject}),
+            br(),
+            a({-title => $covString}, "$idString identical to")),
+           p({-style => 'margin-left: 5em; margin-top: 0em; font-size: 90%;'},
+                CompoundInfoToHtml($query, $curatedInfo{$query}, $seqs{$query})),
+           "\n";
+  }
+  print end_html;
+  exit(0);
+}
+
+# else
+# Clustering mode
 print p("Running BLASTp"), "\n";
 my $covFrac = $minCoverage / 100;
 my $formatCmd = "$formatdb -i $tmpPre.faa -p T";
@@ -459,8 +552,8 @@ sub CompoundInfoToHtml($$$) {
   my @links = ();
   push @links, a({-href => "litSearch.cgi?query=$query"}, "PaperBLAST");
   push @links, a({-href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=$query"}, "CDD");
-  return p(join("<BR>", @pieces,
-                small($len, "amino acids: ", join(", ", @links))));
+  return join("<BR>", @pieces,
+                small($len, "amino acids: ", join(", ", @links)));
 }
 
 sub IsHetero($) {
