@@ -32,6 +32,7 @@ use DB_File;
 use URI::Escape;
 use HTML::Entities;
 use IO::Handle qw{autoflush};
+use List::Util qw{min max};
 
 sub IsHetero($);
 sub MatchRows($$$);
@@ -367,7 +368,8 @@ foreach my $cluster (@clustBySize) {
     die unless defined $seed;
     my $nHetero = scalar(grep IsHetero($_), @ids);
     my $sz = scalar(@ids);
-    my @clusterHeader = ("Cluster $nCluster");
+    my @len = map $curatedInfo{$_}{length}, @ids;
+    my @clusterHeader = ("Cluster $nCluster,", min(@len) . "-" .max(@len), "amino acids");
     if ($nHetero ==  $sz) {
       push @clusterHeader, "(heteromeric)";
     } elsif ($nHetero > 0) {
