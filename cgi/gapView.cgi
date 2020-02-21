@@ -913,8 +913,8 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
       print li($show);
     }
     print end_ul(), "\n";
-    print p("See sequence clustering of the", a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec&step=$step"},
-                         "characterized proteins for this step"));
+    print p("See all characterized", a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec&step=$step"},
+                         "$step proteins"));
 
     # Show similar gaps
     my $known = StepRowToKnown($stepObj, \%markerSim, \%knownGaps);
