@@ -11,19 +11,23 @@
 # or using a step definition:
 #	path -- which pathway the step is in
 #	step -- which step
+# Alternatively, browse the pathways or steps, use
+#	path=all to list the pathways, or
+#	set path but not step to list the steps in a pathway
 #
 # Clustering options:
 # identity -- %identity threshold for clustering, default 30
 # coverage -- %coverage threshold for clustering, default 75
 
 use strict;
-use CGI qw(:standard Vars);
+use CGI qw(:standard Vars start_ul end_ul);
 use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
 use Time::HiRes qw{gettimeofday};
 use DBI;
 use lib "../lib";
 use pbutils qw{ReadTable NewerThan CuratedWordMatch};
 use pbweb qw{start_page AddCuratedInfo GeneToHtmlLine};
+use Steps qw{ReadSteps};
 use DB_File;
 use URI::Escape;
 use HTML::Entities;
@@ -37,7 +41,11 @@ sub CompoundInfoToHtml($$$);
 my $maxHits = 250;
 my $nCPU = 8;
 
+my $minHmmCoverageGood = 0.8;
+
 my $set = param('set') || "gaps2";
+$set =~ m/^[a-zA-Z0-9._-]+$/ || die "Invalid set $set";
+
 my $query = param('query') || "";
 my $word = param('word') || 0;
 my $pathSpec = param('path') || "";
@@ -53,9 +61,22 @@ $minCoverage = 75 unless defined $minCoverage && $minCoverage =~ m/^\d+$/;
 $minCoverage = 100 if $minCoverage > 100;
 $minCoverage = 0 if $minCoverage < 0;
 
-$set =~ m/^[a-zA-Z0-9._-]+$/ || die "Invalid set $set";
+my $stepPath = "../gaps/$set";
+die "Invalid set $set: no $stepPath directory" unless -d $stepPath;
 my $queryPath = "../tmp/path.$set"; # intermediate files
 die "Invalid set $set: no $queryPath directory" unless -d $queryPath;
+
+my ($steps, $banner, $bannerURL);
+my @pathInfo;
+my %pathInfo;
+if ($pathSpec ne "") {
+  $steps = ReadSteps("../gaps/$set/$pathSpec.steps") if $pathSpec && $pathSpec ne "all";
+  @pathInfo = ReadTable("$stepPath/$set.table", ["pathwayId","desc"]);
+  %pathInfo = map { $_->{pathwayId} => $_ } @pathInfo;
+  $banner = "GapMind for " . ($pathInfo{all}{desc} || "pathways");
+  $bannerURL = "gapView.cgi";
+}
+
 my $curatedFaa = "$queryPath/curated.faa";
 die "No such file: $curatedFaa" unless -e $curatedFaa;
 
@@ -73,7 +94,8 @@ foreach my $x ($fastacmd,$blastall,$formatdb) {
 
 my $tmpPre = "/tmp/cluratedClusters.$$";
 
-start_page('title' => 'Clusters of Characterized Proteins');
+start_page('title' => 'Clusters of Characterized Proteins',
+           'banner' => $banner, 'bannerURL' => $bannerURL);
 autoflush STDOUT 1; # show preliminary results
 
 unless (NewerThan("$curatedFaa.db", $curatedFaa)) {
@@ -98,6 +120,9 @@ if ($query eq "" && $pathSpec eq "") {
       '%coverage'),
     p(submit(-name => 'Search')),
     end_form,
+    p(a("Or",
+        a({-href => "curatedClusters.cgi?set=$set&path=all"}, "cluster proteins"),
+        "for steps in", a({-href => "gapView.cgi?set=$set"}, "GapMind"))),
     end_html;
   exit(0);
 }
@@ -136,24 +161,38 @@ if ($query ne "") {
     print p("Found " . scalar(@$hits) . " characterized proteins with matching descriptions. $nHetero of these are heteromeric.");
   }
   @hitIds = map $_->{ids}, @$hits;
+} elsif ($pathSpec eq "all") { # show list of pathways
+  die if $step ne "";
+  print p("Pathways for", $pathInfo{all}{desc}),
+    start_ul();
+  foreach my $pathObj (@pathInfo) {
+    if ($pathObj->{pathwayId} ne "all") {
+      print li(a({ -href => "curatedClusters.cgi?set=$set&path=".$pathObj->{pathwayId} },
+                 $pathObj->{desc}));
+    }
+  }
+  print end_ul(),
+    p("Or",a({-href => "curatedClusters.cgi?set=$set"}, "search by keyword"));
 } elsif ($pathSpec ne "" && $step ne "") {
-  my $stepPath = "../gaps/$set";
-  die "No such directory: $stepPath" unless -d $stepPath;
-  my @pathInfo = ReadTable("$stepPath/$set.table", ["pathwayId","desc"]);
-  my %pathInfo = map { $_->{pathwayId} => $_ } @pathInfo;
-  die "Unknown pathway $pathSpec" unless exists $pathInfo{$pathSpec};
+  my $stepDesc = $steps->{steps}{$step}{desc} || die "Unknown step $step in gaps/$set/$pathSpec.steps";
 
   my @querycol = qw{step type query desc file sequence};
   my @queries = ReadTable("$queryPath/$pathSpec.query", \@querycol);
   @queries = grep { $_->{step} eq $step } @queries;
-  die "Unknown step $step" unless @queries > 0;
-  print p("Clustering the characterized proteins for", i($step), "in $pathInfo{$pathSpec}{desc}");
+  die "Unknown step $step, not in the $pathSpec.query file" unless @queries > 0;
+  print p("Clustering the characterized proteins for", i($step), "($stepDesc) in $pathInfo{$pathSpec}{desc}");
+  print p("Or see all steps for",
+          a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec"}, $pathInfo{$pathSpec}{desc}));
 
+  my %hitHmm = (); # hits from HMMs
+  my %hitHmmGood = (); # hits from HMMs with high coverage
+  my %hitRule = (); # hits from other rules (ignoring uniprot)
   foreach my $query (@queries) {
     if ($query->{type} eq "curated") {
       my $ids = $query->{query};
       die "Unknown identifier $ids in query for $step" unless exists $seqsAll{$ids};
       push @hitIds, $ids;
+      $hitRule{$ids} = 1;
     } elsif ($query->{type} eq "hmm") {
       my $hmm = $query->{query};
       my $hmmFile = $queryPath. "/" . $query->{file};
@@ -169,9 +208,14 @@ if ($query ne "") {
       while(my $line = <$fhHits>) {
         chomp $line;
         next if $line =~ m/^#/;
-        $line =~ s/ .*//;
-        die "Cannot find id in line beginning with $line" unless $line ne "" && exists $curatedInfo{$line};
-        push @hitIds, $line;
+        my @F = split /\s+/, $line;
+      my ($ids, undef, $hitlen, $hmmName, undef, $hmmLen, $seqeval, $seqscore, undef, undef, undef, undef, $domeval, $domscore, undef, $qbeg, $qend, $hitbeg, $hitend) = @F;
+        die "Cannot parse hmmsearch line $line"
+          unless defined $hitend && $hitend > 0 && $hmmLen > 0 && $ids ne "";
+        die "Unknown id $ids reported by hmmsearch" unless exists $curatedInfo{$ids};
+        push @hitIds, $ids;
+        $hitHmm{$ids} = 1;
+        $hitHmmGood{$ids} = 1 if ($qend-$qbeg+1)/$hmmLen >= $minHmmCoverageGood;
       }
       close($fhHits) || die "Error reading $hitsFile";
     } elsif ($query->{type} eq "uniprot") {
@@ -179,6 +223,7 @@ if ($query ne "") {
       if (exists $idToIds{$id}) {
         print p("Warning: uniprot rule $query->{query} is already in curated"), "\n";
         push @hitIds, $idToIds{$id};
+        $hitRule{ $idToIds{$id} } = 1;
       } else {
         $id =~ s/SwissProt/UniProt/;
         my $desc = $query->{desc};
@@ -196,9 +241,27 @@ if ($query ne "") {
     } else {
       die "Unknown query type $query->{type} for step $step in $queryPath/$pathSpec.query";
     }
+    # hits from Hmm only get marked
   }
   print p("Sorry, no curated sequences were found matching any of", scalar(@queries),
           "rules for step $step") if @hitIds == 0;
+  foreach my $ids (keys %hitHmm) {
+    if (!exists $hitRule{$ids}) {
+      $curatedInfo{$ids}{descs} .= exists $hitHmmGood{$ids} ?
+        " (from HMM)" : " (low-coverage HMM hit)";
+    }
+  }
+} elsif ($pathSpec ne "") {
+  die "Unknown pathway $pathSpec" unless exists $pathInfo{$pathSpec};
+  my @steps = sort { $a->{i} <=> $b->{i} } values %{ $steps->{steps} };
+  print h3("Steps in $pathInfo{$pathSpec}{desc}"),
+    p("Cluster the charaterized proteins for a step:"), start_ul();
+  foreach my $stepObj (@steps) {
+    print li(a({ -href => "curatedClusters.cgi?set=$set&path=$pathSpec&step=$stepObj->{name}" }, 
+            $stepObj->{name}) . ":", $stepObj->{desc});
+  }
+  print end_ul(),
+    p("Or see all", a({-href => "curatedClusters.cgi?set=$set&path=all"}, "pathways"));
 } else {
   die "Invalid mode for curatedClusters.cgi";
 }
@@ -260,7 +323,7 @@ print p("Found similarities, at above ${minIdentity}% identity and ${minCoverage
 # Try to find a small number of seed sequences that hit all of the members
 # Don't try to be optimal, just start with the seeds that have the most hits above the threshold
 my %nSims = map { $_ => scalar(keys %{ $sim{$_} }) } (keys %sim);
-my @seeds = sort { $nSims{$b} <=> $nSims{$a} || $a <=> $b } (keys %nSims);
+my @seeds = sort { $nSims{$b} <=> $nSims{$a} || $a cmp $b } (keys %nSims);
 my %clust = (); # sequence to cluster, which is a hash of ids with the seed having a value of 1
 foreach my $seed (@seeds) {
   if (!exists $clust{$seed}) {
