@@ -27,7 +27,7 @@ use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
 use Time::HiRes qw{gettimeofday};
 use DBI;
 use lib "../lib";
-use pbutils qw{ReadTable NewerThan CuratedWordMatch};
+use pbutils qw{ReadTable NewerThan CuratedWordMatch ReadFastaEntry};
 use pbweb qw{start_page AddCuratedInfo GeneToHtmlLine};
 use Steps qw{ReadSteps};
 use DB_File;
