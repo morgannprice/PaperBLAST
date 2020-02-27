@@ -5,6 +5,7 @@ use Getopt::Long;
 
 my $dataDir = "$Bin/../data";
 my @indFiles = qw{uniprot_sprot.dat.gz};
+my $curatedParsed;
 my $usage = <<END
 setupGaps.pl  -ind download_directory -out output_directory
 
@@ -15,14 +16,22 @@ Optional arguments:
 -data data_directory -- The directory with the
   PaperBLAST database. It defaults to
   $dataDir
+-skip 3 -- skip the first 3 commands
+-sprot sprot.curated_parsed -- defaults to
+  data_directory/../sprot.curated_parsed
+-test -- print the commands instead of running them
 END
 ;
 
-my ($indDir, $outDir);
+my ($indDir, $outDir, $test);
+my $skip = 0;
 die $usage
   unless GetOptions('ind=s' => \$indDir,
                     'out=s' => \$outDir,
-                    'data=s' => \$dataDir)
+                    'data=s' => \$dataDir,
+                    'sprot=s' => \$curatedParsed,
+                    'skip=i' => \$skip,
+                    'test' => \$test)
   && @ARGV == 0;
 die $usage unless defined $indDir && defined $outDir;
 foreach my $dir ($indDir, $outDir, $dataDir) {
@@ -32,6 +41,8 @@ foreach my $file (@indFiles) {
   die "No such file: $indDir/$file\n"
     unless -e "$indDir/$file";
 }
+$curatedParsed = "$dataDir/../sprot.curated_parsed" unless defined $curatedParsed;
+die "No such file: $curatedParsed -- use -sprot to change\n" unless -e $curatedParsed;
 
 foreach my $x ("$Bin/usearch", "$Bin/blast/formatdb") {
   die "No such executable: $x\n" unless -x $x;
@@ -54,12 +65,20 @@ my @cmds = ( ["$Bin/curatedFaa.pl",
               "-cluster_fast", "$tmpPre.faa",
               "-id", 0.6,
               "-uc", "$tmpPre.uc"],
-             ["$Bin/clusterEc.pl $tmpPre.faa $tmpPre.uc > $outDir/curated2.faa"]
+             ["$Bin/clusterEc.pl $tmpPre.faa $tmpPre.uc > $outDir/curated2.faa"],
+             ["zcat $indDir/uniprot_sprot.dat.gz | $Bin/sprotSubunit.pl -curated $curatedParsed > $tmpPre.sprot.subunits"],
+             ["$Bin/findHeteromers.pl -sprot $tmpPre.sprot.subunits > $outDir/hetero.tab"]
            );
+die "Invalid skip: $skip\n" if $skip < 0;
+while($skip > 0) {
+  $skip--;
+  shift @cmds;
+}
 foreach my $cmdlist (@cmds) {
   print STDERR join(" ", @$cmdlist)."\n";
-  system(@$cmdlist) == 0 || die "Error running @$cmdlist\n$$!n";
+  defined $test || system(@$cmdlist) == 0 || die "Error running @$cmdlist\n$$!n";
 }
 unlink("$tmpPre.faa");
 unlink("$tmpPre.uc");
-print STDERR "Set up gap files in $outDir\n";
+unlink("$tmpPre.sprot.subunits");
+print STDERR "Set up gap files in $outDir\n" unless defined $test;
