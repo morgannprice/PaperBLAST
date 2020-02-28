@@ -153,6 +153,10 @@ foreach my $ids (keys %curatedInfo) {
   }
 }
 
+my %hitHmm = (); # hits from HMMs
+my %hitHmmGood = (); # hits from HMMs with high coverage
+# hits from other rules (except uniprots not in the curated database which are in %uniprotSeq)
+my %hitRule = ();
 my %ignore = (); # ids to ignore similarity to (used in $closeMode)
 
 if ($query ne "") { # find similar proteins
@@ -206,9 +210,6 @@ if ($query ne "") { # find similar proteins
   print p("Or see all steps for",
           a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec"}, $pathInfo{$pathSpec}{desc}));
 
-  my %hitHmm = (); # hits from HMMs
-  my %hitHmmGood = (); # hits from HMMs with high coverage
-  my %hitRule = (); # hits from other rules (ignoring uniprot)
   foreach my $query (@queries) {
     if ($query->{type} eq "curated") {
       my $ids = $query->{query};
@@ -273,13 +274,9 @@ if ($query ne "") { # find similar proteins
   }
   print p("Sorry, no curated sequences were found matching any of", scalar(@queries),
           "rules for step $step") if @hitIds == 0;
-  # mark hits from Hmm only
-  foreach my $ids (keys %hitHmm) {
-    if (!exists $hitRule{$ids}) {
-      $curatedInfo{$ids}{descs} .= exists $hitHmmGood{$ids} ?
-        " (from HMM)" : " (low-coverage HMM hit)";
-    }
-  }
+
+  # Remove hits that match ignore (this should only happen for HMM hits)
+  @hitIds = grep !exists $ignore{ $_ }, @hitIds;
 } elsif ($pathSpec ne "") {
   die "Unknown pathway $pathSpec" unless exists $pathInfo{$pathSpec};
   my @steps = sort { $a->{i} <=> $b->{i} } values %{ $steps->{steps} };
@@ -360,6 +357,18 @@ if ($closeMode && $pathSpec && $step) {
           "(Found $nHitsAll hits including self hits.)");
   print p("Removing ignored items reduces this to", scalar(@close), "close sequences.")
     if scalar(@close) < $nPreIgnore;
+  # And also record hmm-only good hits
+  my $hasSeqRule = keys(%uniprotSeq) > 0 || keys(%hitRule) > 0;
+  my @hitHmmGoodOnly = ();
+  if ($hasSeqRule) {
+    @hitHmmGoodOnly = grep !exists $ignore{$_} && !exists $hitRule{$_}, keys %hitHmmGood;
+    print p("There are also", scalar(@hitHmmGoodOnly), "HMM-only high-coverage hits.")
+      if @hitHmmGoodOnly > 0;
+  }
+  if (@close > 0) {
+    print h3("Close sequences");
+    print p("(Sequences that are similar to these will not be high-confidence candidates for", i($step).".)");
+  }
   foreach my $close (@close) {
     my $subject = $close->{subject};
     my $query = $close->{query};
@@ -377,6 +386,15 @@ if ($closeMode && $pathSpec && $step) {
            p({-style => 'margin-left: 5em; margin-top: 0em; font-size: 90%;'},
                 CompoundInfoToHtml($query, $curatedInfo{$query}, $seqs{$query})),
            "\n";
+  }
+
+  if (@hitHmmGoodOnly > 0) {
+    print h3("HMM-only sequences");
+    print p("(Since these sequences' annotations are outside the definition for", i($step).",",
+            "HMM hits that are over 40% similar to these sequences will be scored as moderate confidence.)");
+    foreach my $hit (@hitHmmGoodOnly) {
+      print p(CompoundInfoToHtml($hit, $curatedInfo{$hit}, $seqs{$hit}))."\n";
+    }
   }
   print end_html;
   exit(0);
@@ -439,6 +457,19 @@ foreach my $id (keys %seqs) {
 }
 
 # Report the clusters
+
+# Mark HMM only hits
+my $hasSeqRule = keys(%uniprotSeq) > 0 || keys(%hitRule) > 0;
+my $hmmColor = $hasSeqRule ? "red" : "black";
+# mark hits from Hmm only
+foreach my $ids (keys %hitHmm) {
+  if (!exists $hitRule{$ids}) {
+    $curatedInfo{$ids}{descs} .= exists $hitHmmGood{$ids} ?
+      span({-style => "color: $hmmColor;"}, " (from HMM only)")
+        : " (low-coverage HMM hit)";
+  }
+}
+
 # First identify the unique ones
 my %clustByIds = ();
 foreach my $chash (values %clust) {
