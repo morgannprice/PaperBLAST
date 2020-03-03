@@ -11,6 +11,8 @@ use LWP::Simple qw{get};
 use LWP::UserAgent;
 
 sub ReadSteps($); # stepfile => hash of steps, rules, ruleOrder
+sub ReadSteps2($$); # stepfile, doimportflag => same result as ReadSteps
+
 # steps is a hash of step name to a hash of i, name, desc, and search, which is a list of type/value pairs
 #	(use i to sort them by the same order as in the stepfile)
 # rules is a hash of rule name to a list of lists, each element being a step name or another rule name
@@ -18,13 +20,21 @@ sub ReadSteps($); # stepfile => hash of steps, rules, ruleOrder
 #	The sublist is met if all of its components are met (AND at the 2nd level)
 # ruleOrder is a list of rule names in order
 sub ReadSteps($) {
-  my ($stepsfile) = @_;
+  my ($stepsFile) = @_;
+  return ReadSteps2($stepsFile, 1); # 1 means allow imports
+}
+
+sub ReadSteps2($$) {
+  # The purpose of the doimport flag is to prevent cycles A imports from B imports from A
+  # When called with doimport=0, ignores import statements, and allows rules to be incomplete
+  my ($stepsFile, $doimport) = @_;
+  my %imports = (); # filepathname to step object
   my  @stepTypes = qw{term hmm EC uniprot ignore ignore_other curated};
   my %stepTypes = map { $_ => 1 } @stepTypes;
   my $steps = {}; # step name to hash of name, desc, and search, which is a list of pairs
   my $rules = {}; # rule name to list of lists, each element is a step name or another rule name
   my @ruleOrder = (); # list of rules in input order
-  open(my $fhSteps, "<", $stepsfile) || die "Cannot read $stepsfile";
+  open(my $fhSteps, "<", $stepsFile) || die "Cannot read $stepsFile";
   my $nSteps = 0;
   while (my $line = <$fhSteps>) {
     $line =~ s/[\r\n]+$//;
@@ -33,32 +43,65 @@ sub ReadSteps($) {
     next if $line eq ""; # empty or comment line
     if ($line =~ m/^(\S+):\s+(\S.*)$/) {
       my ($rulename, $pieces) = ($1, $2);
-      die "Cannot use step name $rulename as rule name in $stepsfile\n"
+      die "Cannot use step name $rulename as rule name in $stepsFile\n"
         if exists $steps->{$rulename};
       my @pieces = split /\s+/, $pieces;
       foreach my $piece (@pieces) {
-        die "Rule $rulename includes $piece which has not been defined yet in $stepsfile\n"
-          unless exists $rules->{$piece} || exists $steps->{$piece};
-        die "Rule $rulename cannot include itself in $stepsfile\n"
+        # In !doimport mode, some pieces could be missing
+        die "Rule $rulename includes $piece which has not been defined yet in $stepsFile\n"
+          unless exists $rules->{$piece} || exists $steps->{$piece} || ! $doimport;
+        die "Rule $rulename cannot include itself in $stepsFile\n"
           if $piece eq $rulename;
       }
       push @ruleOrder, $rulename unless exists $rules->{$rulename};
       push @{ $rules->{$rulename} }, \@pieces;
+    } elsif ($line =~ m/^import\s/) {
+      my $toget = $line;
+      $toget =~ s/^import\s+//;
+      $toget =~ s/#.*//;
+      $toget =~ s/\s+$//;
+      my @pieces = split /:/, $toget;
+      die "Invalid import line in $stepsFile\n$line\n(should be of the form\nimport stepsfile:step)\n"
+        unless @pieces == 2;
+      my ($importFileName, $stepName) = @pieces;
+      die "Invalid import file $importFileName in $stepsFile\n"
+        unless $importFileName =~ m/^[a-zA-Z0-9._-]+$/;
+      my $importFilePathName = $importFileName;
+      if ($stepsFile =~ m!/!) {
+        $importFilePathName = $stepsFile;
+        $importFilePathName =~ s!/[^/]+$!!;
+        $importFilePathName = $importFilePathName . "/" . $importFileName;
+      }
+      die "Unknown import file $importFilePathName\nfrom line $line\nin steps file $stepsFile\n"
+        unless -e $importFilePathName;
+      if ($doimport) {
+        $imports{$importFilePathName} = ReadSteps2($importFilePathName, 0)
+          if !exists $imports{$importFilePathName};
+        my $stepsImport = $imports{$importFilePathName};
+        die "Steps file $stepsFile imports unknown step $stepName from $importFilePathName\n"
+          unless exists $stepsImport->{steps}{$stepName};
+        die "Steps file $stepsFile imports step $stepName that already exists\n"
+          if exists $steps->{$stepName} || exists $rules->{$stepName};
+        # Load the step.
+        my $stepObj = $stepsImport->{steps}{$stepName};
+        $stepObj->{i} = $nSteps++; # renumber
+        $steps->{$stepName} = $stepObj;
+      }
     } elsif ($line =~ m/\t/) {
       my @F = split /\t/, $line;
       die "Invalid rule line: $line\n" unless @F >= 3;
       my $stepname = shift @F;
-      die "Duplicate definition of step $stepname in $stepsfile\n"
+      die "Duplicate definition of step $stepname in $stepsFile\n"
         if exists $steps->{$stepname};
-      die "Spaces or other whitespace within step name $stepname in $stepsfile are not allowed\n"
+      die "Spaces or other whitespace within step name $stepname in $stepsFile are not allowed\n"
         if $stepname =~ m/\s/;
       my $desc = shift @F;
       my @search = ();
       foreach my $search (@F) {
         $search =~ m/^([a-zA-Z_]+):(.*)$/
-          || die "Do not recognize search specifier $search for step $stepname in $stepsfile\n";
+          || die "Do not recognize search specifier $search for step $stepname in $stepsFile\n";
         my ($type, $value) = ($1,$2);
-        die "Do not recognize the type in search specifier $search for step $stepname in $stepsfile\n"
+        die "Do not recognize the type in search specifier $search for step $stepname in $stepsFile\n"
           unless exists $stepTypes{$type};
         push @search, [$type, $value];
       }
@@ -66,10 +109,10 @@ sub ReadSteps($) {
         unless @search > 0;
       $steps->{$stepname} = { 'name' => $stepname, 'desc' => $desc, 'search' => \@search, 'i' => $nSteps++ };
     } else {
-      die "Do not recognize line $line in $stepsfile as either rule or step\n";
+      die "Do not recognize line $line in $stepsFile as either rule or step\n";
     }
   }
-  close($fhSteps) || die "Error reading $stepsfile";
+  close($fhSteps) || die "Error reading $stepsFile";
 
   # Check for cyclic dependencies within the rules
   # Specifically, when going through rules in order, should
@@ -79,7 +122,7 @@ sub ReadSteps($) {
     foreach my $reqs (@{ $rules->{$rule} }) {
       foreach my $piece (@$reqs) {
         if (!exists $steps->{$piece} && !exists $sofar{$piece}) {
-          die "Out-of-order dependency error in ${stepsfile}\n"
+          die "Out-of-order dependency error in ${stepsFile}\n"
             . "A rule for $rule depends on $piece, but $piece is defined later\n";
         }
       }
