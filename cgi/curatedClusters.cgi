@@ -348,7 +348,7 @@ if ($closeMode && $pathSpec && $step) {
   @close = grep { my $subject = $_->{subject};
                   my $seen = exists $subjectSeen{$subject};
                   $subjectSeen{$subject} = 1;
-                  $seen; } @close;
+                  ! $seen; } @close;
   my $nHitsAll = scalar(@close);
   @close = grep !exists $hitsUniq{ $_->{subject} }, @close;
   my $nPreIgnore = scalar(@close);
