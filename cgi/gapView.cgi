@@ -293,9 +293,12 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
     }
     system("touch", "$sumpre.begin");
     unlink($warningFile);
-    my $timeExpect = 15 * scalar(@orgs);
     my $timeStart = time();
-    print p("Analyzing $setDesc in", scalar(@orgs), "genomes. This should take around $timeExpect seconds."), "\n";
+    my @statusMsg = ();
+    push @statusMsg, "Analyzing $setDesc in", scalar(@orgs), "genomes.";
+    push @statusMsg, "This should take around", (15 * scalar(@orgs)), "seconds."
+      if $set eq "aa";
+    print p(@statusMsg), "\n";
     my @cmds = ();
     push @cmds, ["../bin/gapsearch.pl", "-orgs", $orgpre, "-query", @qFiles,
                  "-nCPU", $nCPU, "-out", "$tmpDir/$orgsSpec/$set.hits"];
@@ -342,8 +345,18 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
 
   # Make sure the warnings file is up to date
   unless (NewerThan($warningFile, "$stepPath/requires.tsv")) {
-    system("../bin/checkGapRequirements.pl -set $set -org ../tmp/$orgsSpec > $warningFile.$$.tmp") == 0
-      || die "checkGapRequirements.pl failed";
+    unless(system("(../bin/checkGapRequirements.pl -set $set -org ../tmp/$orgsSpec > $warningFile.$$.tmp) >& $warningFile.$$.tmp.log") == 0) {
+      print header(),
+        start_html(-title => "Error in GapMind"),
+        h3("Errors from checkGapRequirements.pl"),
+        "<pre>\n";
+      system("cat", "$warningFile.$$.tmp.log");
+      unlink("$warningFile.$$.tmp");
+      unlink("$warningFile.$$.tmp.log");
+      print "</pre>\n";
+      die "checkGapRequirements.pl failed\n";
+    }
+    unlink("$warningFile.$$.tmp.log");
     rename("$warningFile.$$.tmp", $warningFile)
       || die "Failed to rename $warningFile.$$.tmp to $warningFile";
   }
