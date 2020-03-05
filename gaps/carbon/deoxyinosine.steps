@@ -1,0 +1,32 @@
+# FEBA: 2'-Deoxyinosine
+# MetaCyc: DEOXYINOSINE
+
+# Catabolism via 2-deoxyribose or 2-deoxyribose-1-phosphate
+# Cleavage to deoxyribose or deoxyribose-phosphate liberates hypoxanthine,
+# the catabolism of which is not represented here.
+
+# Ignore nupX or xapB, which transport similar substrates
+transporter	deoxyinosine symporter	term:nucleoside%nupC	term:nucleoside%nupG	ignore_other:nupX	ignore_other:xapB
+
+# MetaCyc describes a purine deoxyribonucleosidase (EC 3.2.2.M2) but it has not been linked to sequence.
+# The reaction might also occur non-specifically via ribonucleosidases
+# So, no step definition.
+# The fitness data for Paraburkholderia bryophila 376MFSha3.1
+# does suggest cytoplasmic hydrolysis of purine deoxynucleosides
+
+# The phosphorylase produces 2-deoxy-alpha-D-ribose 1-phosphate
+# (2.4.2.1 includes activity on purine nucleosides and deoxynucleosides)
+# Ignore hits to guanosine phosphorylase (EC 2.4.2.15), which is a quite similar reaction
+deoD	deoxyinosine phosphorylase	EC:2.4.2.1	ignore_other:2.4.2.15
+
+# deoB converts 1-phosphate to 5-phosphate
+deoB	phosphopentomutase	EC:5.4.2.7
+
+import deoxyribose.steps:deoK # deoxyribokinase
+import deoxyribose.steps:deoC # deoxribose-phosphate aldolase
+import deoxyribose.steps:acetald_dehyd # acetaldehyde dehydrogenase
+
+deoxyriboseP: deoC acetald_dehyd
+
+all: transporter deoD deoB deoxyriboseP
+all: transporter deoK deoxyriboseP
