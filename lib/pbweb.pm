@@ -592,7 +592,13 @@ sub VIMSSToFasta($) {
                                              WHERE locusId = ? AND priority=1 },
                                           {}, $locusId);
 
-  &fail("Sorry, VIMSS$locusId is not a protein in MicrobesOnline") unless defined $aaseq;
+  unless (defined $aaseq) {
+    print p("$short matches",
+            a({-href => "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=$locusId"},
+              "VIMS$locusId"),
+            "from MicrobesOnline, which is not a protein-coding gene.");
+    return undef;
+  }
   my ($desc) = $mo_dbh->selectrow_array( qq{SELECT description FROM Locus JOIN Description USING (locusId,version)
                                              WHERE locusId = ? AND priority=1 },
                                           {}, $locusId);
