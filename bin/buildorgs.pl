@@ -14,12 +14,16 @@ my $usearch = "$Bin/usearch";
 
 my $usage = <<END
 ./buildorgs.pl -out prefix -orgs gdb1:gid1 ... gdbN:gidN
+./buildorgs.pl -out prefix -orgfile file
 
-where gdb is one of the genome databases supported by FetchAssembly
+gdb is one of the genome databases supported by FetchAssembly
 (NCBI, JGI, UniProt, MicrobesOnline, FitnessBrowser)
 and gid is a genome identifier,
-or, gdb=file and gid=filename
-or, gdb=file and gid=filename:genomeName
+ or gdb=file and gid=filename
+ or gdb=file and gid=filename:genomeName
+
+If using -orgfile -- the input file should contain one organism
+specifier per line, or comment lines that begin with "#".
 
 Writes to prefix.faa and prefix.org
 
@@ -37,10 +41,12 @@ END
 
 my $prefix;
 my @orgspec;
+my $orgfile;
 my $sixframe;
 
 die $usage
   unless GetOptions('orgs=s{1,}' => \@orgspec,
+                    'orgfile=s' => \$orgfile,
                     'out=s' => \$prefix,
                     'cache=s' => \$cachedir,
                     'febadata=s' => \$febadata,
@@ -48,12 +54,25 @@ die $usage
                     'usearch=s' => \$usearch,
                     'sixframe' => \$sixframe)
   && @ARGV == 0;
-die "Must specify -out and -orgs\n"
-  unless $prefix && @orgspec > 0;
+die "Must specify -out and -orgs or -orgsfile\n"
+  unless $prefix && (@orgspec > 0 || defined $orgfile);
+die "Cannot specify -orgs and -orgsfile\n" if @orgspec > 0 && defined $orgfile;
 foreach my $dir ($cachedir, $febadata, $privdir) {
   die "Not a directory: $dir\n"
     unless -d $dir;
 }
+if (defined $orgfile) {
+  open(my $fhOrgs, "<", $orgfile) || die "Cannot read $orgfile\n";
+  while (my $line = <$fhOrgs>) {
+    chomp $line;
+    push @orgspec, $line
+      unless $line eq "" || $line =~ m/^#/;
+  }
+  close($fhOrgs) || die "Error reading $orgfile\n";
+  die "orgfile $orgfile contains no org specifiers\n"
+    if @orgspec == 0;
+}
+
 SetFitnessBrowserPath($febadata);
 SetPrivDir($privdir);
 my $blastdir = "$Bin/blast";
