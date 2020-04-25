@@ -891,14 +891,16 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
       my ($type,$value) = @$search;
       my $show;
       if ($type eq "EC") {
-        my $URL = "http://papers.genomics.lbl.gov/cgi-bin/genomeSearch.cgi?gdb=" . $orgs{$orgId}{gdb}
+        # Use local URLs for Curated BLAST links, instead of using the official papers.genomics.lbl.gov
+        # site, because the genome may not exist at the public site
+        my $URL = "genomeSearch.cgi?gdb=" . $orgs{$orgId}{gdb}
           . "&gid=" . $orgs{$orgId}{gid}
             . "&query=$value&word=1";
         $show = "Curated proteins or TIGRFams with EC " . a({-href => $URL, -title => "Run Curated BLAST"}, $value);
       } elsif ($type eq "hmm") {
         $show = "HMM " . a({-href => HMMToURL($value) }, $value);
       } elsif ($type eq "term") {
-        my $URL = "http://papers.genomics.lbl.gov/cgi-bin/genomeSearch.cgi?gdb=" . $orgs{$orgId}{gdb}
+        my $URL = "genomeSearch.cgi?gdb=" . $orgs{$orgId}{gdb}
           . "&gid=" . $orgs{$orgId}{gid}
             . "&word=1"
               . "&query=" . uri_escape($value); # need uri_escape because it may contain %
