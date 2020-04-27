@@ -103,7 +103,7 @@ sub AddCuratedInfo($) {
     $gene->{priority} = 3;
   } elsif ($db eq "reanno") {
     $gene->{source} = "Fitness-based Reannotations";
-    $gene->{comment} = "Mutant Phenotype: " . $gene->{comment};
+    $gene->{comment} = b("mutant phenotype:") . " " . $gene->{comment};
     $gene->{priority} = 5;
     my ($orgId, $locusId) = split /:/, $protId;
     die "Invalid protId $protId" unless $locusId;
@@ -144,7 +144,7 @@ sub AddCuratedInfo($) {
   }
   my @ids = ( $gene->{name}, $gene->{id2} );
   push @ids, $protId if $db eq "SwissProt";
-  if ($db eq "TCDB" && $gene->{id2} =~ m/,/) {
+  if ($db eq "TCDB") {
     my @tcids = split /,/, $gene->{id2};
     @ids = map { "TC $_" } @tcids;
   }
