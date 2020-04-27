@@ -142,7 +142,7 @@ describe the protein's function are shown (with bold headings).
 database of the proteins in <i> Escherichia coli</i> K-12, is included, regardless
 of whether they are characterized or not.
 <LI>Proteins from the <A HREF="http://metacyc.org">MetaCyc</A> metabolic pathway database are included if they are linked to a paper in PubMed and their full sequence is known.
-<LI>Proteins from the Transport Classification Database (<A HREF="http://www.tcdb.org">TCDB</A>) are included if they have known substrate(s), have reference(s), and are not described as uncharacterized or putative.
+<LI>Proteins from the Transport Classification Database (<A HREF="http://www.tcdb.org">TCDB</A>) are included if they have known substrate(s), have reference(s), and are not described as uncharacterized or putative. (Some of the references are not visible on the PaperBLAST web site.)
 <LI>Every protein from <A HREF="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/">CharProtDB</A>, a database of experimentally characterized protein annotations, is included.
 <LI>Proteins from the <A HREF="http://www.cazy.org/">CAZy</A> database of carbohydrate-active enzymes are included if they are associated with an Enzyme Classification number. Even though CAZy does not provide links from individual protein sequences to papers, these should all be experimentally-characterized proteins.
 <LI>Proteins from the <A HREF="http://rebase.neb.com/rebase/rebase.html">REBASE</A> database of restriction enzymes are included if they have known specificity.
@@ -161,6 +161,7 @@ You can download PaperBLAST's database <A HREF="https://github.com/morgannprice/
 <P>Changes since the paper was written:
 
 <UL>
+<LI>April 2020: incorporated TCDB.
 <LI>April 2019: EuropePMC now returns table entries in their search results. This has expanded PaperBLAST's database, but most of the new entries are of low relevance, and the resulting snippets are often just lists of locus tags with annotations.
 <LI>February 2018: the alignment page reports the conservation of the hit's functional sites (if available from from Swiss-Prot or UniProt)
 <LI>January 2018: incorporated BRENDA.
