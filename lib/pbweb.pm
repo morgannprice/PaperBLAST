@@ -119,11 +119,35 @@ sub AddCuratedInfo($) {
     $gene->{priority} = 6;
     $gene->{source} = "UniProt";
     $gene->{URL} = "http://www.uniprot.org/uniprot/$protId";
+  } elsif ($db eq "TCDB") {
+    $gene->{priority} = 2.8; # just behind Brenda
+    $gene->{source} = "TCDB";
+    if ($gene->{id2} =~ m/,/) { # in more than one system
+      $gene->{URL} = "http://www.tcdb.org/search/result.php?acc=$protId";
+    } else {
+      $gene->{URL} = "http://www.tcdb.org/search/result.php?tc=" . $gene->{id2}
+        . "&acc=" . $protId;
+    }
+    my @comments = split /_:::_/, $gene->{comment};
+    @comments = map { s/[;. ]+$//; $_; } @comments;
+    my @out = ();
+    foreach my $comment (@comments) {
+     my @words = split / /, $comment;
+     $words[0] = "TCDB comment:" if $words[0] eq "COMMENT:";
+     $words[0] = b(lc($words[0]));
+     push @out, join(" ", @words);
+   }
+    @out = sort @out if $db eq "TCDB"; # substrates before comments
+    $gene->{comment} = join("<BR>\n", @out);
   } else {
     die "Unexpected curated database $db";
   }
   my @ids = ( $gene->{name}, $gene->{id2} );
   push @ids, $protId if $db eq "SwissProt";
+  if ($db eq "TCDB" && $gene->{id2} =~ m/,/) {
+    my @tcids = split /,/, $gene->{id2};
+    @ids = map { "TC $_" } @tcids;
+  }
   @ids = grep { $_ ne "" } @ids;
   $gene->{showName} = join(" / ", @ids) || $protId;
   $gene->{showName} = $protId if $db eq "REBASE";
