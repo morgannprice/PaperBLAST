@@ -93,6 +93,7 @@ HREF="http://www.uniprot.org/" title="The manually annotated and reviewed sectio
 <A HREF="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/" title="Database of experimentally characterized protein annotations">CharProtDB</A>,
 <A HREF="http://metacyc.org/" title="MetaCyc Metabolic Pathway Database">MetaCyc</A>,
 <A HREF="http://ecocyc.org" title="EcoCyc: Encyclopedia of E. coli Genes and Metabolic Pathways">EcoCyc</A>,
+<A HREF="http://www.tcdb.org/" title="The Transporter Classification Database (TCDB)"</A>TCDB</A>,
 <A HREF="http://rebase.neb.com/rebase/rebase.html" title="The Restriction Enzyme Database">REBASE</A>,
 and the <A HREF="http://fit.genomics.lbl.gov/" title="Reannotations from genome-wide fitness data">Fitness Browser</A>.
 Given this database and a protein sequence query,
@@ -141,6 +142,7 @@ describe the protein's function are shown (with bold headings).
 database of the proteins in <i> Escherichia coli</i> K-12, is included, regardless
 of whether they are characterized or not.
 <LI>Proteins from the <A HREF="http://metacyc.org">MetaCyc</A> metabolic pathway database are included if they are linked to a paper in PubMed and their full sequence is known.
+<LI>Proteins from the Transport Classification Database (<A HREF="http://www.tcdb.org">TCDB</A>) are included if they have known substrate(s), have reference(s), and are not described as uncharacterized or putative.
 <LI>Every protein from <A HREF="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/">CharProtDB</A>, a database of experimentally characterized protein annotations, is included.
 <LI>Proteins from the <A HREF="http://www.cazy.org/">CAZy</A> database of carbohydrate-active enzymes are included if they are associated with an Enzyme Classification number. Even though CAZy does not provide links from individual protein sequences to papers, these should all be experimentally-characterized proteins.
 <LI>Proteins from the <A HREF="http://rebase.neb.com/rebase/rebase.html">REBASE</A> database of restriction enzymes are included if they have known specificity.
@@ -220,6 +222,9 @@ corresponding Gene identifers.
 
 <P><A HREF="https://doi.org/10.1093/nar/gkt1178">The carbohydrate-active enzymes database (CAZy) in 2013.</A><BR>
 <small>V. Lombard et al (2014). Nucleic Acids Research, 10.1093/nar/gkt1178.</small>
+
+<P><A HREF="https://doi.org/10.1093/nar/gkv1103">The Transporter Classification Database (TCDB): recent advances</A><BR>
+<small>M. H. Saier, Jr. et al (2016). Nucleic Acids Research, 10.1093/nar/gkv1103.</small>
 
 <P><A HREF="https://doi.org/10.1093/nar/gku1046">REBASE - a database for DNA restriction and modification: enzymes, genes and genomes.</A><BR>
 <small>R. J. Roberts et al (2015). Nucleic Acids Research, 10.1093/nar/gku1046.</small>
