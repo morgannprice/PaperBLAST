@@ -548,6 +548,8 @@ metacyc:ACONITATEDEHYDR-RXN	Cytoplasmic aconitate hydratase	metacyc::HS04597-MON
 RHEA:10231	Cytoplasmic aconitate hydratase	metacyc::HS04597-MONOMER
 metacyc:ACONITATEHYDR-RXN	aconitate hydratase	metacyc::HS04597-MONOMER
 RHEA:22147	aconitate hydratase	metacyc::HS04597-MONOMER
+metacyc:TRANS-RXN0-207	Cu<sup>+</sup> exporting P-type ATPase	metacyc::G6260-MONOMER
+RHEA:25793	Cu<sup>+</sup> exporting P-type ATPase	metacyc::G6260-MONOMER
 metacyc:RXN0-6435	carbamoyl--[HypE] ligase	metacyc::EG11551-MONOMER
 metacyc:TSA-REDUCT-RXN	tartronate semialdehyde reductase	metacyc::TSA-REDUCT-MONOMER
 RHEA:18843	tartronate semialdehyde reductase	metacyc::TSA-REDUCT-MONOMER
@@ -11740,8 +11742,6 @@ metacyc:RXN66-241	noradrenaline <i>N</i>-methyltransferase	metacyc::HS06868-MONO
 RHEA:25270	noradrenaline <i>N</i>-methyltransferase	metacyc::HS06868-MONOMER
 metacyc:H2NEOPTERINALDOL-RXN	dihydroneopterin aldolase	metacyc::MONOMER-17933
 RHEA:10541	dihydroneopterin aldolase	metacyc::MONOMER-17933
-metacyc:RXN-12812	UDP-4-amino-4,6-dideoxy-&alpha;-D-<i>N</i>-acetyl-D-glucosamine transaminase	metacyc::MONOMER-17337
-RHEA:31666	UDP-4-amino-4,6-dideoxy-&alpha;-D-<i>N</i>-acetyl-D-glucosamine transaminase	metacyc::MONOMER-17337
 metacyc:RXN0-3201	lipoprotein signal peptide peptidase	metacyc::EG12436-MONOMER
 metacyc:RXN-18678	signal peptide peptidase	metacyc::EG12436-MONOMER
 metacyc:RXN-8414	beta-caryophyllene synthase	metacyc::MONOMER-14912
@@ -13667,8 +13667,6 @@ metacyc:RXN-698	9-<i>cis</i>-epoxycarotenoid dioxygenase	metacyc::AT1G78390-MONO
 RHEA:19678	9-<i>cis</i>-epoxycarotenoid dioxygenase	metacyc::AT1G78390-MONOMER
 metacyc:RXN0-5330	NADH:ubiquinone oxidoreductase (internal)	metacyc::YML120C-MONOMER
 RHEA:23153	NADH:ubiquinone oxidoreductase (internal)	metacyc::YML120C-MONOMER
-metacyc:RXN-13318	a [protein]-<i>O</i>-disaccharide-L-serine synthase	metacyc::MONOMER-17342
-metacyc:RXN-13317	a [protein]-<i>O</i>-trisaccharide-L-serine synthase	metacyc::MONOMER-17342
 metacyc:UROGENDECARBOX-RXN	uroporphyrinogen-III decarboxylase	metacyc::MONOMER-14921
 RHEA:19866	uroporphyrinogen-III decarboxylase	metacyc::MONOMER-14921
 metacyc:RXN-10642	uroporphyrinogen-I decarboxylase	metacyc::MONOMER-14921
@@ -15206,7 +15204,6 @@ metacyc:1.14.12.4-RXN	3-hydroxy-2-methylpyridinecarboxylate monooxygenase	metacy
 RHEA:10867	3-hydroxy-2-methylpyridinecarboxylate monooxygenase	metacyc::MONOMER-13153
 RHEA:10863	3-hydroxy-2-methylpyridinecarboxylate monooxygenase	metacyc::MONOMER-13153
 metacyc:RXN0-5422	glutamyl-Q tRNA(Asp) synthetase	metacyc::EG11362-MONOMER
-metacyc:RXN-19307	adenosylcobinamide-GDP 5-methylbenzimidazole ribotide phosphate transferase	metacyc::MONOMER-20431
 metacyc:1.3.7.3-RXN	phycoerythrobilin:ferredoxin oxidoreductase	metacyc::MONOMER-18995
 RHEA:22094	phycoerythrobilin:ferredoxin oxidoreductase	metacyc::MONOMER-18995
 metacyc:SUCCINATE-SEMIALDEHYDE-DEHYDROGENASE-RXN	succinate semialdehyde dehydrogenase (NAD<sup>+</sup>)	metacyc::G6811-MONOMER
@@ -19606,7 +19603,6 @@ metacyc:2.7.9.5-RXN	phosphoglucan, water dikinase	metacyc::AT5G26570-MONOMER
 metacyc:RXN-12563	lecithin:11-<i>cis</i> retinol acyltransferase	metacyc::HS04474-MONOMER
 metacyc:2.3.1.135-RXN	lecithin:<i>all-trans</i> retinol acyltransferase	metacyc::HS04474-MONOMER
 metacyc:TRANS-RXN-3	K<sup>+</sup> transporter TrkH	metacyc::TRKH-MONOMER
-metacyc:RXN-19306	icotinate-nucleotide--benzimidazole phosphoribosyltransferase	metacyc::MONOMER-20428
 metacyc:4-HYDROXYMANDELATE-OXY-RXN	(S)-2-hydroxy-2-(4-hydroxyphenyl)acetate:acceptor 2-oxidoreductase	metacyc::MONOMER-2422
 metacyc:MANDELATE-DEHYDROGENASE-RXN	(S)-2-hydroxy-2-phenylacetate:acceptor 2-oxidoreductase	metacyc::MONOMER-2422
 RHEA:15750	(S)-2-hydroxy-2-phenylacetate:acceptor 2-oxidoreductase	metacyc::MONOMER-2422
