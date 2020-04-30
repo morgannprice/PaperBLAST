@@ -13,7 +13,7 @@ reactions.dat (in attribute-value format).
 
 The uniprot and trembl fasta filenames can be .gz files instead.
 
-Writes to out.curated_parsed and out.reaction_links
+Writes to out.curated_parsed, out.reaction_links, and out.reaction_compounds
 
 The curated_parsed file has the fields metacyc,
 metacyc identifier, uniprot identifier, short name, description, organism,
@@ -22,6 +22,13 @@ sequence, blank (comment), pubmed ids (comma separated).
 The reaction_links file has the fields reaction id (either RHEA:number
 or metacyc:reaction-id), metacyc enzrxn id, and one or protein
 identifiers (each of the form metacyc::protein-id)
+
+The reaction_compounds file has the fields reaction id (either
+RHEA:number or metacyc:reaction-id), reaction location (often empty),
+and one or more participants, each of the form
+  side:coefficient:compartment:compound-id:compound-description
+where side is -1 for left side and +1 for right side. The leading CCO-
+has been removed from the compartments.
 
 Limitations -- EC numbers are obtained for proteins that link to
 enzrxns.dat (via CATALYZES) and reactions.dat (via REACTION), or from
@@ -138,6 +145,55 @@ print STDERR "Read " . scalar(@prot) . " protein entries, $nWithPM with PubMid i
 my %enzrxn = (); # unique id => common name
 my %enzrxnToRxn = (); # unique id => unique id
 
+my %compounds = (); # compoundId => hash of compoundName, keggLigand, formula (as string)
+my $compfile = "$metadir/compounds.dat";
+open(my $fhc, "<", $compfile) || die "Cannot read $compfile\n";
+while (my $cmp = ParsePTools($fhc)) {
+  my $cmpId = $cmp->{"UNIQUE-ID"}[0]{"value"};
+  die "Invalid compound in $compfile" unless $cmpId;
+  my $name = $cmp->{"COMMON-NAME"}[0]{"value"} || "";
+  my @formula = ();
+  foreach my $l (@{ $cmp->{"CHEMICAL-FORMULA"} }) {
+    my $string = $l->{"value"};
+    die "Invalid component of chemical formula $string" unless $string =~ m/^[(]([A-Za-z-]+) (\d+)[)]$/;
+    my ($element, $cnt) = ($1,$2);
+    push @formula, ucfirst(lc($element)) . $cnt;
+  }
+  my $keggLigand = "";
+  foreach my $l (@{ $cmp->{"DBLINKS"} }) {
+    my $string = $l->{"value"};
+    $keggLigand = $1 if $string =~ m/^[(]LIGAND-CPD "([A-Z0-9]+)"/;
+  }
+  die "Duplicate compound $cmpId" if exists $compounds{$cmpId};
+  $compounds{$cmpId} = { "compoundName" => $name,
+                         "keggLigand" => $keggLigand,
+                         "formula" => join("", @formula) };
+}
+close($fhc) || die "Error reading $compfile";
+print STDERR "Read " . scalar(keys %compounds) . " compounds\n";
+
+# Classes are hierarchical, so a compound class is not directly labelled as such --
+# one needs to infer that it is a compound by going up the hierarchy
+# (i.e. All-Carbohydrates has TYPES = Compounds and Glycans has TYPES = Carbohydrates.)
+# Instead, will just assume that it is a compound if a pathway or reaction refers to it
+my %classes = (); # id => hash that includes id, name and types (also a hash)
+my $classfile = "$metadir/classes.dat";
+open(my $fhcc, "<", $classfile)
+  || die "Cannot open $classfile";
+while(my $cc = ParsePTools($fhcc)) {
+  my $id = $cc->{"UNIQUE-ID"}[0]{"value"};
+  die unless $id;
+  die "Duplicate class $id" if exists $classes{$id};
+  my %obj = ( "id" => $id, "types" => {}, "name" => "" );
+  foreach my $l (@{ $cc->{"TYPES"} }) {
+    $obj{"types"}{ $l->{"value"} } = 1;
+  }
+  $obj{"name"} = $cc->{"COMMON-NAME"}[0]{"value"}
+    if exists $cc->{"COMMON-NAME"};
+  $classes{$id} = \%obj;
+}
+close($fhcc) || die "Error reading $classfile";
+
 # Parse the enzymatic reactions file to get descriptions for the catalyzed reactions
 my $enzfile = "$metadir/enzrxns.dat";
 open(my $fhEnz, "<", $enzfile) || die "Cannot read $enzfile";
@@ -153,7 +209,9 @@ print STDERR "Parsed descriptions for " . scalar(keys %enzrxn) . " enzymatic rea
 
 my %rxnToEc = ();
 my %rxnToRhea = (); # rxnId => list of rhea id
-
+ # rxnId => list of hashes with "compoundId", "coefficient" "side" (+1 for right side; -1 for left) and optionally "compartment"
+my %rxnCompounds = ();
+my %rxnLocation = ();
 my $reactfile = "$metadir/reactions.dat";
 open (my $fhReact, "<", $reactfile) || die "Cannot read $reactfile";
 while (my $react = ParsePTools($fhReact)) {
@@ -177,8 +235,35 @@ while (my $react = ParsePTools($fhReact)) {
       push @{ $rxnToRhea{$id} }, $rheaId;
     }
   }
+  my @cmp = ();
+  foreach my $l (@{ $react->{"LEFT"} }) {
+    $l->{side} = -1;
+    push @cmp, $l;
+  }
+  foreach my $l (@{ $react->{"RIGHT"} }) {
+    $l->{side} = +1;
+    push @cmp, $l
+  }
+  # set up coefficients and compartments
+  my @cmp2 = ();
+  foreach my $l (@cmp) {
+    my $cmpId = $l->{"value"};
+    my $coefficient = $l->{"COEFFICIENT"} || 1;
+    my $compartment = $l->{"COMPARTMENT"} || "";
+    $compartment =~ s/^CCO-//;
+    $compartment =~ s/://g; # not sure this happens but it would break the output format
+    push @cmp2, { "compoundId" => $cmpId,
+                  "side" => $l->{"side"},
+                  "coefficient" => $coefficient,
+                  "compartment" => $compartment };
+  }
+  # ParseMetaCycPathways.pl from the FEBA code base tries to identify duplicate compounds,
+  # and sums the coefficients. Do not do that here.
+  $rxnCompounds{$id} = \@cmp2;
+  $rxnLocation{$id} = $react->{"RXN-LOCATIONS"}[0]{value} || "";
 }
 close($fhReact) || die "Error reading $reactfile";
+print STDERR "Read " . scalar(keys %rxnCompounds) . " reactions from $reactfile\n";
 
 # Link proteins to EC numbers via enzrxns and via COMPONENT-OF
 foreach my $prot (@prot) {
@@ -337,3 +422,29 @@ foreach my $prot (@prot) {
   }
 }
 close($fhRxn) || die "Error writing to $outpre.reaction_links";
+
+open (my $fhrc, ">", "$outpre.reaction_compounds")
+  || die "Cannot write to $outpre.reaction_compounds\n";
+foreach my $rxnId (sort keys %rxnCompounds) {
+  my $cmps = $rxnCompounds{$rxnId};
+  next if @$cmps == 0; # not sure this actually happens
+  my $showId = "metacyc::" . $rxnId;
+  $showId = $rxnToRhea{$rxnId}[0] if exists $rxnToRhea{$rxnId};
+  my @line = ( $showId, $rxnLocation{$rxnId} );
+  foreach my $cmp (@$cmps) {
+    my $id = $cmp->{compoundId};
+    my $cmpName = $id;
+    if (exists $compounds{$id}) {
+      $cmpName = $compounds{$id}{compoundName};
+    } elsif (exists $classes{$id}) {
+      $cmpName = $classes{$id}{name} if exists $classes{$id}{name};
+      # just use the class name as the id if no COMMON-NAME was provided
+    } else {
+      print STDERR "Warning: unknown compound $id in $rxnId\n" if $cmpName eq "";
+    }
+    push @line, join(":", $cmp->{side}, $cmp->{coefficient}, $cmp->{compartment}, $cmp->{compoundId},
+                    $cmpName);
+  }
+  print $fhrc join("\t", @line)."\n";
+}
+close($fhrc) || die "Error writing to $outpre.reaction_compounds\n";
