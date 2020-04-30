@@ -227,6 +227,8 @@ if ($gdb && $gquery) {
         -title => "MetaCyc Metabolic Pathway Database"}, "MetaCyc").",",
       a({-href => "http://ecocyc.org",
          -title => "EcoCyc: Encyclopedia of E. coli Genes and Metabolic Pathways"}, "EcoCyc").",",
+      a({-href => "http://tcdb.org",
+         -title => "Transporter Classification Database"}, "TCDB").",",
       a({-href => "http://rebase.neb.com/rebase/rebase.html",
         -title => "The Restriction Enzyme Database"}, "REBASE").",",
       "and the",
@@ -252,6 +254,9 @@ if ($gdb && $gquery) {
       a({ -href => "https://github.com/morgannprice/PaperBLAST"}, "code").".",
       "Changes since the paper:",
       start_ul(),
+      li(qq{Added},
+         a({-href => "http://tcdb.org",
+            -title => "Transporter Classification Database"}, "TCDB")),
       li(qq{Shows hits to unannotated reading frames if they hit regions of the curated
             protein that were not hit by any annotated protein
             (or if they score more highly).}),
