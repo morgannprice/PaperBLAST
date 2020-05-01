@@ -32,9 +32,13 @@ die "No such directory: $blastdir" unless -d $blastdir;
 my $blastdb = "$base/uniq.faa";
 die "No such file: $blastdb" unless -e $blastdb;
 
+my $staticDir = "../static";
+
 my $cgi=CGI->new;
 my $query = $cgi->param('query');
-my $word = $cgi->param('word');
+my $queryShow = $query;
+my $wordMode = $cgi->param('word');
+my $transporterMode;
 my $faa_mode = $cgi->param('faa');
 my $table_mode = ! $faa_mode;
 
@@ -45,29 +49,40 @@ my $table_mode = ! $faa_mode;
 
 if ($query) {
   my $maxhits = 1000;
-  my $chits = CuratedMatch($dbh, $query, $maxhits+1);
-  my $quotedquery = HTML::Entities::encode($query);
+  my $chits;
+  if ($query =~ m/^transporter:(.+)$/) {
+    $queryShow = $1;
+    $wordMode = 0;
+    $transporterMode = 1;
+    $chits = TransporterMatch($dbh, $staticDir, $queryShow);
+  } else {
+    $chits = CuratedMatch($dbh, $query, $maxhits+1);
+  }
+  my $quotedquery = HTML::Entities::encode($queryShow);
+  my $transporterStatement = $transporterMode ? " as transporters" : "";
   if ($table_mode && @$chits > $maxhits) {
-    print p(qq{Sorry, too many curated entries match the query '$quotedquery'. Please try},
+    print p(qq{Sorry, too many curated entries match the query '$quotedquery'${transporterStatement}. Please try},
             a({ -href => "curatedSearch.cgi" }, "another query").".");
     finish_page();
   }
   if ($table_mode && @$chits == 0) {
-    print p(qq{None of the curated entries in PaperBLAST's database match '$quotedquery'. Please try},
+    print p(qq{None of the curated entries in PaperBLAST's database match '$quotedquery'${transporterStatement}. Please try},
             a({ -href => "curatedSearch.cgi" }, "another query") . ".");
     finish_page();
   }
-  if ($word) {
+  if ($wordMode) {
     $chits = CuratedWordMatch($chits, $query);
     if ($table_mode && @$chits == 0) {
-      print p(qq{None of the curated entries in PaperBLAST's database match '$query' as complete words. Please try},
+      print p(qq{None of the curated entries in PaperBLAST's database match '$quotedquery' as complete words. Please try},
               a({ -href => "curatedSearch.cgi" }, "another query") . ".");
       finish_page();
     }
   }
-  my $wordstatement = $word ? " as complete word(s)" : "";
+  my $wordStatement = "";
+  $wordStatement = " as complete word(s)" if $wordMode;
+  $wordStatement = " as transporters" if $transporterMode;
   print p("Found", scalar(@$chits),
-          qq{curated entries in PaperBLAST's database that match '$query'${wordstatement}.},
+          qq{curated entries in PaperBLAST's database that match '$quotedquery'${wordStatement}.},
           "Try",
           a({-href => "curatedSearch.cgi"}, "another search"))
     if $table_mode;
@@ -112,7 +127,7 @@ if ($query) {
     print p("These curated entries have", scalar(@uniqids), "distinct",
             a({-href => join("&", "curatedSearch.cgi?faa=1",
                              "query=" . uri_escape($query),
-                             "word=" . ($word ? 1 : 0)) },
+                             "word=" . ($wordMode ? 1 : 0)) },
               "sequences") . ".");
     my %uniqDesc = map { $_ => $idToChit{$_}[0]{desc} } @uniqids;
     my @sorted = sort { $uniqDesc{$a} cmp $uniqDesc{$b} } @uniqids;
@@ -144,3 +159,129 @@ if ($query) {
     end_form;
 }
 finish_page();
+
+sub TransporterMatch($$$) {
+  my ($dbh, $staticDir, $compoundSpec) = @_;
+  my @compoundList = split /:/, $compoundSpec;
+  my %compoundList = map { $_ => 1, lc($_) => 1 } @compoundList;
+
+  # metacyc files linking reactions to compounds and to protein(s)
+  my $reactionCompoundsFile = "$staticDir/metacyc.reaction_compounds";
+  my $reactionProteinsFile = "$staticDir/metacyc.reaction_links";
+
+  my %rxnCompounds = (); # rxnId => compounds with side, coefficient, compartment, compoundId, and compoundName
+  my %rxnLocation = ();
+  open(my $fhc, "<", $reactionCompoundsFile) || die "Cannot read $reactionCompoundsFile";
+  while (my $line = <$fhc>) {
+    chomp $line;
+    my @F = split /\t/, $line;
+    my $rxnId = shift @F;
+    my $rxnLoc = shift @F;
+    $rxnLocation{$rxnId} = $rxnLoc;
+    my @cmp = ();
+    foreach my $f (@F) {
+      my @pieces = split /:/, $f;
+      my $side = shift @pieces;
+      my $coefficient = shift @pieces;
+      my $compartment = shift @pieces;
+      my $compoundId = shift @pieces;
+      my $compoundName = join(":", @pieces) || "";
+      push @cmp, { 'side' => $side, 'coefficient' => $coefficient,
+                   'compartment' => $compartment,
+                   'compoundId' => $compoundId, 'compoundName' => $compoundName };
+    }
+    $rxnCompounds{$rxnId} = \@cmp;
+  }
+  close($fhc) || die "Error reading $reactionCompoundsFile";
+
+  my %rxnProt = (); # rxnId => list of subunits of the form metacyc::id
+  my %rxnName = ();
+  open (my $fhp, "<", $reactionProteinsFile) || die "Cannot read $reactionProteinsFile";
+  while (my $line = <$fhp>) {
+    chomp $line;
+    my @F = split /\t/, $line;
+    my $rxnId = shift @F;
+    my $rxnName = shift @F;
+    push @{ $rxnProt{$rxnId} }, @F;
+    $rxnName{$rxnId} = $rxnName;
+  }
+  close($fhp) || die "Error reading $reactionProteinsFile";
+
+  my @out = (); # list of rows from CuratedGene
+  my %metacycSaved = (); # protId => 1 for entries already in @out
+
+  # Find the MetaCyc reactions that match the compound, either as compoundId or compoundName,
+  # and determine if they are transport reactions, that is, the compound appears
+  # with two different locations.
+  # (For now ignore PTS)
+  foreach my $rxnId (keys %rxnCompounds) {
+    my $cmps = $rxnCompounds{$rxnId};
+    my @cmpMatch = grep { exists $compoundList{$_->{compoundId}}
+                            || exists $compoundList{$_->{compoundName}}
+                              || exists $compoundList{lc($_->{compoundName})} } @$cmps;
+    my %compartments = map { $_->{compartment} => 1 } @cmpMatch;
+    if (@cmpMatch > 1 && scalar(keys %compartments) > 1) {
+      # Compound of interest in more than one compartment
+      # So find all the proteins for this reaction
+      my $protids = $rxnProt{$rxnId};
+      foreach my $protid (@$protids) {
+        my $id = $protid; $id =~ s/^metacyc:://;
+        next if exists $metacycSaved{$id};
+        $metacycSaved{$id} = 1;
+        my $chit = $dbh->selectrow_hashref(qq{ SELECT * FROM CuratedGene WHERE db="metacyc" AND protId=? },
+                                           {}, $id);
+        if (defined $chit) {
+          push @out, $chit;
+        } else {
+          print p("Skipped unknown metacyc id $id");
+        }
+      }
+    }
+  }
+
+  my $tcdbs = $dbh->selectall_arrayref("SELECT * FROM CuratedGene WHERE db = 'TCDB';",
+                                       { Slice => {} });
+  foreach my $tcdb (@$tcdbs) {
+    my @comments = split /_:::_/, $tcdb->{comment};
+    my $keep = 0;
+    foreach my $comment (@comments) {
+      if ($comment =~ m/^SUBSTRATES: (.*)$/) {
+        my @substrates = split /, /, $1;
+        foreach my $substrate (@substrates) {
+          $keep = 1 if exists $compoundList{lc($substrate)};
+        }
+      }
+    }
+    push @out, $tcdb if $keep;
+  }
+
+  # Search the description for words transport, transporter, exporter, porter, permease, import
+  my $chits = $dbh->selectall_arrayref(
+    qq{SELECT * FROM CuratedGene WHERE db IN ("SwissProt","CharProtDB","BRENDA","reanno")
+       AND (desc LIKE "%transport%"
+            OR desc LIKE "%porter%"
+            OR desc LIKE "%import%"
+            OR desc LIKE "%permease%")},
+    { Slice => {} });
+  foreach my $chit (@$chits) {
+    my $desc = $chit->{desc};
+    my $keep = 0;
+    foreach my $cmp (@compoundList) {
+      my $pattern = quotemeta($cmp);
+      # doing a word-based check this is tricky because substrates may be separated by "/", without spaces
+      # or may appear as "glucose-binding"
+      # or because another term like "6-phosphate" could be present as the next word.
+      # That last issue is not handled.
+      if ($desc =~ m!^$pattern[ /]!i
+          || $desc =~ m![/ ]$pattern[/ ]!i
+          || $desc =~ m!^[/ ]$pattern$!i
+          || $desc =~ m!^$pattern-(binding|specific)!i
+          || $desc =~ m![/ ]$pattern-(binding|specific)!i) {
+        $keep = 1;
+      }
+    }
+    push @out, $chit if $keep;
+  }
+
+  return \@out;
+}
