@@ -428,23 +428,25 @@ open (my $fhrc, ">", "$outpre.reaction_compounds")
 foreach my $rxnId (sort keys %rxnCompounds) {
   my $cmps = $rxnCompounds{$rxnId};
   next if @$cmps == 0; # not sure this actually happens
-  my $showId = "metacyc::" . $rxnId;
-  $showId = $rxnToRhea{$rxnId}[0] if exists $rxnToRhea{$rxnId};
-  my @line = ( $showId, $rxnLocation{$rxnId} );
-  foreach my $cmp (@$cmps) {
-    my $id = $cmp->{compoundId};
-    my $cmpName = $id;
-    if (exists $compounds{$id}) {
-      $cmpName = $compounds{$id}{compoundName};
-    } elsif (exists $classes{$id}) {
-      $cmpName = $classes{$id}{name} if exists $classes{$id}{name};
-      # just use the class name as the id if no COMMON-NAME was provided
-    } else {
-      print STDERR "Warning: unknown compound $id in $rxnId\n" if $cmpName eq "";
-    }
-    push @line, join(":", $cmp->{side}, $cmp->{coefficient}, $cmp->{compartment}, $cmp->{compoundId},
-                    $cmpName);
-  }
-  print $fhrc join("\t", @line)."\n";
+  my @showIds = "metacyc:" . $rxnId;
+  push @showIds, @{ $rxnToRhea{$rxnId} } if exists $rxnToRhea{$rxnId};
+  foreach my $showId (@showIds) {
+    my @line = ( $showId, $rxnLocation{$rxnId} );
+    foreach my $cmp (@$cmps) {
+      my $id = $cmp->{compoundId};
+      my $cmpName = $id;
+      if (exists $compounds{$id}) {
+        $cmpName = $compounds{$id}{compoundName};
+      } elsif (exists $classes{$id}) {
+        $cmpName = $classes{$id}{name} if exists $classes{$id}{name};
+        # just use the class name as the id if no COMMON-NAME was provided
+      } else {
+        print STDERR "Warning: unknown compound $id in $rxnId\n" if $cmpName eq "";
+      }
+      push @line, join(":", $cmp->{side}, $cmp->{coefficient}, $cmp->{compartment}, $cmp->{compoundId},
+                       $cmpName);
+    } # end loop over compounds
+    print $fhrc join("\t", @line)."\n";
+  } # end loop over showIds
 }
 close($fhrc) || die "Error writing to $outpre.reaction_compounds\n";
