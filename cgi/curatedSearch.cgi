@@ -55,6 +55,7 @@ if ($query) {
     $wordMode = 0;
     $transporterMode = 1;
     $chits = TransporterMatch($dbh, $staticDir, $queryShow);
+    $queryShow =~ s!:! / !g;
   } else {
     $chits = CuratedMatch($dbh, $query, $maxhits+1);
   }
@@ -220,7 +221,13 @@ sub TransporterMatch($$$) {
                             || exists $compoundList{$_->{compoundName}}
                               || exists $compoundList{lc($_->{compoundName})} } @$cmps;
     my %compartments = map { $_->{compartment} => 1 } @cmpMatch;
-    if (@cmpMatch > 1 && scalar(keys %compartments) > 1) {
+    my @compartments = grep { $_ ne "" } (keys %compartments);
+    my %compartmentsAll = map { $_->{compartment} => 1 } @$cmps;
+    my @compartmentsAll = grep { $_ ne "" } (keys %compartmentsAll);
+    # The same compound on both sides, or, this compound on one side and something else on the other
+    my $use = (@cmpMatch > 1 && @compartments > 1)
+      || (@cmpMatch > 0 && @compartments > 0 && @compartmentsAll > 1);
+    if ($use) {
       # Compound of interest in more than one compartment
       # So find all the proteins for this reaction
       my $protids = $rxnProt{$rxnId};
@@ -261,7 +268,8 @@ sub TransporterMatch($$$) {
        AND (desc LIKE "%transport%"
             OR desc LIKE "%porter%"
             OR desc LIKE "%import%"
-            OR desc LIKE "%permease%")},
+            OR desc LIKE "%permease%"
+            OR desc like "%PTS system%")},
     { Slice => {} });
   foreach my $chit (@$chits) {
     my $desc = $chit->{desc};
@@ -272,11 +280,12 @@ sub TransporterMatch($$$) {
       # or may appear as "glucose-binding"
       # or because another term like "6-phosphate" could be present as the next word.
       # That last issue is not handled.
-      if ($desc =~ m!^$pattern[ /]!i
-          || $desc =~ m![/ ]$pattern[/ ]!i
-          || $desc =~ m!^[/ ]$pattern$!i
-          || $desc =~ m!^$pattern-(binding|specific)!i
-          || $desc =~ m![/ ]$pattern-(binding|specific)!i) {
+      my $b = "[,/ ]"; # pattern for word boundary
+      if ($desc =~ m!^$pattern$b!i # at beginning
+          || $desc =~ m!$b$pattern$b!i # in middle
+          || $desc =~ m!$b$pattern$!i # at end
+          || $desc =~ m!^$pattern-(binding|specific)!i # at beginning
+          || $desc =~ m!$b$pattern-(binding|specific)!i) { # in middle
         $keep = 1;
       }
     }
