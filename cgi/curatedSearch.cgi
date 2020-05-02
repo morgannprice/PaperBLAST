@@ -264,7 +264,7 @@ sub TransporterMatch($$$) {
 
   # Search the description for words transport, transporter, exporter, porter, permease, import
   my $chits = $dbh->selectall_arrayref(
-    qq{SELECT * FROM CuratedGene WHERE db IN ("SwissProt","CharProtDB","BRENDA","reanno")
+    qq{SELECT * FROM CuratedGene WHERE db IN ("SwissProt","CharProtDB","BRENDA","reanno","ecocyc")
        AND (desc LIKE "%transport%"
             OR desc LIKE "%porter%"
             OR desc LIKE "%import%"
