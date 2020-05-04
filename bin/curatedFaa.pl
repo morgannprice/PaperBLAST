@@ -10,7 +10,7 @@ use Getopt::Long;
 my $usage = <<END
 Usage: curatedFaa.pl -db litsearch.db -uniq uniq.faa -out curated.faa
 Filters out curated entries that are probably not actually characterized.
-  -filtered filteredFile -- save the non-curated entries to filteredFile
+  -filter filteredFile -- save the non-curated entries to filteredFile
   -showdesc -- include definitions of the curated entries
   -curatedids -- report the curated ids rather than the unique id,
      and save all lengths and descriptions in a out.info file
@@ -46,16 +46,16 @@ foreach my $gene (@$genes) {
   # In EcoCyc, "putative" is often not informative
   # In other databases, these terms often indicate that there is genetic evidence but
   # not biochemical proof of the exact role; decided to keep those.
-  my $maybe = $desc =~ m/^putative/i || $desc =~ m/^probable/i;
-  if ($desc =~ m/^uncharacterized/i
-      || $desc =~ m/\buncharacterized protein/i
-      || $desc =~ m/^(DUF|UPF|PF)\d+ family protein/i
-      || $desc =~ m/^(DUF|UPF|PF)\d+ protein/i
-      || $desc =~ m/; (DUF|UPF|PF)\d+ family protein/i
-      || $desc =~ m/; (DUF|UPF|PF)\d+ protein/i
-      || ($desc =~ m/^protein [a-zA-Z]+$/i && $db ne "SwissProt")
-      || ($desc =~ m/^putative/i && ($db eq "CharProtDB" || $db eq "ecocyc"))
-      || ($desc =~ m/^probable/i && $db eq "CharProtDB")) {
+  #my $maybe = $desc =~ m/^putative/i || $desc =~ m/^probable/i;
+  my $maybe = $desc =~ m/\buncharacterized protein/i
+    || $desc =~ m/^(DUF|UPF|PF)\d+ family protein/i
+    || $desc =~ m/^(DUF|UPF|PF)\d+ protein/i
+    || $desc =~ m/; (DUF|UPF|PF)\d+ family protein/i
+    || $desc =~ m/; (DUF|UPF|PF)\d+ protein/i
+    || ($desc =~ m/^protein [a-zA-Z]+$/i && $db ne "SwissProt")
+    || ($desc =~ m/^putative/i && ($db eq "CharProtDB" || $db eq "ecocyc"))
+    || ($desc =~ m/^probable/i && $db eq "CharProtDB");
+  if ($maybe && $db ne "reanno" && $db ne "TCDB") {
     $filtered{$db}{$protId} = $desc;
   } else {
     $curatedIds{$db . "::" . $protId} = $desc;
