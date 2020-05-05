@@ -41,6 +41,7 @@ sub MatchRows($$$);
 sub FaaToDb($$);
 # The first argument is a "compound" id which is a list of ids
 sub CompoundInfoToHtml($$$);
+sub TransporterSearch($$$);
 
 my $maxHits = 250;
 my $nCPU = 8;
@@ -159,7 +160,28 @@ my %hitHmmGood = (); # hits from HMMs with high coverage
 my %hitRule = ();
 my %ignore = (); # ids to ignore similarity to (used in $closeMode)
 
-if ($query ne "") { # find similar proteins
+if ($query =~ m/^transporter:(.+)$/) {
+  my $compoundSpec = $1;
+  my $sqldb = "../data/litsearch.db";
+  my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
+  my $staticDir = "../static";
+  my $chits = TransporterMatch($dbh, $staticDir, $compoundSpec);
+  my %idsHit = ();
+  foreach my $chit (@$chits) {
+    my $id = $chit->{db} . "::" . $chit->{protId};
+    if (!exists $idToIds{$id}) {
+      print p("Warning: $id ($chit->{desc}) matched but is not in the curated table"), "\n";
+    } else {
+      $idsHit{ $idToIds{$id} } = 1;
+    }
+  }
+  if (scalar(keys %idsHit) == 0) {
+    print p("Sorry, no transporters were found. Please try a different query.");
+  } else {
+    print p("Found", scalar(@$chits), "transporters with", scalar(keys %idsHit), "different sequences");
+  }
+  @hitIds = sort keys %idsHit;
+} elsif ($query ne "") { # find similar proteins
   my $wordStatement = $wordMode ? " as complete word(s)" : "";
   print p("Searching for", b(HTML::Entities::encode($query)), $wordStatement),
     p("Or try", a({-href => "curatedClusters.cgi?set=${set}"}, "another search")),
@@ -593,4 +615,138 @@ sub IsHetero($) {
     return 1 if exists $hetComment{$id};
   }
   return 0;
+}
+
+sub TransporterMatch($$$) {
+  my ($dbh, $staticDir, $compoundSpec) = @_;
+  my @compoundList = split /:/, $compoundSpec;
+  my %compoundList = map { $_ => 1, lc($_) => 1 } @compoundList;
+
+  # metacyc files linking reactions to compounds and to protein(s)
+  my $reactionCompoundsFile = "$staticDir/metacyc.reaction_compounds";
+  my $reactionProteinsFile = "$staticDir/metacyc.reaction_links";
+
+  my %rxnCompounds = (); # rxnId => compounds with side, coefficient, compartment, compoundId, and compoundName
+  my %rxnLocation = ();
+  open(my $fhc, "<", $reactionCompoundsFile) || die "Cannot read $reactionCompoundsFile";
+  while (my $line = <$fhc>) {
+    chomp $line;
+    my @F = split /\t/, $line;
+    my $rxnId = shift @F;
+    my $rxnLoc = shift @F;
+    $rxnLocation{$rxnId} = $rxnLoc;
+    my @cmp = ();
+    foreach my $f (@F) {
+      my @pieces = split /:/, $f;
+      my $side = shift @pieces;
+      my $coefficient = shift @pieces;
+      my $compartment = shift @pieces;
+      my $compoundId = shift @pieces;
+      my $compoundName = join(":", @pieces) || "";
+      push @cmp, { 'side' => $side, 'coefficient' => $coefficient,
+                   'compartment' => $compartment,
+                   'compoundId' => $compoundId, 'compoundName' => $compoundName };
+    }
+    $rxnCompounds{$rxnId} = \@cmp;
+  }
+  close($fhc) || die "Error reading $reactionCompoundsFile";
+
+  my %rxnProt = (); # rxnId => list of subunits of the form metacyc::id
+  my %rxnName = ();
+  open (my $fhp, "<", $reactionProteinsFile) || die "Cannot read $reactionProteinsFile";
+  while (my $line = <$fhp>) {
+    chomp $line;
+    my @F = split /\t/, $line;
+    my $rxnId = shift @F;
+    my $rxnName = shift @F;
+    push @{ $rxnProt{$rxnId} }, @F;
+    $rxnName{$rxnId} = $rxnName;
+  }
+  close($fhp) || die "Error reading $reactionProteinsFile";
+
+  my @out = (); # list of rows from CuratedGene
+  my %metacycSaved = (); # protId => 1 for entries already in @out
+
+  # Find the MetaCyc reactions that match the compound, either as compoundId or compoundName,
+  # and determine if they are transport reactions, that is, the compound appears
+  # with two different locations.
+  # (For now ignore PTS)
+  foreach my $rxnId (keys %rxnCompounds) {
+    my $cmps = $rxnCompounds{$rxnId};
+    my @cmpMatch = grep { exists $compoundList{$_->{compoundId}}
+                            || exists $compoundList{$_->{compoundName}}
+                              || exists $compoundList{lc($_->{compoundName})} } @$cmps;
+    my %compartments = map { $_->{compartment} => 1 } @cmpMatch;
+    my @compartments = grep { $_ ne "" } (keys %compartments);
+    my %compartmentsAll = map { $_->{compartment} => 1 } @$cmps;
+    my @compartmentsAll = grep { $_ ne "" } (keys %compartmentsAll);
+    # The same compound on both sides, or, this compound on one side and something else on the other
+    my $use = (@cmpMatch > 1 && @compartments > 1)
+      || (@cmpMatch > 0 && @compartments > 0 && @compartmentsAll > 1);
+    if ($use) {
+      # Compound of interest in more than one compartment
+      # So find all the proteins for this reaction
+      my $protids = $rxnProt{$rxnId};
+      foreach my $protid (@$protids) {
+        my $id = $protid; $id =~ s/^metacyc:://;
+        next if exists $metacycSaved{$id};
+        $metacycSaved{$id} = 1;
+        my $chit = $dbh->selectrow_hashref(qq{ SELECT * FROM CuratedGene WHERE db="metacyc" AND protId=? },
+                                           {}, $id);
+        if (defined $chit) {
+          push @out, $chit;
+        } else {
+          print p("Skipped unknown metacyc id $id");
+        }
+      }
+    }
+  }
+
+  my $tcdbs = $dbh->selectall_arrayref("SELECT * FROM CuratedGene WHERE db = 'TCDB';",
+                                       { Slice => {} });
+  foreach my $tcdb (@$tcdbs) {
+    my @comments = split /_:::_/, $tcdb->{comment};
+    my $keep = 0;
+    foreach my $comment (@comments) {
+      if ($comment =~ m/^SUBSTRATES: (.*)$/) {
+        my @substrates = split /, /, $1;
+        foreach my $substrate (@substrates) {
+          $keep = 1 if exists $compoundList{lc($substrate)};
+        }
+      }
+    }
+    push @out, $tcdb if $keep;
+  }
+
+  # Search the description for words transport, transporter, exporter, porter, permease, import
+  my $chits = $dbh->selectall_arrayref(
+    qq{SELECT * FROM CuratedGene WHERE db IN ("SwissProt","CharProtDB","BRENDA","reanno","ecocyc")
+       AND (desc LIKE "%transport%"
+            OR desc LIKE "%porter%"
+            OR desc LIKE "%import%"
+            OR desc LIKE "%permease%"
+            OR desc like "%PTS system%")},
+    { Slice => {} });
+  foreach my $chit (@$chits) {
+    my $desc = $chit->{desc};
+    my $keep = 0;
+    foreach my $cmp (@compoundList) {
+      my $pattern = quotemeta($cmp);
+      # doing a word-based check this is tricky because substrates may be separated by "/", without spaces
+      # or may appear as "glucose-binding"
+      # or because another term like "6-phosphate" could be present as the next word.
+      # That last issue is not handled.
+      my $b = "[,/ ]"; # pattern for word boundary
+      if ($desc =~ m!^$pattern$b!i # at beginning
+          || $desc =~ m!$b$pattern$b!i # in middle
+          || $desc =~ m!$b$pattern$!i # at end
+          || $desc =~ m!^$pattern-(binding|specific)!i # at beginning
+          || $desc =~ m!$b$pattern-(binding|specific)!i) { # in middle
+        $keep = 1;
+      }
+    }
+    push @out, $chit if $keep;
+  }
+
+  return \@out;
 }
