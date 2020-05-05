@@ -6,11 +6,12 @@
 # set -- which database of curated proteins (defaults to gaps2, i.e. using ../tmp/path.gaps2/curated.faa*)
 #
 # Specify which proteins to cluster using a query:
-#	query -- what term to search for
+#	query -- what term to search for, or transporter:compound:compound...
 #	word -- report whole word matches only (like a perl boolean)
 # or using a step definition:
 #	path -- which pathway the step is in
 #	step -- which step
+# In cluster mode, can format the output as tab-delimited (format=tsv) or as rules (format=rules)
 # Alternatively, browse the pathways or steps, use
 #	path=all to list the pathways, or
 #	set path but not step to list the steps in a pathway
@@ -42,6 +43,7 @@ sub FaaToDb($$);
 # The first argument is a "compound" id which is a list of ids
 sub CompoundInfoToHtml($$$);
 sub TransporterSearch($$$);
+sub TSVPrint($$$);
 
 my $maxHits = 250;
 my $nCPU = 8;
@@ -56,8 +58,12 @@ my $wordMode = param('word') || 0;
 my $pathSpec = param('path') || "";
 my $step = param('step') || "";
 my $closeMode = param('close') || 0;
+my $format = param('format') || "";
 die "Can only use close if path and step is set"
   if $closeMode && !($pathSpec && $step);
+die "Format cannot be used with close mode" if $closeMode && $format ne "";
+die "Unknown format spec"
+  if $format ne "" && $format ne "tsv" && $format ne "rules";
 
 my $minIdentity = param('identity');
 $minIdentity = 30 unless defined $minIdentity && $minIdentity =~ m/^\d+$/;
@@ -103,18 +109,33 @@ foreach my $x ($fastacmd,$blastall,$formatdb,$usearch) {
 
 my $tmpPre = "/tmp/cluratedClusters.$$";
 
-start_page('title' => $closeMode ? "Other Proteins Similar to $step"
+$query =~ s/^\s+//;
+$query =~ s/\s+$//;
+die "Can only use format with a query or with step" if $format ne "" && $query eq "" && ($pathSpec eq "" || $step eq "");
+
+if ($format eq "") {
+  start_page('title' => $closeMode ? "Other Proteins Similar to $step"
            : "Clusters of Characterized Proteins",
            'banner' => $banner, 'bannerURL' => $bannerURL);
+} elsif ($format eq "tsv") {
+  print "Content-Type:text/tab-separated-values\n";
+  print "Content-Disposition: attachment; filename=clusters.tsv\n\n";
+  print join("\t", qw{Sequence Cluster id id2 desc organism isHeteromeric})."\n";
+} elsif ($format eq "rules") {
+  print "Content-Type:text\n\n";
+  print "# query: $query\n" if $query ne "";
+  print "# pathway $pathSpec step $step\n" if $pathSpec ne "" && $step ne "";
+} else {
+  die "Unknown mode $format";
+}
+
 autoflush STDOUT 1; # show preliminary results
 
 unless (NewerThan("$curatedFaa.db", $curatedFaa)) {
-  print p("Reformatting the sequence database"), "\n";
+  print p("Reformatting the sequence database"), "\n" unless $format;
   FaaToDb($curatedFaa, "$curatedFaa.db");
 }
 
-$query =~ s/^\s+//;
-$query =~ s/\s+$//;
 if ($query eq "" && $pathSpec eq "") {
   print
     start_form(-method => 'get', -action => 'curatedClusters.cgi'),
@@ -165,7 +186,7 @@ if ($query =~ m/^transporter:(.+)$/) {
   my $compoundSpec = $1;
   my $queryShow = $compoundSpec; $queryShow =~ s!:! / !g;
   print p("Searching for transporters for", HTML::Entities::encode($queryShow)),
-    "\n";
+    "\n" unless $format;
   my $sqldb = "../data/litsearch.db";
   my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
   my $staticDir = "../static";
@@ -180,26 +201,31 @@ if ($query =~ m/^transporter:(.+)$/) {
     }
   }
   if (scalar(keys %idsHit) == 0) {
-    print p("Sorry, no transporters were found. Please try a different query.");
+    print p("Sorry, no transporters were found. Please try a different query.")
+      unless $format;
   } else {
-    print p("Found", scalar(@$chits), "transporters with", scalar(keys %idsHit), "different sequences");
+    print p("Found", scalar(@$chits), "transporters with", scalar(keys %idsHit), "different sequences") 
+      unless $format;
   }
   @hitIds = sort keys %idsHit;
 } elsif ($query ne "") { # find similar proteins
   my $wordStatement = $wordMode ? " as complete word(s)" : "";
   print p("Searching for", b(HTML::Entities::encode($query)), $wordStatement),
     p("Or try", a({-href => "curatedClusters.cgi?set=${set}"}, "another search")),
-    "\n";
+    "\n"
+      unless $format;
   my $hits = MatchRows(\@curatedInfo, $query, $wordMode);
   if (@$hits > $maxHits) {
     print p("Found over $maxHits proteins with matching descriptions. Please try a different query.");
     print end_html;
     exit(0);
   } elsif (@$hits == 0) {
-    print p("Sorry, no hits were found");
+    print p("Sorry, no hits were found")
+      unless $format;
   } else {
     my $nHetero = scalar(grep IsHetero($_), map { $_->{ids} } @$hits);
-    print p("Found " . scalar(@$hits) . " characterized proteins with matching descriptions. $nHetero of these are heteromeric.");
+    print p("Found " . scalar(@$hits) . " characterized proteins with matching descriptions. $nHetero of these are heteromeric.")
+      unless $format;
   }
   @hitIds = map $_->{ids}, @$hits;
 } elsif ($pathSpec eq "all") { # show list of pathways
@@ -222,7 +248,8 @@ if ($query =~ m/^transporter:(.+)$/) {
   @queries = grep { $_->{step} eq $step } @queries;
   die "Unknown step $step, not in the $pathSpec.query file" unless @queries > 0;
   print p($closeMode ? "Finding" : "Clustering",
-          "the characterized proteins for", i($step), "($stepDesc) in $pathInfo{$pathSpec}{desc}");
+          "the characterized proteins for", i($step), "($stepDesc) in $pathInfo{$pathSpec}{desc}")
+    unless $format;
   if ($closeMode) {
     print p("Or see",
             a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec&step=$step"},
@@ -231,10 +258,11 @@ if ($query =~ m/^transporter:(.+)$/) {
   } else {
     print p("Or see",
             a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec&step=$step&close=1"},
-              "other proteins similar to $step"));
+              "other proteins similar to $step")) unless $format;
   }
   print p("Or see all steps for",
-          a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec"}, $pathInfo{$pathSpec}{desc}));
+          a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec"}, $pathInfo{$pathSpec}{desc}))
+    unless $format;
 
   foreach my $query (@queries) {
     if ($query->{type} eq "curated") {
@@ -336,7 +364,8 @@ foreach my $id (@hitIds) {
 }
 my %hitsUniq = map { $_ => 1 } @hitIds;
 die unless scalar(keys %seqs) == scalar(keys %hitsUniq);
-print p("Fetched " . scalar(keys %seqs) . " sequences"), "\n";
+print p("Fetched " . scalar(keys %seqs) . " sequences"), "\n"
+  unless $format;
 
 open(my $fhFaa, ">", "$tmpPre.faa") || die "Error writing to $tmpPre.faa";
 foreach my $id (sort keys %seqs) {
@@ -428,7 +457,7 @@ if ($closeMode && $pathSpec && $step) {
 
 # else
 # Clustering mode
-print p("Running BLASTp"), "\n";
+print p("Running BLASTp"), "\n" unless $format;
 my $covFrac = $minCoverage / 100;
 my $formatCmd = "$formatdb -i $tmpPre.faa -p T";
 system($formatCmd) == 0 || die "formatdb failed -- $formatCmd -- $!";
@@ -455,7 +484,8 @@ while(my $line = <$fhsim>) {
 close($fhsim) || die "Error reading $tmpPre.hits";
 unlink("$tmpPre.hits");
 print p("Found similarities, at above ${minIdentity}% identity and ${minCoverage}% coverage, for",
-        scalar(keys %sim), "of these sequences"), "\n";
+        scalar(keys %sim), "of these sequences"), "\n"
+  unless $format;
 
 # Try to find a small number of seed sequences that hit all of the members
 # Don't try to be optimal, just start with the seeds that have the most hits above the threshold
@@ -503,9 +533,15 @@ foreach my $chash (values %clust) {
 }
 my @clusters = values %clustByIds;
 my @singletons = grep { scalar(keys %$_) == 1 } @clusters;
-my $clustReport = "Found " . (scalar(@clusters) - scalar(@singletons)) . " clusters of similar sequences.";
-$clustReport .= " Another " . scalar(@singletons) . " sequences are not clustered." if @singletons > 0;
-print p($clustReport), "\n";
+unless ($format) {
+  my $clustReport = "Found " . (scalar(@clusters) - scalar(@singletons)) . " clusters of similar sequences.";
+  $clustReport .= " Another " . scalar(@singletons) . " sequences are not clustered." if @singletons > 0;
+  my $baseURL = "curatedClusters.cgi?set=$set&path=$pathSpec&step=$step&query=$query&word=$wordMode&identity=$minIdentity&coverage=$minCoverage";
+  print p($clustReport,
+          "Download as", a({-href => "$baseURL&format=tsv"}, "table"),
+          "or as",
+	  a({-href => "$baseURL&format=rules"}, "draft rules") . ".");
+}
 
 my @clustBySize = sort { scalar(keys %$b) <=> scalar(keys %$a) } @clusters;
 my $nCluster = 0;
@@ -526,26 +562,48 @@ foreach my $cluster (@clustBySize) {
     } else {
       push @clusterHeader, "(not heteromeric)";
     }
-    print h3(@clusterHeader);
-    print small("The first sequence in each cluster is the seed.") if $nCluster == 1; 
+    print h3(@clusterHeader) unless $format;
+    print "\n# " . join(" ", @clusterHeader) . "\n" if $format eq "rules";
+    print small("The first sequence in each cluster is the seed.")
+      if $nCluster == 1 && $format eq ""; 
     my @other = grep ! $cluster->{$_}, @ids;
     foreach my $id ($seed, @other) {
-      print p(CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id})), "\n";
+      if ($format eq "") {
+        print p(CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id})), "\n";
+      } elsif ($format eq "rules") {
+        my $isHetero = IsHetero($id) ? " (heteromeric)" : "";
+        print "# $id $curatedInfo{$id}{id2s} $curatedInfo{$id}{descs} $curatedInfo{$id}{orgs}$isHetero\n";
+      } elsif ($format eq "tsv") {
+        TSVPrint("Cluster$nCluster", $id, $curatedInfo{$id});
+      }
     }
-  }
+    if ($format eq "rules") {
+      print join(" ", "Cluster$nCluster:",
+                 map { my $short = $_; $short =~ s/,.*//; "curated:$short" } ($seed, @other))."\n";
+    }
+  } # end if @ids > 1
 }
 if (@singletons > 0) {
   my @singletonIds = map { (keys %{ $_ })[0] } @singletons;
   my $nHetero = scalar(grep IsHetero($_), @singletonIds);
   my $nSingle = scalar(@singletonIds);
-  print h3("Singletons ($nHetero/$nSingle heteromeric)");
+  print h3("Singletons ($nHetero/$nSingle heteromeric)") unless $format;
+  my $nSingleShow = 0;
   foreach my $id (sort @singletonIds) {
-    print p(CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id})), "\n";
+    $nSingleShow++;
+    if ($format eq "") {
+      print p(CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id})), "\n";
+    } elsif ($format eq "rules") {
+      my $isHetero = IsHetero($id) ? " (heteromeric)" : "";
+      print "\n# Singleton $nSingleShow $id $curatedInfo{$id}{id2s} $curatedInfo{$id}{descs} $curatedInfo{$id}{orgs}$isHetero\n";
+      my $short = $id; $short =~ s/,.*//;
+      print "Singleton$nSingleShow: curated:$short\n";
+    } elsif ($format eq "tsv") {
+      TSVPrint("Singleton$nSingleShow", $id, $curatedInfo{$id});
+    }
   }
 }
-
-
-print end_html;
+print end_html unless $format;
 exit(0);
 
 sub MatchRows($$$) {
@@ -759,3 +817,22 @@ sub TransporterMatch($$$) {
 
   return \@out;
 }
+
+my $nSeqShow = 0;
+sub TSVPrint($$$) {
+  my ($cluster, $id, $info) = @_;
+  $nSeqShow++;
+  my @ids = split /,/, $id;
+  die unless @ids > 0;
+  my @descs = split /;; /, $info->{descs};
+  my @orgs = split /;; /, $info->{orgs} if defined $info->{orgs};
+  my @id2s = split /;; /, $info->{id2s} if defined $info->{id2s};
+  # fields Sequence Cluster id id2 desc organism
+
+  foreach my $i (0..(scalar(@ids)-1)) {
+    print join("\t", $nSeqShow, $cluster,
+               $ids[$i], $id2s[$i] || "", $descs[$i], $orgs[$i],
+               exists $hetComment{$ids[$i]} ? $hetComment{$ids[$i]} || "heteromer" : "")."\n";
+  }
+}
+
