@@ -12,7 +12,8 @@ my $usage = <<END
 findHeteromers.pl -sprot sprot.subunits > work/hetero.tab
 
 Compiles heteromer information from BRENDA.subunits,
-metacyc.reaction_links, and sprot.subunits
+metacyc.reaction_links, sprot.subunits, TCDB.curated_parsed, and
+reanno.curated_parsed
 
 BRENDA.subunits should have fields EC, organism, and one or more
 protein identifiers (of the form db::protId)
@@ -26,7 +27,7 @@ subunit.
 Outputs a tab-delimited file with the fields db, protId, and comment
 (which has the first sentence of the SUBUNIT field from SwissProt).
 
-By default looks for the BRENDA and metacyc input files in:
+By default looks for all input files, except sprot.subunits, in:
   $staticDir
 Use -static static to change this.
 END
@@ -40,7 +41,9 @@ die $usage
 die "Not a directory: $staticDir\n" unless -d $staticDir;
 my $brendaFile = "$staticDir/BRENDA.subunits";
 my $metacycFile = "$staticDir/metacyc.reaction_links";
-foreach my $file ($brendaFile,$metacycFile) {
+my $reannoFile = "$staticDir/reanno.curated_parsed";
+my $tcdbFile = "$staticDir/TCDB.curated_parsed";
+foreach my $file ($brendaFile, $metacycFile, $reannoFile, $tcdbFile) {
   die "No such file: $file\n" unless -e $file;
 }
 
@@ -98,6 +101,40 @@ foreach my $sprot (@sprot) {
   print join("\t", $sprot->{db}, $sprot->{id}, $sprot->{subunit})."\n"
     if $sprot->{isHetero};
 }
+
+open (my $fhTCDB, "<", $tcdbFile) || die "Cannot read $tcdbFile\n";
+my %tcdbToAcc = (); # tcdbId => list of acc
+my %accToTCDB = (); # acc => list of tcdbId
+while(my $line = <$fhTCDB>) {
+  chomp $line;
+  my ($db, $acc, $ids, undef, $desc, $org, $seq, $comments, $pmids) = split /\t/, $line;
+  die unless $db eq "TCDB";
+  die "Invalid pmids in $line" unless $pmids =~ m/^[0-9,]*$/; # may be missing
+  my @tcdbIds = split /,/, $ids;
+  foreach my $tcdbId (@tcdbIds) {
+    die "Invalid tcdbid $tcdbId" unless $tcdbId =~ m/^[0-9][.][A-Z][.][0-9.]+$/;
+    push @{ $tcdbToAcc{$tcdbId} }, $acc;
+    push @{ $accToTCDB{$acc} }, $tcdbId;
+  }
+}
+close($fhTCDB) || die "Error reading $tcdbFile";
+foreach my $acc (sort keys %accToTCDB) {
+  my $isHetero = 0;
+  foreach my $tcdbId (@{ $accToTCDB{$acc} }) {
+    $isHetero = 1 if @{ $tcdbToAcc{$tcdbId} } > 1;
+  }
+  ReportProtId("TCDB::" . $acc) if $isHetero;
+}
+
+open (my $fhReanno, "<", $reannoFile) || die "Cannot read $reannoFile\n";
+while (my $line = <$fhReanno>) {
+  chomp $line;
+  my ($db, $acc, undef, undef, $desc, $org) = split /\t/, $line;
+  die unless $db eq "reanno";
+  ReportProtId("reanno::" . $acc)
+    if $desc =~ m/\b(component|subunit)s?\b/i;
+}
+close($fhReanno) || die "Error reading $reannoFile";
 
 sub ReportProtId($) {
   my $protId = shift;
