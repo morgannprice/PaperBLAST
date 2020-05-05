@@ -13,30 +13,35 @@ Filters out curated entries that are probably not actually characterized.
   -filter filteredFile -- save the non-curated entries to filteredFile
   -showdesc -- include definitions of the curated entries
   -curatedids -- report the curated ids rather than the unique id,
-     and save all lengths and descriptions in a out.info file
+     and save metadata to an out.info file in tab-delimited format
+     with fields ids, length, id2s, descs, and orgs.
+     multiple ids are separated by commas; (protein) length is a single number,
+     and multiple values for other fields are separated by ";; "
 END
 ;
 
-my ($dbfile, $uniqfile, $outfile, $filterfile, $showdesc, $curatedids);
+my ($dbfile, $uniqfile, $outfile, $filterfile, $showdesc, $showCuratedInfo);
 die $usage
   unless GetOptions('db=s' => \$dbfile,
                     'uniq=s' => \$uniqfile,
                     'out=s' => \$outfile,
                     'filter=s' => \$filterfile,
                     'showdesc' => \$showdesc,
-                   'curatedids' => \$curatedids)
+                    'curatedids' => \$showCuratedInfo)
   && defined $dbfile && defined $uniqfile && defined $outfile
   && @ARGV ==0;
 die "No such file: $dbfile\n" unless -e $dbfile;
 die "No such file: $uniqfile\n" unless -e $uniqfile;
 my $dbh = DBI->connect("dbi:SQLite:dbname=$dbfile","","",{ RaiseError => 1 }) || die $DBI::errstr;
 
-my %curatedIds = (); # db::protId => desc
-my $genes = $dbh->selectall_arrayref("SELECT db,protId,desc FROM CuratedGene");
-my %filtered = (); # db => protId => 1
+my %curatedIds = (); # db::protId => row from curated gene
+my $genes = $dbh->selectall_arrayref("SELECT db,protId,id2,desc,organism FROM CuratedGene",
+                                    { Slice => {} });
+my %filtered = (); # db => protId => desc
 
 foreach my $gene (@$genes) {
-  my ($db, $protId, $desc) = @$gene;
+  my $db = $gene->{db};
+  my $desc = $gene->{desc};
   # Curated annotations for proteins that are not actually characterized often match these patterns
   # [DUPF]+ matches PF or UPF or DUF, which together with numbers are common uninformative annotations
   # descriptions like protein yyyY occur in EcoCyc
@@ -56,9 +61,9 @@ foreach my $gene (@$genes) {
     || ($desc =~ m/^putative/i && ($db eq "CharProtDB" || $db eq "ecocyc"))
     || ($desc =~ m/^probable/i && $db eq "CharProtDB");
   if ($maybe && $db ne "reanno" && $db ne "TCDB") {
-    $filtered{$db}{$protId} = $desc;
+    $filtered{$db}{$gene->{protId}} = $desc;
   } else {
-    $curatedIds{$db . "::" . $protId} = $desc;
+    $curatedIds{$db . "::" . $gene->{protId}} = $gene;
   }
 }
 
@@ -77,39 +82,44 @@ my %written = ();
 open(my $fhU, "<", $uniqfile) || die "Cannot read $uniqfile";
 open(my $fhOut, ">", $outfile) || die "Cannot write to $outfile";
 my $fhInfo;
-if (defined $curatedids) {
+if (defined $showCuratedInfo) {
   open($fhInfo, ">", "$outfile.info") || die "Cannot write to $outfile.info";
-  print $fhInfo join("\t", "ids", "length", "descs")."\n";
+  print $fhInfo join("\t", "ids", "length", "id2s", "descs", "orgs")."\n";
 }
 
 my $state = {};
 while (my ($uniqId,$sequence) = ReadFastaEntry($fhU, $state)) {
-  if (exists $curatedIds{$uniqId} || exists $keepIds{$uniqId}) {
-    if (defined $curatedids) {
-      my $ci = FetchCuratedInfo($dbh, $uniqId);
-      die "$uniqId is not curated" unless @$ci > 0;
-      my @ids = map { $_->[0] . "::" . $_->[1] } @$ci;
-      my @desc = map $_->[2], @$ci;
-      print $fhOut ">" . join(",", @ids) . "\n" . $sequence . "\n";
-      print $fhInfo join("\t", join(",",@ids), length($sequence), join(";; ", @desc))."\n";
-    } else {
-      my $showid = $uniqId;
-      my $desc;
-      my $defline = ">" . $showid;
-      if (defined $showdesc) {
-        my @ids = ();
-        push @ids, $uniqId if exists $curatedIds{$uniqId};
-        push @ids, @{ $keepIds{$uniqId} } if exists $keepIds{$uniqId};
-        foreach my $id (@ids) {
-          die unless exists $curatedIds{$id};
-          $defline .= " ";
-          $defline .= ";; " unless $id eq $ids[0];
-          $defline .= "$id $curatedIds{$id}";
-        }
-      }
+  my @genes = ();
+  push @genes, $curatedIds{$uniqId} if exists $curatedIds{$uniqId};
+  push @genes, map $curatedIds{$_}, @{ $keepIds{$uniqId} }
+    if exists $keepIds{$uniqId};
+  next unless @genes > 0;
+
+  my @ids = map { $_->{db} . "::" . $_->{protId} } @genes;
+  if ($showCuratedInfo) {
+    my @id2s = map $_->{id2}, @genes;
+    my @descs = map $_->{desc}, @genes;
+    my @orgs = map $_->{organism}, @genes;
+    print $fhOut ">" . join(",", @ids) . "\n" . $sequence . "\n";
+    print $fhInfo join("\t",
+                       join(",",@ids),
+                       length($sequence),
+                       join(";; ", @id2s),
+                       join(";; ", @descs),
+                       join(";; ", @orgs))."\n"
+  } else {
+    my $showid = $uniqId;
+    my $defline = ">" . $showid;
+    foreach my $id (@ids) {
+      die unless exists $curatedIds{$id};
+      $defline .= " ";
+      $defline .= ";; " unless $id eq $ids[0];
+      $defline .= $id . " " . $curatedIds{$id}{desc};
       print $fhOut "$defline\n$sequence\n";
     }
-    $written{$uniqId} = 1;
+  }
+  foreach my $id (@ids) {
+    $written{$id} = 1;
   }
 }
 close($fhU) || die "Error reading $uniqfile";
