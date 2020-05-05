@@ -139,6 +139,7 @@ if ($query eq "" && $pathSpec eq "") {
 
 # Fetch curated sequences
 my @curatedInfo = ReadTable("$curatedFaa.info", ["ids","length","descs"]);
+# will also have orgs and id2s if a newer file
 my %curatedInfo = map { $_->{ids} => $_ } @curatedInfo;
 my %seqsAll;
 tie %seqsAll, "DB_File", "$curatedFaa.db", O_RDONLY, 0666, $DB_HASH
@@ -581,6 +582,9 @@ sub CompoundInfoToHtml($$$) {
   my @ids = split /,/, $compoundId;
   die unless @ids > 0;
   my @descs = split /;; /, $info->{descs};
+  my @orgs = split /;; /, $info->{orgs} if defined $info->{orgs};
+  my @id2s = split /;; /, $info->{id2s} if defined $info->{id2s};
+
   die "Mismatched length of ids and descs" unless scalar(@ids) == scalar(@descs);
   my $len = $info->{length};
   die unless $len;
@@ -592,10 +596,12 @@ sub CompoundInfoToHtml($$$) {
     die "Cannot parse id $id" unless $protId;
     my $gene = { 'db' => $db, 'protId' => $protId, 'desc' => $desc,
                  'protein_length' => $len,
-                 'comment' => '', 'name' => '', id2 => '' };
+                 'comment' => '', 'name' => '', id2 => '', organism => '' };
+    $gene->{id2} = $id2s[$i] if @id2s > 0;
+    $gene->{organism} = $orgs[$i] if @orgs > 0;
     AddCuratedInfo($gene);
     $gene->{HTML} = GeneToHtmlLine($gene);
-    $gene->{HTML} .= " (" . i(a({ -title => $hetComment{$id} }, "heteromeric")) . ")"
+    $gene->{HTML} .= " (" . a({ -title => $hetComment{$id} }, "heteromeric") . ")"
       if exists $hetComment{$id};
     push @genes, $gene;
   }
