@@ -162,6 +162,9 @@ my %ignore = (); # ids to ignore similarity to (used in $closeMode)
 
 if ($query =~ m/^transporter:(.+)$/) {
   my $compoundSpec = $1;
+  my $queryShow = $compoundSpec; $queryShow =~ s!:! / !g;
+  print p("Searching for transporters for", HTML::Entities::encode($queryShow)),
+    "\n";
   my $sqldb = "../data/litsearch.db";
   my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
   my $staticDir = "../static";
