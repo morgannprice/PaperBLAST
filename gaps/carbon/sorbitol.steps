@@ -1,0 +1,69 @@
+# D-sorbitol is also known as D-glucitol
+#
+# Rules for sorbitol transport were built using curated clusters for transporters of
+# sorbitol / D-sorbitol / glucitol / D-glucitol
+# on May 6, 2020
+#
+# polyol ABC transporter, known as MtlEFGK in Pseudomonas fluorescens (TC 3.A.1.1.49)
+# mtlE = substrate-binding component
+# mtlF = permease component
+# mtlG = permease component
+# mtlK = ATPase component
+# The system in Pseudomonas fluorescens FW300-N2E3 and Pseudomonas fluorescens GW456-L13 is very similar
+# but FW300-N2E3 does not grow on sorbitol as the sole C source, and we have no fitness data for GW456-L13 on sorbitol,
+# so it is uncertain whether they transport sorbitol or not. They are marked as ignore.
+#
+# A related system in Rhodobacter sphaeroides, smoEFGK, appears in TCDB (as TC 3.A.1.1.5) but there does not
+# seem to be any experimental evidence that it tranpsorts sorbitol, so it is also ignored.
+
+mtlE	ABC transporter for polyols MtlEFGK, substrate-binding component MtlE	curated:TCDB::O30491	curated:reanno::BFirm:BPHYT_RS16115	curated:reanno::Phaeo:GFF1305	curated:reanno::WCS417:GFF2493	curated:reanno::acidovorax_3H11:Ac3H11_2944	curated:reanno::pseudo5_N2C3_1:AO356_00025	curated:reanno::pseudo6_N2E2:Pf6N2E2_1963	ignore:reanno::pseudo3_N2E3:AO353_25880	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_3042
+
+mtlF	ABC transporter for polyols MtlEFGK, permease component MtlF	curated:TCDB::O30492	curated:reanno::BFirm:BPHYT_RS16110	curated:reanno::Phaeo:GFF1304	curated:reanno::WCS417:GFF2492	curated:reanno::acidovorax_3H11:Ac3H11_2943	curated:reanno::pseudo5_N2C3_1:AO356_00020	curated:reanno::pseudo6_N2E2:Pf6N2E2_1962	ignore:reanno::pseudo3_N2E3:AO353_25885	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_3041
+
+mtlG	ABC transporter for polyols MtlEFGK, permease component MtlG	curated:TCDB::O30493	curated:reanno::BFirm:BPHYT_RS16105	curated:reanno::Phaeo:GFF1303	curated:reanno::WCS417:GFF2491	curated:reanno::acidovorax_3H11:Ac3H11_2942	curated:reanno::pseudo5_N2C3_1:AO356_00015	curated:reanno::pseudo6_N2E2:Pf6N2E2_1961	ignore:reanno::pseudo3_N2E3:AO353_25890	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_3040	ignore:TCDB::O30833
+
+mtlK	ABC transporter for polyols MtlEFGK, permease component MtlK	curated:TCDB::O30494	curated:reanno::BFirm:BPHYT_RS16095	curated:reanno::Phaeo:GFF1302	curated:reanno::WCS417:GFF2490	curated:reanno::acidovorax_3H11:Ac3H11_2941	curated:reanno::pseudo5_N2C3_1:AO356_00010	curated:reanno::pseudo6_N2E2:Pf6N2E2_1960	ignore:reanno::pseudo3_N2E3:AO353_25895	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_3039	ignore:TCDB::P54933
+
+mtlEFGK: mtlE mtlF mtlG mtlK
+
+# sorbitol-specific PTS system with an unusual split EII-C, known as srlABE in Escherichia coli (TC 4.A.4.1.1)
+# Because enzyme I and HPR are usually not specific, they are not represented
+# srlA = EII-C2 component, cluster 5
+# srlB = EII-A component, cluster 8
+# srlE = EII-BC1 components, cluster 7
+# A complication in Erwinia -- srlB is present in Erwinia amylovora (O32523_ERWAM, 50% identical)
+# but is not	curated; 
+# P. Aldridge et al. 1997 "Genetics of sorbitol metabolism in Erwinia amylovora
+# and its influence on bacterial virulence" do not report a mutant in it, so that is probably why.
+# Since it is in a characterized cluster, decided to include it.
+# Also Aldridge et al suggest that EII-BC1 is split into srlA/srlE but I think they are confused.
+srlA	PTS system for sorbitol SrlABE, EII-C2 component SrlA	curated:SwissProt::O32332	curated:SwissProt::O32521	curated:SwissProt::P56579
+
+srlB	PTS system for sorbitol SrlABE, EII-A component SrlB	curated:CharProtDB::CH_090883	curated:TCDB::O32334	uniprot:O32523
+
+srlE	PTS system for sorbitol SrlABE, EII-BC1 component SrlE	curated:SwissProt::O32333	curated:SwissProt::O32522	curated:SwissProt::P56580
+
+srlABE: srlA srlB srlE
+
+# polyol PTS system with EII-CBA all fused, known as mtlA in E. coli (TC 4.A.2.1.2)
+# Also includes TC 4.A.2.1.12 (Q9KKQ7)
+# TC 4.A.2.1.5 (P42956) is the B. subtilis mannitol transporter but probably has weak activity no sorbitol (PMC222339)
+# so exclude it. Not known if the homologs from Geobacillus stearothermophilus (P50852) or Clostridium acetobutylicum
+# (O65989) [which lack the A component], which are mannitol transporters, are capable of sorbitol transport
+mtlA	PTS system for polyols, EII-CBA components	curated:BRENDA::P00550	curated:TCDB::Q9KKQ7	ignore:TCDB::P42956
+
+# Various monomeric transporters related to SOT1 or SOT2
+SOT	sorbitol:H+ co-transporter SOT1 or SOT2	curated:CharProtDB::CH_091483	curated:TCDB::AGG19156.1	curated:TCDB::AIU41385.1
+
+# TakP from Rhodobacter sphaeroides (Q3J1R2) was originally misannotated as SmoM, ignored.
+
+# transport coupled to phosphorylation
+PTS: mtlA
+PTS: srlABE
+
+# transport without modification
+transport: SOT
+transport: mtlEFGK
+
+all: PTS
+all: transport
