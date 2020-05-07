@@ -114,7 +114,7 @@ $query =~ s/\s+$//;
 die "Can only use format with a query or with step" if $format ne "" && $query eq "" && ($pathSpec eq "" || $step eq "");
 
 if ($format eq "") {
-  start_page('title' => $closeMode ? "Other Proteins Similar to $step"
+  start_page('title' => $closeMode ? "Other Characterized Proteins Similar to $step"
            : "Clusters of Characterized Proteins",
            'banner' => $banner, 'bannerURL' => $bannerURL);
 } elsif ($format eq "tsv") {
@@ -258,7 +258,7 @@ if ($query =~ m/^transporter:(.+)$/) {
   } else {
     print p("Or see",
             a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec&step=$step&close=1"},
-              "other proteins similar to $step")) unless $format;
+              "other characterized proteins similar to $step")) unless $format;
   }
   print p("Or see all steps for",
           a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec"}, $pathInfo{$pathSpec}{desc}))
