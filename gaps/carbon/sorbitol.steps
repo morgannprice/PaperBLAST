@@ -65,5 +65,11 @@ PTS: srlABE
 transport: SOT
 transport: mtlEFGK
 
-all: PTS
-all: transport
+# MetaCyc D-sorbitol degradation I: sorbitol dehydrogenase => D-fructose => fructose-6-phosphate
+sdh	sorbitol dehydrogenase	EC:1.1.1.14	term:sorbitol dehydrogenase
+
+# MetaCyc D-sorbitol degradation II: sorbitol-6-phosphate 2-dehydrogenase => fructose-6-phosphate
+srlD	sorbitol 6-phosphate 2-dehydrogenase	EC:1.1.1.140	term:sorbitol-6-phosphate dehydrogenase
+
+all: transport sdh
+all: PTS srlD
