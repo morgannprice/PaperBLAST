@@ -90,7 +90,7 @@ sub FaaToDb($$); # fasta file to db (from DB_File)
 
 my $tmpDir = "../tmp"; # for CacheAssembly
 my %orgs = (); # orgId => hash including gdb, gid, genomeName
-my $nCPU = 6;
+my $nCPU = $ENV{CPU_USE} || 6;
 
 # maximum size of posted data, in bytes
 my $maxMB = 100;
