@@ -1,0 +1,142 @@
+Formats of the various databases and flat files used by PaperBLAST and
+related tools:
+
+
+PaperBLAST
+
+Metadata about proteins and papers is in a SQLite3 database: data/litsearch.db
+The database schema is in bin/litsearch.sql
+
+The non-redundant protein sequences are in a BLASTp database in data/uniq.faa
+with identifiers like geneId from Gene or db::protId from CuratedGene.
+
+See the SeqToDuplicate table (of litsearch.db) for the mapping of
+redundant identifiers to the (arbitrarily selected) one in uniq.faa
+
+
+SitesBLAST
+
+Proteins with known functional sites are in the BLASTp database
+data/hassites.faa. It includes entries of the form SwissProt::protId
+or PDB:accession:chain. Information about the sites is in
+litsearch.db.
+
+
+Curated BLAST
+
+Curated BLAST relies on uniq.faa and litsearch.db to get metadata and
+sequences of characterized proteins.
+
+
+Genomes are fetched using lib/FetchAssembly.pm (see below)
+
+GapMind: information about pathways
+
+Information about a pathway is in gaps/{set}, including:
+
+The list of pathways in the set, in {set}.table
+
+The rules files for each pathway, in *.steps (documented in
+Steps.pm). Before being used as queries, these are compiled into
+*.query files in tmp/path.{set}/
+
+Dependencies between pathways, in requires.tsv
+
+Known gaps in organisms that can perform pathways, in
+{set}.known.gaps.tsv and {set}.known.gaps.markers.faa
+
+Curated classifications of gaps for those pathways in some organisms,
+in {set}.curated.gaps.tsv
+
+
+GapMind: characterized proteins and queries
+
+GapMind relies on various files in tmp/path.{set}/ to describe the
+queries for a set of pathways. For instance see tmp/path.aa/ and the tarball
+http://papers.genomics.lbl.gov/tmp/path.aa/aa.resources.tar.gz
+
+This directory includes:
+
+{path}.query has the compiled queries for each step of each pathway.
+This is tab-delimited with fields step, type of step (see
+lib/Steps.pm), query, desc, file, and sequence. (file is for HMM
+queries.)
+
+*.hmm files store the relevant HMM models, if any.
+
+A BLASTp database named curated.faa stores all the characterized
+proteins. (This is a subset of what is the CuratedGene table and is
+stored separately because mismatches between the design of the rules
+and the database of characterized proteins can cause good candidates
+to be marked as moderate-confidence.) The headers are named
+id1,...,idN where the ids are all identical sequences and of the form
+db::protId. For instance, Q7XJ02 is described in both BRENDA and
+SwissProt so there is a header line
+">BRENDA::Q7XJ02,SwissProt::Q7XJ02".
+
+To speed up fetching of sequences, gapView.cgi creates curated.faa.db,
+which uses DB_File (BerkeleyDB) to maps ids to sequences. This file is
+automatically recreated by gapView.cgi if it is out of date.
+
+curated.faa.info is tab-delimited with ids, length, descs, and
+optionally id2s and orgs. ids is the comma-delimited list of
+identifiers used in the curated.faa file. length is the length of the
+sequence (in amino acids). descs, id2s, and orgs are delimited by ";; "
+and correspond to the desc, id2, and organism fields of CuratedGene.
+
+hetero.tab records which of these proteins is part of a heteromeric
+complex. It is tab-delimited with fields db, protId, and comment. Even
+if comment is empty, it implies that the protein is heteromeric. This
+file is used by curatedClusters.cgi to highlight proteins that match a
+rule and are heteromeric. It is not used by the main GapMind pages
+(gapView.cgi).
+
+orgSets.tsv records if an analysis for a genome is already available
+in one of the standard sets such as orgsFit. It is tab-delimited with
+fields orgId, gdb, gid, genomeName, nProteins (as in a .org file, see
+FetchAssembly), and also orgSet.
+
+date should be update whenever any of the other files are changed, so
+that analyses can be rerun if necessary.
+
+{set}.resources.tar.gz is a downloadable tarball that includes the
+characterized proteins, the query files, and the HMM models.
+
+
+GapMind: assemblies and results
+
+GapMind uses FetchAssembly.pm to download assemblies, see
+below. For uploaded files, it uses AASeqToAssembly(). For
+groups of assemblies, it uses directories like tmp/orgsFit (these are
+created at the command line, not from the web site).
+
+In either case, it uses a directory in tmp/ to store the analysis
+results. For individual assemblies, these are named {gdb}__{gid}. For
+uploaded assemblies, they have hex names like
+9e004e282fd791a3bc03b92a56fbb6c8. By convention, the directories for
+groups of assemblies have names beginning with tmp/orgs.
+
+
+FetchAssembly.pm
+
+CacheAssembly() caches NCBI assemblies in tmp/refseq_{gid}.* with
+suffixes faa (for predicted proteins in fasta format), fna (for the
+genome sequence in fasta format), and features.tab for the gene
+annotations). The gid is an assembly id such as "GCF_003173355.1".
+
+CacheAssembly() caches MicrobesOnline genomes in tmp/mogenome_{gid}.*
+with suffixes faa and fna. The gid is an NCBI taxonomy id such as
+"272844".
+
+CacheAssembly() caches JGI genomes in tmp/{gid}, where gid is the
+identifier at the JGI portal, such as "EsccolW_FD". FetchAssembly.pm
+requires a private key, usually in private/.JGI.info, for access to
+the JGI portal. (The SetPrivDir() function sets the private
+directory.)
+
+CaceAssembly() caches fitness browser genomes in tmp/fbrowse_{gid}.*
+with suffixes faa and fna. The gid is the orgId in the Fitness Browser
+such as "Keio". FetchAssembly.pm requires the fitness browser database
+to be available locally, as set by SetFitnessBrowserPath(), usually
+fbrowse_data is a symbolic link to the cgi_data directory of the
+fitness browser.
