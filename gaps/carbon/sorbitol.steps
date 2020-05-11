@@ -16,9 +16,9 @@
 # A related system in Rhodobacter sphaeroides, smoEFGK, appears in TCDB (as TC 3.A.1.1.5) but there does not
 # seem to be any experimental evidence that it tranpsorts sorbitol, so it is also ignored.
 
-mtlE	ABC transporter for polyols MtlEFGK, substrate-binding component MtlE	curated:TCDB::O30491	curated:reanno::BFirm:BPHYT_RS16115	curated:reanno::Phaeo:GFF1305	curated:reanno::WCS417:GFF2493	curated:reanno::acidovorax_3H11:Ac3H11_2944	curated:reanno::pseudo5_N2C3_1:AO356_00025	curated:reanno::pseudo6_N2E2:Pf6N2E2_1963	ignore:reanno::pseudo3_N2E3:AO353_25880	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_3042
+mtlE	ABC transporter for polyols MtlEFGK, substrate-binding component MtlE	curated:TCDB::O30491	curated:reanno::BFirm:BPHYT_RS16115	curated:reanno::Phaeo:GFF1305	curated:reanno::WCS417:GFF2493	curated:reanno::acidovorax_3H11:Ac3H11_2944	curated:reanno::pseudo5_N2C3_1:AO356_00025	curated:reanno::pseudo6_N2E2:Pf6N2E2_1963	curated:TCDB::O30831	ignore:reanno::pseudo3_N2E3:AO353_25880	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_3042
 
-mtlF	ABC transporter for polyols MtlEFGK, permease component MtlF	curated:TCDB::O30492	curated:reanno::BFirm:BPHYT_RS16110	curated:reanno::Phaeo:GFF1304	curated:reanno::WCS417:GFF2492	curated:reanno::acidovorax_3H11:Ac3H11_2943	curated:reanno::pseudo5_N2C3_1:AO356_00020	curated:reanno::pseudo6_N2E2:Pf6N2E2_1962	ignore:reanno::pseudo3_N2E3:AO353_25885	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_3041
+mtlF	ABC transporter for polyols MtlEFGK, permease component MtlF	curated:TCDB::O30492	curated:reanno::BFirm:BPHYT_RS16110	curated:reanno::Phaeo:GFF1304	curated:reanno::WCS417:GFF2492	curated:reanno::acidovorax_3H11:Ac3H11_2943	curated:reanno::pseudo5_N2C3_1:AO356_00020	curated:reanno::pseudo6_N2E2:Pf6N2E2_1962	curated:TCDB::O30832	ignore:reanno::pseudo3_N2E3:AO353_25885	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_3041
 
 mtlG	ABC transporter for polyols MtlEFGK, permease component MtlG	curated:TCDB::O30493	curated:reanno::BFirm:BPHYT_RS16105	curated:reanno::Phaeo:GFF1303	curated:reanno::WCS417:GFF2491	curated:reanno::acidovorax_3H11:Ac3H11_2942	curated:reanno::pseudo5_N2C3_1:AO356_00015	curated:reanno::pseudo6_N2E2:Pf6N2E2_1961	ignore:reanno::pseudo3_N2E3:AO353_25890	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_3040	ignore:TCDB::O30833
 
