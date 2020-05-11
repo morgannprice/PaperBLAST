@@ -22,13 +22,13 @@ or PDB:accession:chain. Information about the sites is in
 litsearch.db.
 
 
-Curated BLAST
+Curated BLAST for Genomes
 
 Curated BLAST relies on uniq.faa and litsearch.db to get metadata and
 sequences of characterized proteins.
 
-
 Genomes are fetched using lib/FetchAssembly.pm (see below)
+
 
 GapMind: information about pathways
 
@@ -111,10 +111,21 @@ groups of assemblies, it uses directories like tmp/orgsFit (these are
 created at the command line, not from the web site).
 
 In either case, it uses a directory in tmp/ to store the analysis
-results. For individual assemblies, these are named {gdb}__{gid}. For
-uploaded assemblies, they have hex names like
+results. For individual assemblies, these directories are named
+{gdb}__{gid}. For uploaded assemblies, they have hex names like
 9e004e282fd791a3bc03b92a56fbb6c8. By convention, the directories for
 groups of assemblies have names beginning with tmp/orgs.
+
+The analysis results are in {set}.sum.*. with suffixes rules (one line
+per pathway/rule), steps (one line per pathway/step), cand (one line
+per for pathway/step/candidate), and warn (one line per violated
+requirement). These are all tab-delimited. These are computed by
+gapsummary.pl or (for the warn file) checkGapRequirements.pl.
+
+The file {set}.sum.done indicates that the analysis completed.
+
+The files {set}.hits and {set}.revhits are intermediate files from
+gapsearch.pl and gaprevsearch.pl
 
 
 FetchAssembly.pm
