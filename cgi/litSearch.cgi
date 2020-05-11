@@ -380,7 +380,7 @@ if (!defined $seq && ! $more_subjectId) {
 
       my $newline = "%0A";
       my $cdd_url = "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=>"
-        . HTML::Entities::encode($def) . $newline . $seq;
+        . uri_escape($def) . $newline . $seq;
       my $sblastURL = "sites.cgi?query=" . uri_escape($query);
       print qq{ <DIV style="float:right; padding-left: 10px; width:25%; background-color: #EEEEEE;">
                 <P>Also see
