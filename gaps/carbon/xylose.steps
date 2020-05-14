@@ -1,0 +1,195 @@
+# Transporters were identified using
+# query: transporter:D-xylose:xylose:CPD-15377
+
+# monomeric transporters include xylT-like proteins, and also Gal2, GlcP, but not XYLP_LACPE
+# TCDB also mentions MA6T (TC 2.A.1.1.10; P15685) but I did not find a reference linking this to xylose uptake
+
+# xylT- and xylE-like proteins, 457-576 amino acids (not heteromeric)
+# SwissProt::O52733,TCDB::O52733 XYLT_LACBR;; 2.A.1.1.41 D-xylose transporter; D-xylose-proton symporter;; The D-xylose:H+ symporter, XylT (Km=220 &#956;M; inhibited competitively by 6-deoxyglucose (Ki=220 &#956;M), but not by other sugars tested) Lactobacillus brevis;; Lactobacillus brevis
+# CharProtDB::CH_091400,SwissProt::P32467,TCDB::P32467 ;; HXT4_YEAST;; 2.A.1.1.30 low-affinity glucose transporter HXT4;; Low-affinity glucose transporter HXT4; Low-affinity glucose transporter LGT1;; Low affinity, constitutive, glucose (hexose; xylose) uniporter, Hxt4 (LGT1; Rag1) (also transports arsenic trioxide [As(OH)3] as do Hxtl, 3, 5, 7 and 9) Saccharomyces cerevisiae;; Saccharomyces cerevisiae (strain ATCC 204508 / S288c) (Baker's yeast);; Saccharomyces cerevisiae (Baker's yeast)
+# CharProtDB::CH_091493,SwissProt::Q9SFG0,TCDB::Q9SFG0 RF|NP_187247.1;; STP6_ARATH;; 2.A.1.1.56 sugar transport protein 6;; Sugar transport protein 6; Hexose transporter 6;; High affinity monosaccharide (KM &#8776; 20 µM):H+ symporter, Stp6 (takes up glucose, 3-O-methylglucose, mannose, fructose, galactose and to a lesser extent, xylose and ribulose. Arabidopsis thaliana;; Arabidopsis thaliana (Mouse-ear cress);; Arabidopsis thaliana (Mouse-ear cress)
+# CharProtDB::CH_109760,SwissProt::P0AGF4,TCDB::P0AGF4,ecocyc::XYLE-MONOMER,metacyc::XYLE-MONOMER ;; XYLE_ECOLI;; 2.A.1.1.3;; b4031;; P0AGF4 D-xylose-proton symporter;; D-xylose-proton symporter; D-xylose transporter;; Xylose (xylopyranose):H+ symporter of 491 aas and 12 TMSs;; D-xylose:H<sup>+</sup> symporter;; D-xylose:H<sup>+</sup> symporter Escherichia coli K12;; Escherichia coli (strain K12);; Escherichia coli;; Escherichia coli K-12 substr. MG1655;; Escherichia coli (strain K12)
+# SwissProt::P0AE24,TCDB::P0AE24,ecocyc::ARAE-MONOMER,metacyc::ARAE-MONOMER ARAE_ECOLI;; 2.A.1.1.2;; b2841;; P0AE24 Arabinose-proton symporter; Arabinose transporter;; Arabinose (xylose; galactose):H+ symporter, AraE (low affinity high capacity);; arabinose:H<sup>+</sup> symporter;; arabinose:H<sup>+</sup> symporter Escherichia coli (strain K12);; Escherichia coli;; Escherichia coli K-12 substr. MG1655;; Escherichia coli (strain K12)
+# SwissProt::P96710,TCDB::P96710 ARAE_BACSU;; 2.A.1.1.55 Arabinose-proton symporter; Arabinose transporter;; L-arabinose:proton symporter, AraE (Sa-Nogueira and Ramos, 1997). Also transports xylose, galactose and &alpha;-1,5 arabinobiose Bacillus subtilis (strain 168);; Bacillus subtilis
+# TCDB::C4B4V9 2.A.1.1.116 Arabinose/xylose transporter, AraE Corynebacterium glutamicum
+# TCDB::Q0WWW9 2.A.1.1.103 D-xylose-proton symporter-like 3, chloroplastic Arabidopsis thaliana
+# TCDB::Q2MDH1 2.A.1.1.67 Glucose/xylose facilitator-1, GXF1 (functions by sugar uniport; low affinity Candida intermedia
+# TCDB::Q2MEV7 2.A.1.1.51 Glucose/xylose: H+ symporter, Gsx1 Candida intermedia
+# TCDB::Q64L87 2.A.1.1.40 The xylose facilitator, Xylhp Debaryomyces hansenii (Yeast) (Torulaspora hansenii)
+# TCDB::Q9XIH7 2.A.1.1.75 The fructose/xylose:H+ symporter, PMT1 (polyol monosaccharide transporter-1). Also transports other substrates at lower rates. PMT2 is largely of the same sequence and function. Both are present in pollen and young xylem cells (Klepek et al., 2005). A similar ortholog has been identifed in pollen grains of Petunia hybrida Arabidopsis thaliana
+# Fitness data identified CCNA_00857 (CC0814; A0A0H3C6H3) as the xylose transporter in Caulobacter crescentus,
+# consistent with a previous report (PMC2168598)
+
+xylT	D-xylose transporter	curated:SwissProt::O52733	curated:CharProtDB::CH_091400	curated:CharProtDB::CH_091493	curated:CharProtDB::CH_109760	curated:SwissProt::P0AE24	curated:SwissProt::P96710	curated:TCDB::C4B4V9	curated:TCDB::Q0WWW9	curated:TCDB::Q2MDH1	curated:TCDB::Q2MEV7	curated:TCDB::Q64L87	curated:TCDB::Q9XIH7	uniprot:A0A0H3C6H3
+
+gal2	galactose/glucose/xylose uniporter	curated:CharProtDB::CH_091029
+
+glcP	glucose/mannose/xylose:H+ symporter	curated:SwissProt::O07563
+
+# ABC transporters include xylFGH from several organisms (T. maritima has a diverged SBP),
+# another system from T. maritima (xylE_Tm xylF_Tm XylK_Tm),
+# and araVUTS from Sulfolobus solfataricus
+
+# xylF-like substrate binding components, 330-359 amino acids (heteromeric)
+# CharProtDB::CH_003787,TCDB::P37387,ecocyc::XYLF-MONOMER,metacyc::XYLF-MONOMER GB|AAC76590.1;; 3.A.1.2.4;; b3566;; P37387 D-xylose ABC transporter, periplasmic D-xylose-binding protein;; XylF aka XYLT aka B3566, component of Xylose porter;; xylose ABC transporter periplasmic binding protein (EC 7.5.2.13; EC 7.5.2.10);; xylose ABC transporter periplasmic binding protein (EC 7.5.2.13) Escherichia coli K12;; Escherichia coli;; Escherichia coli K-12 substr. MG1655;; Escherichia coli (strain K12) (heteromeric)
+# TCDB::A6LW10 3.A.1.2.26 D-xylose ABC transporter, periplasmic substrate-binding protein, component of Xylose transporter, XylFGH (XylF (R), 359 aas; XylG (C), 525 aas; XylH (M), 389 aas Clostridium beijerinckii (strain ATCC 51743 / NCIMB 8052) (heteromeric)
+# TCDB::P25548 3.A.1.2.5 CVE1 aka ChvE aka ATU2348 aka AGR_C_4267, component of Multiple sugar (arabinose, xylose, galactose, glucose, fucose) putative porter Agrobacterium tumefaciens (heteromeric)
+#
+# and also G4FGN5 = Tmari_1858, the SBP in T. maritima, which is quite distantly related.
+# Tmari_1858 is sometimes annotated as gluE, and is glucose induced.
+# But the Km for xylose is quite low, so, leave it in as a xylose transporter
+# TCDB::G4FGN5 3.A.1.2.20 LacI family transcriptional regulator, component of Glucose porter. Also bind xylose (Boucher and Noll 2011). Induced by glucose (Frock et al. 2012). Directly regulated by glucose-responsive regulator GluR Thermotoga maritima (strain ATCC 43589 / MSB8 / DSM 3109 / JCM 10099) (heteromeric)
+#
+# Ignore P54083 (sbpA from A. brasilensis), not known if it transports xylose or not.
+# A close homolog HSERO_RS05190 has a mild defect on xylose, so, it may well.
+xylF	ABC transporter for xylose, substrate binding component xylF	curated:CharProtDB::CH_003787	curated:TCDB::A6LW10	curated:TCDB::P25548	curated:TCDB::G4FGN5	ignore:SwissProt::P54083
+
+# xylG-like ATP-binding components: 494-525 amino acids (heteromeric)
+# SwissProt::P37388,CharProtDB::CH_003788,TCDB::P37388,ecocyc::XYLG-MONOMER,metacyc::XYLG-MONOMER XYLG_ECOLI;; GB|AAC76591.1;; 3.A.1.2.4;; b3567;; P37388 Xylose import ATP-binding protein XylG; EC 7.5.2.10;; D-xylose ABC transporter, ATP-binding protein; EC 3.6.3.17;; XylG aka B3567, component of Xylose porter;; xylose ABC transporter ATP binding subunit (EC 7.5.2.13; EC 7.5.2.10);; xylose ABC transporter ATP binding subunit (EC 7.5.2.13) Escherichia coli (strain K12);; Escherichia coli K12;; Escherichia coli;; Escherichia coli K-12 substr. MG1655;; Escherichia coli (strain K12) (heteromeric)
+# TCDB::A6LW11 3.A.1.2.26 Xylose import ATP-binding protein XylG, component of Xylose transporter, XylFGH (XylF (R), 359 aas; XylG (C), 525 aas; XylH (M), 389 aas Clostridium beijerinckii (strain ATCC 51743 / NCIMB 8052) (heteromeric)
+# TCDB::G4FGN3 3.A.1.2.20 Monosaccharide-transporting ATPase, component of Glucose porter. Also bind xylose (Boucher and Noll 2011). Induced by glucose (Frock et al. 2012). Directly regulated by glucose-responsive regulator GluR Thermotoga maritima (strain ATCC 43589 / MSB8 / DSM 3109 / JCM 10099) (heteromeric)
+# TCDB::O05176 3.A.1.2.5 GguA aka ATU2347 aka AGR_C_4264, component of Multiple sugar (arabinose, xylose, galactose, glucose, fucose) putative porter Agrobacterium radiobacter (heteromeric)
+
+xylG	ABC transporter for xylose, ATP-binding component xylG	curated:SwissProt::P37388	curated:TCDB::A6LW11	curated:TCDB::G4FGN3	curated:TCDB::O05176
+
+# xylH-like permease components: 313-398 amino acids (heteromeric)
+# TCDB::A6LW12 3.A.1.2.26 Monosaccharide-transporting ATPase, component of Xylose transporter, XylFGH (XylF (R), 359 aas; XylG (C), 525 aas; XylH (M), 389 aas Clostridium beijerinckii (strain ATCC 51743 / NCIMB 8052) (heteromeric)
+# CharProtDB::CH_024441,TCDB::P0AGI4,ecocyc::XYLH-MONOMER,metacyc::XYLH-MONOMER RF|NP_418025;; 3.A.1.2.4;; b3568;; P0AGI4 D-xylose ABC transporter, permease protein;; Xylose transport system permease protein XylH aka B3568, component of Xylose porter;; xylose ABC transporter membrane subunit (EC 7.5.2.13; EC 7.5.2.10);; xylose ABC transporter membrane subunit (EC 7.5.2.13) Escherichia coli K12;; Escherichia coli;; Escherichia coli K-12 substr. MG1655;; Escherichia coli (strain K12) (heteromeric)
+# TCDB::G4FGN4 3.A.1.2.20 Putative beta-xyloside ABC transporter, permease component, component of Glucose porter. Also bind xylose (Boucher and Noll 2011). Induced by glucose (Frock et al. 2012). Directly regulated by glucose-responsive regulator GluR Thermotoga maritima (strain ATCC 43589 / MSB8 / DSM 3109 / JCM 10099) (heteromeric)
+# TCDB::O05177 3.A.1.2.5 GguB aka ATU2346 aka AGR_C_4262, component of Multiple sugar (arabinose, xylose, galactose, glucose, fucose) putative porter Agrobacterium radiobacter (heteromeric)
+
+xylH	ABC transporter for xylose, permease component xylH	curated:TCDB::A6LW12	curated:CharProtDB::CH_024441	curated:TCDB::G4FGN4	curated:TCDB::O05177
+
+# The ABC transporter in T. maritima described above is TC 3.A.1.2.20
+# TC 3.A.1.2.18 led me to another ABC transporter for xylose in T. maritima:
+# Q9WXW7 = TM0112 = XylF, the permease subunit
+# Q9WXW9 = TM0114 = XylE, the SBP, reported high affinity for xylose (PMC1392961)
+#   (Only the SBP seems to be characterized but that plus the clustering of these genes with each other
+#    and other xylose-related genes is quite suggestive.)
+# Q9WXX0 = TM0115 = xylK is the ATPase-binding component
+# (TM0113 is a putative xylanase)
+# TC 3.A.1.2.18 also includes Q9WXW0 = TM0105, for which they cite Nanavati et al (PMC1392961),
+#  but that paper does not mention this gene. Probably a curation error.
+
+xylF_Tm	ABC transporter for xylose, permease component xylF	curated:TCDB::Q9WXW7
+xylE_Tm	ABC transporter for xylose, substrate binding component xylE	uniprot:Q9WXW9
+xylK_Tm	ABC transporter for xylose, ATP binding component xylK	uniprot:Q9WXX0
+
+
+# AraVUTS (TC 3.A.1.1.14) from Sulfolobus solfataricus
+araV	component of Arabinose, fructose, xylose porter	curated:TCDB::Q97UF2
+araU	component of Arabinose, fructose, xylose porter	curated:TCDB::Q97UF3
+araT	component of Arabinose, fructose, xylose porter	curated:TCDB::Q97UF4
+araS	component of Arabinose, fructose, xylose porter	curated:TCDB::Q97UF5
+
+# There are also reports of xylose uptake by the mannose PTS system in Lactobacillus
+# (S. Chaillou et al, J. Bact. 1999) but with poor affinity.
+
+transport: xylT
+transport: gal2
+transport: glcP
+
+transport: xylF xylG xylH
+transport: xylF_Tm xylE_Tm xylK_Tm
+transport: araV araU araT araS
+
+# MetaCyc D-xylose degradation I: converts D-xylose to D-xylulose 5-phosphate,
+# and then ribulose-phosphate 3-epimerase and ribose-5-phosphate isomerase
+# (part of the pentose phosphate pathway) can covert it
+# to ribose 5-phosphate, a central intermediate
+xylA	xylose isomerase	EC:5.3.1.5
+# Echvi_1875 (L0FZT0) is annotated as xylulose kinase and has its strongest phentoypes on xylose
+# CA_C2612 (Q97FW4) from Clostridium acetobutylicum, was proven to be xylulose kinase (PMC2873477)
+# BT0792 (Q8A9M3) has its strongest phenotypes on xylose
+xylB	xylulokinase	EC:2.7.1.17	uniprot:L0FZT0	uniprot:Q97FW4	uniprot:Q8A9M3
+rpe	ribulose-phosphate epimerase	EC:5.1.3.1
+rpi	ribose-5-phosphate isomerase	EC:5.3.1.6
+
+# MetaCyc D-xylose degradation II: reduction to xylitol and oxidation to xylulose,
+# followed by xylB, rpe, rpi to reach ribose 5-phosphate.
+# This pathway is only reported in fungi.
+xyrA	xylitol reductase	EC:1.1.1.307
+# L-iditol 2-dehydrogenases (EC 1.1.1.14) often act on xylitol as well, so ignore those
+# There's also some xylulose reductases annotated but without an EC number
+xdhA	xylitol dehydrogenase	EC:1.1.1.9	ignore_other:1.1.1.14	ignore_other:xylulose reductase
+
+# MetaCyc D-xylose degradation III: oxidation to xylonate, dehydration
+# to 2-dehydro-3-deoxy-D-arabinonate (sometimes called D-2-keto-3-deoxypentonate, D-KDP;
+#     could also be described as 2-oxo-4,5-dihydoxypentanonate)
+# and again to a-ketoglutarate semialdehyde (2,5-dioxopentanonate),
+# and oxidation to a-ketoglutarate
+# MetaCyc D-xylose degradation V is very similar but with a different xylose dehydrogenase
+# Both produce D-xylono-1,5-lactone so they need not be distinguished here.
+# Watanabe et al 2019 (see below) also show that
+# C785_RS00860 = WP_034330287.1 = A0A4R8NY47 is D-xylose dehydrogenase (xdh)
+# Another issue is that xdh from Haloferax volcanii (HVO_B0028; D4GP29) is reported to form xylono-1,4-lactone,
+# (see Sutter et al 2017, PMID:28854683), but this is not reflected in the databases,
+# and for some (many?) xylose dehydrogenases,
+# it is uncertain which lactone they form.
+xdh	D-xylose dehydrogenase	EC:1.1.1.179	EC:1.1.1.175	uniprot:A0A4R8NY47
+# 3.1.1.110 is the 1,5-lactonase; 3.1.1.68 is the 1,4-lactonase
+# D4GP31 (HVO_B0030) can do either reaction (Sutter et al 2017)
+# xylono-1,4-lactonase is sometimes given EC 3.1.1.15 (L-arabinino-1,4-lactonase) so ignore those
+xylC	xylonolactonase	EC:3.1.1.110	EC:3.1.1.68	uniprot:D4GP31	ignore_other:3.1.1.15
+# Watanabe et al show that
+# C785_RS00855 = WP_039783171.1 = UPI0004007277 is D-xylonate dehydratase (xad)
+#   this is 98% identical to D8IWS7_HERSS, so use that identifier
+xad	D-xylonate dehydratase	EC:4.2.1.82	uniprot:D8IWS7_HERSS
+# Watanabe et al show that
+# C785_RS13680 = WP_039786859.1 = UPI00041852D2 is D-KDP dehydratase (kdaD)
+#   Is 98% identical to D8IS12 so use that
+kdaD	2-keto-3-deoxy-D-arabinonate dehydratase	EC:4.2.1.141	uniprot:D8IS12
+dopDH	2,5-dioxopentanonate dehydrogenase	EC:1.2.1.26
+
+# MetaCyc D-xylose degradation IV: oxidation to xylonate,
+# dehydration to 2-dehydro-3-deoxy-D-arabinonate / D-KDP,
+# aldolase cleavage to pyruvate + glycolaldehyde,
+# oxidation to glycolate and to glyoxylate,
+# and assimilation via malate synthase
+# (xdh, xylC, and xad are already defined above)
+#
+# A number of 4.1.2.55 enzymes are similar but are promiscuous and are likely
+# to have this activity as well. This includes Q97U28 which is nearly identical to the
+# promiscuous KDGA_SACSO / O54288, but is not annotated with this activity.
+DKDP_aldolase	2-dehydro-3-deoxy-D-arabinonate aldolase	EC:4.1.2.28	ignore_other:4.1.2.55
+# glycolaldehyde oxidoreductase is tricky: multi-subunits, and no EC number (Q97VI4 Q97VI7 Q97VI6)
+# But that is an inference from close homologs proteins from S. acidocaldarius
+# And there's demonstrate activity on glyceraldehyde-3-P, glyceraldehyde, and acetaldehyde, but not
+# on glycolaldehyde itself, so there's no proof that these genes provide the activity.
+# Related enzymes in EC 1.2.99.8 are promiscuous, may well have this activity, so ignore
+aldox_large	(glycol)aldehyde oxidoreductase, large subunit	curated:metacyc::MONOMER-18071	curated:SwissProt::Q4J6M3	ignore_other:1.2.99.8
+aldox_med	(glycol)aldehyde oxidoreductase, medium subunit	curated:metacyc::MONOMER-18072	curated:SwissProt::Q4J6M6	ignore_other:1.2.99.8
+aldox_small	(glycol)aldehyde oxidoreductase, small subunit	curated:metacyc::MONOMER-18073	curated:SwissProt::Q4J6M5	ignore_other:1.2.99.8
+# There's also glycolaldehyde dehydrogenase, 1.2.1.21 (aldA), with a single subunit
+aldA	(glycol)aldehyde dehydrogenase	EC:1.2.1.21
+# The NADP based glyoxylate reductase (EC 1.1.1.79) is probably biased in the wrong direction
+# so do not include, but ignore homology to it
+gyaR	glyoxylate reductase	EC:1.1.1.26	ignore_other:1.1.1.79
+# Besides the standard enzyme, there's an archaeal enzyme that is sometimes annotated as 4.1.3.24,
+# but that only includes the formation of malyl-CoA, not the cleavage to malate (which these
+# enzymes also do).
+glcB	malate synthase	EC:2.3.3.9	ignore_other:4.1.3.24
+
+glycolaldehyde_dehydrogenase: aldA
+glycolaldehyde_dehydrogenase: aldox_large aldox_med aldox_small
+
+# Watanabe et al 2019 (Scientific Reports 2019, Novel non-phosphorylative pathway of pentose metabolism, PMC6336799)
+# describe another pathway from D-KDP, with oxidation to
+# 5-hydroxy,2-4-dioxopentanonate (HDOP) followed by hydrolysis to glycolate + pyruvate
+# As of May 2020, this pathway is not in MetaCyc.
+# C785_RS13675 = WP_039786858.1 = A0A4P7ABK7 is the D-KDP 4-dehydrogenase
+# C785_RS20550 = WP_039788920.1 = A0A2E7P912 is the HDOP hydrolase
+#   (closely related to 2,4-diketo-3-deoxy-L-rhamnonate hydrolase, BPHYT_RS34210, which I reannotated, ignore that)
+# (xdh, xylC, and xad are defined above)
+DKDP_dehydrog	D-2-deto-3-deoxypentoate dehydrogenase	uniprot:A0A4P7ABK7
+# This enzyme is also similar to SM_b21112, thought to be L-2,4-diketo-3-deoxyrhamnonate hydrolase
+# and 2,4-dioxopentanoate hydrolase. It is plausible that it acts on HDOP as well.
+# Similarly for BPHYT_RS34210 (thought to act on 2,4-diketo-3-deoxy-L-fuconate = oL-2,4-diketo-3-deoxyrhamnonate)
+HDOP_hydrol	5-hydroxy-2,4-dioxopentanonate hydrolase	uniprot:A0A2E7P912	ignore:reanno::BFirm:BPHYT_RS34210	ignore:reanno::Smeli:SM_b21112
+# (gyaR and glcB are defined above)
+
+all: transport xylA xylB rpe rpi
+all: transport xyrA xdhA xylB rpe rpi
+all: transport xdh xylC xad kdaD dopDH
+all: transport xdh xylC xad DKDP_aldolase glycolaldehyde_dehydrogenase gyaR glcB
+all: transport xdh xylC xad DKDP_dehydrog HDOP_hydrol gyaR glcB
