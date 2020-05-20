@@ -578,7 +578,10 @@ foreach my $cluster (@clustBySize) {
       }
     }
     if ($format eq "rules") {
-      print join(" ", "Cluster$nCluster:",
+      my $desc = $curatedInfo{$seed}{descs} || "No description";
+      $desc =~ s/ ;;.*//;
+      print join("\t", "Cluster$nCluster",
+                 $desc,
                  map { my $short = $_; $short =~ s/,.*//; "curated:$short" } ($seed, @other))."\n";
     }
   } # end if @ids > 1
@@ -597,7 +600,9 @@ if (@singletons > 0) {
       my $isHetero = IsHetero($id) ? " (heteromeric)" : "";
       print "\n# Singleton $nSingleShow $id $curatedInfo{$id}{id2s} $curatedInfo{$id}{descs} $curatedInfo{$id}{orgs}$isHetero\n";
       my $short = $id; $short =~ s/,.*//;
-      print "Singleton$nSingleShow: curated:$short\n";
+      my $desc = $curatedInfo{$id}{descs};
+      $desc =~ s/;; .*//;
+      print join("\t", "Singleton$nSingleShow",  $desc, "curated:$short")."\n";
     } elsif ($format eq "tsv") {
       TSVPrint("Singleton$nSingleShow", $id, $curatedInfo{$id});
     }
