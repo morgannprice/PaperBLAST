@@ -195,7 +195,8 @@ if ($query =~ m/^transporter:(.+)$/) {
   foreach my $chit (@$chits) {
     my $id = $chit->{db} . "::" . $chit->{protId};
     if (!exists $idToIds{$id}) {
-      print p("Warning: $id ($chit->{desc}) matched but is not in the curated table"), "\n";
+      print p("Warning: $id ($chit->{desc}) matched but is not in the curated table"), "\n"
+        unless $format;
     } else {
       $idsHit{ $idToIds{$id} } = 1;
     }
