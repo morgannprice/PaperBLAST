@@ -12,6 +12,7 @@
 #	path -- which pathway the step is in
 #	step -- which step
 # In cluster mode, can format the output as tab-delimited (format=tsv) or as rules (format=rules)
+#	can also sort by organism (byorg)
 # Alternatively, browse the pathways or steps, use
 #	path=all to list the pathways, or
 #	set path but not step to list the steps in a pathway
@@ -64,6 +65,9 @@ die "Can only use close if path and step is set"
 die "Format cannot be used with close mode" if $closeMode && $format ne "";
 die "Unknown format spec"
   if $format ne "" && $format ne "tsv" && $format ne "rules";
+my $byorg = param('byorg') || "";
+die "byorg cannot be used with close mode" if $byorg && $closeMode;
+die "byorg cannot be used with format" if $byorg && $format ne "";
 
 my $minIdentity = param('identity');
 $minIdentity = 30 unless defined $minIdentity && $minIdentity =~ m/^\d+$/;
@@ -149,6 +153,8 @@ if ($query eq "" && $pathSpec eq "") {
       '%identity and',
       textfield(-name => "coverage", -value => $minCoverage, -size => 3, -maxlemgth => 3),
       '%coverage'),
+    p({-style => "margin-left: 3em;" },
+      checkbox(-name => "byorg", -label => "Sort by organism?", -checked => 0)),
     p(submit(-name => 'Search')),
     end_form,
     p(a("Or",
@@ -162,6 +168,8 @@ if ($query eq "" && $pathSpec eq "") {
 my @curatedInfo = ReadTable("$curatedFaa.info", ["ids","length","descs"]);
 # will also have orgs and id2s if a newer file
 my %curatedInfo = map { $_->{ids} => $_ } @curatedInfo;
+die "Sorry, this version of the database does not store organism information"
+  if $byorg && !exists $curatedInfo[0]{orgs};
 my %seqsAll;
 tie %seqsAll, "DB_File", "$curatedFaa.db", O_RDONLY, 0666, $DB_HASH
   || die "Cannot open file $curatedFaa.db -- $!";
@@ -195,7 +203,7 @@ if ($query =~ m/^transporter:(.+)$/) {
   foreach my $chit (@$chits) {
     my $id = $chit->{db} . "::" . $chit->{protId};
     if (!exists $idToIds{$id}) {
-      print p("Warning: $id ($chit->{desc}) matched but is not in the curated table"), "\n"
+      print p("Curated entry $id ($chit->{desc}) is excluded because it is not in the table of characterized proteins"), "\n"
         unless $format;
     } else {
       $idsHit{ $idToIds{$id} } = 1;
@@ -538,77 +546,131 @@ unless ($format) {
   my $clustReport = "Found " . (scalar(@clusters) - scalar(@singletons)) . " clusters of similar sequences.";
   $clustReport .= " Another " . scalar(@singletons) . " sequences are not clustered." if @singletons > 0;
   my $baseURL = "curatedClusters.cgi?set=$set&path=$pathSpec&step=$step&query=$query&word=$wordMode&identity=$minIdentity&coverage=$minCoverage";
+  my $viewBy;
+  if ($byorg) {
+    $viewBy = a({-href => $baseURL}, "by cluster");
+  } else {
+    $viewBy = a({-href => $baseURL."&byorg=1"}, "by organism");
+  }
   print p($clustReport,
           "Download as", a({-href => "$baseURL&format=tsv"}, "table"),
           "or as",
-	  a({-href => "$baseURL&format=rules"}, "draft rules") . ".");
+	  a({-href => "$baseURL&format=rules"}, "draft rules"),
+          "or view", $viewBy);
 }
 
 my @clustBySize = sort { scalar(keys %$b) <=> scalar(keys %$a) } @clusters;
-my $nCluster = 0;
-foreach my $cluster (@clustBySize) {
-  my @ids = sort keys %$cluster;
-  if (@ids > 1) {
-    $nCluster++;
-    my ($seed) = grep $cluster->{$_}, @ids;
-    die unless defined $seed;
-    my $nHetero = scalar(grep IsHetero($_), @ids);
-    my $sz = scalar(@ids);
-    my @len = map $curatedInfo{$_}{length}, @ids;
-    my @clusterHeader = ("Cluster $nCluster,", min(@len) . "-" .max(@len), "amino acids");
-    if ($nHetero ==  $sz) {
-      push @clusterHeader, "(heteromeric)";
-    } elsif ($nHetero > 0) {
-      push @clusterHeader, "($nHetero/$sz heteromeric)";
-    } else {
-      push @clusterHeader, "(not heteromeric)";
+my @singletonIds = sort map { (keys %{ $_ })[0] } @singletons;
+
+if ($byorg) { # show by organism
+  # Name each group of ids
+  my $nCluster = 0;
+  my $nSingle = 0;
+  my %idsToCluster = (); # ids to cluster name or singleton name
+  foreach my $cluster (@clustBySize) {
+    my @ids = sort keys %$cluster;
+    if (@ids > 1) {
+      $nCluster++;
+      my $name = "Cluster $nCluster";
+      foreach my $ids (@ids) {
+        $idsToCluster{$ids} = $name;
+      }
     }
-    print h3(@clusterHeader) unless $format;
-    print "\n# " . join(" ", @clusterHeader) . "\n" if $format eq "rules";
-    print small("The first sequence in each cluster is the seed.")
-      if $nCluster == 1 && $format eq ""; 
-    my @other = grep ! $cluster->{$_}, @ids;
-    foreach my $id ($seed, @other) {
+  }
+  foreach my $ids (@singletonIds) {
+    $nSingle++;
+    $idsToCluster{ $ids } = "Singleton $nSingle";
+  }
+
+  # simplify organisms (so that they will hopefully be consistent across databases)
+  my %orgIds = (); # organism => ids => 1
+  foreach my $ids (keys %idsToCluster) {
+    my $info = $curatedInfo{$ids} || die;
+    my @orgs = split /;; /, $info->{orgs};
+    my %orgU = ();
+    foreach my $org (@orgs) {
+      $org =~ s/^candidatus //i;
+      $org =~ s/^([a-zA-Z]+) sp./\1/;
+      my @words = split / /, $org;
+      @words = splice(@words, 0, 2) if @words > 2;
+      $org = join(" ", @words);
+      $orgIds{$org}{$ids} = 1;
+    }
+  }
+
+  foreach my $org (sort keys %orgIds) {
+    my @ids = sort keys %{ $orgIds{$org} };
+    print h3($org),"\n";
+    foreach my $ids (@ids) {
+      print p(CompoundInfoToHtml($ids, $curatedInfo{$ids}, $seqs{$ids}),
+              "(".$idsToCluster{$ids}.")"), "\n";
+    }
+  }
+} else { # !$byorg, or, show by cluster
+  my $nCluster = 0;
+  foreach my $cluster (@clustBySize) {
+    my @ids = sort keys %$cluster;
+    if (@ids > 1) {
+      $nCluster++;
+      my ($seed) = grep $cluster->{$_}, @ids;
+      die unless defined $seed;
+      my $nHetero = scalar(grep IsHetero($_), @ids);
+      my $sz = scalar(@ids);
+      my @len = map $curatedInfo{$_}{length}, @ids;
+      my @clusterHeader = ("Cluster $nCluster,", min(@len) . "-" .max(@len), "amino acids");
+      if ($nHetero ==  $sz) {
+        push @clusterHeader, "(heteromeric)";
+      } elsif ($nHetero > 0) {
+        push @clusterHeader, "($nHetero/$sz heteromeric)";
+      } else {
+        push @clusterHeader, "(not heteromeric)";
+      }
+      print h3(@clusterHeader) unless $format;
+      print "\n# " . join(" ", @clusterHeader) . "\n" if $format eq "rules";
+      print small("The first sequence in each cluster is the seed.")
+        if $nCluster == 1 && $format eq ""; 
+      my @other = grep ! $cluster->{$_}, @ids;
+      foreach my $id ($seed, @other) {
+        if ($format eq "") {
+          print p(CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id})), "\n";
+        } elsif ($format eq "rules") {
+          my $isHetero = IsHetero($id) ? " (heteromeric)" : "";
+          print "# $id $curatedInfo{$id}{id2s} $curatedInfo{$id}{descs} $curatedInfo{$id}{orgs}$isHetero\n";
+        } elsif ($format eq "tsv") {
+          TSVPrint("Cluster$nCluster", $id, $curatedInfo{$id});
+        }
+      }
+      if ($format eq "rules") {
+        my $desc = $curatedInfo{$seed}{descs} || "No description";
+        $desc =~ s/ ;;.*//;
+        print join("\t", "Cluster$nCluster",
+                   $desc,
+                   map { my $short = $_; $short =~ s/,.*//; "curated:$short" } ($seed, @other))."\n";
+      }
+    } # end if @ids > 1
+  }
+  if (@singletons > 0) {
+    my $nHetero = scalar(grep IsHetero($_), @singletonIds);
+    my $nSingle = scalar(@singletonIds);
+    print h3("Singletons ($nHetero/$nSingle heteromeric)") unless $format;
+    my $nSingleShow = 0;
+    foreach my $id (@singletonIds) {
+      $nSingleShow++;
       if ($format eq "") {
         print p(CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id})), "\n";
       } elsif ($format eq "rules") {
         my $isHetero = IsHetero($id) ? " (heteromeric)" : "";
-        print "# $id $curatedInfo{$id}{id2s} $curatedInfo{$id}{descs} $curatedInfo{$id}{orgs}$isHetero\n";
+        print "\n# Singleton $nSingleShow $id $curatedInfo{$id}{id2s} $curatedInfo{$id}{descs} $curatedInfo{$id}{orgs}$isHetero\n";
+        my $short = $id; $short =~ s/,.*//;
+        my $desc = $curatedInfo{$id}{descs};
+        $desc =~ s/;; .*//;
+        print join("\t", "Singleton$nSingleShow",  $desc, "curated:$short")."\n";
       } elsif ($format eq "tsv") {
-        TSVPrint("Cluster$nCluster", $id, $curatedInfo{$id});
+        TSVPrint("Singleton$nSingleShow", $id, $curatedInfo{$id});
       }
     }
-    if ($format eq "rules") {
-      my $desc = $curatedInfo{$seed}{descs} || "No description";
-      $desc =~ s/ ;;.*//;
-      print join("\t", "Cluster$nCluster",
-                 $desc,
-                 map { my $short = $_; $short =~ s/,.*//; "curated:$short" } ($seed, @other))."\n";
-    }
-  } # end if @ids > 1
-}
-if (@singletons > 0) {
-  my @singletonIds = map { (keys %{ $_ })[0] } @singletons;
-  my $nHetero = scalar(grep IsHetero($_), @singletonIds);
-  my $nSingle = scalar(@singletonIds);
-  print h3("Singletons ($nHetero/$nSingle heteromeric)") unless $format;
-  my $nSingleShow = 0;
-  foreach my $id (sort @singletonIds) {
-    $nSingleShow++;
-    if ($format eq "") {
-      print p(CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id})), "\n";
-    } elsif ($format eq "rules") {
-      my $isHetero = IsHetero($id) ? " (heteromeric)" : "";
-      print "\n# Singleton $nSingleShow $id $curatedInfo{$id}{id2s} $curatedInfo{$id}{descs} $curatedInfo{$id}{orgs}$isHetero\n";
-      my $short = $id; $short =~ s/,.*//;
-      my $desc = $curatedInfo{$id}{descs};
-      $desc =~ s/;; .*//;
-      print join("\t", "Singleton$nSingleShow",  $desc, "curated:$short")."\n";
-    } elsif ($format eq "tsv") {
-      TSVPrint("Singleton$nSingleShow", $id, $curatedInfo{$id});
-    }
   }
-}
+} # end else on $byorg
 print end_html unless $format;
 exit(0);
 
