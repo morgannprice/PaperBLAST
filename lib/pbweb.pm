@@ -147,6 +147,7 @@ sub AddCuratedInfo($) {
   if ($db eq "TCDB") {
     my @tcids = split /,/, $gene->{id2};
     @ids = map { "TC $_" } @tcids;
+    push @ids, $protId;
   }
   @ids = grep { $_ ne "" } @ids;
   $gene->{showName} = join(" / ", @ids) || $protId;
