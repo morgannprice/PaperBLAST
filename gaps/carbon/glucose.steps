@@ -18,8 +18,9 @@
 # Ignore CH_122303, yet another hexose transporter
 # Ignore yet more yeast hexose transporters P40886, P54862, GHT8_SCHPO / Q9P3U7, C5E4Z7,
 # CH_123252, CH_123250, CH_122864, P39924, CH_124796, P54854
+# Shewana3_2310 = glcP(Mal) = A0KXM0 was shown to be a glucose transporter (PMID:20836887)
 
-MFS_glucose	glucose transporter, MFS superfamily	curated:SwissProt::A0A0H2VG78	curated:CharProtDB::CH_091029	curated:CharProtDB::CH_091305	curated:CharProtDB::CH_091400	curated:CharProtDB::CH_091463	curated:CharProtDB::CH_091493	curated:CharProtDB::CH_091695	curated:CharProtDB::CH_122958	curated:CharProtDB::CH_124310	curated:SwissProt::A0A1D8PCL1	curated:SwissProt::F1R0H0	curated:SwissProt::O44616	curated:SwissProt::O44827	curated:SwissProt::P0AEP1	curated:SwissProt::P11166	curated:SwissProt::P11167	curated:SwissProt::P11168	curated:SwissProt::P11169	curated:SwissProt::P12336	curated:SwissProt::P14142	curated:SwissProt::P14246	curated:SwissProt::P14672	curated:SwissProt::P17809	curated:SwissProt::P19357	curated:SwissProt::P27674	curated:SwissProt::P32037	curated:SwissProt::P47843	curated:SwissProt::P58353	curated:SwissProt::P58354	curated:SwissProt::Q07647	curated:SwissProt::Q56ZZ7	curated:SwissProt::Q9JIF3	curated:SwissProt::Q9JJZ1	curated:SwissProt::Q9NY64	curated:SwissProt::Q9WV38	curated:SwissProt::Q9XSC2	curated:TCDB::A0QZX3	curated:TCDB::A0ZXK6	curated:TCDB::A1Z264	curated:TCDB::G4N740	curated:TCDB::H9BPB6	curated:TCDB::P15729	curated:TCDB::P23585	curated:TCDB::P49374	curated:TCDB::Q0SE66	curated:TCDB::Q2MDH1	curated:TCDB::Q2MEV7	curated:TCDB::Q63ZP5	curated:TCDB::Q7BEC4	curated:TCDB::Q8G3X1	curated:TCDB::Q8J0U9	curated:TCDB::Q8NTX0	curated:TCDB::Q9LT15	curated:SwissProt::O07563	curated:SwissProt::Q8TDB8	curated:CharProtDB::CH_091552	curated:CharProtDB::CH_121984	curated:SwissProt::P22732	curated:SwissProt::P43427	curated:SwissProt::P46408	curated:SwissProt::Q3T9X0	curated:SwissProt::Q6PXP3	curated:SwissProt::Q9BYW1	curated:SwissProt::Q9NRM0	curated:TCDB::Q26579	curated:TCDB::A3M0N3	curated:CharProtDB::CH_091058	curated:CharProtDB::CH_123257	curated:SwissProt::B8MYS7	curated:SwissProt::P32465	curated:SwissProt::P32466	curated:TCDB::Q9P3U6	curated:SwissProt::O95528	curated:SwissProt::Q5J316	curated:SwissProt::Q6NWF1	curated:SwissProt::Q8BFW9	curated:SwissProt::Q8TD20	curated:TCDB::B1PLM1	curated:TCDB::O61059	curated:TCDB::O61060	curated:TCDB::O76486	curated:TCDB::Q06222	curated:TCDB::A5Y0C3	curated:SwissProt::Q3UDF0	curated:SwissProt::Q9UGQ3	curated:TCDB::O25788	curated:TCDB::P0C105	curated:TCDB::Q04DP6	curated:TCDB::Q04FN1	curated:CharProtDB::CH_091224	curated:CharProtDB::CH_091141	curated:SwissProt::P21906	curated:SwissProt::Q8IRI6	curated:TCDB::C5DX43	curated:TCDB::P39004	curated:CharProtDB::CH_091031	ignore:CharProtDB::CH_091031	curated:TCDB::P43581	ignore:CharProtDB::CH_122303	ignore:SwissProt::P40886	ignore:TCDB::P54862	ignore:SwissProt::Q9P3U7	ignore:TCDB::C5E4Z7	ignore:CharProtDB::CH_123252	ignore:CharProtDB::CH_123250	ignore:CharProtDB::CH_122864	ignore:TCDB::P39924	ignore:CharProtDB::CH_124796	ignore:TCDB::P54854
+MFS_glucose	glucose transporter, MFS superfamily	curated:SwissProt::A0A0H2VG78	curated:CharProtDB::CH_091029	curated:CharProtDB::CH_091305	curated:CharProtDB::CH_091400	curated:CharProtDB::CH_091463	curated:CharProtDB::CH_091493	curated:CharProtDB::CH_091695	curated:CharProtDB::CH_122958	curated:CharProtDB::CH_124310	curated:SwissProt::A0A1D8PCL1	curated:SwissProt::F1R0H0	curated:SwissProt::O44616	curated:SwissProt::O44827	curated:SwissProt::P0AEP1	curated:SwissProt::P11166	curated:SwissProt::P11167	curated:SwissProt::P11168	curated:SwissProt::P11169	curated:SwissProt::P12336	curated:SwissProt::P14142	curated:SwissProt::P14246	curated:SwissProt::P14672	curated:SwissProt::P17809	curated:SwissProt::P19357	curated:SwissProt::P27674	curated:SwissProt::P32037	curated:SwissProt::P47843	curated:SwissProt::P58353	curated:SwissProt::P58354	curated:SwissProt::Q07647	curated:SwissProt::Q56ZZ7	curated:SwissProt::Q9JIF3	curated:SwissProt::Q9JJZ1	curated:SwissProt::Q9NY64	curated:SwissProt::Q9WV38	curated:SwissProt::Q9XSC2	curated:TCDB::A0QZX3	curated:TCDB::A0ZXK6	curated:TCDB::A1Z264	curated:TCDB::G4N740	curated:TCDB::H9BPB6	curated:TCDB::P15729	curated:TCDB::P23585	curated:TCDB::P49374	curated:TCDB::Q0SE66	curated:TCDB::Q2MDH1	curated:TCDB::Q2MEV7	curated:TCDB::Q63ZP5	curated:TCDB::Q7BEC4	curated:TCDB::Q8G3X1	curated:TCDB::Q8J0U9	curated:TCDB::Q8NTX0	curated:TCDB::Q9LT15	curated:SwissProt::O07563	curated:SwissProt::Q8TDB8	curated:CharProtDB::CH_091552	curated:CharProtDB::CH_121984	curated:SwissProt::P22732	curated:SwissProt::P43427	curated:SwissProt::P46408	curated:SwissProt::Q3T9X0	curated:SwissProt::Q6PXP3	curated:SwissProt::Q9BYW1	curated:SwissProt::Q9NRM0	curated:TCDB::Q26579	curated:TCDB::A3M0N3	curated:CharProtDB::CH_091058	curated:CharProtDB::CH_123257	curated:SwissProt::B8MYS7	curated:SwissProt::P32465	curated:SwissProt::P32466	curated:TCDB::Q9P3U6	curated:SwissProt::O95528	curated:SwissProt::Q5J316	curated:SwissProt::Q6NWF1	curated:SwissProt::Q8BFW9	curated:SwissProt::Q8TD20	curated:TCDB::B1PLM1	curated:TCDB::O61059	curated:TCDB::O61060	curated:TCDB::O76486	curated:TCDB::Q06222	curated:TCDB::A5Y0C3	curated:SwissProt::Q3UDF0	curated:SwissProt::Q9UGQ3	curated:TCDB::O25788	curated:TCDB::P0C105	curated:TCDB::Q04DP6	curated:TCDB::Q04FN1	curated:CharProtDB::CH_091224	curated:CharProtDB::CH_091141	curated:SwissProt::P21906	curated:SwissProt::Q8IRI6	curated:TCDB::C5DX43	curated:TCDB::P39004	curated:CharProtDB::CH_091031	ignore:CharProtDB::CH_091031	curated:TCDB::P43581	ignore:CharProtDB::CH_122303	ignore:SwissProt::P40886	ignore:TCDB::P54862	ignore:SwissProt::Q9P3U7	ignore:TCDB::C5E4Z7	ignore:CharProtDB::CH_123252	ignore:CharProtDB::CH_123250	ignore:CharProtDB::CH_122864	ignore:TCDB::P39924	ignore:CharProtDB::CH_124796	ignore:TCDB::P54854	uniprot:A0KXM0
 
 # solute_symporter (SSS) family transpoters
 SSS_glucose	Sodium/glucose cotransporter	curated:SwissProt::A0PJK1	curated:CharProtDB::CH_091086	curated:SwissProt::P11170	curated:SwissProt::P31636	curated:SwissProt::P31639	curated:SwissProt::P96169	curated:SwissProt::Q28610	curated:SwissProt::Q28728	curated:SwissProt::Q2M3M2	curated:SwissProt::Q6R4Q5	curated:SwissProt::Q8K0E3	curated:SwissProt::Q8WWX8	curated:SwissProt::Q9NY91	curated:SwissProt::Q9Z1F2	curated:TCDB::P26430	curated:TCDB::Q2A687
@@ -65,7 +66,7 @@ SWEET1	bidirectional sugar transporter SWEET1	curated:SwissProt::Q8L9J7
 # Cluster 18, 392-393 amino acids (not heteromeric), TCDB::P31675,ecocyc::B0070-MONOMER,metacyc::B0070-MONOMER
 
 
-# ABC transporters (three systems)
+# ABC transporters (several systems)
 
 # mglABC-like ABC transporters, from E. coli, Haloferax, Thermotoga, Agrobacterium, Phaeobacter
 # But in Haloferax, only two components are known; there is a SBP nearby but also a second permease.
@@ -119,6 +120,24 @@ glcT	glucose ABC transporter, permease component 1 (GlcT)	curated:TCDB::Q97UZ0
 glcU	glucose ABC transporter, permease component 2 (GlcU)	curated:TCDB::Q97UY9
 glcV	glucose ABC transporter, ATPase component (GclV)	curated:BRENDA::Q97UY8
 
+# ABC transporter aglEFGK (Dshi_1652:Dshi_1648) from Dinoroseobacter shibae
+# The gene names are from aglEFGK of Sinorhizobium meliloti, which are involved in uptake of sucrose
+# and some other disaccharides (PMID:10400573); in fitness data, they are important for maltose & trehalose
+# (i.e. see SMc03061 = aglE); not important on glucose but S. meliloti also has SM_b20894, close to gguA/mglA O05176
+# It is uncertain whether aglEFGK from S. meliloti can transport glucose or not, so it is ignored
+
+# Dshi_1652 = A8LLL6
+aglE	glucose ABC transporter, periplasmic substrate-binding component (AglE)	uniprot:A8LLL6	ignore:reanno::Smeli:SMc03061
+
+# Dshi_1651 = A8LLL5
+aglF	glucose ABC transporter, permease component 1 (AglF)	uniprot:A8LLL5	ignore:reanno::Smeli:SMc03062
+
+# Dshi_1650 = A8LLL4
+aglG	glucose ABC transporter, permease component 2 (AglG)	uniprot:A8LLL4	ignore:reanno::Smeli:SMc03063
+
+# Dshi_1648 = A8LLL2
+aglK	glucose ABC transporter, ATPase component (AglK)	uniprot:A8LLL2	ignore:reanno::Smeli:SMc03065
+
 transport: MFS_glucose
 transport: SSS_glucose
 transport: glcU_Firmicutes
@@ -128,6 +147,7 @@ transport: SWEET1
 transport: mglA mglB mglC
 transport: gtsA gtsB gtsC gtsD
 transport: glcS glcT glcU glcV
+transport: aglE aglF aglG aglK
 
 # PTS systems (several systems)
 
@@ -176,9 +196,16 @@ PTS: bglF
 PTS: ptsG crr
 PTS: manX manY manZ
 
+# Dshi_1655 (A8LLL9) was identified using fitness data, is very important for growth on glucose and
+#    several glucose-containing disaccharides; and functional residues seem to be conserved.
+# Q5GAN8 = hexA from B. fragilis is a broad-specificity hexokinase (PMID:15659667)
+# Q5GBH5 = rokA = MONOMER-19002 from B. fragilis is a glucose/mannose/NAG kinase (PMID:15659667)
+#	(MetaCyc lists it as NAG kinase only but it is just as active on glucose)
 # CH_123431 is nearly identical to a characterized broad-specificity hexose kinase, so ignore
 # SCO5059 (Q9ADE8) is reported to have ATP-glucokinase activity (PMID:24200789), so ignore
-glk	glucokinase	EC:2.7.1.1	EC:2.7.1.2	ignore:CharProtDB::CH_123431	ignore:BRENDA::Q9ADE8
+glk	glucokinase	EC:2.7.1.1	EC:2.7.1.2	uniprot:A8LLL9	uniprot:Q5GAN8	curated:metacyc::MONOMER-19002	ignore:CharProtDB::CH_123431	ignore:BRENDA::Q9ADE8
 
 all: transport glk
 all: PTS
+
+# Not yet represented is the oxidative pathway via 2-ketogluconate
