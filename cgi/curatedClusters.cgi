@@ -562,26 +562,25 @@ unless ($format) {
 my @clustBySize = sort { scalar(keys %$b) <=> scalar(keys %$a) } @clusters;
 my @singletonIds = sort map { (keys %{ $_ })[0] } @singletons;
 
-if ($byorg) { # show by organism
-  # Name each group of ids
-  my $nCluster = 0;
-  my $nSingle = 0;
-  my %idsToCluster = (); # ids to cluster name or singleton name
-  foreach my $cluster (@clustBySize) {
-    my @ids = sort keys %$cluster;
-    if (@ids > 1) {
-      $nCluster++;
-      my $name = "Cluster $nCluster";
-      foreach my $ids (@ids) {
-        $idsToCluster{$ids} = $name;
-      }
+my $nCluster = 0;
+my $nSingle = 0;
+my %idsToCluster = (); # ids to cluster name or singleton name
+foreach my $cluster (@clustBySize) {
+  my @ids = sort keys %$cluster;
+  if (@ids > 1) {
+    $nCluster++;
+    my $name = "Cluster $nCluster";
+    foreach my $ids (@ids) {
+      $idsToCluster{$ids} = $name;
     }
   }
-  foreach my $ids (@singletonIds) {
-    $nSingle++;
-    $idsToCluster{ $ids } = "Singleton $nSingle";
-  }
+}
+foreach my $ids (@singletonIds) {
+  $nSingle++;
+  $idsToCluster{ $ids } = "Singleton $nSingle";
+}
 
+if ($byorg) { # show by organism
   # simplify organisms (so that they will hopefully be consistent across databases)
   my %orgIds = (); # organism => ids => 1
   foreach my $ids (keys %idsToCluster) {
@@ -607,17 +606,16 @@ if ($byorg) { # show by organism
     }
   }
 } else { # !$byorg, or, show by cluster
-  my $nCluster = 0;
   foreach my $cluster (@clustBySize) {
     my @ids = sort keys %$cluster;
     if (@ids > 1) {
-      $nCluster++;
       my ($seed) = grep $cluster->{$_}, @ids;
+      my $clusterId = $idsToCluster{$seed} || die;
       die unless defined $seed;
       my $nHetero = scalar(grep IsHetero($_), @ids);
       my $sz = scalar(@ids);
       my @len = map $curatedInfo{$_}{length}, @ids;
-      my @clusterHeader = ("Cluster $nCluster,", min(@len) . "-" .max(@len), "amino acids");
+      my @clusterHeader = ($clusterId, min(@len) . "-" .max(@len), "amino acids");
       if ($nHetero ==  $sz) {
         push @clusterHeader, "(heteromeric)";
       } elsif ($nHetero > 0) {
@@ -637,13 +635,15 @@ if ($byorg) { # show by organism
           my $isHetero = IsHetero($id) ? " (heteromeric)" : "";
           print "# $id $curatedInfo{$id}{id2s} $curatedInfo{$id}{descs} $curatedInfo{$id}{orgs}$isHetero\n";
         } elsif ($format eq "tsv") {
-          TSVPrint("Cluster$nCluster", $id, $curatedInfo{$id});
+          $clusterId =~ s/ //;
+          TSVPrint($clusterId, $id, $curatedInfo{$id});
         }
       }
       if ($format eq "rules") {
         my $desc = $curatedInfo{$seed}{descs} || "No description";
         $desc =~ s/ ;;.*//;
-        print join("\t", "Cluster$nCluster",
+        $clusterId =~ s/ //;
+        print join("\t", $clusterId,
                    $desc,
                    map { my $short = $_; $short =~ s/,.*//; "curated:$short" } ($seed, @other))."\n";
       }
@@ -653,20 +653,30 @@ if ($byorg) { # show by organism
     my $nHetero = scalar(grep IsHetero($_), @singletonIds);
     my $nSingle = scalar(@singletonIds);
     print h3("Singletons ($nHetero/$nSingle heteromeric)") unless $format;
-    my $nSingleShow = 0;
     foreach my $id (@singletonIds) {
-      $nSingleShow++;
+      my $singleId = $idsToCluster{$id} || die;
       if ($format eq "") {
-        print p(CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id})), "\n";
+        my $show = CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id});
+        if (exists $sim{$id}) {
+          my @simto = sort keys %{ $sim{$id} };
+          my $sim = $simto[0] || die;
+          my $simCluster = $idsToCluster{$sim};
+          $sim =~ s/,.*//; # keep 1st id only
+          $show .= br() . small("(similar to $sim from ${simCluster},",
+                                "but similarity to seed sequence is below thresholds)");
+        }
+        print p($show), "\n";
       } elsif ($format eq "rules") {
         my $isHetero = IsHetero($id) ? " (heteromeric)" : "";
-        print "\n# Singleton $nSingleShow $id $curatedInfo{$id}{id2s} $curatedInfo{$id}{descs} $curatedInfo{$id}{orgs}$isHetero\n";
+        print "\n# $singleId $id $curatedInfo{$id}{id2s} $curatedInfo{$id}{descs} $curatedInfo{$id}{orgs}$isHetero\n";
         my $short = $id; $short =~ s/,.*//;
         my $desc = $curatedInfo{$id}{descs};
         $desc =~ s/;; .*//;
-        print join("\t", "Singleton$nSingleShow",  $desc, "curated:$short")."\n";
+        $singleId =~ s/ //;
+        print join("\t", $singleId, $desc, "curated:$short")."\n";
       } elsif ($format eq "tsv") {
-        TSVPrint("Singleton$nSingleShow", $id, $curatedInfo{$id});
+        $singleId =~ s/ //;
+        TSVPrint($singleId, $id, $curatedInfo{$id});
       }
     }
   }
