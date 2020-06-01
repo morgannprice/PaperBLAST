@@ -205,7 +205,48 @@ PTS: manX manY manZ
 # SCO5059 (Q9ADE8) is reported to have ATP-glucokinase activity (PMID:24200789), so ignore
 glk	glucokinase	EC:2.7.1.1	EC:2.7.1.2	uniprot:A8LLL9	uniprot:Q5GAN8	curated:metacyc::MONOMER-19002	ignore:CharProtDB::CH_123431	ignore:BRENDA::Q9ADE8
 
+# glucose degradation (oxidative) -- MetaCyc DHGLUCONATE-PYR-CAT-PWY
+# involves periplasmic oxidation to 2-ketogluconate, uptake by kguT,
+# phosphorylation, reduction to gluconate-6-phosphate, and the Entner-Doudoroff pathway
+
+# periplasmic oxidation to gluconate, uptake, and phosphorylation by gnuK is also
+# a path to gluconate-6-phosphate, but is not represented because it is not known to be
+# the major path for glucose utilization in a prokaryote
+
+gdh	quinoprotein glucose dehydrogenase	EC:1.1.5.2
+
+# Add Pseudomonas ppgL (PA4204 = Q9HWH7; see PMID:18832304)
+gnl	gluconolactonase	EC:3.1.1.17	uniprot:Q9HWH7
+
+# gluconate 2-dehydrogenase has three subunits; known in Pseudomonas fluorescens and Pantoea/Pectobacterium cypripedii
+# There's also papers about two different enzymes in Gluconobacter.
+# PMID:17720837 describes A4PIA9 = gndS = gadh3; A4PIB0 = gndL = gadh1; A4PIB1 = gndC = gadh2
+#	BRENDA includes only A4PIB0
+# PMID:27392695 shows that overexpressing GOX1232 to GOX1230 (Q5FRK3 G5EBD9 Q5FRK5), paralogs of gndSLC,
+#   leads to increased production of 2-ketogluconate; BRENDA includes only Q5FRK5
+# Finally, C0LE03 is listed by BRENDA as a 2-gluconate dehydrogenase and is nearly identical to
+# Q4KKM7 = metacyc:MONOMER-12745, so include that as well.
+# Some papers also mention GOX0147 = 5FTU6 but that is the cytoplasmic 2-ketogluconate reductase
+
+gadh1	gluconate 2-dehydrogenase flavoprotein subunit	curated:SwissProt::O34214	curated:metacyc::MONOMER-12745	curated:BRENDA::A4PIB0	uniprot:G5EBD9	curated:BRENDA::C0LE03
+
+gadh2	gluconate 2-dehydrogenase cytochrome c subunit	curated:SwissProt::O34215	curated:metacyc::MONOMER-12746	uniprot:A4PIB1	curated:BRENDA::Q5FRK5
+
+gadh3	gluconate 2-dehydrogenase subunit 3	curated:SwissProt::O34213	curated:metacyc::MONOMER-12747	uniprot:A4PIA9	uniprot:Q5FRK3
+
+# kguT = KU168042 = A0A167V864 was shown to be required for 2-ketogluconate utilization (PMID:30109560)
+kguT	2-gluconate transporter	uniprot:A0A167V864
+
+kguK	2-ketogluconokinase	EC:2.7.1.13
+
+kguD	2-keto-6-phosphogluconate reductase	EC:1.1.1.43
+
+# Entner-Doudoroff pathway: oxidation to 2-keto-3-deoxy-6-phosphogluconate and aldolase
+
+edd	phosphogluconate dehydratase	EC:4.2.1.12
+
+eda	2-keto-3-deoxygluconate 6-phosphate aldolase	EC:4.1.2.14	EC:4.1.2.55
+
 all: transport glk
 all: PTS
-
-# Not yet represented is the oxidative pathway via 2-ketogluconate
+all: gdh gnl gadh1 gadh2 gadh3 kguT kguK kguD edd eda
