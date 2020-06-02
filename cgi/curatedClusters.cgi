@@ -416,6 +416,7 @@ if ($closeMode && $pathSpec && $step) {
   my $nHitsAll = scalar(@close);
   @close = grep !exists $hitsUniq{ $_->{subject} }, @close;
   my $nPreIgnore = scalar(@close);
+  my @ignore = grep exists $ignore{ $_->{subject} }, @close;
   @close = grep !exists $ignore{ $_->{subject} }, @close;
   print p("Found hits to $nPreIgnore  other characterized sequences.",
           "(Found $nHitsAll hits including self hits.)");
@@ -460,6 +461,30 @@ if ($closeMode && $pathSpec && $step) {
       print p(CompoundInfoToHtml($hit, $curatedInfo{$hit}, $seqs{$hit}))."\n";
     }
   }
+
+  if (@ignore > 0) {
+    print h3("Close but ignored sequences");
+    print p("(Sequences that are similar to these will still be high-confidence candidates for", i($step).".)");
+    foreach my $close (@ignore) {
+      my $subject = $close->{subject};
+      my $query = $close->{query};
+      my $queryDesc = CompoundInfoToHtml($query, $curatedInfo{$query}, $seqs{$query});
+
+      my $idString = int($close->{identity})."%";
+      my $covString =   "Amino acids $close->{sbeg}:$close->{send}/$curatedInfo{$subject}{length}"
+        . " are $idString identical to $close->{qbeg}:$close->{qend}/$curatedInfo{$query}{length}"
+          . " of the $step protein";
+
+      print p({ -style => 'margin-bottom: 0em; color: darkgrey;', },
+              CompoundInfoToHtml($subject, $curatedInfo{$subject}, $seqsAll{$subject}),
+              br(),
+              a({-title => $covString}, "$idString identical to")),
+                p({-style => 'margin-left: 5em; margin-top: 0em; font-size: 90%; color: darkgrey;'},
+                  CompoundInfoToHtml($query, $curatedInfo{$query}, $seqs{$query})),
+                    "\n";
+    }
+  }
+
   print end_html;
   exit(0);
 }
