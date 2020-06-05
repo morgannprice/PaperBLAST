@@ -23,8 +23,8 @@ The open access manuscripts, into dir/oa/*.xml.gz (21 GB)
 The author manuscripts, into dir/am/*.tar.gz (8.5 GB)
 	These are then exploded to give dir/am/*/*.xml
 	The directory names are listed in dir/am/files
-Thir Links of PMC ids to RefSeq or UniProt, into
-	dir/UniProt_PMC.csv and dir/RefSeq_PMC.csv
+Their links of PMC ids to RefSeq or UniProt, into
+	dir/uniprot.csv and dir/refseq.csv
 
 From RefSeq:
 The compressed genbank format files, into dir/refseq/complete.*.gbff.gz (86 GB)
@@ -169,7 +169,7 @@ if (exists $dosteps{"am"}) {
 
 if (exists $dosteps{"pmclinks"}) {
   print STDERR "Step pmclinks\n";
-  foreach my $file (qw{UniProt_PMC.csv RefSeq_PMC.csv}) {
+  foreach my $file (qw{uniprot.csv refseq.csv}) {
     &maybe_wget("ftp://ftp.ebi.ac.uk/pub/databases/pmc/TextMinedTerms/$file", "$dir/$file");
   }
 }

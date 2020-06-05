@@ -208,7 +208,7 @@ if (exists $dosteps{"generif"}) {
 # Given words from pm/pmc/am/, find identifiers in RefSeq
 if (exists $dosteps{"refseq"}) {
   # get just the protein ids from the pmc links
-  &maybe_run("cut -d, -f 1 ind/RefSeq_PMC.csv | grep 'P_' | sed -e 's/[.][0-9]*//' > $workdir/words.refseq.pmclinks");
+  &maybe_run(qq{cut -d, -f 1 ind/refseq.csv | grep 'P_' | sed -e 's/[.][0-9]*//; s/"//g' > $workdir/words.refseq.pmclinks});
   &maybe_run("(cut -f 2 $workdir/generifs_prot; cat $workdir/words.u; cat $workdir/words.refseq.pmclinks) | sort -u > $workdir/words.refseq");
 
   my @files = &read_list("$indir/refseq/files");
@@ -236,7 +236,7 @@ if (exists $dosteps{"refseq"}) {
 # Given words from pm/pmc/am, find identifiers matching UniProt
 if (exists $dosteps{"sprot"}) {
   &maybe_run("$Bin/select_uniprot_words.pl < $workdir/words > $workdir/words.uniprot1");
-  &maybe_run("cut -d, -f 1 < $indir/UniProt_PMC.csv | grep -v UniProt | sort -u > $workdir/words.uniprot2");
+  &maybe_run(qq{cut -d, -f 1 < $indir/uniprot.csv | sed -e 's/"//g' | grep -v uniprot | sort -u > $workdir/words.uniprot2});
   &maybe_run("sort -u $workdir/words.uniprot1 $workdir/words.uniprot2 > $workdir/words.uniprot");
 
   my $in = "$indir/uniprot_sprot.fasta.gz";
