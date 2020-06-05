@@ -11,11 +11,15 @@
 # pseudo6_N2E2:Pf6N2E2_5849 = A0A165ZRB0
 
 # Closely related to E. coli actP = P32705, so ignore that
-actP	large subunit of pyruvate transporter (actP-like)	uniprot:A0A1N7U9G2	uniprot:G8AHY6	uniprot:A0A166PH03	uniprot:A0A165ZRB0	ignore:SwissProt::P32705
+# Added Marinobacter HP15_1251 (E4PHQ0) because it has a specific phenotype (if mild) and fills the gap
+# It is closely related to the D-alanine uptake system Psest_0347 (GFF346), so ignore that
+actP	large subunit of pyruvate transporter (actP-like)	uniprot:A0A1N7U9G2	uniprot:G8AHY6	uniprot:A0A166PH03	uniprot:A0A165ZRB0	ignore:SwissProt::P32705	uniprot:E4PHQ0	ignore:reanno::psRCH2:GFF346
 
 # Cluster 1 100-103 amino acids -- this is the yjcH-like subunit
 # It is 61% identical to E. coli b4068/yjcH/18096, involved in glycolate & acetate transport, so ignore that
-yjcH	putative small subunit of pyruvate transporter (yjcH-like)	curated:reanno::WCS417:GFF1742	curated:reanno::azobra:AZOBR_RS02935	curated:reanno::pseudo1_N1B4:Pf1N1B4_3672	curated:reanno::pseudo6_N2E2:Pf6N2E2_5848	ignore:reanno::Keio:18096
+# Added Marinobacter HP15_1252 (E4PHQ1) because it has a specific phenotype (if mild) and fills the gap
+# It is closely related to the D-alanine uptake system Psset_0346 (GFF345), so ignore that
+yjcH	putative small subunit of pyruvate transporter (yjcH-like)	curated:reanno::WCS417:GFF1742	curated:reanno::azobra:AZOBR_RS02935	curated:reanno::pseudo1_N1B4:Pf1N1B4_3672	curated:reanno::pseudo6_N2E2:Pf6N2E2_5848	ignore:reanno::Keio:18096	uniprot:E4PHQ1	ignore:reanno::psRCH2:GFF345
 
 transport: yjcH actP
 
