@@ -45,7 +45,7 @@ sub FaaToDb($$);
 sub CompoundInfoToHtml($$$);
 sub TransporterSearch($$$);
 sub TSVPrint($$$);
-
+sub TransporterMatch($$$);
 my $maxHits = 250;
 my $nCPU = 8;
 
@@ -612,9 +612,10 @@ if ($byorg) { # show by organism
     my $info = $curatedInfo{$ids} || die;
     my @orgs = split /;; /, $info->{orgs};
     my %orgU = ();
+    push @orgs, "Organism unknown" if @orgs == 0;
     foreach my $org (@orgs) {
       $org =~ s/^candidatus //i;
-      $org =~ s/^([a-zA-Z]+) sp./\1/;
+      $org =~ s/^([a-zA-Z]+) sp./$1/;
       my @words = split / /, $org;
       @words = splice(@words, 0, 2) if @words > 2;
       $org = join(" ", @words);
