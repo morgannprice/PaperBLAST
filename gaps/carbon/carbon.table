@@ -1,5 +1,6 @@
 pathwayId	desc
 all	catabolism of small carbon sources
+alanine	L-alanine catabolism
 deoxyinosine	2'-deoxyinosine catabolism
 deoxyribose	2-deoxy-D-ribose catabolism
 glucose	D-glucose catabolism

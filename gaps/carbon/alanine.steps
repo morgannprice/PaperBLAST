@@ -1,0 +1,83 @@
+# Transporters were identified using curated clusters and
+# query: transporter:L-alanine:alanine
+
+# Cluster 1 457-556 amino acids (not heteromeric)
+# A sequence nearly identical to E. coli K-12's cycA (CYCA_ECOL6 / A0A0H2VDI7) is annotated as a D-alanine
+#  transporter only, ignore
+# And add DL-alanine permease SERP2_LACLM / A2RI86
+# And add general amino-acid permease GAP1_YEAST / P19145, GAP2_CANAL / A0A1D8PK89
+cycA	L-alanine symporter CycA	curated:SwissProt::P0AAE0	curated:TCDB::F2HQ24	curated:TCDB::M1IW84	curated:TCDB::Q2VQZ4	curated:reanno::WCS417:GFF1065	curated:reanno::pseudo3_N2E3:AO353_16120	curated:reanno::pseudo5_N2C3_1:AO356_17670	ignore:SwissProt::A0A0H2VDI7	curated:SwissProt::A2RI86	curated:SwissProt::P19145	curated:SwissProt::A0A1D8PK89
+
+# ABC transporters: there's BraCDEFG (P. aeruginosa), NatABCDE (Synechocystis), LivJFGHM (S. pneumoniae)
+# Although TCDB suggests that LivJFGHM transports alanine and serine, this is not supported by PMID:19470745,
+# so this was removed
+# Also, BraFG and NatAE are similar and were clustered together;
+# clustering at 40% separates this into BraF/NatA and BraG/NatE (P21630/P73650).
+# And an orthologous system to NatABCDE, TC 3.A.1.4.6, was missed initially
+#
+# Also, TC 3.A.1.4.3 from Rhizobium leguminosarum is described as BraCDEFG and as a L-alanine transporter.
+# However, the substrate-binding protein BraC is not required for L-alanine uptake, so is another
+# SBP is likely used.
+#
+# Also note: some components of the R. leguminosarum system are very similar to
+# BraC (SMc01946) and BraDEFG (SMc01951:SMc01948) from S. meliloti, but some are quite distant.
+# (In S. meliloti, these are important for utilization of some larger amino acids, and again,
+# BraC does not seem to be the only SBP for this system.)
+
+# braC and natB are quite distantly related and were nto clustered, but both are periplasmic components
+braC	L-alanine ABC transporter, periplasmic substrate binding protein (BraC/NatB)	curated:SwissProt::P21175	curated:TCDB::Q55387	curated:TCDB::Q8YVY4
+
+braD	L-alanine ABC transporter, permease component 1 (BraD/NatD)	curated:TCDB::P21627	curated:TCDB::P74318	curated:TCDB::Q8YXD0
+
+braE	L-alanine ABC transporter, permease component 2 (BraE/NatC)	curated:TCDB::P21628	curated:TCDB::P74455	curated:TCDB::Q8YY08
+
+braF	L-alanine ABC transporter, ATP-binding component 1 (BraF/NatA)	curated:TCDB::P21629	curated:TCDB::Q55164	curated:TCDB::Q7A2H0
+
+braG	L-alanine ABC transporter, ATP-binding component 2 (BraG/NatE)	curated:TCDB::P21630	curated:TCDB::P73650	curated:TCDB::Q8YT15
+
+# Cluster 3 445-465 amino acids (not heteromeric)
+# Merge in TC 2.A.25.1.1 / P30144 (dagA from Alteromonas haloplanktis), which is similar but was
+#   not included in the cluster because it is longer
+alsT	L-alanine symporter AlsT/DagA	curated:SwissProt::P30145	curated:SwissProt::Q6LX42	curated:TCDB::Q45068	curated:TCDB::W0WFC6	curated:TCDB::P30144
+
+# Cluster 6 532-553 amino acids (not heteromeric)
+SLC1A4	L-alanine symporter SLC1A4	curated:CharProtDB::CH_091534	curated:CharProtDB::CH_091706
+
+# Cluster 10 504-547 amino acids (not heteromeric)
+SLC38A3	L-alanine symporter SLC38A3	curated:CharProtDB::CH_091437	curated:SwissProt::Q9EQ25
+
+# Cluster 11 213-213 amino acids (not heteromeric)
+# Structural studies show these are related to TRIC transporters
+TRIC	TRIC-type L-alanine transporter	curated:reanno::ANA3:7023996	curated:reanno::MR1:202450
+
+AAP1	L-alanine permease AAP1	curated:CharProtDB::CH_091601
+
+AAP24	L-alanine transporter AAP24	curated:TCDB::A4HUI4
+
+snatA	L-alanine symporter SnatA	curated:TCDB::Q8J305
+
+metP	sodium-dependent methionine/alanine transporter, large subunit MetP	curated:TCDB::Q8NRL8
+
+metS	sodium-dependent methionine/alanine transporter, small subunit MetS	curated:TCDB::Q8NRL9
+
+transport: cycA
+transport: braC braD braE braF braG
+transport: alsT
+transport: SLC1A4
+transport: SLC38A3
+transport: TRIC
+transport: AAP1
+transport: AAP24
+transport: snatA
+transport: metP metS
+
+# Ignore LAT2_HUMAN / Q9UHI5 and related proteins, which are amino acid exchangers in animals
+# Ignore b2670 (ALAE_ECOLI) and related proteins, which are amino acid exporters
+# Ignore PA5152-PA5155, which probably transports D-alanine
+# Ignore D-alanyl carrier protein DCP (P39579)
+# Ignore aspartate/alanine antiporter (Q8L3K8 or Q845W9)
+# Ignore spore germination L-alanine receptor (P07869)
+# Ignore likely efflux protein b4210 / YtfF
+# Ignore TC 2.A.21.4.1 / Q8VM88 which has far tighter affinity for lactate/pyruvate
+
+all: transport
