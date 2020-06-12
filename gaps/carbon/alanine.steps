@@ -1,6 +1,12 @@
 # Transporters were identified using curated clusters and
 # query: transporter:L-alanine:alanine
 
+# No enzymatic steps are listed because L-alanine is a single transamination reaction
+# away from pyruvate, which is a central metabolic intermediate.
+#   (It can also be converted to pyruvate by alanine dehydrogenase.
+#    D-alanine dehydrogenase is important for L-alanine utilization in some bacteria
+#    because of alanine racemase activity.)
+
 # Cluster 1 457-556 amino acids (not heteromeric)
 # A sequence nearly identical to E. coli K-12's cycA (CYCA_ECOL6 / A0A0H2VDI7) is annotated as a D-alanine
 #  transporter only, ignore
