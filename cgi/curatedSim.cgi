@@ -163,8 +163,13 @@ print h3("Query"),
   p(CompoundInfoToHtml($queryId, $curatedInfo{$queryId}, $seqs{$queryId})),
   "\n";
 
-print h3("Other Sequences"), "\n";
-foreach my $subjectId (@subjectIds) {
+my @subjectsHit = sort { $subjectHit{$b}{identity} <=> $subjectHit{$a}{identity} }
+  grep { exists $subjectHit{$_} } @subjectIds;
+
+print h3("Other Sequences with Hits"), "\n";
+print p("None") if @subjectsHit == 0;
+
+foreach my $subjectId (@subjectsHit) {
   my $simString = "";
   if (exists $subjectHit{$subjectId}) {
     my $hit = $subjectHit{$subjectId};
@@ -182,6 +187,14 @@ foreach my $subjectId (@subjectIds) {
   }
   print p(CompoundInfoToHtml($subjectId, $curatedInfo{$subjectId}, $seqs{$subjectId}),
           br(), $simString), "\n";
+}
+
+my @subjectsNotHit = grep !exists $subjectHit{$_}, @subjectIds;
+print h3("Other Sequences without Hits"), "\n";
+print p("None") if @subjectsNotHit == 0;
+
+foreach my $subjectId (@subjectsNotHit) {
+  print p(CompoundInfoToHtml($subjectId, $curatedInfo{$subjectId}, $seqs{$subjectId})), "\n";
 }
 
 print end_html;
