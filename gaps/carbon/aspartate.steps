@@ -7,10 +7,12 @@
 # First, the ABC transporters
 
 # BztABCD from Rhodobacter capsulatus (Rhodopseudomonas capsulata),  TC 3.A.1.3.7
-bztA	glutamate ABC transporter, periplasmic substrate-binding component BztA	curated:TCDB::Q52663
+# Ignore similarity of bztA to general amino acid porter AapJ
+bztA	glutamate ABC transporter, periplasmic substrate-binding component BztA	curated:TCDB::Q52663	ignore:TCDB::Q52812
 bztB	glutamate ABC transporter, permease component 1 (BztB)	curated:CharProtDB::CH_011913
 bztC	glutamate ABC transporter, permease component 2 (BztC)	curated:TCDB::Q52665
-bztD	glutamate ABC transporter, ATPase component (BztD)	curated:TCDB::Q52666
+# Ignore similarity of bztD to general amino acid porter AapP, SMc02121, Pf6N2E2_5405
+bztD	glutamate ABC transporter, ATPase component (BztD)	curated:TCDB::Q52666	ignore:TCDB::Q52815	ignore:reanno::Smeli:SMc02121
 transport:  bztA bztB bztC bztD
 
 # Pep1ABC from Campylobacter jejuni, TC 3.A.1.3.16, is listed with three components,
@@ -24,27 +26,24 @@ peb1D	aspartate ABC transporter, permease component 2 (Peb1D)	uniprot:A0A0H3PA28
 transport: peb1A peb1B peb1C peb1D
 
 # AatJMQP from Pseudomonas putida KT2440, TC 3.A.1.3.19,
-# is quite similar to an aspartate ABC transporter from P. fluorescens N2E3.
-# aatJ = PP1071 or AO353_16290
-aatJ	aspartate ABC transporter, periplasmic substrate-binding component AatJ	curated:TCDB::Q88NY2	curated:reanno::pseudo3_N2E3:AO353_16290
-# aatQ = PP1070 or AO353_16285
-aatQ	aspartate ABC transporter, permease component 1 (AatQ)	curated:TCDB::Q88NY3	curated:reanno::pseudo3_N2E3:AO353_16285
-# aatM = PP1069 or AO353_16280
-aatM	aspartate ABC transporter, permease component 2 (AatM)	curated:TCDB::Q88NY4	curated:reanno::pseudo3_N2E3:AO353_16280
-# aatP = PP1068 or AO353_16275
-aatP	aspartate ABC transporter, ATPase component	curated:TCDB::Q88NY5	curated:reanno::pseudo3_N2E3:AO353_16275
+# is quite similar to an aspartate ABC transporter from P. fluorescens N2E3
+# and to GltIJKL from E. coli.
+#
+# It is also very similar to asparagine/glutamate transporters from other Pseudomonas, which might transport
+# this as well, so ignore those.
+# aatJ = PP1071 or AO353_16290 or gltI
+aatJ	aspartate ABC transporter, periplasmic substrate-binding component AatJ	curated:TCDB::Q88NY2	curated:reanno::pseudo3_N2E3:AO353_16290	ignore:reanno::pseudo1_N1B4:Pf1N1B4_771	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_4770	ignore:TCDB::Q9I402	curated:CharProtDB::CH_002441
+# aatQ = PP1070 or AO353_16285 or gltJ
+aatQ	aspartate ABC transporter, permease component 1 (AatQ)	curated:TCDB::Q88NY3	curated:reanno::pseudo3_N2E3:AO353_16285	ignore:reanno::pseudo1_N1B4:Pf1N1B4_772	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_4771	ignore:TCDB::Q9I403	curated:SwissProt::P0AER3
+# aatM = PP1069 or AO353_16280 or gltK
+aatM	aspartate ABC transporter, permease component 2 (AatM)	curated:TCDB::Q88NY4	curated:reanno::pseudo3_N2E3:AO353_16280	ignore:reanno::pseudo1_N1B4:Pf1N1B4_773	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_4772	ignore:TCDB::Q9I404	curated:SwissProt::P0AER5
+# aatP = PP1068 or AO353_16275 or gltL
+aatP	aspartate ABC transporter, ATPase component	curated:TCDB::Q88NY5	curated:reanno::pseudo3_N2E3:AO353_16275	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_4773	ignore:reanno::pseudo1_N1B4:Pf1N1B4_774	ignore:TCDB::Q9I405	curated:TCDB::P0AAG3
 transport: aatJ aatQ aatM aatP
-
-# E. coli GltIKJL
-gltI	aspartate ABC transporter, periplasmic substrate-binding component GltI	curated:CharProtDB::CH_002441
-gltJ	aspartate ABC transporter, permease component 1 (GltJ)	curated:SwissProt::P0AER3
-gltK	aspartate ABC transporter, permease component 2 (GltK)	curated:SwissProt::P0AER5
-gltL	aspartate ABC transporter, ATPase component GltL	curated:TCDB::P0AAG3
-transport: gltI gltJ gltK gltL
 
 # dmeA is described in TCDB as an aspartate transporter, but the cited paper (PMC:PMC4507348)
 # instead suggests that Synpcc7942_0246 to Synpcc7942_0249 is an ABC transporter for aspartate and glutamate.
-# 3/4 subunits are closely related to those of Anabaena N-II, which is the main aspartaet transporter
+# 3/4 subunits are closely related to those of Anabaena N-II, which is the main aspartate transporter
 # (PMID:18208492)
 #
 # Of Synpcc7942_0246 to Synpcc7942_0249: _0246 = Q31RP1 is similar to NatF,
@@ -57,15 +56,19 @@ transport: gltI gltJ gltK gltL
 natF	aspartate ABC transporter, periplasmic substrate-binding component NatF	curated:TCDB::Q8YPM9	uniprot:Q31RP1
 bgtB'	aspartate ABC transporter, permease component 1 (BgtB)	uniprot:Q31RP0
 natH	aspartate ABC transporter, permease component 2 (NatH)	curated:TCDB::Q8YPM7	uniprot:Q31RN9
-bgtA	aspartate ABC transporter, ATPase component BgtA	uniprot:Q31RN8	uniprot:Q8YSA2
+bgtA	aspartate ABC transporter, ATPase component BgtA	uniprot:Q31RN8	curated:TCDB::Q8YSA2
 transport: natF bgtB' natH bgtA
 
 natG	aspartate ABC transporter, permease component 1 (NatG)	curated:TCDB::Q8YPM8
 transport: natF natG natH bgtA
 
 # Cluster, 1 421-579 amino acids
-GLAST	sodium-dependent aspartate transporter	curated:SwissProt::P43003	curated:CharProtDB::CH_091614	curated:SwissProt::O35544	curated:SwissProt::O35921	curated:SwissProt::O57321	curated:SwissProt::O59010	curated:SwissProt::P24943	curated:SwissProt::P31596	curated:SwissProt::P31597	curated:SwissProt::P43004	curated:SwissProt::P43005	curated:SwissProt::P43006	curated:SwissProt::P46411	curated:SwissProt::P48664	curated:SwissProt::P51906	curated:SwissProt::P51907	curated:SwissProt::P56564	curated:SwissProt::Q9N1R2	curated:TCDB::B0W0K4	curated:TCDB::Q10901	curated:TCDB::Q8T0S9
-transport: GLAST
+# The original cluster was entirely eukaryotic except for gltPh from Pyrococcus horikoshii
+# Added gltT from Bacillus caldotenax (CharProtDB::CH_088342), which is also an aspartate transporter
+# So, name it glt
+# Ignore Q9N280 which has a questionable annotation in BRENDA
+glt	sodium-dependent aspartate transporter	curated:SwissProt::P43003	curated:CharProtDB::CH_091614	curated:SwissProt::O35544	curated:SwissProt::O35921	curated:SwissProt::O57321	curated:SwissProt::O59010	curated:SwissProt::P24943	curated:SwissProt::P31596	curated:SwissProt::P31597	curated:SwissProt::P43004	curated:SwissProt::P43005	curated:SwissProt::P43006	curated:SwissProt::P46411	curated:SwissProt::P48664	curated:SwissProt::P51906	curated:SwissProt::P51907	curated:SwissProt::P56564	curated:SwissProt::Q9N1R2	curated:TCDB::B0W0K4	curated:TCDB::Q10901	curated:TCDB::Q8T0S9	curated:CharProtDB::CH_088342	ignore:BRENDA::Q9N280
+transport: glt
 
 # Ignore aspartate-fumarate antiporters DcuA, DcuB, or YhiT  -- these are important for
 # utilization as a nitrogen source, but does not permit utilization as a carbon source
@@ -83,7 +86,8 @@ transport: GLAST
 # CharProtDB::CH_091540,SwissProt::Q12482,TCDB::Q12482
 
 # Cluster 7 488-489 amino acids (not heteromeric)
-acaP	aspartate permease AcaP	curated:SwissProt::A2RL65	curated:TCDB::F2HJG8
+# Ignore E. coli YcaM which does not seem to be characterized
+acaP	aspartate permease AcaP	curated:SwissProt::A2RL65	curated:TCDB::F2HJG8	ignore:TCDB::P75835
 transport: acaP
 
 # Cluster 8 470-478 amino acids (not heteromeric)
@@ -91,14 +95,18 @@ SLC7A13	sodium-independent aspartate transporter	curated:SwissProt::Q8TCU3	curat
 transport: SLC7A13
 
 # Cluster 9 428-437 amino acids (not heteromeric)
-# gltP or dctA
+# gltP or dctA from E. coli.
+# E. coli DctA is almost 80% identical to Pseudomonas dicarboxylate transporters whose activity on
+# aspartate is uncertain. As these are not important for aspartate utilization (AO356_18980, AO353_02800),
+# do not mark them as ignored.
 gltP	aspartate:proton symporter GltP	curated:SwissProt::P21345	curated:CharProtDB::CH_014038
 transport: gltP
 
 yveA	aspartate:proton symporter YveA	curated:SwissProt::O07002
 transport: yveA
 
-dauA	dicarboxylic acid transporter DauA	curated:SwissProt::P0AFR2
+# Ignore TC 2.A.53.3.9 / A1JRS3 which has structural information only (no subunit information)
+dauA	dicarboxylic acid transporter DauA	curated:SwissProt::P0AFR2	ignore:TCDB::A1JRS3
 transport: dauA
 
 all: transport
