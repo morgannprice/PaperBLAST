@@ -103,11 +103,10 @@ die "No such file: $hetFile" unless -e $hetFile;
 my @het = ReadTable($hetFile, ["db","protId","comment"]);
 my %hetComment = map { $_->{db} . "::" . $_->{protId} => $_->{comment} } @het;
 
-my $fastacmd = "../bin/blast/fastacmd";
 my $blastall = "../bin/blast/blastall";
 my $formatdb = "../bin/blast/formatdb";
 my $usearch = "../bin/usearch";
-foreach my $x ($fastacmd,$blastall,$formatdb,$usearch) {
+foreach my $x ($blastall,$formatdb,$usearch) {
   die "No such executable: $x" unless -x $x;
 }
 
@@ -656,7 +655,12 @@ if ($byorg) { # show by organism
       my @other = grep ! $cluster->{$_}, @ids;
       foreach my $id ($seed, @other) {
         if ($format eq "") {
-          print p(CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id})), "\n";
+          my @idsLeft = grep { $_ ne $id } @ids;
+          my $idsLeftSpec = join("&", map "ids=$_", @idsLeft);
+          print p(CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id})
+                  . ", "
+                  . a({ -href => "curatedSim.cgi?set=$set&path=$pathSpec&ids=$id&$idsLeftSpec" },
+                    "Compare to cluster"));
         } elsif ($format eq "rules") {
           my $isHetero = IsHetero($id) ? " (heteromeric)" : "";
           print "# $id $curatedInfo{$id}{id2s} $curatedInfo{$id}{descs} $curatedInfo{$id}{orgs}$isHetero\n";
