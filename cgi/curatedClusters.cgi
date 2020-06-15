@@ -589,6 +589,7 @@ my @singletonIds = sort map { (keys %{ $_ })[0] } @singletons;
 my $nCluster = 0;
 my $nSingle = 0;
 my %idsToCluster = (); # ids to cluster name or singleton name
+my %clusterNameToIds = (); # for clusters, cluster name to list of members
 foreach my $cluster (@clustBySize) {
   my @ids = sort keys %$cluster;
   if (@ids > 1) {
@@ -597,6 +598,7 @@ foreach my $cluster (@clustBySize) {
     foreach my $ids (@ids) {
       $idsToCluster{$ids} = $name;
     }
+    $clusterNameToIds{$name} = \@ids;
   }
 }
 foreach my $ids (@singletonIds) {
@@ -626,8 +628,16 @@ if ($byorg) { # show by organism
     my @ids = sort keys %{ $orgIds{$org} };
     print h3($org),"\n";
     foreach my $ids (@ids) {
+      my $clusterName = $idsToCluster{$ids};
+      my $clusterShow = $clusterName;
+      if (exists $clusterNameToIds{$clusterName}) {
+        my @idsLeft = grep { $_ ne $ids } @{ $clusterNameToIds{$clusterName} };
+        my $idsLeftSpec = join("&", map "ids=$_", @idsLeft);
+        my $URL = "curatedSim.cgi?set=$set&path=$pathSpec&ids=$ids&$idsLeftSpec";
+        $clusterShow = a({ -href => $URL }, $clusterShow);
+      }
       print p(CompoundInfoToHtml($ids, $curatedInfo{$ids}, $seqs{$ids}),
-              "(".$idsToCluster{$ids}.")"), "\n";
+              "($clusterShow)"), "\n";
     }
   }
 } else { # !$byorg, or, show by cluster
