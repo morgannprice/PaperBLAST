@@ -659,8 +659,8 @@ if ($byorg) { # show by organism
           my $idsLeftSpec = join("&", map "ids=$_", @idsLeft);
           print p(CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id})
                   . ", "
-                  . a({ -href => "curatedSim.cgi?set=$set&path=$pathSpec&ids=$id&$idsLeftSpec" },
-                    "Compare to cluster"));
+                  . small(a({ -href => "curatedSim.cgi?set=$set&path=$pathSpec&ids=$id&$idsLeftSpec" },
+                    "Compare to cluster")));
         } elsif ($format eq "rules") {
           my $isHetero = IsHetero($id) ? " (heteromeric)" : "";
           print "# $id $curatedInfo{$id}{id2s} $curatedInfo{$id}{descs} $curatedInfo{$id}{orgs}$isHetero\n";
