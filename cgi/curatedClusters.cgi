@@ -443,8 +443,10 @@ if ($closeMode && $pathSpec && $step) {
       . " are $idString identical to $close->{qbeg}:$close->{qend}/$curatedInfo{$query}{length}"
         . " of the $step protein";
 
+    my $subjectShort = $subject; $subjectShort =~ s/,.*//;
     print p({ -style => 'margin-bottom: 0em;' },
-            CompoundInfoToHtml($subject, $curatedInfo{$subject}, $seqsAll{$subject}),
+            CompoundInfoToHtml($subject, $curatedInfo{$subject}, $seqsAll{$subject})
+                . ", " . small($subjectShort),
             br(),
             a({-title => $covString}, "$idString identical to")),
            p({-style => 'margin-left: 5em; margin-top: 0em; font-size: 90%;'},
