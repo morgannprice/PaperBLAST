@@ -8,11 +8,11 @@
 
 # BztABCD from Rhodobacter capsulatus (Rhodopseudomonas capsulata),  TC 3.A.1.3.7
 # Ignore similarity of bztA to general amino acid porter AapJ
-bztA	glutamate ABC transporter, periplasmic substrate-binding component BztA	curated:TCDB::Q52663	ignore:TCDB::Q52812
-bztB	glutamate ABC transporter, permease component 1 (BztB)	curated:CharProtDB::CH_011913
-bztC	glutamate ABC transporter, permease component 2 (BztC)	curated:TCDB::Q52665
+bztA	aspartate ABC transporter, periplasmic substrate-binding component BztA	curated:TCDB::Q52663	ignore:TCDB::Q52812
+bztB	aspartate ABC transporter, permease component 1 (BztB)	curated:CharProtDB::CH_011913
+bztC	aspartate ABC transporter, permease component 2 (BztC)	curated:TCDB::Q52665
 # Ignore similarity of bztD to general amino acid porter AapP, SMc02121, Pf6N2E2_5405
-bztD	glutamate ABC transporter, ATPase component (BztD)	curated:TCDB::Q52666	ignore:TCDB::Q52815	ignore:reanno::Smeli:SMc02121
+bztD	aspartate ABC transporter, ATPase component (BztD)	curated:TCDB::Q52666	ignore:TCDB::Q52815	ignore:reanno::Smeli:SMc02121
 transport:  bztA bztB bztC bztD
 
 # Pep1ABC from Campylobacter jejuni, TC 3.A.1.3.16, is listed with three components,
