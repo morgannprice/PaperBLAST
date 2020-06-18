@@ -1,0 +1,138 @@
+# Glutamate can be transaminated to 2-oxoglutarate, which is an
+# intermediate in central metabolism, so just represent uptake.
+
+# To find transporters, used
+# query: transporter:glutamate:L-glutamate
+
+# First, the ABC transporters
+
+# BztABCD from Rhodobacter capsulatus (Rhodopseudomonas capsulata),  TC 3.A.1.3.7
+# Ignore similarity of bztA to general amino acid porter AapJ
+# Ignore similarity of bztA to SMc02118, which could be a glutamate transporter as well
+bztA	glutamate ABC transporter, periplasmic substrate-binding component BztA	curated:TCDB::Q52663	ignore:TCDB::Q52812	ignore:reanno::Smeli:SMc02118
+bztB	glutamate ABC transporter, permease component 1 (BztB)	curated:CharProtDB::CH_011913
+bztC	glutamate ABC transporter, permease component 2 (BztC)	curated:TCDB::Q52665
+# Ignore similarity of bztD to general amino acid porter AapP, SMc02121, Pf6N2E2_5405
+bztD	glutamate ABC transporter, ATPase component (BztD)	curated:TCDB::Q52666	ignore:TCDB::Q52815	ignore:reanno::Smeli:SMc02121
+transport:  bztA bztB bztC bztD
+
+# Pep1ABC from Campylobacter jejuni, TC 3.A.1.3.16, is listed with three components,
+# but a second permease subunit (CJJ81176_0926 = Cj0919c = A0A0H3PA28) is conserved nearby, and
+# a genetic study (PMC5438104) found a similar phenotype for this putative subunit as for
+# peb1A/peb1B. I will call it peb1D.
+peb1A	glutamate ABC transporter, perisplasmic substrate-binding component Peb1A	curated:CharProtDB::CH_021449
+peb1B	glutamate ABC transporter, permease component 1 (Peb1B)	curated:TCDB::A1VZQ3
+peb1C	glutamate ABC transporter, ATPase component Peb1C	curated:TCDB::A3ZI83
+peb1D	glutamate ABC transporter, permease component 2 (Peb1D)	uniprot:A0A0H3PA28
+transport: peb1A peb1B peb1C peb1D
+
+# AatJMQP from Pseudomonas putida KT2440, TC 3.A.1.3.19,
+# is quite similar to a glutamate ABC transporter from other Pseudomonas
+# and to GltIJKL from E. coli.
+# Some of the Pseudomonas homologs are ignored because their substrate range is uncertain
+
+# aatJ = PP1071 or gltI
+aatJ	glutamate ABC transporter, periplasmic substrate-binding component AatJ	curated:TCDB::Q88NY2	curated:reanno::pseudo3_N2E3:AO353_16290	curated:reanno::pseudo1_N1B4:Pf1N1B4_771	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_4770	ignore:TCDB::Q9I402	curated:CharProtDB::CH_002441
+# aatQ = PP1070 or gltJ
+aatQ	glutamate ABC transporter, permease component 1 (AatQ)	curated:TCDB::Q88NY3	curated:reanno::pseudo3_N2E3:AO353_16285	curated:reanno::pseudo1_N1B4:Pf1N1B4_772	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_4771	ignore:TCDB::Q9I403	curated:SwissProt::P0AER3
+# aatM = PP1069 or gltK
+aatM	glutamate ABC transporter, permease component 2 (AatM)	curated:TCDB::Q88NY4	curated:reanno::pseudo3_N2E3:AO353_16280	curated:reanno::pseudo1_N1B4:Pf1N1B4_773	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_4772	ignore:TCDB::Q9I404	curated:SwissProt::P0AER5
+# aatP = PP1068 or gltL
+aatP	glutamate ABC transporter, ATPase component	curated:TCDB::Q88NY5	curated:reanno::pseudo3_N2E3:AO353_16275	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_4773	curated:reanno::pseudo1_N1B4:Pf1N1B4_774	ignore:TCDB::Q9I405	curated:TCDB::P0AAG3
+transport: aatJ aatQ aatM aatP
+
+# dmeA is described in TCDB as an aspartate transporter, but the cited paper (PMC:PMC4507348)
+# instead suggests that Synpcc7942_0246 to Synpcc7942_0249 is an ABC transporter for aspartate and glutamate.
+# 3/4 subunits are closely related to those of Anabaena N-II, which is the main aspartate transporter
+# and is also a glutamate transporter (PMID:18208492)
+#
+# Of Synpcc7942_0246 to Synpcc7942_0249: _0246 = Q31RP1 is similar to NatF,
+# _0247 = Q31RP0 is a permease component and is usually named BgtB (but is *not* closely related to Anabaena BgtB),
+# _0248 = Q31RN9 is NatH-like, and _0249 = Q31RN8 is BgtA-like.
+# Note similarity to Anabaena N-II, which has NatFGH-BgtA and is the major glutamate transporter 
+# (For N-II, TC 3.A.1.3.18 lists 3 components NatFGH)
+# Anabaena bgtB = alr3187 is not closely related to _0247
+# Note Anabanea bgtA = alr4167 = Q8YSA2
+natF	glutamate ABC transporter, periplasmic substrate-binding component NatF	curated:TCDB::Q8YPM9	uniprot:Q31RP1
+bgtB'	glutamate ABC transporter, permease component 1 (BgtB)	uniprot:Q31RP0
+natH	glutamate ABC transporter, permease component 2 (NatH)	curated:TCDB::Q8YPM7	uniprot:Q31RN9
+bgtA	glutamate ABC transporter, ATPase component BgtA	uniprot:Q31RN8	curated:TCDB::Q8YSA2
+transport: natF bgtB' natH bgtA
+
+natG	glutamate ABC transporter, permease component 1 (NatG)	curated:TCDB::Q8YPM8
+transport: natF natG natH bgtA
+
+# gluBACD from Corenybacterium glutamicum, TC 3.A.1.3.9
+gluB	glutamate ABC transporter, periplasmic substrate-binding component GluB	curated:TCDB::P48242
+gluA	glutamate ABC transporter, ATPase component GluA	curated:TCDB::P48243
+gluC	glutamate ABC transporter, permease component 1 (GluC)	curated:TCDB::P48244
+gluD	glutamate ABC transporter, permease component 2 (GluD)	curated:TCDB::P48245
+transport: gluB gluA gluC gluD
+
+# glnQP from Lactococcus lactis, TC 3.A.1.3.25
+glnQ	glutamate ABC transporter, ATPase component GlnQ	curated:TCDB::Q9CES4
+glnP	glutamate ABC transporter, fused permease and periplasmic substrate-binding components GlnP	curated:TCDB::Q9CES5
+transport: glnQ glnP
+
+# Other heteromeric transporters
+
+# gtrABC from Synechocystis strain PCC 6803, TC 2.A.56.3.1
+gtrC	glutamate:Na+ TRAP transporter, periplasmic substrate-binding component GtrC	curated:TCDB::P74223
+gtrB	glutamate:Na+ TRAP transporter, large permease component (GtrB)	curated:TCDB::P74224
+gtrA	glutamate:Na+ TRAP transporter, small permease component (GtrA)	curated:TCDB::P74225
+transport: gtrC gtrB gtrA
+
+# Cluster 1 421-579 amino acids (not heteromeric)
+# Added gltT from Bacillus caldotenax (CharProtDB::CH_088342)
+# Ignore Q9N280 which has a questionable annotation in BRENDA
+glt	sodium-dependent glutamate transporter Glt	curated:SwissProt::P43003	curated:CharProtDB::CH_091614	curated:CharProtDB::CH_091706	curated:SwissProt::O35544	curated:SwissProt::O35921	curated:SwissProt::O57321	curated:SwissProt::O59010	curated:SwissProt::P24943	curated:SwissProt::P31596	curated:SwissProt::P31597	curated:SwissProt::P43004	curated:SwissProt::P43005	curated:SwissProt::P43006	curated:SwissProt::P46411	curated:SwissProt::P48664	curated:SwissProt::P51906	curated:SwissProt::P51907	curated:SwissProt::P56564	curated:SwissProt::Q9N1R2	curated:TCDB::B0W0K4	curated:TCDB::O00341	curated:TCDB::Q10901	curated:TCDB::Q8T0S9	curated:CharProtDB::CH_088342	ignore:BRENDA::Q9N280
+transport: glt
+
+# Cluster 2 496-601 amino acids (not heteromeric)
+SLC17A8	glutamate transporter	curated:SwissProt::Q3TXX4	curated:SwissProt::P34644	curated:SwissProt::Q5W8I7	curated:SwissProt::Q5W8I8	curated:SwissProt::Q62634	curated:SwissProt::Q7TSF2	curated:SwissProt::Q8BFU8	curated:SwissProt::Q8BLE7	curated:SwissProt::Q8NDX2	curated:SwissProt::Q9JI12	curated:SwissProt::Q9P2U7	curated:SwissProt::Q9P2U8	curated:TCDB::F2YPN7
+transport: SLC17A8
+
+# Cluster 5 470-502 amino acids (1/4 heteromeric)
+# Ignore mammalian protein Q9WTR6 which is apparently heteromeric
+SLC7A13	sodium-independent glutamate transporter	curated:SwissProt::Q8TCU3	curated:SwissProt::Q91WN3	curated:SwissProt::Q9UPY5	ignore:TCDB::Q9WTR6
+transport: SLC7A13
+
+# Cluster 7 401-404 amino acids (not heteromeric)
+# Add gltS from Synechococcus PCC 7002 (B1XKD9) which is distantly related
+gltS	sodium/glutamate symporter GltS	curated:SwissProt::P0AER8	curated:TCDB::P73275	curated:TCDB::Q9HZ58	curated:TCDB::B1XKD9
+transport: gltS
+
+# Cluster 8 476-489 amino acids (not heteromeric)
+# Ignore E. coli YcaM which does not seem to be characterized
+acaP	aspartate permease AcaP	curated:SwissProt::A2RL65	curated:TCDB::F2HJG8	ignore:TCDB::P75835
+transport: acaP
+
+# Cluster 10 414-437 amino acids (not heteromeric)
+gltP	proton/glutamate symporter GltP	curated:SwissProt::P21345	curated:SwissProt::P39817
+transport: gltP
+
+# Cluster 13 563-564 amino acids (not heteromeric)
+DIT2	dicarboxylate translocator DIT2	curated:SwissProt::Q8L7Z9	curated:SwissProt::Q9FMF7
+transport: DIT2
+
+SAM3	S-adenosylmethionine/glutamate permease SAM3	curated:CharProtDB::CH_091257
+transport: SAM3
+
+yveA	glutamate-proton symporter YveA	curated:SwissProt::O07002
+transport: yveA
+
+polyph	glutamate transporter polyphemus	curated:SwissProt::Q4V5R4
+transport: polyph
+
+# Ignore a cluster of mammalian glutamate transporter interacting proteins
+# Ignore two clusters of mitochondrial glutamate carrier proteins
+# Ignore a cluster of antiporters including L-glutamate:4-aminobutyrate antiporter gadC
+# Ignore TC 2.A.1.19.10 and 2.A.60.1.20 which may use glutamate as a counter-anion
+# Ignore TC 1.A.24.1.1, glutamate efflux
+# Ignore SLC3A2 / P08195 which is a component of various amino acid transporters but not necessarily for glutamate
+# Ignore RhoGEF glutamate transport modulator GTRAP48 / Q9ES67
+# Ignore TC 9.B.16.1.2 involved in glutamate secretion
+# Ignore dicarboxylate transporter TC 2.A.47.5.2 (vcINDY) which is not demonstrated to
+#   transport glutamate and is proposed to do so with low affinity
+
+all: transport
