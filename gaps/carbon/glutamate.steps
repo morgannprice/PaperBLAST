@@ -84,8 +84,10 @@ transport: gtrC gtrB gtrA
 
 # Cluster 1 421-579 amino acids (not heteromeric)
 # Added gltT from Bacillus caldotenax (CharProtDB::CH_088342)
+# Added Psest_4075 (L0GT47) from Pseudomona stutzeri RCH2, which appears to be the major glutamate transporter
+#   during carbon source experiments (see fitness browser)
 # Ignore Q9N280 which has a questionable annotation in BRENDA
-glt	sodium-dependent glutamate transporter Glt	curated:SwissProt::P43003	curated:CharProtDB::CH_091614	curated:CharProtDB::CH_091706	curated:SwissProt::O35544	curated:SwissProt::O35921	curated:SwissProt::O57321	curated:SwissProt::O59010	curated:SwissProt::P24943	curated:SwissProt::P31596	curated:SwissProt::P31597	curated:SwissProt::P43004	curated:SwissProt::P43005	curated:SwissProt::P43006	curated:SwissProt::P46411	curated:SwissProt::P48664	curated:SwissProt::P51906	curated:SwissProt::P51907	curated:SwissProt::P56564	curated:SwissProt::Q9N1R2	curated:TCDB::B0W0K4	curated:TCDB::O00341	curated:TCDB::Q10901	curated:TCDB::Q8T0S9	curated:CharProtDB::CH_088342	ignore:BRENDA::Q9N280
+glt	sodium-dependent glutamate transporter Glt	curated:SwissProt::P43003	curated:CharProtDB::CH_091614	curated:CharProtDB::CH_091706	curated:SwissProt::O35544	curated:SwissProt::O35921	curated:SwissProt::O57321	curated:SwissProt::O59010	curated:SwissProt::P24943	curated:SwissProt::P31596	curated:SwissProt::P31597	curated:SwissProt::P43004	curated:SwissProt::P43005	curated:SwissProt::P43006	curated:SwissProt::P46411	curated:SwissProt::P48664	curated:SwissProt::P51906	curated:SwissProt::P51907	curated:SwissProt::P56564	curated:SwissProt::Q9N1R2	curated:TCDB::B0W0K4	curated:TCDB::O00341	curated:TCDB::Q10901	curated:TCDB::Q8T0S9	curated:CharProtDB::CH_088342	ignore:BRENDA::Q9N280	uniprot:L0GT47
 transport: glt
 
 # Cluster 2 496-601 amino acids (not heteromeric)
