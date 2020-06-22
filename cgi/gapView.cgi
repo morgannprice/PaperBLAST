@@ -1362,10 +1362,10 @@ sub CandToOtherColumns($) {
   $otherIdentity = span({ -title => "coverage: " . int(0.5 + 100 *$cand->{otherCoverage})."%"},
                         int(0.5 + $cand->{otherIdentity})."%")
     if $cand->{otherBits};
-  my $descShowOther = $cand->{otherDesc}; $descShowOther =~ s/;;.*//;
+  my $descShowOther = $cand->{otherDesc} || $cand->{otherIds}; $descShowOther =~ s/;;.*//;
   my @otherIds = split /,/, $cand->{otherIds};
   my $URLother = "";
-    my $linkOther = "";
+  my $linkOther = "";
   if ($cand->{otherBits}) {
     $URLother = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=" . $otherIds[0];
     my $idShowOther = $otherIds[0];
