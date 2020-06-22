@@ -199,15 +199,8 @@ sub MergeHits($$$$$$);
   my @revFields = qw{locusId otherId bits locusBegin locusEnd otherBegin otherEnd otherIdentity};
   my @revhits = ReadTable($revhitsFile, \@revFields);
 
-  my %curatedInfo = (); # id => length, desc
-  open(my $fhInfo, "<", $infoFile) || die "Cannot read $infoFile\n";
-  while (my $line = <$fhInfo>) {
-    chomp $line;
-    my ($ids, $length, $descs) = split /\t/, $line;
-    die "Not enough columns in $infoFile: $line\n" unless defined $descs;
-    $curatedInfo{$ids} = [$length, $descs] unless $ids eq "ids";
-  }
-  close($fhInfo) || die "Error reading $infoFile\n";
+  my @curatedInfoFields = qw{ids length descs};
+  my %curatedInfo = map { $_->{ids} => $_ } ReadTable($infoFile, \@curatedInfoFields);
 
   my %hits; # orgId => pathwayId => step => locusId => list of relevant hits
   foreach my $hit (@hits) {
@@ -259,7 +252,7 @@ sub MergeHits($$$$$$);
     my $otherId = $revhit->{otherId};
     die "Unknown curated id $otherId in rev hits $revhitsFile\n"
       unless exists $curatedInfo{$otherId};
-    my $len = $curatedInfo{$otherId}[0];
+    my $len = $curatedInfo{$otherId}{length};
     $revhit->{otherLength} = $len;
     $revhit->{otherCoverage} = ($revhit->{otherEnd} - $revhit->{otherBegin} + 1) / $len;
   }
@@ -452,7 +445,7 @@ sub MergeHits($$$$$$);
           }
           $cand->{curatedDesc} = $queryDesc{ $cand->{curatedIds} } if $cand->{curatedIds};
           $cand->{hmmDesc} = $queryDesc{ $cand->{hmmId} } if $cand->{hmmId};
-          $cand->{otherDesc} = $curatedInfo{ $cand->{otherIds } }[1] if $cand->{otherIds};
+          $cand->{otherDesc} = $curatedInfo{ $cand->{otherIds } }{descs} if $cand->{otherIds};
           $cand->{gdb} = $orgs{$orgId}{gdb};
           $cand->{gid} = $orgs{$orgId}{gid};
           my @out = map { defined $cand->{$_} ? $cand->{$_} : "" } @candfields;
