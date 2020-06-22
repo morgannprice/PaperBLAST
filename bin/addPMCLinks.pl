@@ -20,7 +20,7 @@ query_term, pmcId, pmId, doi, title, authors, journal, year, isOpen
 used).
 
 The input directory should contain comma-delimited tables
-RefSeq_PMC.csv and UniProt_PMC.csv, with fields RefSeq or UniProt,
+refseq.csv and uniprot.csv, with fields RefSeq or UniProt,
 PMCID, and PMID.
 
 Writes three files (out.queries, out.papers, and out.faa), in the same
@@ -42,9 +42,9 @@ die $usage
 die "No such file: $queryfile\n" unless -e $queryfile;
 die "No such file: $papersfile\n" unless -e $papersfile;
 die "No such directory: $indir\n" unless -d $indir;
-my $inRefSeq = "$indir/RefSeq_PMC.csv";
+my $inRefSeq = "$indir/refseq.csv";
 die "No such file: $inRefSeq\n" unless -e $inRefSeq;
-my $inUniProt = "$indir/UniProt_PMC.csv";
+my $inUniProt = "$indir/uniprot.csv";
 die "No such file: $inUniProt\n" unless -e $inUniProt;
 
 my $pmFields = "$Bin/pubmedFields.pl";
@@ -59,9 +59,11 @@ my $nRefSeq = 0;
 open(REFSEQ, "<", $inRefSeq) || die "Cannot read $inRefSeq";
 while(my $line = <REFSEQ>) {
   chomp $line;
-  my ($refseqId, $pmcId, $pmId) = split /,/, $line;
+  my ($refseqId, $pmcId, $pmId, $source) = split /,/, $line;
+  next unless $source eq "MED";
   die "Invalid input in $inRefSeq: $line" unless defined $pmId;
   next unless $pmId =~ m/^\d+$/; # occassionally missing; also skip header
+  $refseqId =~ s/"//g;
   $refseqId =~ s/[.]\d+//;
   $link{$refseqId}{$pmId} = 0;
   $nRefSeq++;
@@ -74,8 +76,9 @@ my $nUniProt = 0;
 open(UNIPROT, "<", $inUniProt) || die "Cannot read $inUniProt";
 while(my $line = <UNIPROT>) {
   chomp $line;
-  my ($uniprotId, $pmcId, $pmId) = split /,/, $line;
-  next unless $pmId =~ m/^\d+$/;
+  my ($uniprotId, $pmcId, $pmId, $source) = split /,/, $line;
+  next unless $source eq "MED" && $pmId =~ m/^\d+$/;
+  $uniprotId =~ s/"//g;
   # UniProt ids sometimes show up with a version number, which we ignore
   # Also note that some of the UniProt ids are secondary accession numbers, which
   # may fail to match (unless sprotToQuery.pl is updated)
