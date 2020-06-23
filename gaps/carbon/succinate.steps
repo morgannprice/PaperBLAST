@@ -58,7 +58,7 @@ sdhA	succinate dehydrogenase flavoprotein subunit	curated:BRENDA::Q97W79	curated
 
 sdhB	succinate dehydrogenase iron-sulfur subunit	curated:BRENDA::A0QT07	curated:BRENDA::C4T9C3	curated:BRENDA::D2KQI9	curated:BRENDA::E2RZU1	curated:BRENDA::P21912	curated:BRENDA::Q6DLZ2	curated:BRENDA::Q8LB02	curated:BRENDA::Q8LBZ7	curated:BRENDA::Q9C4L8	curated:CharProtDB::CH_024580	curated:CharProtDB::CH_123686	curated:SwissProt::P21801	curated:SwissProt::P21914	curated:SwissProt::Q007T0	curated:SwissProt::Q6H4G3	curated:SwissProt::Q9FJP9	curated:SwissProt::Q9S827	curated:SwissProt::Q9YHT2	curated:BRENDA::Q97W78	curated:BRENDA::P77944	curated:BRENDA::A0QPJ2	ignore_other:1.3.5.1	ignore_other:1.3.5.4	ignore_other:succinate dehydrogenase
 
-sdhC	succinate dehydrogenase transmembrane subunit	curated:SwissProt::P70097	curated:BRENDA::Q99643	curated:SwissProt::D0VWV4	curated:SwissProt::P33421	curated:SwissProt::P41956	curated:BRENDA::F9VN12	curated:BRENDA::O73939	curated:BRENDA::P77945	curated:BRENDA::Q97W77	curated:BRENDA::A0QT10	curated:SwissProt::O53368	curated:CharProtDB::CH_024341	ignore_other:1.3.5.1	ignore_other:1.3.5.4	ignore_other:succinate dehydrogenase
+sdhC	succinate dehydrogenase transmembrane subunit	curated:SwissProt::P70097	curated:BRENDA::Q99643	curated:SwissProt::D0VWV4	curated:SwissProt::P33421	curated:SwissProt::P41956	curated:BRENDA::F9VN12	curated:BRENDA::O73939	curated:BRENDA::P77945	curated:BRENDA::Q97W77	curated:BRENDA::A0QT10	curated:SwissProt::O53368	curated:CharProtDB::CH_024341	ignore_other:1.3.5.1	ignore_other:1.3.5.4	ignore_other:succinate dehydrogenase	hmm:TIGR02970
 
 sdh: sdhA sdhB sdhC
 
