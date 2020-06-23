@@ -5,11 +5,15 @@
 # ABC transporters
 
 # ThuEFGK in Sinorhizobium meliloti and TTC1627-9 + MalK1 in Thermus thermophilus
-thuE	sucrose ABC transporter, periplasmic substrate-binding component ThuE	curated:TCDB::Q72H68	curated:TCDB::Q9R9Q7
-thuF	sucrose ABC transporter, permease component 1 (ThuF)	curated:TCDB::Q72H67	curated:reanno::Smeli:SM_b20326
-thuG	sucrose ABC transporter, permease component 2 (ThuG)	curated:TCDB::Q72H66	curated:reanno::Smeli:SM_b20327
+# Also, a thuEFGK homolog in various Pseudomonas is important or detrimental for fitness on sucrose,
+# i.e., Pf1N1B4_5112:5116 or Psyr_0762:Psyr_0759, and is presumably a sucrose transporter.
+# The N1B4 system is A0A166QFS3 A0A166QFV1 A0A161ZE72 A0A166QFW2
+# (The detrimental phenotypes might indicate toxicity from too-rapid uptake of ~10 mM sucrose.)
+thuE	sucrose ABC transporter, periplasmic substrate-binding component ThuE	curated:TCDB::Q72H68	curated:TCDB::Q9R9Q7	uniprot:A0A166QFS3
+thuF	sucrose ABC transporter, permease component 1 (ThuF)	curated:TCDB::Q72H67	curated:reanno::Smeli:SM_b20326	uniprot:A0A166QFV1
+thuG	sucrose ABC transporter, permease component 2 (ThuG)	curated:TCDB::Q72H66	curated:reanno::Smeli:SM_b20327	uniprot:A0A161ZE72
 # aglK (Q9Z3R9, SMc03065) also clustered with thuK but is not that similar (56% identity) so was ignored
-thuK	sucrose ABC transporter, ATPase component ThuK	curated:TCDB::Q72L52	curated:TCDB::Q9R9Q4	ignore:reanno::Smeli:SMc03065
+thuK	sucrose ABC transporter, ATPase component ThuK	curated:TCDB::Q72L52	curated:TCDB::Q9R9Q4	ignore:reanno::Smeli:SMc03065	uniprot:A0A166QFW2
 transport: thuE thuF thuG thuK
 
 # AglEFGK in Sinorhizobium meliloti
@@ -56,7 +60,8 @@ transport: scrT
 sut1	alpha-glucoside permease Sut1	curated:CharProtDB::CH_091204
 transport: sut1
 
-cscB	sucrose:H+ symporter CscB	curated:SwissProt::P30000
+# PMID:29808622 have evidence that PFL_3238 (Q4KBP0) is a sucrose permease; it is related to E. coli cscB
+cscB	sucrose:H+ symporter CscB	curated:SwissProt::P30000	uniprot:Q4KBP0
 transport: cscB
 
 SLC45A3	sucrose:H+ symporter	curated:SwissProt::Q96JT2
@@ -75,7 +80,8 @@ transport: SLC45A4
 
 # This reaction does not match an EC number
 # Many invertases (EC 3.2.1.26) also have this activity, so allow matches to those as well
-scrB	sucrose-6-phosphate hydrolase	curated:CAZy::CAG25843.1	curated:CAZy::S68598	curated:SwissProt::P27217	curated:reanno::pseudo5_N2C3_1:AO356_28590	curated:SwissProt::Q09122	ignore_other:3.2.1.26
+# And the original reannotation of AO356_28590 as sucrose-6-phosphate hydrolase is questionable
+scrB	sucrose-6-phosphate hydrolase	curated:CAZy::CAG25843.1	curated:CAZy::S68598	curated:SwissProt::P27217	curated:reanno::pseudo5_N2C3_1:AO356_28590	curated:SwissProt::Q09122	ignore_other:3.2.1.26	ignore:reanno::pseudo5_N2C3_1:AO356_28590
 
 # ignore fragmentary sequence of Q09123
 scrK	fructokinase	EC:2.7.1.4	ignore:SwissProt::Q09123
@@ -103,7 +109,10 @@ all: transport SUS scrK galU pgi
 # transport followed by cleavage to glucose + fructose and phosphorylation of each
 
 # The annotation of P93291 (AtMg00260) in BRENDA is questionable
-ams	sucrose beta-fructofuranosidase (invertase)	EC:3.2.1.26	EC:3.2.1.48	ignore:BRENDA::P93291
+# And the original reannotation of AO356_28590 was as sucrose 6-phosphate hydrolase,
+# but it is probably a sucrose hydrolase. Also, PMID:29808622 has evidence that
+# the related protein PFL_3237 (cscA, Q4KBP1) is a sucrose hydrolase
+ams	sucrose hydrolase (invertase)	EC:3.2.1.26	EC:3.2.1.48	term:sucrose hydrolase	ignore:BRENDA::P93291	curated:reanno::pseudo5_N2C3_1:AO356_28590	uniprot:Q4KBP1
 
 glk	glucokinase	EC:2.7.1.1	EC:2.7.1.2
 
