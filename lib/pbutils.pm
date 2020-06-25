@@ -207,7 +207,7 @@ sub ReadFastaEntry {
     $state->{sequence} = "";
   }
   while (my $line = <$fh>) {
-    chomp $line;
+    $line =~ s/[\r\n]+$//; # handle DOS files
     if ($line =~ m/^>(.*)/) {
       my $old_header = $state->{"header"};
       my $old_sequence = $state->{"sequence"};
