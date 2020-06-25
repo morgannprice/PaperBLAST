@@ -53,32 +53,38 @@ END
   die "Must specify at least 1 CPU\n" unless $nCPU >= 1;
 
   my @hits = ReadTable($hitsFile, \@infields);
-  my %loci = ();
-  foreach my $hit (@hits) {
-    $loci{ $hit->{locusId} } = 1;
-  }
-
-  my @orgs = ReadOrgTable("$orgprefix.org");
-  die "The organism table $orgprefix.org has no rows\n" unless @orgs > 0;
-
-  my $aaIn = "$orgprefix.faa";
-  die "No such file: $aaIn\n" unless -e $aaIn;
-  open(my $fhIn, "<", $aaIn) || die "Cannot read $aaIn\n";
-  my $faaCand = "/tmp/gaprevsearch.$$.db";
-  open(my $fhCand, ">", $faaCand) || die "Cannot write to $faaCand\n";
-  my $state = {};
-  while (my $prot = ReadOrgProtein($fhIn,$state)) {
-    my $locusId = $prot->{orgId} . ":" . $prot->{locusId};
-    print $fhCand ">${locusId}\n$prot->{aaseq}\n"
-      if exists $loci{$locusId};
-  }
-  close($fhIn) || die "Error reading $aaIn\n";
-  close($fhCand) || die "Error writing to $faaCand\n";
-
   my $rhitsFile = "/tmp/gaprevsearch.$$.revhits";
-  my $cmd = "$usearch -ublast $faaCand -db $curatedFile -id 0.3 -evalue 0.01 -blast6out $rhitsFile -threads $nCPU >& /dev/null";
-  system($cmd) == 0 || die "Error running $cmd: $!\n";
-  unlink($faaCand);
+  # usearch fails if there are no candidates so:
+  if (scalar(@hits) == 0) {
+    system("touch", $rhitsFile);
+  } else {
+    my %loci = ();
+    foreach my $hit (@hits) {
+      $loci{ $hit->{locusId} } = 1;
+    }
+
+    my @orgs = ReadOrgTable("$orgprefix.org");
+    die "The organism table $orgprefix.org has no rows\n" unless @orgs > 0;
+
+    my $aaIn = "$orgprefix.faa";
+    die "No such file: $aaIn\n" unless -e $aaIn;
+    open(my $fhIn, "<", $aaIn) || die "Cannot read $aaIn\n";
+    my $faaCand = "/tmp/gaprevsearch.$$.db";
+    open(my $fhCand, ">", $faaCand) || die "Cannot write to $faaCand\n";
+    my $state = {};
+    while (my $prot = ReadOrgProtein($fhIn,$state)) {
+      my $locusId = $prot->{orgId} . ":" . $prot->{locusId};
+      print $fhCand ">${locusId}\n$prot->{aaseq}\n"
+        if exists $loci{$locusId};
+    }
+    close($fhIn) || die "Error reading $aaIn\n";
+    close($fhCand) || die "Error writing to $faaCand\n";
+
+    my $cmd = "$usearch -ublast $faaCand -db $curatedFile -id 0.3 -evalue 0.01 -blast6out $rhitsFile -threads $nCPU >& /dev/null";
+
+    system($cmd) == 0 || die "Error running $cmd: $!\n";
+    unlink($faaCand);
+  }
   open(my $fhRH, "<", $rhitsFile) || die "Cannot read from $rhitsFile\n";
   open(my $fhOut, ">", $outFile) || die "Cannot write to $outFile\n";
   print $fhOut join("\t", @outfields)."\n";
