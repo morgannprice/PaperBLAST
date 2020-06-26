@@ -183,6 +183,30 @@ foreach my $ids (keys %curatedInfo) {
   }
 }
 
+my %curatedPfam = (); # ids => list of hits, in arbitrary order
+# Each hit is a hash that includes hmmName, hmmAcc, evalue, bits, seqFrom, seqTo, seqLen, hmmFrom, hmmTo, hmmLen
+my $pfamFile = "$queryPath/pfam.hits.tab";
+if (-e $pfamFile) {
+  open (my $fh, "<", $pfamFile) || die "Cannot read $pfamFile";
+  while(my $line = <$fh>) {
+    chomp $line;
+    my ($ids, $hmmName, $hmmAcc, $evalue, $bits, $seqFrom, $seqTo, $seqLen, $hmmFrom, $hmmTo, $hmmLen)
+      = split /\t/, $line;
+    die "Invalid line $line in $pfamFile" unless $hmmLen =~ m/^\d+$/;
+    push @{ $curatedPfam{$ids} }, { 'hmmName' => $hmmName,
+                                    'hmmAcc' => $hmmAcc,
+                                    'evalue' => $evalue,
+                                    'bits' => $bits,
+                                    'seqFrom' => $seqFrom,
+                                    'seqTo' => $seqTo,
+                                    'seqLen' => $seqLen,
+                                    'hmmFrom' => $hmmFrom,
+                                    'hmmTo' => $hmmTo,
+                                    'hmmLen' => $hmmLen };
+  }
+  close($fh) || die "Error reading $pfamFile";
+}
+
 my %hitHmm = (); # hits from HMMs
 my %hitHmmGood = (); # hits from HMMs with high coverage
 # hits from other rules (except uniprots not in the curated database which are in %uniprotSeq)
@@ -345,7 +369,7 @@ if ($query =~ m/^transporter:(.+)$/) {
   print h3("Steps in $pathInfo{$pathSpec}{desc}"),
     p("Cluster the charaterized proteins for a step:"), start_ul();
   foreach my $stepObj (@steps) {
-    print li(a({ -href => "curatedClusters.cgi?set=$set&path=$pathSpec&step=$stepObj->{name}" }, 
+    print li(a({ -href => "curatedClusters.cgi?set=$set&path=$pathSpec&step=$stepObj->{name}" },
             $stepObj->{name}) . ":", $stepObj->{desc});
   }
   print end_ul(),
@@ -791,6 +815,20 @@ sub CompoundInfoToHtml($$$) {
   my @links = ();
   push @links, a({-href => "litSearch.cgi?query=$query"}, "PaperBLAST");
   push @links, a({-href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=$query"}, "CDD");
+  if (exists $curatedPfam{$compoundId}) {
+    my @rows = sort { $a->{seqFrom} <=> $b->{seqFrom} } @{ $curatedPfam{$compoundId} };
+    my @pfams = ();
+    foreach my $row (@rows) {
+      my $pfam = $row->{hmmAcc}; $pfam =~ s/[.]\d+$//;
+      die $pfam unless $pfam =~ m/^PF\d+$/;
+      my $cov = ($row->{hmmTo} - $row->{hmmFrom} + 1) / $row->{hmmLen};
+      my $covPercent = int(0.5 + 100 * $cov);
+      push @pfams, a({ -href => "http://pfam.xfam.org/family/${pfam}#pfamContent",
+                       -title => "amino acids $row->{seqFrom}:$row->{seqTo} (${covPercent}% coverage of $row->{hmmAcc}, E = $row->{bits})" },
+                     $row->{hmmName});
+    }
+    push @pieces, small("PFams:", join(", ", @pfams));
+  }
   return join("<BR>", @pieces,
                 small($len, "amino acids: ", join(", ", @links)));
 }
