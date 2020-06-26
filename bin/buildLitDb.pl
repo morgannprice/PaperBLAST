@@ -146,8 +146,17 @@ sub csv_quote($);
     if ($queryTerm =~ m/^[a-zA-Z]\d+$/ && $snippet !~ m/$queryTerm/) {
       $nSuppressedByCase++;
     } else {
-      print OUT join("\t", $queryId, $queryTerm, $pmcId, $pmId, &csv_quote($snippet))."\n";
-      $linkSupport{ join("::", $pmcId, $pmId) }{ $queryId } = 1;
+      # Check if Snippet contains too many non-printable characters. This is a sign of an input
+      # problem (like, treating a PDF file as text).
+      my $cleaned = $snippet; $cleaned =~ s/[^[:print:]]//g;
+      if (length($cleaned) < 20 || length($cleaned) < 0.9 * length($snippet)) {
+        print STDERR "Suppressed garbled (non-printable) snippet for query $queryId pmcId $pmcId pmId $pmId\n";
+      } else {
+        # replace any non-printable characters with spaces
+        $snippet =~ s/[^[:print:]]/ /g;
+        print OUT join("\t", $queryId, $queryTerm, $pmcId, $pmId, &csv_quote($snippet))."\n";
+        $linkSupport{ join("::", $pmcId, $pmId) }{ $queryId } = 1;
+      }
     }
   }
   print STDERR "Wrote $dir/Snippet, suppressed $nSuppressedByCase snippets with risky locus tags and the wrong case\n";
