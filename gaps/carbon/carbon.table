@@ -9,6 +9,8 @@ fructose	D-fructose catabolism
 glucose	D-glucose catabolism
 glucose6P	D-glucose-6-phosphate catabolism
 glutamate	L-glutamate catabolism
+mannitol	D-mannitol catabolism
+mannose	D-mannose catabolism
 pyruvate	pyruvate catabolism
 sorbitol	D-sorbitol (glucitol) catabolism
 succinate	succinate catabolism
