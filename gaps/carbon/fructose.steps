@@ -87,9 +87,13 @@ fruK	fructose ABC transporter, ATPase component FruK	curated:SwissProt::Q8G847
 transport: fruE fruF fruG fruK
 
 # FrcABC from Rhizobium meliloti
-frcA	fructose ABC transporter, ATPase component FrcA	curated:SwissProt::Q9F9B0
-frcB	fructose ABC transporter, periplasmic substrate-binding component FrcB	curated:SwissProt::Q9F9B2
-frcC	fructose ABC transporter, permease component FrcC	curated:SwissProt::Q9F9B1
+# A distantly related system in Ralstonia eutropha H16 is required for fructose utilization (21478317),
+# and fitness data confirms that the homologs in Cupriavidus basilensis 4G11 are
+# important during growth on fructose
+# (frcA = RR42_RS03360 = A0A0C4Y5F6; frcC = RR42_RS03365 = A0A0C4Y7K0; frcB = RR42_RS03370 = A0A0C4Y591)
+frcA	fructose ABC transporter, ATPase component FrcA	curated:SwissProt::Q9F9B0	uniprot:A0A0C4Y5F6
+frcB	fructose ABC transporter, periplasmic substrate-binding component FrcB	curated:SwissProt::Q9F9B2	uniprot:A0A0C4Y591
+frcC	fructose ABC transporter, permease component FrcC	curated:SwissProt::Q9F9B1	uniprot:A0A0C4Y7K0
 transport: frcA frcB frcC
 
 # Cluster 2 486-540 amino acids (not heteromeric) -- MFS type
@@ -121,6 +125,11 @@ transport: THT2A
 
 frt1	fructose:H+ symporter Frt1	curated:TCDB::Q8NJ22
 transport: frt1
+
+# N515DRAFT_1918 (A0A1I2JXG1) from Dyella japonica UNC79MFTsu3.2 is an MFS-type transporter that is
+# specifically important for growth on fructose.
+fruP	fructose porter FruP	uniprot:A0A1I2JXG1
+transport: fruP
 
 # For PTS forming fructose 6-phosphate, no further steps are needed to reach
 # central metabolism
