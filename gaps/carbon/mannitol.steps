@@ -1,0 +1,72 @@
+# Transporters were identified using
+# query: transporter:mannitol:D-mannitol
+
+# PTS systems (forming mannitol 1-phosphate)
+
+# Unified EII-CBA in Escherichia coli (mtlA) and Vibrio cholerae (Part of cluster 1)
+# Ignore similarity to the II-CB only systems
+mtlA	mannitol phosphotransferase system, EII-CBA components	curated:BRENDA::P00550	curated:TCDB::Q9KKQ7	ignore:TCDB::P42956	ignore:SwissProt::P50852	ignore:SwissProt::O65989	ignore:SwissProt::P69826	ignore:SwissProt::P28008
+PTS: mtlA
+
+# Two proteins, with EII-CB (cmtA/mtlA) separate from EII-A (cmtB/mtlF), in
+# Escherichia coli (cmt system), Bacillus subtilis, Staphylococcus
+# carnosus, Clostridium acetobutylicum, Geobacillus stearothermophilus.
+# Ignore similarity to the full-length systems
+cmtA	mannitol phosphotransferase system, EII-CB component CmtA/MtlF	curated:SwissProt::P69826	curated:TCDB::P42956	curated:SwissProt::P28008	curated:SwissProt::O65989	curated:SwissProt::P50852	ignore:BRENDA::P00550	ignore:TCDB::Q9KKQ7
+
+# cmtB is a singleton; mtlF from B.subtilis & S.carnosus clustered
+# together; for C. acetobutylicum, the mtlF component is is O65991
+# (see PMID:11160802); and in Geobacillus it is Q45420 (PMID:824601;
+# Genbank U18943.1).
+# There is also a paper about the EII-A and EII-BC system from S. aureus, see PMID:3064811 and
+# SwissProt P0A0E0, but I'm not sure this is the correct accession, so ignore it
+cmtB	mannitol phosphotransferase system, EII-A component CmtB/MtlF	curated:ecocyc::CMTB-MONOMER	curated:SwissProt::P17876	curated:TCDB::C0H3V2	uniprot:O65991	uniprot:Q45420	ignore:SwissProt::P0A0E0
+
+PTS: cmtA cmtB
+
+# EII-A, EII-BC1, and EII-C2 -- the sorbitol/glucitol system in E. coli, which also transports mannitol
+gutB	mannitol PTS system, EII-A component GutB	curated:CharProtDB::CH_090883
+# Ignore similarity to close homolog in Erwinia, annotated as transporting sorbitol only
+gutE	mannitol PTS system, EII-BC1 component GutE	curated:SwissProt::P56580	ignore:SwissProt::O32522
+# Ignore similarity to close homolog in Erwinia, annotated as transporting sorbitol only
+gutA	mannitol PTS system, EII-C2 component GutA	curated:SwissProt::P56579	ignore:SwissProt::O32521
+PTS: gutB gutE gutA
+
+# ABC transporters
+# MtlEFGK in 4 strains of Pseudomonas fluorescens or Pseudomonas simiae, or smoEFGK in Rhodopseudomonas sphaeroides
+# (The Rhodopseudomonas system was missed by the query; annotated as hexitol transporter)
+# For all components, ignore simlarity to close homologs in FW300-N2C3 or FW300-N2E2, annotated as transporting sorbitol only
+mtlE	polyol ABC transporter, periplasmic substrate-binding component MtlE/SmoE	curated:TCDB::O30491	curated:reanno::WCS417:GFF2493	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3042	curated:reanno::pseudo3_N2E3:AO353_25880	ignore:reanno::pseudo5_N2C3_1:AO356_00025	ignore:reanno::pseudo6_N2E2:Pf6N2E2_1963	curated:TCDB::O30831
+mtlF	polyol ABC transporter, permease component 1 (MtlF/SmoF)	curated:TCDB::O30492	curated:reanno::WCS417:GFF2492	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3041	curated:reanno::pseudo3_N2E3:AO353_25885	ignore:reanno::pseudo5_N2C3_1:AO356_00020	ignore:reanno::pseudo6_N2E2:Pf6N2E2_1962	curated:TCDB::O30832
+mtlG	polyol ABC transporter, permease component 2 (MtlG/SmoG)	curated:TCDB::O30493	curated:reanno::WCS417:GFF2491	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3040	curated:reanno::pseudo3_N2E3:AO353_25890	ignore:reanno::pseudo6_N2E2:Pf6N2E2_1961	ignore:reanno::pseudo5_N2C3_1:AO356_00015	curated:TCDB::O30833
+mtlK	polyol ABC transporter, ATP component MtlK/SmoG	curated:TCDB::O30494	curated:reanno::WCS417:GFF2490	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3039	curated:reanno::pseudo3_N2E3:AO353_25895	ignore:reanno::pseudo6_N2E2:Pf6N2E2_1960	ignore:reanno::pseudo5_N2C3_1:AO356_00010	curated:TCDB::P54933
+
+transport: mtlE mtlF mtlG mtlK
+
+PLT5	polyol transporter PLT5	curated:CharProtDB::CH_091483
+transport: PLT5
+
+# Ignore erroneous annotation of the TRAP transporter component Q3J1R2 from Rhodobacter sphaeroides as SmoM
+# Ignore a porin from Pseudomonas aeruginosa
+
+mtlP	mannitol transporter, MFS type	curated:reanno::SB2B:6936374	curated:reanno::pseudo5_N2C3_1:AO356_28540
+transport: mtlP
+
+# MetaCyc Pathway: mannitol degradation I -- oxidation of D-mannitol 1-phosphate
+# (from PTS) to fructose 6-phosphate
+mtlD	mannitol-1-phosphate 5-dehydrogenase	EC:1.1.1.17
+all: PTS mtlD
+
+# MetaCyc Pathway: mannitol degradation II -- oxidation of mannitol to
+# mannose, phosphorylation to mannose 6-phosphate, and phosphomannose isomerase
+
+mt1d	mannitol 1-dehydrogenase	EC:1.1.1.255
+mak	mannose kinase	EC:2.7.1.7
+pmi	phosphomannose isomerase	EC:5.3.1.8
+all: transport mt1d mak pmi
+
+# There's also mannitol 2-dehdyrogenase, forming fructose,
+# which can be catabolized via fructokinase
+mt2d	mannitol 2-dehydrogenase	EC:1.1.1.67	EC:1.1.1.138
+import fructose.steps:scrK # fructokinase
+all: transport mt2d scrK
