@@ -86,6 +86,8 @@ sub ReadSteps2($$) {
         my $stepObj = $stepsImport->{steps}{$stepName};
         $stepObj->{i} = $nSteps++; # renumber
         $steps->{$stepName} = $stepObj;
+      } else {
+        $steps->{$stepName} = {}; # empty object
       }
     } elsif ($line =~ m/\t/) {
       my @F = split /\t/, $line;
