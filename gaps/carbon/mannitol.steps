@@ -59,14 +59,17 @@ all: PTS mtlD
 
 # MetaCyc Pathway: mannitol degradation II -- oxidation of mannitol to
 # mannose, phosphorylation to mannose 6-phosphate, and phosphomannose isomerase
+# (manA) to fructose 6-phosphate, a central metabolic intermediate
 
 mt1d	mannitol 1-dehydrogenase	EC:1.1.1.255
 mak	mannose kinase	EC:2.7.1.7
-pmi	phosphomannose isomerase	EC:5.3.1.8
-all: transport mt1d mak pmi
+import mannose.steps:manA
+all: transport mt1d mak manA
 
 # There's also mannitol 2-dehdyrogenase, forming fructose,
 # which can be catabolized via fructokinase
-mt2d	mannitol 2-dehydrogenase	EC:1.1.1.67	EC:1.1.1.138
+# SwissProt P33216 was shown to have this activity (PMID:2789134; PMID:8254318)
+# and a homolog PGA1_c13160 (I7EW69) from Phaeobacter inhibens has a specific phenotype on mannitol
+mt2d	mannitol 2-dehydrogenase	EC:1.1.1.67	EC:1.1.1.138	uniprot:P33216	uniprot:I7EW69
 import fructose.steps:scrK # fructokinase
 all: transport mt2d scrK

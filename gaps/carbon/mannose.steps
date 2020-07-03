@@ -23,7 +23,8 @@ PTS: manP
 
 # ABC transporters are described in Saccharolobus solfataricus (formerly Sulfolobus),
 # Thermus thermophilus, Pseudomonas fluorescens and P. simiae, Thermotoga maritima,
-# and Ensifer meliloti (formerly Rhizobium or Sinorhizobium)
+# and Ensifer meliloti (formerly Rhizobium or Sinorhizobium); and
+# fitness data identified a system in Herbaspirillum seropedicae.
 # The Pseudomonas systems are similar and are described together.
 
 # The Saccharolobus solfataricus system (4 components)
@@ -67,6 +68,11 @@ frcB	mannose ABC transporter, periplasmic substrate-binding component FrcB	curat
 frcC	mannose ABC transporter, permease component FrcC	curated:SwissProt::Q9F9B1
 transport: frcA frcB frcC
 
+# The Herbaspirillum seropedicae system (3 components)
+HSERO_RS03635	mannose ABC transporter, periplasmic substrate-binding component	uniprot:D8IZC6
+HSERO_RS03640	mannose ABC transporter, ATPase component	uniprot:D8IZC7
+HSERO_RS03645	mannose ABC transporter, permease component	uniprot:D8IZC8
+transport: HSERO_RS03635 HSERO_RS03640 HSERO_RS03645
 
 # Cluster 8 507-514 amino acids (not heteromeric)
 STP6	mannose:H+ symporter	curated:CharProtDB::CH_091493	curated:TCDB::Q9LT15
@@ -89,9 +95,10 @@ manMFS	mannose transporter, MFS superfamily	curated:reanno::pseudo5_N2C3_1:AO356
 transport: manMFS
 
 # After uptake by a PTS system, the usual pathway is mannose-6-phosphate isomerase, which
-# produces glucose-6-phosphate (a central metabolic intermediate)
-
-manA	mannose-6-phosphate isomerase	EC:5.3.1.8
+# produces fructose-6-phosphate (a central metabolic intermediate)
+# SMc03111 (P29954) is specifically important for utilizing mannose and mannitol, and
+# which confirms it is mannose 6-phosphate isomerase
+manA	mannose-6-phosphate isomerase	EC:5.3.1.8	uniprot:P29954
 all: PTS manA
 
 # For direct transport, one pathway involves D-mannose isomerase,
@@ -99,7 +106,7 @@ all: PTS manA
 
 # Ignore some vaguely annotated mannose or mannose-6-P isomerases
 man_isomerase	D-mannose isomerase	EC:5.3.1.7	ignore:reanno::pseudo3_N2E3:AO353_03400	ignore:reanno::pseudo1_N1B4:Pf1N1B4_597	ignore:reanno::pseudo5_N2C3_1:AO356_05200
-import fructose.steps:scrK
+import fructose.steps:scrK # fructokinase
 all: transport man_isomerase scrK
 
 # Or mannokinase folowed by manA
