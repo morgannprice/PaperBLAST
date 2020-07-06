@@ -75,5 +75,6 @@ all: PTS nagA nagB
 # MetaCyc Pathway: N-acetylglucosamine degradation II is similar
 # but relies on NAG kinase (nagK) instead of PTS
 # Ignore a putative enzyme from C. albicans, not given this EC number, in CharProtDB
-nagK	N-acetylglucosamine kinase	EC:2.7.1.59	ignore:CharProtDB::CH_123431
+# PMC2832512 identified two NAG kinases in Xanthomonas campestris, XCC2886 (Q8P6S9) and XCC2943 (Q8P6M4)
+nagK	N-acetylglucosamine kinase	EC:2.7.1.59	ignore:CharProtDB::CH_123431	uniprot:Q8P6S9	uniprot:Q8P6M4
 all: transport nagK nagA nagB
