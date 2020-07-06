@@ -1,0 +1,79 @@
+# Transporters were identified using:
+# query: transporter:N-acetylglucosamine:N-ACETYL-D-GLUCOSAMINE:CPD-12541
+
+# PTS systems:
+
+# unified EII-ABC (E. coli, Klebsiella pneumoniae)
+nagEcba	N-acetylglucosamine phosphotransferase system, EII-CBA components	curated:BRENDA::P09323	curated:BRENDA::P45604
+PTS: nagEcba
+
+# nagFE, where nagF has PTS I, Hpr, and II-A, and nagE has II-CB
+# (in Burkholderia phytofirmans and two Pseudomonas fluorescens, and in P. aeruginosa)
+nagF	N-acetylglucosamine phosphotransferase system, E-I, Hpr, and EII-A components (NagF)	curated:reanno::BFirm:BPHYT_RS02740	curated:reanno::pseudo3_N2E3:AO353_04460	curated:reanno::pseudo5_N2C3_1:AO356_17540	curated:TCDB::Q9HXN5
+nagEcb	N-acetylglucosamine phosphotransferase system, EII-CB components	curated:reanno::BFirm:BPHYT_RS02745	curated:reanno::pseudo3_N2E3:AO353_04465	curated:reanno::pseudo5_N2C3_1:AO356_17535	curated:TCDB::Q9HXN4
+PTS: nagF nagEcb
+
+# Streptomyces coelicolor has just EII-B and EII-C (ptsB, ptsC);
+#  "crr" (SCO1390/Q9KZP2) is the EII-A (i.e. see PMC3294797), not curated
+# Streptomyces olivaceoviridis with EII-B, EII-C, and EII-C' components (ptsBC1C2)
+#	where is EII-A? not known; this is related to the S. coelicolor system
+#	(although that has just one C component)
+#	Either ptsC1 or ptsC2 suffices for xylose uptake but ptsC2 is specific for NAG;
+#	see PMID:12436256
+#	(So put ptsC2 with S. coelicolor's ptsC; not sure if ptsC1 = Q8GBT7 should be marked ignore or not)
+crr	N-acetylglucosamine phosphotransferase system, EII-A component Crr	uniprot:Q9KZP2
+ptsB	N-acetylglucosamine-specific phosphotransferase system, EII-B component PtsB	curated:SwissProt::Q9S2H6	curated:TCDB::Q8GBT8
+ptsC	N-acetylglucosamine phosphotransferase system, EII-C component PtsC	curated:SwissProt::Q9S2H4	curated:TCDB::Q8GBT6
+PTS: crr ptsB ptsC
+
+# Bacillus subtilis has EII-CB, known as nagP, but where is EII-A? ptsG (P20166) is the major one
+#	see PMID:30038046, which is a bit surprising as it has EII-B and EII-C domains as well
+#	and is thought to be specific for glucose.
+#	YpqE (P50829) or GamP (P39816) also suffice and the difference compared to w.t. is not large
+#	(YpqE has EII-A only, while GamP is the EII-CBA protein for glucosamine)
+nagEIIA	N-acetylglucosamine phosphotransferase system, EII-A component (PtsG/YpqE/GamP)	curated:TCDB::P20166	uniprot:P50829	curated:SwissProt::P39816
+nagPcb	N-acetylglucosamine phosphotransferase system, EII-CB component NagP	curated:SwissProt::O34521
+PTS: nagEIIA nagPcb
+
+# ABC transporters:
+
+# Phaeobacter inhibens and Sinorhizobium meliloti have a 4-component system; name them by
+# the S. meliloti components
+SMc02869	N-acetylglucosamine ABC transporter, ATPase component	curated:reanno::Phaeo:GFF2754	curated:reanno::Smeli:SMc02869
+SMc02872	N-acetylglucosamine ABC transporter, permease component 1	curated:reanno::Phaeo:GFF2751	curated:reanno::Smeli:SMc02872
+SMc02871	N-acetylglucosamine ABC transporter, permease component 2	curated:reanno::Phaeo:GFF2752	curated:reanno::Smeli:SMc02871
+SMc02873	N-acetylglucosamine ABC transporter, periplasmic substrate-binding component	curated:reanno::Phaeo:GFF2750	curated:reanno::Smeli:SMc02873
+transport: SMc02869 SMc02872 SMc02871 SMc02873
+
+# Streptomyces olivaceoviridis has ngcEFG, with the presumed ATPase component
+# not identified. It probably depends on a shared ATPase component such as msiK (known in S. coelicolor)
+ngcE	N-acetylglucosamine ABC transporter, periplasmic substrate-binding component (NgcE)	curated:TCDB::Q8RJV0
+ngcF	N-acetylglucosamine ABC transporter, permease component 1 (NgcF)	curated:TCDB::Q8RJU9
+ngcG	N-acetylglucosamine ABC transporter, permease component 2 (NgcG)	curated:TCDB::Q8RJU8
+transport: ngcE ngcF ngcG
+
+# Other transporters:
+nagP	N-acetylglucosamine transporter NagP	curated:TCDB::Q8EBL0	curated:reanno::ANA3:7025962
+transport: nagP
+
+# Cluster 7 561-581 amino acids (not heteromeric)
+nag3	N-acetylglucosamine transporter nag3/nag4	curated:SwissProt::A0A1D8PQG0	curated:SwissProt::Q59RG0
+transport: nag3
+
+ngt1	N-acetylglucosamine:H+ symporter Ngt1	curated:CharProtDB::CH_123262
+transport: ngt1
+
+# MetaCyc Pathway: N-acetylglucosamine degradation I involves PTS
+# followed by deacetylase nagA and the isomerizing deaminase nagB, which produces fructose-6-P,
+# a central intermediate
+# Ignore a putative NAG deacetylase from C. albicans, not given this EC number, in CharProtDB
+nagA	N-acetylglucosamine 6-phosphate deacetylase	EC:3.5.1.25	ignore:CharProtDB::CH_123434
+# Add the Candida isomerase, not given this EC number by CharProtDB
+nagB	glucosamine 6-phosphate deaminase (isomerizing)	EC:3.5.99.6	curated:CharProtDB::CH_123433
+all: PTS nagA nagB
+
+# MetaCyc Pathway: N-acetylglucosamine degradation II is similar
+# but relies on NAG kinase (nagK) instead of PTS
+# Ignore a putative enzyme from C. albicans, not given this EC number, in CharProtDB
+nagK	N-acetylglucosamine kinase	EC:2.7.1.59	ignore:CharProtDB::CH_123431
+all: transport nagK nagA nagB
