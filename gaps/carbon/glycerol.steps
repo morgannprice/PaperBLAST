@@ -60,7 +60,8 @@ glpK	glycerol kinase	EC:2.7.1.30
 # 1.1.5.3 is flavin- or quinone-dependent and may be heteromeric; monomeric forms are selected here
 # 1.1.1.8/1.1.1.94 are NAD(P)H dependent and the forward reaction is thermodynamically unfavorable,
 #   so they are not included here.
-glpD	glycerol 3-phosphate dehydrogenase (monomeric)	curated:SwissProt::P18158	curated:BRENDA::P13035	curated:BRENDA::P35571	curated:BRENDA::P43304	curated:BRENDA::Q06B39	curated:BRENDA::Q64521	curated:CharProtDB::CH_091834	curated:SwissProt::P32191	curated:SwissProt::Q8SR40	curated:SwissProt::Q9SS48	curated:CharProtDB::CH_122883
+# Fitness data identified SMc02520 (Q92LM5) as the glycerol-3-phosphate dehydrogenase in Sinorhizobium meliloti
+glpD	glycerol 3-phosphate dehydrogenase (monomeric)	curated:SwissProt::P18158	curated:BRENDA::P13035	curated:BRENDA::P35571	curated:BRENDA::P43304	curated:BRENDA::Q06B39	curated:BRENDA::Q64521	curated:CharProtDB::CH_091834	curated:SwissProt::P32191	curated:SwissProt::Q8SR40	curated:SwissProt::Q9SS48	curated:CharProtDB::CH_122883	uniprot:Q92LM5
 g3p_dehydrogenase: glpD
 
 glpA	glycerol 3-phosphate dehydrogenase subunit A	curated:SwissProt::D4GQU6	curated:SwissProt::D4GYI2	curated:ecocyc::ANGLYC3PDEHYDROGSUBUNITA-MONOMER
