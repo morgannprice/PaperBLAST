@@ -30,7 +30,7 @@ cycA	L-alanine symporter CycA	curated:SwissProt::P0AAE0	curated:TCDB::F2HQ24	cur
 # (In S. meliloti, these are important for utilization of some larger amino acids, and again,
 # BraC does not seem to be the only SBP for this system.)
 
-# braC and natB are quite distantly related and were nto clustered, but both are periplasmic components
+# braC and natB are quite distantly related and were not clustered, but both are periplasmic components
 braC	L-alanine ABC transporter, periplasmic substrate binding protein (BraC/NatB)	curated:SwissProt::P21175	curated:TCDB::Q55387	curated:TCDB::Q8YVY4
 
 braD	L-alanine ABC transporter, permease component 1 (BraD/NatD)	curated:TCDB::P21627	curated:TCDB::P74318	curated:TCDB::Q8YXD0
