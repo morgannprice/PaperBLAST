@@ -38,6 +38,17 @@ AZOBR_RS08250	proline ABC transporter, ATPase component 2	uniprot:G8ALJ1
 AZOBR_RS08260	proline ABC transporter, substrate-binding component	uniprot:G8ALJ3
 transport: AZOBR_RS08235 AZOBR_RS08240 AZOBR_RS08245 AZOBR_RS08250 AZOBR_RS08260
 
+# 5-part ABC transporter in Herbaspirillum brasilense, identified using fitness data.
+# This system is distantly related to AZOBR_RS08235:RS08260
+HSERO_RS00870	proline ABC transporter, periplasmic substrate-binding component	uniprot:D8IUY1
+HSERO_RS00885	proline ABC transporter, permease component 1	uniprot:D8IUY4
+HSERO_RS00890	proline ABC transporter, permease component 2	uniprot:D8IUY5
+HSERO_RS00895	proline ABC transporter, ATPase component 1	uniprot:D8J1T6
+HSERO_RS00900	proline ABC transporter, ATPase component 2	uniprot:D8IUY7
+transport: HSERO_RS00870 HSERO_RS00885 HSERO_RS00890 HSERO_RS00895 HSERO_RS00900
+
+# Other transporters:
+
 # Cluster 1 456-627 amino acids (not heteromeric)
 proY	proline:H+ symporter	curated:TCDB::Q2VQZ4	curated:CharProtDB::CH_091285	curated:CharProtDB::CH_122066	curated:SwissProt::P46349	curated:SwissProt::Q9URZ3	curated:TCDB::P0AAE2	curated:TCDB::P37460
 transport: proY
@@ -70,6 +81,14 @@ transport: BAC2
 
 AAT20.2	proline transporter	curated:TCDB::A4HUI4
 transport: AAT20.2
+
+# Identified using fitness data for Caulobacter crescentus
+CCNA_00435	proline transporter	uniprot:A0A0H3C3Q5
+transport: CCNA_00435
+
+# Identified using fitness data for Dyella japonica
+N515DRAFT_2924	proline transporter	uniprot:A0A1I1Y8J0
+transport: N515DRAFT_2924
 
 # Ignore SLC7A8, not sure if it has much activity as a proline transporter
 # Ignore OdpB, a porin
