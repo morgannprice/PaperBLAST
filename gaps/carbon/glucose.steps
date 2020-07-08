@@ -83,7 +83,7 @@ mglA	glucose ABC transporter, ATP-binding component (MglA)	ignore:SwissProt::D4G
 # or TC 3.A.1.2.20 / G4FGN5 in Thermotoga (343 a.a.)
 #   [absent from Haloferax]
 # Ignore SBPA_AZOBR / P54083 from Azospirillum, whose substrate specificity is uncertain
-mglB	glucose ABC transporter, periplasmic substrate-binding component	curated:TCDB::P0AEE5	curated:TCDB::P25548	curated:reanno::Phaeo:GFF3639	curated:TCDB::G4FGN5	ignore:SwissProt::P54083
+mglB	glucose ABC transporter, substrate-binding component	curated:TCDB::P0AEE5	curated:TCDB::P25548	curated:reanno::Phaeo:GFF3639	curated:TCDB::G4FGN5	ignore:SwissProt::P54083
 
 # mglC (b2148), from cluster 22 (398-433) or cluster 24 (313-336 amino acids)
 # or from Haloferax (TSGBD_HALVD / D4GPW2; TSGDD_HALVD / D4GPW3)
@@ -97,9 +97,9 @@ mglC	glucose ABC transporter, permease component (MglC)	curated:TCDB::G4FGN4	cur
 # which genetic data suggest are a glucose-6-phosphate transporter. Could they be a glucose transporter
 # instead? Not sure, so ignore those.
 #
-# gtsA, periplasmic substrate-binding component
+# gtsA, substrate-binding component
 # Cluster 15, 414-432 amino acids (P. putida, P. fluorescens, Thermus)
-gtsA	glucose ABC transporter, periplasmic substrate-binding component (GtsA)	curated:TCDB::Q88P38	curated:TCDB::Q72KX2	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1894	ignore:reanno::WCS417:GFF4324
+gtsA	glucose ABC transporter, substrate-binding component (GtsA)	curated:TCDB::Q88P38	curated:TCDB::Q72KX2	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1894	ignore:reanno::WCS417:GFF4324
 
 # gtsB, permease component 1
 # Cluster 20, 302-302 amino acids (P. putida, P. fluorescens)
@@ -115,7 +115,7 @@ gtsC	glucose ABC transporter, permease component 2 (GtsC)	curated:TCDB::Q72KX4	c
 gtsD	glucose ABC transporter, ATPase component (GtsD)	curated:TCDB::Q72L52	ignore:BRENDA::Q97UY8	curated:TCDB::Q88P35	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1897	ignore:reanno::WCS417:GFF4321
 
 # ABC transporter glcSTUV from Saccharolobus/Sulfolobus
-glcS	glucose ABC transporter, periplasmic substrate-binding component (GlcS)	curated:SwissProt::Q97UZ1
+glcS	glucose ABC transporter, substrate-binding component (GlcS)	curated:SwissProt::Q97UZ1
 glcT	glucose ABC transporter, permease component 1 (GlcT)	curated:TCDB::Q97UZ0
 glcU	glucose ABC transporter, permease component 2 (GlcU)	curated:TCDB::Q97UY9
 glcV	glucose ABC transporter, ATPase component (GclV)	curated:BRENDA::Q97UY8
@@ -127,7 +127,7 @@ glcV	glucose ABC transporter, ATPase component (GclV)	curated:BRENDA::Q97UY8
 # It is uncertain whether aglEFGK from S. meliloti can transport glucose or not, so it is ignored
 
 # Dshi_1652 = A8LLL6
-aglE	glucose ABC transporter, periplasmic substrate-binding component (AglE)	uniprot:A8LLL6	ignore:reanno::Smeli:SMc03061
+aglE	glucose ABC transporter, substrate-binding component (AglE)	uniprot:A8LLL6	ignore:reanno::Smeli:SMc03061
 
 # Dshi_1651 = A8LLL5
 aglF	glucose ABC transporter, permease component 1 (AglF)	uniprot:A8LLL5	ignore:reanno::Smeli:SMc03062
@@ -198,12 +198,14 @@ PTS: manX manY manZ
 
 # Dshi_1655 (A8LLL9) was identified using fitness data, is very important for growth on glucose and
 #    several glucose-containing disaccharides; and functional residues seem to be conserved.
+# The related protein PGA1_c05420 (I7DXX1) also seems to be glk
 # Q5GAN8 = hexA from B. fragilis is a broad-specificity hexokinase (PMID:15659667)
 # Q5GBH5 = rokA = MONOMER-19002 from B. fragilis is a glucose/mannose/NAG kinase (PMID:15659667)
 #	(MetaCyc lists it as NAG kinase only but it is just as active on glucose)
 # CH_123431 is nearly identical to a characterized broad-specificity hexose kinase, so ignore
 # SCO5059 (Q9ADE8) is reported to have ATP-glucokinase activity (PMID:24200789), so ignore
-glk	glucokinase	EC:2.7.1.1	EC:2.7.1.2	uniprot:A8LLL9	uniprot:Q5GAN8	curated:metacyc::MONOMER-19002	ignore:CharProtDB::CH_123431	ignore:BRENDA::Q9ADE8
+# 
+glk	glucokinase	EC:2.7.1.1	EC:2.7.1.2	uniprot:A8LLL9	uniprot:Q5GAN8	curated:metacyc::MONOMER-19002	ignore:CharProtDB::CH_123431	ignore:BRENDA::Q9ADE8	uniprot:I7DXX1
 
 # glucose degradation (oxidative) -- MetaCyc DHGLUCONATE-PYR-CAT-PWY
 # involves periplasmic oxidation to 2-ketogluconate, uptake by kguT,
