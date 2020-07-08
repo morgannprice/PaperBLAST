@@ -42,12 +42,12 @@ PTS: nagEIIA nagPcb
 SMc02869	N-acetylglucosamine ABC transporter, ATPase component	curated:reanno::Phaeo:GFF2754	curated:reanno::Smeli:SMc02869
 SMc02872	N-acetylglucosamine ABC transporter, permease component 1	curated:reanno::Phaeo:GFF2751	curated:reanno::Smeli:SMc02872
 SMc02871	N-acetylglucosamine ABC transporter, permease component 2	curated:reanno::Phaeo:GFF2752	curated:reanno::Smeli:SMc02871
-SMc02873	N-acetylglucosamine ABC transporter, periplasmic substrate-binding component	curated:reanno::Phaeo:GFF2750	curated:reanno::Smeli:SMc02873
+SMc02873	N-acetylglucosamine ABC transporter, substrate-binding component	curated:reanno::Phaeo:GFF2750	curated:reanno::Smeli:SMc02873
 transport: SMc02869 SMc02872 SMc02871 SMc02873
 
 # Streptomyces olivaceoviridis has ngcEFG, with the presumed ATPase component
 # not identified. It probably depends on a shared ATPase component such as msiK (known in S. coelicolor)
-ngcE	N-acetylglucosamine ABC transporter, periplasmic substrate-binding component (NgcE)	curated:TCDB::Q8RJV0
+ngcE	N-acetylglucosamine ABC transporter, substrate-binding component (NgcE)	curated:TCDB::Q8RJV0
 ngcF	N-acetylglucosamine ABC transporter, permease component 1 (NgcF)	curated:TCDB::Q8RJU9
 ngcG	N-acetylglucosamine ABC transporter, permease component 2 (NgcG)	curated:TCDB::Q8RJU8
 transport: ngcE ngcF ngcG

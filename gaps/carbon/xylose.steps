@@ -30,18 +30,11 @@ glcP	glucose/mannose/xylose:H+ symporter	curated:SwissProt::O07563
 # another system from T. maritima (xylE_Tm xylF_Tm XylK_Tm),
 # and araVUTS from Sulfolobus solfataricus
 
-# xylF-like substrate binding components, 330-359 amino acids (heteromeric)
-# CharProtDB::CH_003787,TCDB::P37387,ecocyc::XYLF-MONOMER,metacyc::XYLF-MONOMER GB|AAC76590.1;; 3.A.1.2.4;; b3566;; P37387 D-xylose ABC transporter, periplasmic D-xylose-binding protein;; XylF aka XYLT aka B3566, component of Xylose porter;; xylose ABC transporter periplasmic binding protein (EC 7.5.2.13; EC 7.5.2.10);; xylose ABC transporter periplasmic binding protein (EC 7.5.2.13) Escherichia coli K12;; Escherichia coli;; Escherichia coli K-12 substr. MG1655;; Escherichia coli (strain K12) (heteromeric)
-# TCDB::A6LW10 3.A.1.2.26 D-xylose ABC transporter, periplasmic substrate-binding protein, component of Xylose transporter, XylFGH (XylF (R), 359 aas; XylG (C), 525 aas; XylH (M), 389 aas Clostridium beijerinckii (strain ATCC 51743 / NCIMB 8052) (heteromeric)
-# TCDB::P25548 3.A.1.2.5 CVE1 aka ChvE aka ATU2348 aka AGR_C_4267, component of Multiple sugar (arabinose, xylose, galactose, glucose, fucose) putative porter Agrobacterium tumefaciens (heteromeric)
-#
 # and also G4FGN5 = Tmari_1858, the SBP in T. maritima, which is quite distantly related.
 # Tmari_1858 is sometimes annotated as gluE, and is glucose induced.
 # But the Km for xylose is quite low, so, leave it in as a xylose transporter
-# TCDB::G4FGN5 3.A.1.2.20 LacI family transcriptional regulator, component of Glucose porter. Also bind xylose (Boucher and Noll 2011). Induced by glucose (Frock et al. 2012). Directly regulated by glucose-responsive regulator GluR Thermotoga maritima (strain ATCC 43589 / MSB8 / DSM 3109 / JCM 10099) (heteromeric)
-#
 # Ignore P54083 (sbpA from A. brasilensis), not known if it transports xylose or not.
-# A close homolog HSERO_RS05190 has a mild defect on xylose, so, it may well.
+# A close homolog HSERO_RS05190 has a mild defect on xylose, so, it may well transport xylose
 xylF	ABC transporter for xylose, substrate binding component xylF	curated:CharProtDB::CH_003787	curated:TCDB::A6LW10	curated:TCDB::P25548	curated:TCDB::G4FGN5	ignore:SwissProt::P54083
 
 # xylG-like ATP-binding components: 494-525 amino acids (heteromeric)

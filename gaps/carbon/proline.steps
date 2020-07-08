@@ -6,7 +6,7 @@
 # Ignore a similar system in Dickeya dadantii (or Erwinia chrysanthemi) reported to act on glycine betaine only
 proV	proline ABC transporter, ATPase component ProV	curated:CharProtDB::CH_001555	curated:SwissProt::P17328	ignore:SwissProt::E0SCY1
 proW	proline ABC transporter, permease component ProW	curated:SwissProt::P14176	ignore:SwissProt::E0SCY2
-proX	proline ABC transporter, substrate-binding periplasmic component ProX	curated:CharProtDB::CH_024698	ignore:SwissProt::E0SCY3
+proX	proline ABC transporter, substrate-binding component ProX	curated:CharProtDB::CH_024698	ignore:SwissProt::E0SCY3
 transport: proV proW proX
 
 # In Listeria monocytogenes and in Lactococcus lactis, the permease is fused to the substrate-binding component
@@ -17,7 +17,7 @@ transport: opuBA opuBB
 
 # Synechocystis sp. NatABCDE; also a similar system in Anabaena
 natA	proline ABC transporter, ATPase component 1 (NatA)	curated:TCDB::Q55164	curated:TCDB::Q7A2H0
-natB	proline ABC transporter, periplasmic substrate-binding component NatB	curated:TCDB::Q55387	curated:TCDB::Q8YVY4
+natB	proline ABC transporter, substrate-binding component NatB	curated:TCDB::Q55387	curated:TCDB::Q8YVY4
 natC	proline ABC transporter, permease component 1 (NatC)	curated:TCDB::P74455	curated:TCDB::Q8YY08
 natD	proline ABC transporter, permease component 2 (NatD)	curated:TCDB::P74318	curated:TCDB::Q8YXD0
 natE	proline ABC transporter, ATPase component 2 (NatE)	curated:TCDB::P73650	curated:TCDB::Q8YT15
@@ -26,7 +26,7 @@ transport: natA natB natC natD natE
 # Ensifer meliloti (formerly Rhizobium or Sinorhizobium) hutVWX
 hutV	proline ABC transporter, ATPase component HutV	curated:TCDB::Q9KKE1
 hutW	proline ABC transporter, permease component HutW	curated:TCDB::Q9KKE2
-hutX	proline ABC transporter, periplasmic substrate-binding component HutX	curated:TCDB::Q9KKE3
+hutX	proline ABC transporter, substrate-binding component HutX	curated:TCDB::Q9KKE3
 transport: hutV hutW hutX
 
 # Azospirillum brasilense -- just one component is in the reannotations, but
@@ -40,7 +40,7 @@ transport: AZOBR_RS08235 AZOBR_RS08240 AZOBR_RS08245 AZOBR_RS08250 AZOBR_RS08260
 
 # 5-part ABC transporter in Herbaspirillum brasilense, identified using fitness data.
 # This system is distantly related to AZOBR_RS08235:RS08260
-HSERO_RS00870	proline ABC transporter, periplasmic substrate-binding component	uniprot:D8IUY1
+HSERO_RS00870	proline ABC transporter, substrate-binding component	uniprot:D8IUY1
 HSERO_RS00885	proline ABC transporter, permease component 1	uniprot:D8IUY4
 HSERO_RS00890	proline ABC transporter, permease component 2	uniprot:D8IUY5
 HSERO_RS00895	proline ABC transporter, ATPase component 1	uniprot:D8J1T6

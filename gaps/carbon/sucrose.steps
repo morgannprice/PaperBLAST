@@ -9,7 +9,7 @@
 # i.e., Pf1N1B4_5112:5116 or Psyr_0762:Psyr_0759, and is presumably a sucrose transporter.
 # The N1B4 system is A0A166QFS3 A0A166QFV1 A0A161ZE72 A0A166QFW2
 # (The detrimental phenotypes might indicate toxicity from too-rapid uptake of ~10 mM sucrose.)
-thuE	sucrose ABC transporter, periplasmic substrate-binding component ThuE	curated:TCDB::Q72H68	curated:TCDB::Q9R9Q7	uniprot:A0A166QFS3
+thuE	sucrose ABC transporter, substrate-binding component ThuE	curated:TCDB::Q72H68	curated:TCDB::Q9R9Q7	uniprot:A0A166QFS3
 thuF	sucrose ABC transporter, permease component 1 (ThuF)	curated:TCDB::Q72H67	curated:reanno::Smeli:SM_b20326	uniprot:A0A166QFV1
 thuG	sucrose ABC transporter, permease component 2 (ThuG)	curated:TCDB::Q72H66	curated:reanno::Smeli:SM_b20327	uniprot:A0A161ZE72
 # aglK (Q9Z3R9, SMc03065) also clustered with thuK but is not that similar (56% identity) so was ignored
@@ -17,7 +17,7 @@ thuK	sucrose ABC transporter, ATPase component ThuK	curated:TCDB::Q72L52	curated
 transport: thuE thuF thuG thuK
 
 # AglEFGK in Sinorhizobium meliloti
-aglE	sucrose ABC transporter, periplasmic substrate-binding component AglK	curated:TCDB::Q9Z3R5
+aglE	sucrose ABC transporter, substrate-binding component AglK	curated:TCDB::Q9Z3R5
 aglF	sucrose ABC transporter, permease component 1 (AglF)	curated:reanno::Smeli:SMc03062
 aglG	sucrose ABC transporter, permease component 2 (AglG)	curated:reanno::Smeli:SMc03063
 aglK	sucrose ABC transporter, ATPase component AglK	curated:reanno::Smeli:SMc03065
@@ -130,7 +130,7 @@ all: transport scrP scrK pgi
 # overlaps with III and is reported only in mammals, ignore
 
 # MetaCyc Pathway: sucrose degradation VII (sucrose 3-dehydrogenase)
-# sucrose 3-dehdyrogenase converts periplasmic sucrose to
+# sucrose 3-dehydrogenase converts periplasmic sucrose to
 # 3-ketosucrose, which is transported, hydrolyzed to 3-ketoglucose and
 # fructose.  The 3-ketoglucose is reduced to glucose by a reductase.
 # This pathway was not sufficiently understood to be included.  Only

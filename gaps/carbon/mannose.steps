@@ -28,7 +28,7 @@ PTS: manP
 # The Pseudomonas systems are similar and are described together.
 
 # The Saccharolobus solfataricus system (4 components)
-glcS	mannose ABC transporter, periplasmic substrate-binding component GlcS	curated:SwissProt::Q97UZ1
+glcS	mannose ABC transporter, substrate-binding component GlcS	curated:SwissProt::Q97UZ1
 glcT	mannose ABC transporter, permease component 1 (GlcT)	curated:TCDB::Q97UZ0
 glcU	mannose ABC transporter, permease component 2 (GlcU)	curated:TCDB::Q97UY9
 glcV	mannose ABC transporter, ATPase component GlcV	curated:BRENDA::Q97UY8
@@ -43,7 +43,7 @@ transport: glcS glcT glcU glcV
 # excluded (probably)
 mtlG	mannose ABC transporter, permease component 1 (MtlG)	curated:reanno::WCS417:GFF2491	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3040	curated:reanno::pseudo3_N2E3:AO353_25890	ignore:TCDB::O30493	ignore:reanno::pseudo6_N2E2:Pf6N2E2_1961	ignore:reanno::pseudo5_N2C3_1:AO356_00015	
 mtlF	mannose ABC transporter, permease component 2 (MtlF)	curated:reanno::WCS417:GFF2492	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3041	curated:reanno::pseudo3_N2E3:AO353_25885	ignore:TCDB::O30492	ignore:reanno::pseudo5_N2C3_1:AO356_00020	ignore:reanno::pseudo6_N2E2:Pf6N2E2_1962
-mtlE	mannose ABC transporter, periplasmic substrate-binding component MtlE	curated:reanno::WCS417:GFF2493	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3042	curated:reanno::pseudo3_N2E3:AO353_25880	ignore:TCDB::O30491	ignore:reanno::pseudo5_N2C3_1:AO356_00025	ignore:reanno::pseudo6_N2E2:Pf6N2E2_1963
+mtlE	mannose ABC transporter, substrate-binding component MtlE	curated:reanno::WCS417:GFF2493	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3042	curated:reanno::pseudo3_N2E3:AO353_25880	ignore:TCDB::O30491	ignore:reanno::pseudo5_N2C3_1:AO356_00025	ignore:reanno::pseudo6_N2E2:Pf6N2E2_1963
 mtlK	mannose ABC transporter, ATPase component MtlK	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3039	curated:reanno::WCS417:GFF2490	curated:reanno::pseudo3_N2E3:AO353_25895	ignore:TCDB::O30494	ignore:TCDB::O30494	ignore:reanno::pseudo6_N2E2:Pf6N2E2_1960	ignore:reanno::pseudo5_N2C3_1:AO356_00010
 transport: mtlG mtlF mtlE mtlK
 
@@ -51,11 +51,11 @@ transport: mtlG mtlF mtlE mtlK
 TT_C0211	mannose ABC transporter, ATPase component MalK1	curated:TCDB::Q72L52
 TT_C0327	mannose ABC transporter, permease component 1	curated:TCDB::Q72KX3
 TT_C0326	mannose ABC transporter, permease component 2	curated:TCDB::Q72KX4
-TT_C0328	mannose ABC transporter, periplasmic substrate-binding component	curated:TCDB::Q72KX2
+TT_C0328	mannose ABC transporter, substrate-binding component	curated:TCDB::Q72KX2
 transport: TT_C0211 TT_C0327 TT_C0326 TT_C0328
 
 # The Thermotoga maritima system (5 components)
-TM1746	mannose ABC transporter, periplasmic substrate-binding component	curated:TCDB::Q9X268
+TM1746	mannose ABC transporter, substrate-binding component	curated:TCDB::Q9X268
 TM1747	mannose ABC transporter, permease component 1	curated:TCDB::Q9X269
 TM1748	mannose ABC transporter, permease component 2	curated:TCDB::Q9X270
 TM1749	mannose ABC transporter, ATPase component 1	curated:TCDB::Q9X271
@@ -64,12 +64,12 @@ transport: TM1746 TM1747 TM1748 TM1749 TM1750
 
 # The Ensifer meliloti system (3 components)
 frcA	mannose ABC transporter, ATPase component FrcA	curated:SwissProt::Q9F9B0
-frcB	mannose ABC transporter, periplasmic substrate-binding component FrcB	curated:SwissProt::Q9F9B2
+frcB	mannose ABC transporter, substrate-binding component FrcB	curated:SwissProt::Q9F9B2
 frcC	mannose ABC transporter, permease component FrcC	curated:SwissProt::Q9F9B1
 transport: frcA frcB frcC
 
 # The Herbaspirillum seropedicae system (3 components)
-HSERO_RS03635	mannose ABC transporter, periplasmic substrate-binding component	uniprot:D8IZC6
+HSERO_RS03635	mannose ABC transporter, substrate-binding component	uniprot:D8IZC6
 HSERO_RS03640	mannose ABC transporter, ATPase component	uniprot:D8IZC7
 HSERO_RS03645	mannose ABC transporter, permease component	uniprot:D8IZC8
 transport: HSERO_RS03635 HSERO_RS03640 HSERO_RS03645

@@ -75,12 +75,12 @@ PTS_6_phosphate: levDE levF levG
 araV	fructose ABC transporter, ATPase component AraV	curated:TCDB::Q97UF2
 araU	fructose ABC transporter, permease component 1 (AraU)	curated:TCDB::Q97UF3
 araT	fructose ABC transporter, permease component 2 (AraT)	curated:TCDB::Q97UF4
-araS	fructose ABC transporter, periplasmic substrate-binding component AraS	curated:TCDB::Q97UF5
+araS	fructose ABC transporter, substrate-binding component AraS	curated:TCDB::Q97UF5
 transport: araV araU araT araS
 
 # FruEFGK from Bifidobacterium longum
 # (fruF is distantly related to fruC below)
-fruE	fructose ABC transporter, periplasmic substrate-binding component FruE	curated:SwissProt::Q8G848
+fruE	fructose ABC transporter, substrate-binding component FruE	curated:SwissProt::Q8G848
 fruF	fructose ABC transporter, permease component 1 (FruF)	curated:SwissProt::Q8G846
 fruG	fructose ABC transporter, permease component 2 (FruG)	curated:SwissProt::Q8G845
 fruK	fructose ABC transporter, ATPase component FruK	curated:SwissProt::Q8G847
@@ -92,7 +92,7 @@ transport: fruE fruF fruG fruK
 # important during growth on fructose
 # (frcA = RR42_RS03360 = A0A0C4Y5F6; frcC = RR42_RS03365 = A0A0C4Y7K0; frcB = RR42_RS03370 = A0A0C4Y591)
 frcA	fructose ABC transporter, ATPase component FrcA	curated:SwissProt::Q9F9B0	uniprot:A0A0C4Y5F6
-frcB	fructose ABC transporter, periplasmic substrate-binding component FrcB	curated:SwissProt::Q9F9B2	uniprot:A0A0C4Y591
+frcB	fructose ABC transporter, substrate-binding component FrcB	curated:SwissProt::Q9F9B2	uniprot:A0A0C4Y591
 frcC	fructose ABC transporter, permease component FrcC	curated:SwissProt::Q9F9B1	uniprot:A0A0C4Y7K0
 transport: frcA frcB frcC
 

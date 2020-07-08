@@ -9,7 +9,7 @@
 # BztABCD from Rhodobacter capsulatus (Rhodopseudomonas capsulata),  TC 3.A.1.3.7
 # Ignore similarity of bztA to general amino acid porter AapJ
 # Ignore similarity of bztA to SMc02118, which could be a glutamate transporter as well
-bztA	glutamate ABC transporter, periplasmic substrate-binding component BztA	curated:TCDB::Q52663	ignore:TCDB::Q52812	ignore:reanno::Smeli:SMc02118
+bztA	glutamate ABC transporter, substrate-binding component BztA	curated:TCDB::Q52663	ignore:TCDB::Q52812	ignore:reanno::Smeli:SMc02118
 bztB	glutamate ABC transporter, permease component 1 (BztB)	curated:CharProtDB::CH_011913
 bztC	glutamate ABC transporter, permease component 2 (BztC)	curated:TCDB::Q52665
 # Ignore similarity of bztD to general amino acid porter AapP, SMc02121, Pf6N2E2_5405
@@ -32,7 +32,7 @@ transport: peb1A peb1B peb1C peb1D
 # Some of the Pseudomonas homologs are ignored because their substrate range is uncertain
 
 # aatJ = PP1071 or gltI
-aatJ	glutamate ABC transporter, periplasmic substrate-binding component AatJ	curated:TCDB::Q88NY2	curated:reanno::pseudo3_N2E3:AO353_16290	curated:reanno::pseudo1_N1B4:Pf1N1B4_771	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_4770	ignore:TCDB::Q9I402	curated:CharProtDB::CH_002441
+aatJ	glutamate ABC transporter, substrate-binding component AatJ	curated:TCDB::Q88NY2	curated:reanno::pseudo3_N2E3:AO353_16290	curated:reanno::pseudo1_N1B4:Pf1N1B4_771	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_4770	ignore:TCDB::Q9I402	curated:CharProtDB::CH_002441
 # aatQ = PP1070 or gltJ
 aatQ	glutamate ABC transporter, permease component 1 (AatQ)	curated:TCDB::Q88NY3	curated:reanno::pseudo3_N2E3:AO353_16285	curated:reanno::pseudo1_N1B4:Pf1N1B4_772	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_4771	ignore:TCDB::Q9I403	curated:SwissProt::P0AER3
 # aatM = PP1069 or gltK
@@ -53,7 +53,7 @@ transport: aatJ aatQ aatM aatP
 # (For N-II, TC 3.A.1.3.18 lists 3 components NatFGH)
 # Anabaena bgtB = alr3187 is not closely related to _0247
 # Note Anabanea bgtA = alr4167 = Q8YSA2
-natF	glutamate ABC transporter, periplasmic substrate-binding component NatF	curated:TCDB::Q8YPM9	uniprot:Q31RP1
+natF	glutamate ABC transporter, substrate-binding component NatF	curated:TCDB::Q8YPM9	uniprot:Q31RP1
 bgtB'	glutamate ABC transporter, permease component 1 (BgtB)	uniprot:Q31RP0
 natH	glutamate ABC transporter, permease component 2 (NatH)	curated:TCDB::Q8YPM7	uniprot:Q31RN9
 bgtA	glutamate ABC transporter, ATPase component BgtA	uniprot:Q31RN8	curated:TCDB::Q8YSA2
@@ -63,7 +63,7 @@ natG	glutamate ABC transporter, permease component 1 (NatG)	curated:TCDB::Q8YPM8
 transport: natF natG natH bgtA
 
 # gluBACD from Corenybacterium glutamicum, TC 3.A.1.3.9
-gluB	glutamate ABC transporter, periplasmic substrate-binding component GluB	curated:TCDB::P48242
+gluB	glutamate ABC transporter, substrate-binding component GluB	curated:TCDB::P48242
 gluA	glutamate ABC transporter, ATPase component GluA	curated:TCDB::P48243
 gluC	glutamate ABC transporter, permease component 1 (GluC)	curated:TCDB::P48244
 gluD	glutamate ABC transporter, permease component 2 (GluD)	curated:TCDB::P48245
@@ -71,13 +71,13 @@ transport: gluB gluA gluC gluD
 
 # glnQP from Lactococcus lactis, TC 3.A.1.3.25
 glnQ	glutamate ABC transporter, ATPase component GlnQ	curated:TCDB::Q9CES4
-glnP	glutamate ABC transporter, fused permease and periplasmic substrate-binding components GlnP	curated:TCDB::Q9CES5
+glnP	glutamate ABC transporter, fused permease and substrate-binding components GlnP	curated:TCDB::Q9CES5
 transport: glnQ glnP
 
 # Other heteromeric transporters
 
 # gtrABC from Synechocystis strain PCC 6803, TC 2.A.56.3.1
-gtrC	glutamate:Na+ TRAP transporter, periplasmic substrate-binding component GtrC	curated:TCDB::P74223
+gtrC	glutamate:Na+ TRAP transporter, substrate-binding component GtrC	curated:TCDB::P74223
 gtrB	glutamate:Na+ TRAP transporter, large permease component (GtrB)	curated:TCDB::P74224
 gtrA	glutamate:Na+ TRAP transporter, small permease component (GtrA)	curated:TCDB::P74225
 transport: gtrC gtrB gtrA

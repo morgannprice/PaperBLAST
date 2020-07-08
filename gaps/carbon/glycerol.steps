@@ -10,7 +10,7 @@ glpS	glycerol ABC transporter, ATPase component 1 (GlpS)	curated:TCDB::G3LHY8	cu
 glpT	glycerol ABC transporter, ATPase component 2 (GlpT)	curated:TCDB::G3LHY9	curated:reanno::acidovorax_3H11:Ac3H11_792
 glpP	glycerol ABC transporter, permease component 1 (GlpP)	curated:TCDB::G3LHZ0	curated:reanno::acidovorax_3H11:Ac3H11_793
 glpQ	glycerol ABC transporter, permease component 2 (GlpQ)	curated:TCDB::G3LHZ1	curated:reanno::acidovorax_3H11:Ac3H11_794
-glpV	glycerol ABC transporter, periplasmic substrate-binding component GlpV	curated:TCDB::G3LHZ3	curated:reanno::acidovorax_3H11:Ac3H11_796
+glpV	glycerol ABC transporter, substrate-binding component GlpV	curated:TCDB::G3LHZ3	curated:reanno::acidovorax_3H11:Ac3H11_796
 transport: glpS glpT glpP glpQ glpV
 
 # Other transporters:

@@ -29,7 +29,7 @@ transport: satP
 dctQ	succinate TRAP transporter, small permease component DctQ	curated:SwissProt::O07837	curated:SwissProt::Q9HU17	curated:reanno::PV4:5208944	curated:reanno::psRCH2:GFF4196	uniprot:Q9KQS0	ignore:reanno::SB2B:6938089
 dctM	succinate TRAP transporter, large permease protein DctM	curated:SwissProt::O07838	curated:SwissProt::Q9HU16	curated:reanno::PV4:5208943	uniprot:Q9KQS1	ignore:reanno::SB2B:6938090
 # B. subtilis DctB is similar to DctP but is probably involved in sensing, not transport, so is not included
-dctP	succinate TRAP transporter, periplasmic component DctP	curated:SwissProt::P37735	curated:SwissProt::Q9HU18	curated:reanno::PV4:5208945	curated:SwissProt::Q9KQR9	ignore:reanno::SB2B:6938088
+dctP	succinate TRAP transporter, component DctP	curated:SwissProt::P37735	curated:SwissProt::Q9HU18	curated:reanno::PV4:5208945	curated:SwissProt::Q9KQR9	ignore:reanno::SB2B:6938088
 transport: dctQ dctM dctP
 
 # Ignore mitochondrial dicarboxylate:phosphate antiporters

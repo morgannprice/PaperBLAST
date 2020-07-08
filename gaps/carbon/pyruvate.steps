@@ -40,7 +40,7 @@ transport: SLC5A8
 
 # Cluster 4 includes DctP from Nostoc, Rhodobacter; associated with dctQ and dctM
 # Similar to TakP (Q3J1R2), which is misannotated and not characterized
-dctP	pyruvate TRAP transporter, periplasmic component	curated:SwissProt::Q8YSQ6	curated:TCDB::D5ALT6	ignore:SwissProt::Q3J1R2
+dctP	pyruvate TRAP transporter, component	curated:SwissProt::Q8YSQ6	curated:TCDB::D5ALT6	ignore:SwissProt::Q3J1R2
 
 # Cluster 8 184-190 amino acids (heteromeric)
 dctQ	pyruvate TRAP transporter, small permease component	curated:TCDB::D5ATK0	curated:TCDB::Q8YSQ8
