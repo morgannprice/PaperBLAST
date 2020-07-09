@@ -272,7 +272,7 @@ sub CreateJGICookie($$$) {
   my ($username, $passwd, $cookiefile) = @_;
   my $tmpfile = "$cookiefile.$$.tmp";
   unlink($tmpfile); # in case it exists
-  my $URL = "https://signon-old.jgi.doe.gov/signon/create";
+  my $URL = "https://signon.jgi.doe.gov/signon/create";
   my @cmd = ("curl", "--silent", $URL,
               "--data-urlencode", "login=$username",
               "--data-urlencode", "password=$passwd",
@@ -298,6 +298,7 @@ sub FetchJGI($$$$) {
   my $down_url = "https://genome.jgi.doe.gov/portal/ext-api/downloads/get-directory?organism=$portalid";
   my $in; # for reading in from various pipes
 
+  print p("Fetching $down_url")."\n";
   open($in, "-|", "curl", "--silent", $down_url, "-b", $cookiefile)
     || die "Cannot run curl on $down_url";
   my @lines = <$in>;
@@ -322,6 +323,7 @@ sub FetchJGI($$$$) {
   $tar_url = "https://genome.jgi.doe.gov" . $tar_url;
 
   my $tmp_tar = "$dir.$$.tar";
+  print p("Fetching $tar_url")."\n";
   open($in, "-|", "curl", "--silent", $tar_url, "-b", $cookiefile)
     || die "Cannot run curl on $tar_url";
   open(my $tarfh, ">", "$tmp_tar.gz") || die "Cannot write to $tmp_tar.gz";
@@ -330,6 +332,7 @@ sub FetchJGI($$$$) {
   }
   close($in) || return "Error reading from IMG tarball $tar_url";
   close($tarfh) || die "Error writing to $tmp_tar.gz";
+  print p("Fetching complete")."\n";
   my $tmpdir = "$dir.$$";
   die "temporary directory $tmpdir already exists" if -e $tmpdir;
 
