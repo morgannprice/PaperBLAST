@@ -1,0 +1,122 @@
+# Transporters were identified using
+# query: transporter:cellobiose:D-cellobiose:CPD-15976:beta-glucoside:beta-glucosides
+
+# Note -- some of the beta-glucoside transporters might not be cellobiose transporters
+# Omit TCDB 4.A.1.2.15 = LGAS_1755 = ART98417 (see curated BLAST for PTS vs. GCF_000014425.1), "PTS 19CBA" in PMC2848229 (Francl et al 2010)
+#   Not actually shown to be a cellobiose transporter (and, the main one in this organism is 4.A.1.2.14 = LGAS_1669)
+# Omit TM1219:TM1223, listed as a probable cellobiose porter
+#    the SBP TM1223 is reported to bind beta,1-4-mannobiose only (PMC1392961)
+
+# ABC transporters:
+
+# 5-member system from Thermotoga maritima (TM0027:TM0031)
+TM0031	cellobiose ABC transporter, substrate-binding component	curated:TCDB::Q9WXN8
+TM0030	cellobiose ABC transporter, permease component 1	curated:TCDB::Q9WXN7	ignore:TCDB::Q9X0U9
+TM0029	cellobiose ABC transporter, permease component 2	curated:TCDB::Q9WXN6	ignore:TCDB::Q9X0U8
+TM0028	cellobiose ABC transporter, ATPase component 1	curated:TCDB::Q9WXN5	ignore:TCDB::Q9X0U7
+TM0027	cellobiose ABC transporter, ATPase component 2	curated:TCDB::Q9WXN4	ignore:TCDB::Q9X0U6
+transport: TM0031 TM0030 TM0029 TM0028 TM0027
+
+# cbtABCDF from Sulfolobus solfataricus
+cbtA	cellobiose ABC transporter, substrate-binding component CbtA	curated:TCDB::Q97VF7
+cbtB	cellobiose ABC transporter, permease component 1 (CbtB)	curated:TCDB::Q97VF8
+cbtC	cellobiose ABC transporter, permease component 2 (CbtC)	curated:TCDB::Q97VF6
+cbtD	cellobiose ABC transporter, ATPase component 1 (CbtD)	curated:TCDB::Q97VF5
+cbtF	cellobiose ABC transporter, ATPase component 2 (CbtF)	curated:TCDB::Q97VF4
+transport: cbtA cbtB cbtC cbtD cbtF
+
+# cebEFG-msiK from Streptomyces reticuli
+cebE	cellobiose ABC transporter, substrate-binding component CebE	curated:TCDB::Q9X9R7
+cebF	cellobiose ABC transporter, permease component 1 (CebF)	curated:TCDB::Q9X9R6
+cebG	cellobiose ABC transporter, permease component 2 (CebG)	curated:TCDB::Q9X9R5
+# Ignore msiK from S. coelicolor (msiK is shared across ABC transporters)
+msiK	cellobiose ABC transporter, ATPase component	curated:TCDB::P96483	ignore:SwissProt::Q9L0Q1
+transport: cebE cebF cebG msiK
+
+# 4-member system from Sinorhizobium meliloti (SMc04256:SMc04259)
+
+SMc04256	cellobiose ABC transporter, ATPase component	curated:reanno::Smeli:SMc04256
+SMc04257	cellobiose ABC transporter, permease component 1	curated:reanno::Smeli:SMc04257
+SMc04258	cellobiose ABC transporter, permease component 2	curated:reanno::Smeli:SMc04258
+SMc04259	cellobiose ABC transporter, substrate-binding protein	curated:reanno::Smeli:SMc04259
+transport: SMc04256 SMc04257 SMc04258 SMc04259
+
+# Clostridium thermocellum has two ABC transporters with cellobiose-binding SBPs,
+# see PMID:18952792 (Nataf et al 2009)
+# cbpB = gi 125973535 = WP_011837947.1 = A3DE73 = Cthe_1020
+# cbpC = gi 125974617 = WP_003516700.1 = Cthe_2128 = A3DHA5
+# The ATPase component of these systems is not clear, but
+# cbpB is close to permease components Cthe_1019=msdB1=A3DE72 and Cthe_1018=msdB2=A3DE71
+# cbpC is close to permease components Cthe_2126=A3DHA3 and Cthe_2125=A3DHA2
+# (the name of those components by Nataf et al is ambiguous)
+
+cbpB	cellobiose ABC transporter, substrate-binding component CpbB	uniprot:A3DE73
+msdB1	cellobiose ABC transporter, permease component 1 (MsdB1)	uniprot:A3DE72
+msdB2	cellobiose ABC transporter, permease component 2 (MsdB2)	uniprot:A3DE71
+transport: cbpB msdB1 msdB2
+
+cbpC	cellobiose ABC transporter, substrate-binding component CbpC	uniprot:A3DHA5
+msdC1	cellobiose ABC transporter, permease component 1 (MsdC1)	uniprot:A3DHA3
+msdC2	cellobiose ABC transporter, permease component 1 (MsdC2)	uniprot:A3DHA2
+transport: cbpC msdC1 msdC2
+
+# PTS systems:
+# Lactobacillus gasseri has EII-BCA, and E. coli has EII-BCA (bglG)
+# E. coli also has a similar system, EII-BC (ascF); the EII-A component is not known
+# A single-a.a. mutation to a EII-BCA from Corynebacterium glutamicum (TC 4.A.1.2.5 / Q8GGK3) allows it to transport cellobiose,
+# so that is included as well.
+bglG	cellobiose PTS system, EII-BC or EII-BCA components	curated:SwissProt::P24241	curated:TCDB::ART98499	curated:TCDB::P08722	curated:TCDB::Q8GGK3
+PTS: bglG
+
+# E. coli also has chbABC (separate EII-A, EII-B and EII-C components)
+# Lactococcus lactis has a similar system (ptcA-ptcB-celB)
+# Separate EIIABC proteins are also known in Streptococcus pneumoniae, see PMC3302838
+# (SP0308 = celC = EIIA = A0A0H2UNC0; Sp0305 = celB = EIIB = A0A0H2UNC2; SP0310 = celD = EIIC = A0A0H2UNC6)
+# Ignore a close homolog from L. lactis cremoris (annotated as galactose-specific) and a systems from Klebsiella pneumoniae
+# and Serratia marcescens that may transport cellobiose.
+celEIIA	cellobiose PTS system, EII-A component	curated:SwissProt::P69791	curated:SwissProt::Q9CIE9	uniprot:A0A0H2UNC0	ignore:SwissProt::A2RIE7	ignore:TCDB::C4X746
+celEIIB	cellobiose PTS system, EII-B component	curated:BRENDA::P69795	curated:SwissProt::Q9CIF0	uniprot:A0A0H2UNC2	ignore:SwissProt::A2RIE6	ignore:TCDB::C4X744	ignore:TCDB::Q8L3C3
+celEIIC	cellobiose PTS system, EII-C component	curated:SwissProt::P17334	curated:SwissProt::Q9CJ32	uniprot:A0A0H2UNC6	ignore:TCDB::C4X745	ignore:BRENDA::Q8L3C2
+PTS: celEIIA celEIIB celEIIC
+
+# Ignore the porin bglH and the efflux transporter setA
+
+# Homomeric transporters:
+
+# combine cdt-1, cdt-2 which are distantly related
+cdt	cellobiose transporter cdt-1/cdt-2	curated:TCDB::Q7SCU1	curated:TCDB::Q7SD12
+transport: cdt
+
+# Gene name is from Rodionov et al 2010 (PMC2996990)
+bglT	cellobiose transporter BglT	curated:reanno::SB2B:6937231
+transport: bglT
+
+# MetaCyc does not list any pathways for cellobiose utilization, but the major catabolic enzymes are
+# believed to be intracellular cellobiase, cellobiose-6-phosphate hydrolase, or
+# cellobiose phosphorylase, see PMID:28535986
+# 
+# Some bacteria might use an extracellular cellobiase and uptake glucose; this is not represented
+#
+# There also may be a 3-ketoglucoside pathway in some Bacteroidetes, but this is not characterized.
+
+# After transport, cellobiase cleaves cellobiose into glucose, and
+# glucokinase (glk) forms the central metabolite glucose-6-phosphate
+bgl	cellobiase	EC:3.2.1.21
+import glucose.steps:glk
+all: transport bgl glk
+
+# After transport, cellobiose phosphorylase cleaves cellobiose
+# into glucose and alpha-glucose-1-phosphate.
+# alpha-phosphoglucomutase converts the glucose-1-P to glucose-6-phosphate
+# and glucokinase converts glucose to glucose-6-phosphate
+cbp	cellobiose phosphorylase	EC:2.4.1.20
+pgmA	alpha-phosphoglucomutase	EC:5.4.2.2
+all: transport cbp pgmA glk
+
+# After transport and phosphorylation by a PTS system,
+# 6-phosphocellobiose hydrolase forms glucose and glucose-6-phosphate,
+# and glucokinase converts the glucose to glucose-6-phosphate
+# Q9AI65 from Erwinia rhapontici seems to be misannotated in BRENDA, as does
+# Q1JK37 from Streptococcus pyogenes
+ascB	6-phosphocellobiose hydrolase	EC:3.2.1.86	ignore:BRENDA::Q9AI65	ignore:BRENDA::Q1JK37
+all: PTS ascB glk
