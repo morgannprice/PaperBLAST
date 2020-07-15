@@ -114,7 +114,9 @@ transport: cscB
 malAP	maltose permease	curated:TCDB::Q45632
 transport: malAP
 
-malI	maltose transporter	curated:TCDB::Q9A612
+# Caulobacter malI; also CA265_RS24665 (A0A1X9ZCC9) is specifically important for maltose utilization
+# and is related
+malI	maltose transporter	curated:TCDB::Q9A612	uniprot:A0A1X9ZCC9
 transport: malI
 
 # MetaCyc Pathway: maltose degradation involves
@@ -138,3 +140,11 @@ all: PTS malA glk
 mapP	maltose 6'-phosphate phosphatase	EC:3.1.3.90
 all: PTS mapP malP pgmB glk
 
+# Or, direct hydrolysis of maltose by alpha-glucosidase (EC 3.2.1.20)
+# (I imagine this could be extracellular, with glucose rather than maltose
+#  being transported; but that is not represented here)
+# Q2PCE2 is ignored because it appears to be misannotated in BRENDA
+# Close homologs are sometimes annotated as maltases (which should be included)
+# or isomaltase (which should not; that refers to hydrolyzing the alpha-1-6 linkage)
+susB	alpha-glucosidase (maltase)	EC:3.2.1.20	ignore:BRENDA::Q2PCE2	ignore_other:maltase
+all: transport susB glk

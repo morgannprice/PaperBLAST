@@ -92,17 +92,65 @@ bglT	cellobiose transporter BglT	curated:reanno::SB2B:6937231
 transport: bglT
 
 # MetaCyc does not list any pathways for cellobiose utilization, but the major catabolic enzymes are
-# believed to be intracellular cellobiase, cellobiose-6-phosphate hydrolase, or
+# believed to be intracellular cellobiase, periplasmic cellobiase,
+# cellobiose-6-phosphate hydrolase, or
 # cellobiose phosphorylase, see PMID:28535986
 # 
 # Some bacteria might use an extracellular cellobiase and uptake glucose; this is not represented
 #
 # There also may be a 3-ketoglucoside pathway in some Bacteroidetes, but this is not characterized.
 
+# If the cellobiase is periplasmic, then the next step would be
+# glucose uptake and phosphorylation
+
+# Import the various transporters and PTS systems
+# (This is a hack; it would be better to be able to import a rule and rename it)
+import glucose.steps:ptsG-crr
+import glucose.steps:ptsG
+import glucose.steps:crr
+import glucose.steps:bglF
+import glucose.steps:manX
+import glucose.steps:manY
+import glucose.steps:manZ
+glucosePTS: ptsG-crr
+glucosePTS: bglF
+glucosePTS: ptsG crr
+glucosePTS: manX manY manZ
+
+import glucose.steps:mglA
+import glucose.steps:mglB
+import glucose.steps:mglC
+import glucose.steps:gtsA
+import glucose.steps:gtsB
+import glucose.steps:gtsC
+import glucose.steps:gtsD
+import glucose.steps:glcS
+import glucose.steps:glcT
+import glucose.steps:glcU
+import glucose.steps:glcV
+import glucose.steps:aglE
+import glucose.steps:aglF
+import glucose.steps:aglG
+import glucose.steps:aglK
+import glucose.steps:MFS_glucose
+import glucose.steps:SSS_glucose
+import glucose.steps:glcU_Firmicutes
+
+glucosetransport: mglA mglB mglC
+glucosetransport: gtsA gtsB gtsC gtsD
+glucosetransport: glcS glcT glcU glcV
+glucosetransport: aglE aglF aglG aglK
+glucosetransport: MFS_glucose
+glucosetransport: SSS_glucose
+glucosetransport: glcU_Firmicutes
+
+bgl	cellobiase	EC:3.2.1.21
+all: bgl glucosePTS
+import glucose.steps:glk
+all: bgl glucosetransport glk
+
 # After transport, cellobiase cleaves cellobiose into glucose, and
 # glucokinase (glk) forms the central metabolite glucose-6-phosphate
-bgl	cellobiase	EC:3.2.1.21
-import glucose.steps:glk
 all: transport bgl glk
 
 # After transport, cellobiose phosphorylase cleaves cellobiose
