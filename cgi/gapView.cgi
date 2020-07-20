@@ -81,6 +81,8 @@ sub PathToHTML($$$$$$$$);
 sub StepToShortHTML($$$$$$$);
 sub GetMarkerSimilarity($$);
 sub ShowWarnings($$$$);
+sub UniqueLoci(@);
+sub SplitLoci(@);
 
 # This uses the DB_File in $org.faa.db if that exists,
 # or else tries to use fastacmd against the blast database.
@@ -712,22 +714,17 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
                    \%markerSim, \%knownGaps)),
       "\n";
 
-    my @bestcand = (); # the best candidate per step
+    my @bestcand = (); # the best candidate per step (or the top two, if the same score)
     foreach my $step (@expandedPath) {
       my $stepS = $sumSteps{$step} || die;
       push @bestcand, $stepS->{locusId} if $stepS->{locusId};
+      push @bestcand, $stepS->{locusId2} if $stepS->{locusId2} && ($stepS->{score}+0) == ($stepS->{score2}+0);
     }
     if ($orgs{$orgId}{gdb} eq "FitnessBrowser" && @bestcand > 0) {
-      # Link to fitness data for the best candidates; but first, split the best ORFs
-      my @bestcand2 = ();
-      foreach my $cand (@bestcand) {
-        push @bestcand2, split /,/, $cand;
-      }
-      # remove duplicates
-      my %seen = ();
-      my @bestcand3 = grep { my $keep = !exists $seen{$_}; $seen{$_} = 1; $keep; } @bestcand2;
+      # Link to fitness data for the best candidates
+      my @loci = UniqueLoci(SplitLoci(@bestcand));
       my $URL = "http://fit.genomics.lbl.gov/cgi-bin/genesFit.cgi?orgId=${gid}&"
-        . join("&", map { "locusId=$_" } @bestcand3);
+        . join("&", map { "locusId=$_" } @loci);
       print p("Also see", a({ -href => $URL }, "fitness data"), "for the top candidates");
     }
 
@@ -884,6 +881,15 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
       }
       print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
       print LegendForColorCoding();
+      if ($orgs{$orgId}{gdb} eq "FitnessBrowser") {
+        # link to all the candidates
+        my @loci = UniqueLoci(grep { $_ ne "" } map { $_->{locusId}, $_->{locusId2} } @cand);
+        @loci = splice(@loci, 0, 6) if @loci > 6;
+        my $gid = $orgs{$orgId}{gid};
+        my $URL = "http://fit.genomics.lbl.gov/cgi-bin/genesFit.cgi?orgId=${gid}&"
+          . join("&", map { "locusId=$_" } @loci);
+        print p("Also see", a({ -href => $URL }, "fitness data"),"for the candidates");
+      }
     }
     print h3("Definition of step $step"), "\n";
     print start_ul();
@@ -1815,4 +1821,22 @@ END
   print end_html;
   exit(0);
 
+}
+
+sub UniqueLoci(@) {
+  my %seen = ();
+  my @out = ();
+  foreach my $in (@_) {
+    push @out, $in if !exists $seen{$in};
+    $seen{$in} = 1;
+  }
+  return @out;
+}
+
+sub SplitLoci(@) {
+  my @out = ();
+  foreach my $in (@_) {
+    push @out, split /,/, $in;
+  }
+  return @out;
 }
