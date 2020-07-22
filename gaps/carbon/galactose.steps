@@ -94,6 +94,34 @@ transport: lacP
 
 # Ignore TCDB::A1RW34 2.A.1.66.1, which is not characterized
 
+# MetaCyc Pathway: lactose and galactose degradation I
+# describes the breakdown of galactose-6-phosphate
+# (from a PTS system)
+# via isomerization to tagatose-6-phosphate,
+# tagatose-6-phosphate kinase,
+# tagatose-bisphosphate aldolase (forming glycerone phosphate and glyceraldehyde 3-phosphate),
+# and tpi to convert glcyerone phosphate to glyceraldehyde 3-phosphate
+
+# EC 5.3.1.26; only a few known members, all heterodimeric
+lacA	galactose-6-phosphate isomerase, lacA subunit	curated:SwissProt::P23494	curated:metacyc::MONOMER-2781
+lacB	galactose-6-phosphate isomerase, lacB subunit	curated:SwissProt::P23495	curated:metacyc::MONOMER-2782
+lacC	D-tagatose-6-phosphate kinase	EC:2.7.1.144
+
+# Two forms of D-tagatose-1,6-phosphate aldolase are known, homomeric (lacD) or heteromeric (gatYZ or kbaYZ)
+
+lacD	D-tagatose-1,6-bisphosphate aldolase (monomeric)	curated:BRENDA::Q5HE13	curated:SwissProt::P26593
+
+gatY	D-tagatose-1,6-bisphosphate aldolase, catalytic subunit (GatY/KbaY)	curated:CharProtDB::CH_024465	curated:SwissProt::P0C8J6	curated:SwissProt::P0C8J7	curated:SwissProt::Q8VS16	curated:SwissProt::Q9KIP8
+
+gatZ	D-tagatose-1,6-bisphosphate aldolase, chaperone subunit (GatZ/KbaZ)	curated:SwissProt::P0C8J8	curated:SwissProt::P0C8J9	curated:SwissProt::P0C8K0	curated:metacyc::MONOMER-18280	curated:SwissProt::Q8VS12
+
+tag16P_aldolase: lacD
+tag16P_aldolase: gatY gatZ
+
+tpi	triose-phosphate isomerase	EC:5.3.1.1	ignore:SwissProt::P85814
+
+all: PTS lacA lacB lacC tag16P_aldolase tpi
+
 # MetaCyc Pathway: D-galactose degradation I (Leloir pathway)
 #  galactose 1-epimerase (to alpha-D-galactopyranose), galactose kinase (to galactose 1-P),
 #  galT to transfer (from UDP-glucose) to UDP-galactose, releasing alpha-glucose-1-phosphate
@@ -130,7 +158,8 @@ galdh	D-galactose 1-dehydrogenase (forming 1,4- or 1,5-lactones)	EC:1.1.1.48	EC:
 # Fitness data confirms diverged lactonases N515DRAFT_1229 (A0A1I2AUG6), BPHYT_RS16915 (B2SYR2)
 # PS417_17365 from P. simiae WCS417 (GFF3393) is a galactono-1,5-lactonase, so is not given this EC number
 # Similarly for PfGW456L13_3314
-lactonase	galactonolactonase (either 1,4- or 1,5-lactone)	EC:3.1.1.25	ignore_other:3.1.1.15	ignore:BRENDA::A3FJ64	uniprot:B2SYR2	uniprot:A0A1I2AUG6	curated:reanno::WCS417:GFF3393	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3314
+# In Acidovorax sp. GW101-3H11, fitness data suggests that the lactonase is Ac3H11_615 (A0A165IRV8)
+lactonase	galactonolactonase (either 1,4- or 1,5-lactone)	EC:3.1.1.25	ignore_other:3.1.1.15	ignore:BRENDA::A3FJ64	uniprot:B2SYR2	uniprot:A0A1I2AUG6	curated:reanno::WCS417:GFF3393	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3314	uniprot:A0A165IRV8
 dgoD	D-galactonate dehydratase	EC:4.2.1.6	EC:4.2.1.140
 # BRENDA misannotates Q9zU29 as dgoK
 # fitness data confirms diverged dgoK's BPHYT_RS16950 (B2SYR9), N515DRAFT_1233 (A0A1I2AR49),
@@ -139,22 +168,7 @@ dgoK	2-dehydro-3-deoxygalactonokinase	EC:2.7.1.58	EC:2.7.1.178	ignore:BRENDA::Q9
 dgoA	2-dehydro-3-deoxy-6-phosphogalactonate aldolase	EC:4.1.2.21	EC:4.1.2.55
 all: transport galdh lactonase dgoD dgoK dgoA
 
+
 # MetaCyc Pathway: D-galactose degradation IV
 # (via galacticol and sorbitol) is described as a fungal
 # pathway, so it is not included here
-
-# MetaCyc Pathway: lactose and galactose degradation I
-# describes the breakdown of galactose-6-phosphate
-# (from a PTS system)
-# via isomerization to tagatose-6-phosphate,
-# tagatose-6-phosphate kinase,
-# tagatose-bisphosphate aldolase (forming glycerone phosphate and glyceraldehyde 3-phosphate),
-# and tpi to convert glcyerone phosphate to glyceraldehyde 3-phosphate
-
-# EC 5.3.1.26; only a few known members, all heterodimeric
-lacA	galactose-6-phosphate isomerase, lacA subunit	curated:SwissProt::P23494	curated:metacyc::MONOMER-2781
-lacB	galactose-6-phosphate isomerase, lacB subunit	curated:SwissProt::P23495	curated:metacyc::MONOMER-2782
-lacC	D-tagatose-6-phosphate kinase	EC:2.7.1.144
-lacD	D-tagatose-1,6-phsophate aldolase	EC:4.1.2.40
-tpi	triose-phosphate isomerase	EC:5.3.1.1	ignore:SwissProt::P85814
-all: PTS lacA lacB lacC lacD tpi
