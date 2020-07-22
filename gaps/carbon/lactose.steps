@@ -1,0 +1,80 @@
+# Transporters were identified using
+# query: transporter:lactose:alpha-lactose:CPD-15971
+
+# ABC transporters:
+# Agrobacterium radiobacter and Sinorhizobium meliloti have related systems,
+# named lacEFGK in Agrobacterium
+
+lacE	lactose ABC transporter, substrate-binding component	curated:TCDB::P29822	curated:reanno::Smeli:SM_b21652
+lacF	lactose ABC transporter, permease component 1	curated:TCDB::P29823	curated:reanno::Smeli:SM_b21653
+lacG	lactose ABC transporter, permease component 2	curated:TCDB::P29824	curated:reanno::Smeli:SM_b21654
+lacK	lactose ABC transporter, ATPase component	curated:TCDB::Q01937	curated:reanno::Smeli:SM_b20002
+transport: lacE lacF lacG lacK
+
+# PTS systems (forming lactose 6'-phosphate)
+
+# Klebsiella pneumoniae has a EIIA,B,C in 3 separate proteins
+# The other characterized PTS systems have EII and EIICB
+lacIIA	lactose PTS system, EIIA component	curated:SwissProt::P0A0D6	curated:SwissProt::P11502	curated:SwissProt::P23532	curated:TCDB::Q045H4	curated:TCDB::Q045X4	curated:TCDB::U5MLJ3
+
+lacIIB	lactose PTS system, EIIB component	curated:TCDB::U5MIE1
+
+lacIIC	lactose PTS system, EIIC component	curated:TCDB::U5MFA1
+
+lacIICB	lactose PTS system, fused EIIC and EIIB components	curated:SwissProt::P11162	curated:SwissProt::P23531	curated:SwissProt::P24400	curated:TCDB::Q045H3	curated:TCDB::Q045X3
+
+PTS: lacIIA lacIIB lacIIC
+PTS: lacIIA lacIICB
+
+lacP	lactose permease LacP	curated:CharProtDB::CH_124122	curated:CharProtDB::CH_124118	curated:CharProtDB::CH_124308	curated:CharProtDB::CH_124309	curated:TCDB::P07921
+transport: lacP
+
+lacS	lactose permease LacS	curated:SwissProt::Q7WTB2	curated:TCDB::P23936
+transport: lacS
+
+lacY	lactose:proton symporter LacY	curated:SwissProt::P02920	curated:SwissProt::P96517
+transport: lacY
+
+# Ignored sugar exporters such as setA or sotA
+
+# MetaCyc Pathway: lactose and galactose degradation I
+# PTS to lactose 6'-phosphate, phosphogalactosidase to galactose 6-phosphate,
+# which is catabolized via tagatose-1,6-bisphosphate
+pbgal	phospho-beta-galactosidase	EC:3.2.1.85
+import galactose.steps:lacA
+import galactose.steps:lacB
+import galactose.steps:lacC
+import galactose.steps:lacD
+import galactose.steps:gatY
+import galactose.steps:gatZ
+import galactose.steps:tpi
+tag16P_aldolase: lacD
+tag16P_aldolase: gatY gatZ
+
+# MetaCyc Pathway: lactose degradation II
+# is not represented becaus the 3-ketoglycoside pathway is too poorly understood
+
+# MetaCyc Pathway: lactose degradation III -- beta-galactosidase,
+# forming glucose and galactose, and then galactose utilization
+# via the Leloir pathway or galactose 1-dehydrogenase.
+# glucokinase should also be required to consume the glucose
+lacZ	lactose galactohydrolase	EC:3.2.1.108
+import galactose.steps:galM
+import galactose.steps:galK
+import galactose.steps:galT
+import galactose.steps:galE
+import galactose.steps:pgm
+import galactose.steps:galdh
+import galactose.steps:lactonase
+import galactose.steps:dgoD
+import galactose.steps:dgoK
+import galactose.steps:dgoA
+galactose: galM galK galT galE pgm
+galactose: galdh lactonase dgoD dgoK dgoA
+
+import glucose.steps:glk
+all: transport lacZ galactose glk
+
+# The actual rule for PTS based utilization
+all: PTS pbgal lacA lacB lacC tag16P_aldolase tpi
+
