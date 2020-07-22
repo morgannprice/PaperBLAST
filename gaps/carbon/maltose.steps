@@ -143,8 +143,8 @@ all: PTS mapP malP pgmB glk
 # Or, direct hydrolysis of maltose by alpha-glucosidase (EC 3.2.1.20)
 # (I imagine this could be extracellular, with glucose rather than maltose
 #  being transported; but that is not represented here)
-# Q2PCE2 is ignored because it appears to be misannotated in BRENDA
 # Close homologs are sometimes annotated as maltases (which should be included)
-# or isomaltase (which should not; that refers to hydrolyzing the alpha-1-6 linkage)
-susB	alpha-glucosidase (maltase)	EC:3.2.1.20	ignore:BRENDA::Q2PCE2	ignore_other:maltase
+# or isomaltase (which should not; that refers to hydrolyzing the alpha-1-6 linkage).
+# BRENDA::Q2PCE2 seems surprising but is supported by the underlying paper
+susB	alpha-glucosidase (maltase)	EC:3.2.1.20	ignore_other:maltase
 all: transport susB glk
