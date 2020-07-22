@@ -35,12 +35,26 @@ transport: glcS glcT glcU glcV
 # Pseudomonas fluorescens has a 4-part transporter
 # A related system in P. simiae WCS417 is slightly deleterious during growth on galactose,
 #  so it could be a galactose transporter; it is marked ignore
+# A related system is also found in P. putida (gtsABCD), which does not utilize galactose,
+# but similar systems in other Pseudomonas do seem to be involved in galactose transport
+# (i.e., AO356_05195:AO356_05180 from FW300-N2C3), so gtsABCD is also marked ignore.
 
-PfGW456L13_1894	ABC transporter for D-Galactose and D-Glucose, periplasmic substrate-binding component	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1894	ignore:reanno::WCS417:GFF4324
-PfGW456L13_1895	ABC transporter for D-Galactose and D-Glucose, permease component 1	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1895	ignore:reanno::WCS417:GFF4323
-PfGW456L13_1896	ABC transporter for D-Galactose and D-Glucose, permease component 2	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1896	ignore:reanno::WCS417:GFF4322
-PfGW456L13_1897	ABC transporter for D-Galactose and D-Glucose, ATPase component	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1897	ignore:reanno::WCS417:GFF4321
+PfGW456L13_1894	ABC transporter for D-Galactose and D-Glucose, periplasmic substrate-binding component	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1894	ignore:reanno::WCS417:GFF4324	ignore:TCDB::Q88P38
+PfGW456L13_1895	ABC transporter for D-Galactose and D-Glucose, permease component 1	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1895	ignore:reanno::WCS417:GFF4323	ignore:TCDB::Q88P37
+PfGW456L13_1896	ABC transporter for D-Galactose and D-Glucose, permease component 2	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1896	ignore:reanno::WCS417:GFF4322	ignore:TCDB::Q88P36
+PfGW456L13_1897	ABC transporter for D-Galactose and D-Glucose, ATPase component	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1897	ignore:reanno::WCS417:GFF4321	ignore:TCDB::Q88P35
 transport: PfGW456L13_1894 PfGW456L13_1895 PfGW456L13_1896 PfGW456L13_1897
+
+# Burkholderia phytofirmans and some other Pseudomonas fluorescens (such as FW300-N2E2)
+# have a 3-part galactose transporter. (This P. fluorescens system also transports L-arabinose.)
+
+# BPHYT_RS16935 = B2SYR6; Pf6N2E2_5968 = A0A161H4E4
+BPHYT_RS16935	galactose ABC transporter, substrate-binding component	uniprot:B2SYR6	uniprot:A0A161H4E4
+# BPHYT_RS16930 = B2SYR5; Pf6N2E2_5969 = A0A165ZSX8
+BPHYT_RS16930	galactose ABC transporter, ATPase component	uniprot:B2SYR5	uniprot:A0A165ZSX8
+# BPHYT_RS16925 = B2SYR4; Pf6N2E2_5970 = A0A161GM94
+BPHYT_RS16925	galactose ABC transporter, permease component	uniprot:B2SYR4	uniprot:A0A161GM94
+transport: BPHYT_RS16935 BPHYT_RS16930 BPHYT_RS16925
 
 # PTS systems (forming galactose-6-phosphate)
 
@@ -64,10 +78,12 @@ transport: gal2
 SGLT1	sodium/galactose cotransporter	curated:CharProtDB::CH_091086
 transport: SGLT1
 
-CeSWEET1	galactose tranpsorter	curated:SwissProt::O45102
+CeSWEET1	galactose transporter	curated:SwissProt::O45102
 transport: CeSWEET1
 
-sglS	sodium/glucose cotransporter	curated:SwissProt::P96169
+# Echvi_1871 (L0FZF3) seems to be a glucose/galactose transporter
+# CA265_RS06130 (A0A1X9Z2P8) sees to be a galactose transporter
+sglS	sodium/galactose cotransporter	curated:SwissProt::P96169	uniprot:L0FZF3	uniprot:A0A1X9Z2P8
 transport: sglS
 
 MST1	galactose:H+ symporter	curated:TCDB::A0ZXK6
@@ -88,14 +104,18 @@ galM	galactose 1-epimerase	EC:5.1.3.3
 # Some curated sequences match an HMM and are annotated as galactokinases, but
 # without the EC number.
 galK	galactokinase	EC:2.7.1.6	ignore_other:galactokinase
-galT	UDP-glucose:alpha-D-galactose-1-phosphate uridylyltransferase	EC:2.7.7.12
-galE	UDP-glucose 4-epimerase	EC:5.1.3.2
+# In the reannotations, galT is often misannotated as 2.7.7.10 (using UTP rather than UDP-glucose
+# as the substrate)
+galT	UDP-glucose:alpha-D-galactose-1-phosphate uridylyltransferase	EC:2.7.7.12	curated:reanno::Cola:Echvi_0695	curated:reanno::Pedo557:CA265_RS06120
+
+# Echvi_1472 (L0FXG3) is important for galactose utilization and similar to E. coli galE
+galE	UDP-glucose 4-epimerase	EC:5.1.3.2	uniprot:L0FXG3
 # PH0923 (MONOMER-13382) is both phosphomannomutase and phosphoglucomutase (PMID:16091590)
 pgm	phosphoglucomutase	EC:5.4.2.2	curated:metacyc::MONOMER-13382
 all: transport galM galK galT galE pgm
 
 # MetaCyc Pathway: D-galactose degradation II followed by D-galactonate degradation
-# involves 1-dehdyrogenase forming the 1,4-lactone,
+# involves 1-dehdyrogenase forming the 1,4-lactone [although some enzymes probably form 1,5-lactones],
 # hydrolysis to D-galactonate,
 # and dehydratase, kinase, and aldolase reactions
 # (forming pyruvate and 3-phosphoglycerate)
@@ -103,13 +123,19 @@ all: transport galM galK galT galE pgm
 # Some L-arabinose dehydrogenases (EC 1.1.1.46) are bifunctional
 # Q92RN6 is annotated as a probable galactose dehydrogenase, and mutants are defective in utilization,
 # but was not given this EC number
-galdh	D-galactose 1-dehydrogenase	EC:1.1.1.48	EC:1.1.1.360	ignore_other:1.1.1.46	curated:SwissProt::Q92RN6
-# some galactonolactonases are also L-arabinolactonases (EC 3.1.1.15)
+galdh	D-galactose 1-dehydrogenase (forming 1,4- or 1,5-lactones)	EC:1.1.1.48	EC:1.1.1.360	ignore_other:1.1.1.46	curated:SwissProt::Q92RN6
+
+# Some galactonolactonases are also L-arabinolactonases (EC 3.1.1.15)
 # also BRENDA annotates A3FJ64 (from Bacillus thuringensis) as this, which seems questionable
-lactonase	galactonolactonase	EC:3.1.1.25	ignore_other:3.1.1.15	ignore:BRENDA::A3FJ64
+# Fitness data confirms diverged lactonases N515DRAFT_1229 (A0A1I2AUG6), BPHYT_RS16915 (B2SYR2)
+# PS417_17365 from P. simiae WCS417 (GFF3393) is a galactono-1,5-lactonase, so is not given this EC number
+# Similarly for PfGW456L13_3314
+lactonase	galactonolactonase (either 1,4- or 1,5-lactone)	EC:3.1.1.25	ignore_other:3.1.1.15	ignore:BRENDA::A3FJ64	uniprot:B2SYR2	uniprot:A0A1I2AUG6	curated:reanno::WCS417:GFF3393	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3314
 dgoD	D-galactonate dehydratase	EC:4.2.1.6	EC:4.2.1.140
 # BRENDA misannotates Q9zU29 as dgoK
-dgoK	2-dehydro-3-deoxygalactonokinase	EC:2.7.1.58	EC:2.7.1.178	ignore:BRENDA::Q9ZU29
+# fitness data confirms diverged dgoK's BPHYT_RS16950 (B2SYR9), N515DRAFT_1233 (A0A1I2AR49),
+#   HSERO_RS05160 (D8J0Z3)
+dgoK	2-dehydro-3-deoxygalactonokinase	EC:2.7.1.58	EC:2.7.1.178	ignore:BRENDA::Q9ZU29	uniprot:B2SYR9	uniprot:A0A1I2AR49	uniprot:D8J0Z3
 dgoA	2-dehydro-3-deoxy-6-phosphogalactonate aldolase	EC:4.1.2.21	EC:4.1.2.55
 all: transport galdh lactonase dgoD dgoK dgoA
 
