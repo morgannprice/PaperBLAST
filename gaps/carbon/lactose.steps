@@ -58,7 +58,24 @@ tag16P_aldolase: gatY gatZ
 # forming glucose and galactose, and then galactose utilization
 # via the Leloir pathway or galactose 1-dehydrogenase.
 # glucokinase should also be required to consume the glucose
-lacZ	lactose galactohydrolase	EC:3.2.1.108
+
+# Most lactases are homomeric, but Lactobacillus have a heteromeric enzyme LacLM
+# (There is also a heteromeric beta-galactosidase in barley, BGAL_HORVU / P83252m not dealt with here;
+#  also "evolved beta-galactosidase" ebgA from E. coli is more active with its partner ebgC,
+#  but it retains activity on its own.)
+
+lacL	heteromeric lactase, large subunit	curated:BRENDA::A0SWS3	curated:CAZy::AAA25267.1	curated:CAZy::AAL09167.1	curated:CAZy::ABF72116.1	curated:CAZy::ABJ65308.1	curated:CAZy::ACC38286.1	curated:CAZy::AEG39988.1	curated:CAZy::AEJ32720.1	curated:CAZy::BAA20536.1	curated:CAZy::CAA57730.1	curated:CAZy::CAD65569.1	curated:CAZy::CAZ66936.1	curated:SwissProt::Q7WTB4
+
+lacM	heteromeric lactase, small subunit	curated:BRENDA::A0SWS4	curated:BRENDA::Q19R71	curated:SwissProt::Q7WTB3
+
+# Mark the sequences for lacL or lacM as ignore, and also BGAL_HORVU / P83252
+# Also mark some similar enzymes annotated as beta-glycosidases as ignore
+
+lacZ	lactase (homomeric)	EC:3.2.1.108	EC:3.2.1.23	ignore:BRENDA::A0SWS3	ignore:CAZy::AAA25267.1	ignore:CAZy::AAL09167.1	ignore:CAZy::ABF72116.1	ignore:CAZy::ABJ65308.1	ignore:CAZy::ACC38286.1	ignore:CAZy::AEG39988.1	ignore:CAZy::AEJ32720.1	ignore:CAZy::BAA20536.1	ignore:CAZy::CAA57730.1	ignore:CAZy::CAD65569.1	ignore:CAZy::CAZ66936.1	ignore:SwissProt::Q7WTB4	ignore:BRENDA::A0SWS4	ignore:BRENDA::Q19R71	ignore:SwissProt::Q7WTB3	ignore:SwissProt::P83252	ignore:CAZy::AAA79030.1	ignore:CAZy::AAN05439.1	ignore:CAZy::AAF36392.1	ignore:CAZy::AAN05441.1	ignore:CAZy::ABW87307.1	ignore:CAZy::AAO15361.1	ignore:CAZy::AAN05440.1	ignore:CAZy::ABW01253.1	ignore:CAZy::AAY81155.1	ignore:CAZy::CAA34074.1	ignore:CAZy::ADL19795.1	ignore:CAZy::AEE47485.1	ignore:CAZy::ACK41548.1	ignore:CAZy::ABX04075.1	ignore:CAZy::BAA78713.1
+
+bgal: lacZ
+bgal: lacL lacM
+
 import galactose.steps:galM
 import galactose.steps:galK
 import galactose.steps:galT
@@ -69,11 +86,11 @@ import galactose.steps:lactonase
 import galactose.steps:dgoD
 import galactose.steps:dgoK
 import galactose.steps:dgoA
-galactose: galM galK galT galE pgm
-galactose: galdh lactonase dgoD dgoK dgoA
+galactose_util: galM galK galT galE pgm
+galactose_util: galdh lactonase dgoD dgoK dgoA
 
 import glucose.steps:glk
-all: transport lacZ galactose glk
+all: transport bgal galactose_util glk
 
 # The actual rule for PTS based utilization
 all: PTS pbgal lacA lacB lacC tag16P_aldolase tpi
