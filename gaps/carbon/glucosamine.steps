@@ -1,0 +1,136 @@
+# Transporters were identified using
+# query: transporter:glucosamine:D-glucosamine:CPD-12538:CPD-12539
+
+# ABC transporters:
+
+# A 4-part system in Sinorhizobium meliloti was identified from genetic data;
+# expression of this system is also induced by glucosamine or galactosamine (PMC1635973)
+
+SM_b21216	ABC transporter for D-Glucosamine, ATPase component	curated:reanno::Smeli:SM_b21216
+SM_b21219	ABC transporter for D-Glucosamine, permease component 1	curated:reanno::Smeli:SM_b21219
+SM_b21220	ABC transporter for D-Glucosamine, permease component 2	curated:reanno::Smeli:SM_b21220
+SM_b21221	ABC transporter for D-Glucosamine, substrate-binding protein	curated:reanno::Smeli:SM_b21221
+transport: SM_b21216 SM_b21219 SM_b21220 SM_b21221
+
+# Pseudomonas oxidize glucosamine to glucosaminate using glucose dehydrogenase (PMID:1849886),
+# which is a periplasmic enzyme.
+# So these 4-part "glucosamine" ABC transporters,
+# which were identified by genetic data from various Pseudomonas,
+# are actually glucosaminate transporters
+
+AO353_21715	glucosaminate ABC transporter, permease component 1	curated:reanno::pseudo3_N2E3:AO353_21715	curated:reanno::pseudo6_N2E2:Pf6N2E2_2052	curated:reanno::pseudo5_N2C3_1:AO356_00475
+AO353_21720	glucosaminate ABC transporter, permease component 2	curated:reanno::pseudo3_N2E3:AO353_21720	curated:reanno::pseudo5_N2C3_1:AO356_00470	
+AO353_21725	glucosaminate ABC transporter, ATPase component	curated:reanno::pseudo3_N2E3:AO353_21725	curated:reanno::pseudo5_N2C3_1:AO356_00465	curated:reanno::pseudo6_N2E2:Pf6N2E2_2050
+AO353_21710	glucosaminate ABC transporter, substrate-binding component	curated:reanno::pseudo3_N2E3:AO353_21710	curated:reanno::pseudo5_N2C3_1:AO356_00480	curated:reanno::pseudo6_N2E2:Pf6N2E2_2053
+glucosaminate_transport: AO353_21715 AO353_21720 AO353_21725 AO353_21710
+
+# PTS systems (forming glucosamine-6-phosphate)
+
+# Unified EII-CBA systems in E. coli ("nagE") or B. subtilis ("gamP")
+# Ignore a close homolog of NagE from Klebsiella, annotated as a NAG PTS system, which is not well studied
+# and may well act on glucosamine as well
+gamP	glucosamine PTS system, EII-CBA components (GamP/NagE)	curated:BRENDA::P09323	curated:SwissProt::P39816	ignore:BRENDA::P45604
+PTS: gamP
+
+# The manXYZ system from E. coli where manX has EII-AB, manY has EII-C, and manZ has EII-D
+#   (manZ is listed twice with slightly different sequence lengths)
+
+manX	glucosamine PTS system, EII-AB component ManX	curated:CharProtDB::CH_088329
+manY	glucosamine PTS system, EII-C component ManY	curated:CharProtDB::CH_088330
+manZ	glucosamine PTS system, EII-D component ManZ	curated:SwissProt::P69805	curated:TCDB::P69805
+PTS: manX manY manZ
+
+# Other transporters:
+
+SLC2A2	glucosamine transporter SLC2A2	curated:SwissProt::P11168
+transport: SLC2A2
+
+# periplasmic glucose dehydrogenase
+import glucose.steps:gdh
+
+# NAG kinase, NAG deacetylase, and glucosamine-6-phosphate isomerase/deaminase
+import nag.steps:nagK
+import nag.steps:nagA
+import nag.steps:nagB
+
+# NAG PTS systems
+import nag.steps:nagEcba
+import nag.steps:nagF
+import nag.steps:nagEcb
+import nag.steps:crr
+import nag.steps:ptsB
+import nag.steps:ptsC
+import nag.steps:nagEIIA
+import nag.steps:nagPcb
+nagPTS: nagEcba
+nagPTS: nagF nagEcb
+nagPTS: crr ptsB ptsC
+nagPTS: nagEIIA nagPcb
+
+# NAG ABC transporters
+import nag.steps:SMc02869
+import nag.steps:SMc02872
+import nag.steps:SMc02871
+import nag.steps:SMc02873
+import nag.steps:ngcE
+import nag.steps:ngcF
+import nag.steps:ngcG
+nagtransport: SMc02869 SMc02872 SMc02871 SMc02873
+nagtransport: ngcE ngcF ngcG
+
+# NAG transporters
+import nag.steps:nagP
+import nag.steps:nag3
+import nag.steps:ngt1
+nagtransport: nagP
+nagtransport: nag3
+nagtransport: ngt1
+
+# The glucosaminate pathway involves the periplasmic glucose dehydrogenase (gdh).
+# It is not clear if this forms glucosaminate directly or forms a lactone intermediate.
+# (The latter seems more likely but has not been demonstrated, nor has a lactonase
+#   been identified by genetics; or the lactone might hydrolyze
+#   spontaneously.)
+# Glucosaminate is then taken up and processed by glucosaminate dehydratase
+# (also known as ammonia-lyase). This produces 2-keto-3-deoxy-gluconate (KDGA),
+# which can then be phosphorylated (kdgK) and cleaved by an aldolase (kdgA/eda),
+# yielding glyceraldehyde-3-phosphate and pyruvate.
+# (No phenotypes for kdgK were identified with genetic data, but they could be redundant.)
+# (Alternatively, it is reported that the glucosaminate dehydratase has
+# some aldolase activity, producing glyceraldehye and pyruvate (PMID:7766176).)
+
+# A purified glucosaminate dehydratase "alpha subunit" was determined to be
+# thioredoxin (SwissProt Q93HX6), which seems unlikely to physiologically relevant.
+glucosaminatelyase	glucosaminate ammonia-lyase	EC:4.3.1.9	ignore:SwissProt::Q93HX6
+# The entry for Q9ZU29 is erroneous (the correct accession is Q97U29)
+kdgK	2-keto-3-deoxygluconate kinase	EC:2.7.1.45	EC:2.7.1.178	ignore:BRENDA::Q9ZU29
+kdgA	2-keto-3-deoxygluconate-6-phosphate aldolase    EC:4.1.2.14	EC:4.1.2.55
+all: gdh glucosaminate_transport glucosaminatelyase kdgK kdgA
+
+# A PTS system, or glucosamine kinase, would form glucosamine-6-phosphate,
+# which can be converted by nagB (glucosamine 6-phosphate deaminase (isomerizing))
+# to fructose-6-phosphate
+# Fitness data confirms that SM_b21217 (Q92VI2), a proposed glucosamine kinase, is involved in glucosamine utilization
+kinase	glucosamine kinase	EC:2.7.1.8	EC:2.7.1.147	uniprot:Q92VI2
+all: transport kinase nagB
+all: PTS nagB
+
+# The transmembrane transacetylase (NagX) route involves
+# conversion in the periplasm to N-acetylglucosamine, followed by
+# uptake and catabolism by nagKAB (nagK is not necessary if a PTS
+# system is used).
+
+# These NagX proteins are distantly related to human HGSNAT (Q68CP4),
+# which is a transmembrane acetyl-CoA:alpha-glucosaminide N-acetyltransferase.
+# Genetic data suggests that these bacterial homologs are involved in glucosamine
+# utilization, but not as a transporter -- N-acetylglucosamine utilization
+# gene are also involved. So, they appear to be transmembrane N-acetyltransferases
+# for glucosamine. The key histidine which holds the acetyl group as it passes
+# through the membrane (His269 in NG_009552.1, or His297
+# in Q68CP4) is conserved in these proteins.
+# The bacterial proteins with clear evidence for this role are:
+# Shewana3_3111 (A0KZW6), Sama_0947 (A1S448), and Echvi_1106 (L0FVP4)
+
+nagX	transmembrane glucosamine N-acetyltransferase NagX	uniprot:A0KZW6	uniprot:A1S448	uniprot:L0FVP4
+all: nagX nagtransport nagK nagA nagB
+all: nagX nagPTS nagA nagB

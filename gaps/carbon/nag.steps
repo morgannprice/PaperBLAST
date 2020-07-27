@@ -69,7 +69,8 @@ transport: ngt1
 # Ignore a putative NAG deacetylase from C. albicans, not given this EC number, in CharProtDB
 nagA	N-acetylglucosamine 6-phosphate deacetylase	EC:3.5.1.25	ignore:CharProtDB::CH_123434
 # Add the Candida isomerase, not given this EC number by CharProtDB
-nagB	glucosamine 6-phosphate deaminase (isomerizing)	EC:3.5.99.6	curated:CharProtDB::CH_123433
+# And fitness data confirms the proposal that SM_b21218 (Q92VI1) is this enzyme
+nagB	glucosamine 6-phosphate deaminase (isomerizing)	EC:3.5.99.6	curated:CharProtDB::CH_123433	uniprot:Q92VI1
 all: PTS nagA nagB
 
 # MetaCyc Pathway: N-acetylglucosamine degradation II is similar
