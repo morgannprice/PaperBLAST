@@ -96,23 +96,26 @@ mglC	glucose ABC transporter, permease component (MglC)	curated:TCDB::G4FGN4	cur
 # The system in P. fluorescens is very similar (~90% a.a. identity) to PS417_22145:PS417_22130 (GFF4324:GFF4321),
 # which genetic data suggest are a glucose-6-phosphate transporter. Could they be a glucose transporter
 # instead? Not sure, so ignore those.
+# Fitness data also identified a gtsABCD-like glucose transporter in Acidovorax sp. GW101-3H11
+# (Ac3H11_2062:Ac3H11_2064:Ac3H11_2065:Ac3H11_2066; A0A165KPY4, A0A165KPZ4, A0A165KQ00, A0A165KQ08)
+
 #
 # gtsA, substrate-binding component
 # Cluster 15, 414-432 amino acids (P. putida, P. fluorescens, Thermus)
-gtsA	glucose ABC transporter, substrate-binding component (GtsA)	curated:TCDB::Q88P38	curated:TCDB::Q72KX2	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1894	ignore:reanno::WCS417:GFF4324
+gtsA	glucose ABC transporter, substrate-binding component (GtsA)	curated:TCDB::Q88P38	curated:TCDB::Q72KX2	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1894	ignore:reanno::WCS417:GFF4324	uniprot:A0A165KPY4
 
 # gtsB, permease component 1
 # Cluster 20, 302-302 amino acids (P. putida, P. fluorescens)
 # and Q72KX3 from Thermus (369 a.a.)
-gtsB	glucose ABC transporter, permease component 1 (GtsB)	curated:TCDB::Q88P37	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1895	curated:TCDB::Q72KX3	ignore:reanno::WCS417:GFF4323 
+gtsB	glucose ABC transporter, permease component 1 (GtsB)	curated:TCDB::Q88P37	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1895	curated:TCDB::Q72KX3	ignore:reanno::WCS417:GFF4323	uniprot:A0A165KPZ4
 
 # gtsC, permease component 2
 # Cluster 16, 268-281 amino acids (Thermus, P. putida, P. fluorescens)
-gtsC	glucose ABC transporter, permease component 2 (GtsC)	curated:TCDB::Q72KX4	curated:TCDB::Q88P36	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1896	ignore:reanno::WCS417:GFF4322
+gtsC	glucose ABC transporter, permease component 2 (GtsC)	curated:TCDB::Q72KX4	curated:TCDB::Q88P36	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1896	ignore:reanno::WCS417:GFF4322	uniprot:A0A165KQ00
 
 # gtsD, ATPase component
 # Cluster 13, 353-386 amino acids (Thermus, P. putida, P. fluorescens; exclude Saccharolobus)
-gtsD	glucose ABC transporter, ATPase component (GtsD)	curated:TCDB::Q72L52	ignore:BRENDA::Q97UY8	curated:TCDB::Q88P35	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1897	ignore:reanno::WCS417:GFF4321
+gtsD	glucose ABC transporter, ATPase component (GtsD)	curated:TCDB::Q72L52	ignore:BRENDA::Q97UY8	curated:TCDB::Q88P35	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1897	ignore:reanno::WCS417:GFF4321	uniprot:A0A165KQ08
 
 # ABC transporter glcSTUV from Saccharolobus/Sulfolobus
 glcS	glucose ABC transporter, substrate-binding component (GlcS)	curated:SwissProt::Q97UZ1
@@ -226,7 +229,7 @@ gnl	gluconolactonase	EC:3.1.1.17	uniprot:Q9HWH7
 #	BRENDA includes only A4PIB0
 # PMID:27392695 shows that overexpressing GOX1232 to GOX1230 (Q5FRK3 G5EBD9 Q5FRK5), paralogs of gndSLC,
 #   leads to increased production of 2-ketogluconate; BRENDA includes only Q5FRK5
-# Finally, C0LE03 is listed by BRENDA as a 2-gluconate dehydrogenase and is nearly identical to
+# Finally, C0LE03 is listed by BRENDA as a gluconate 2-dehydrogenase and is nearly identical to
 # Q4KKM7 = metacyc:MONOMER-12745, so include that as well.
 # Some papers also mention GOX0147 = 5FTU6 but that is the cytoplasmic 2-ketogluconate reductase
 
@@ -237,7 +240,7 @@ gadh2	gluconate 2-dehydrogenase cytochrome c subunit	curated:SwissProt::O34215	c
 gadh3	gluconate 2-dehydrogenase subunit 3	curated:SwissProt::O34213	curated:metacyc::MONOMER-12747	uniprot:A4PIA9	uniprot:Q5FRK3
 
 # kguT = KU168042 = A0A167V864 was shown to be required for 2-ketogluconate utilization (PMID:30109560)
-kguT	2-gluconate transporter	uniprot:A0A167V864
+kguT	2-ketogluconate transporter	uniprot:A0A167V864
 
 kguK	2-ketogluconokinase	EC:2.7.1.13
 
