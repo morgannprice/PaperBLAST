@@ -23,6 +23,7 @@ use pbutils; # for ReadFastaEntry(), Curated search functions
 use pbweb qw{start_page finish_page loggerjs AddCuratedInfo};
 use URI::Escape;
 use HTML::Entities;
+sub TransporterMatch($$$);
 
 my $base = "../data";
 my $sqldb = "$base/litsearch.db";
