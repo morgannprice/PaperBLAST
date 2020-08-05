@@ -1482,7 +1482,7 @@ sub ShowCandidatesForStep($$$$) {
   my ($orgsSpec, $set, $stepRow, $candHash) = @_;
   return ("","") unless defined $stepRow;
   my $orgId = $stepRow->{orgId} || die;
-  my $locusHash = $candHash->{$orgId} || die;
+  my $locusHash = $candHash->{$orgId};
   my @work = ();
   push @work, [ $stepRow->{locusId}, $stepRow->{sysName},  $stepRow->{score} ]
     if $stepRow->{locusId} ne "";
