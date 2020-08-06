@@ -15,6 +15,8 @@
 # file -- uploaded fasta file (used to create orgs)
 #	(This usually leads to running the analysis, or showing
 #	the overview page)
+# pathByScore -- sort pathways by score instead of by name
+#	(in all pathways for this organism mode)
 #
 # Modes of this viewer:
 # If gdb and gquery are set, search for relevant genomes
@@ -668,9 +670,25 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
       die if exists $sumSteps{$st->{pathway}}{$st->{step}};
       $sumSteps{$st->{pathway}}{$st->{step}} = $st;
     }
+    my @allSorted = ();
     foreach my $path (@path) {
-      my $all = $all{$path} || die "Missing result for rule = all and orgId = $orgId in $sumpre.rules\n"
-        unless @all == 1;
+      my $all = $all{$path}
+        || die "Missing result for rule = all, path $path, orgId = $orgId in $sumpre.rules\n";
+      # XXX I don't think this was necessary:  unless @all == 1;
+      $all->{minScore} = 2;
+      $all->{minScore} = 0 if $all->{nLo} > 0;
+      $all->{minScore} = 1 if $all->{nMed} > 0;
+      $all->{n} = $all->{nHi} + $all->{nMed} + $all->{nLo};
+      push @allSorted, $all;
+    }
+    if (param('pathByScore')) {
+      # The same sorting as used to choose between paths in gapsummary.pl
+      @allSorted = sort { $b->{minScore} <=> $a->{minScore}
+                              || $b->{score} <=> $a->{score}
+                              || $b->{n} <=> $a->{n} } @allSorted;
+    }
+    foreach my $all (@allSorted) {
+      my $path = $all->{pathway};
       my @show = ();
 
       my $st = GetStepsObj($stepPath, $path);
@@ -686,6 +704,14 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
     print LegendForColorCoding();
+    my $baseURL = "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId";
+    if (param('pathByScore')) {
+      print p("Pathways are sorted by completeness.",
+              a({-href => $baseURL}, "Sort by name instead."));
+    } else {
+      print p("Pathways are sorted by name.",
+              a({-href => "${baseURL}&pathByScore=1"}, "Sort by completness instead."));
+    }
     ShowWarnings(\@warn, $orgsSpec, $set, $orgId);
   } elsif ($orgId ne "" && $pathSpec ne "" && $step eq "" && $locusSpec eq "") {
     # mode: Overview of this pathway in this organism
