@@ -91,7 +91,8 @@ all: PTS scrB scrK
 # MetaCyc Pathway: sucrose degradation II (sucrose synthase)
 # transport followed by sucrase synthase (in reverse), forming fructose and UDP-glucose
 # The fructose is phosphorylated as above.
-# The UDP-glucose is transformed to glucose-6-phosphate by a pyrophosphorylase and a glucomutase
+# The UDP-glucose is transformed to glucose-6-phosphate by a pyrophosphorylase and
+# phosphoglucomutase (pgmA)
 
 # Ignore sucrose-phosphate synthase BAA08304.1, given the wrong EC in CAZy
 # and similarly the sucrose-phosphate synthase from Thermosipho melanesiensis A6LKE9 (see PMID:25846332)
@@ -101,9 +102,9 @@ SUS	sucrose synthase	EC:2.4.1.13	ignore:CAZy::BAA08304.1	ignore:BRENDA::A6LKE9
 galU	glucose 1-phosphate uridylyltransferase	EC:2.7.7.9	EC:2.7.7.64	ignore:BRENDA::Q8GQP9
 
 # PH0923 (MONOMER-13382) is both phosphomannomutase and phosphoglucomutase (PMID:16091590)
-pgi	phosphoglucomutase	EC:5.4.2.2	curated:metacyc::MONOMER-13382
+import galactose.steps:pgmA
 
-all: transport SUS scrK galU pgi
+all: transport SUS scrK galU pgmA
 
 # MetaCyc Pathway: sucrose degradation III (sucrose invertase)
 # transport followed by cleavage to glucose + fructose and phosphorylation of each
@@ -124,7 +125,7 @@ all: transport ams scrK glk
 
 scrP	sucrose phosphorylase	EC:2.4.1.7
 
-all: transport scrP scrK pgi
+all: transport scrP scrK pgmA
 
 # MetaCyc Pathway: sucrose degradation V (sucrose alpha-glucosidase)
 # overlaps with III and is reported only in mammals, ignore

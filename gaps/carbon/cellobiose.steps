@@ -155,10 +155,10 @@ all: transport bgl glk
 
 # After transport, cellobiose phosphorylase cleaves cellobiose
 # into glucose and alpha-glucose-1-phosphate.
-# alpha-phosphoglucomutase converts the glucose-1-P to glucose-6-phosphate
+# alpha-phosphoglucomutase (pgmA) converts the glucose-1-P to glucose-6-phosphate
 # and glucokinase converts glucose to glucose-6-phosphate
 cbp	cellobiose phosphorylase	EC:2.4.1.20
-pgmA	alpha-phosphoglucomutase	EC:5.4.2.2
+import galactose.steps:pgmA
 all: transport cbp pgmA glk
 
 # After transport and phosphorylation by a PTS system,

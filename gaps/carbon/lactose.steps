@@ -79,14 +79,14 @@ bgal: lacL lacM
 import galactose.steps:galK
 import galactose.steps:galT
 import galactose.steps:galE
-import galactose.steps:pgm
+import galactose.steps:pgmA
 import galactose.steps:galdh
 import galactose.steps:lactonase
 import galactose.steps:dgoD
 import galactose.steps:dgoK
 import galactose.steps:dgoA
 galM	galactose 1-epimerase	EC:5.1.3.3
-galactose_util: galM galK galT galE pgm
+galactose_util: galM galK galT galE pgmA
 galactose_util: galdh lactonase dgoD dgoK dgoA
 
 import glucose.steps:glk

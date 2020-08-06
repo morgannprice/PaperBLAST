@@ -163,5 +163,5 @@ all: PTS trePP pgmB
 # which are converted to glucose-6-P by alpha-phosphoglucomutase and glk
 # (This is a fungal pathway and might not occur in prokaryotes.)
 PsTP	trehalose phosphorylase	EC:2.4.1.231
-pgmA	alpha-phosphoglucomutase	EC:5.4.2.2
+import galactose.steps:pgmA
 all: transport PsTP pgmA glk
