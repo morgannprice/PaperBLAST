@@ -111,6 +111,7 @@ all: transport man_isomerase scrK
 
 # Or mannokinase folowed by manA
 # SMc03109 was annotated as mannokinase but not given this EC number
-mannokinase	D-mannose kinase	EC:2.7.1.7	curated:reanno::Smeli:SMc03109
+# rokA (MONOMER-19002) and hexA (Q5GAN8) are hexose kinases, including mannose kinases (PMID:PMC545704)
+mannokinase	D-mannose kinase	EC:2.7.1.7	curated:reanno::Smeli:SMc03109	curated:metacyc::MONOMER-19002	uniprot:Q5GAN8
 all: transport manA mannokinase
 
