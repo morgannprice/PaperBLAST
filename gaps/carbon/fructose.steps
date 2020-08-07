@@ -131,6 +131,10 @@ transport: frt1
 fruP	fructose porter FruP	uniprot:A0A1I2JXG1
 transport: fruP
 
+# The putative hexose transporter BT1758 (Q8A6W8) is important for fructose and levan utilization
+# It is in a fructan utilization cluster, so was propsoed to be the fructose transporter (see PMC3225772)
+BT1758	fructose transporter	uniprot:Q8A6W8
+
 # For PTS forming fructose 6-phosphate, no further steps are needed to reach
 # central metabolism
 all: PTS_6_phosphate
