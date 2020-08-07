@@ -52,11 +52,12 @@ malK_Aa	maltose ABC transporter, ATPase component	curated:BRENDA::Q70HW1
 transport: malE_Aa malF_Aa malG_Aa malK_Aa
 
 # Sinorhizobium meliloti has a second system, algEFGK
-aglE	maltose ABC transporter, substrate-binding component AglK	curated:TCDB::Q9Z3R5
-aglF	maltose ABC transporter, permease component 1 (AglF)	curated:reanno::Smeli:SMc03062
-aglG	maltose ABC transporter, permease component 2 (AglG)	curated:reanno::Smeli:SMc03063
-aglK	maltose ABC transporter, ATPase component AglK	curated:reanno::Smeli:SMc03065
-transport: aglE aglF aglG aglK
+# Use .Sm names to avoid confusion with the glucose transporter algEFGK
+aglE.Sm	maltose ABC transporter, substrate-binding component AglK	curated:TCDB::Q9Z3R5
+aglF.Sm	maltose ABC transporter, permease component 1 (AglF)	curated:reanno::Smeli:SMc03062
+aglG.Sm	maltose ABC transporter, permease component 2 (AglG)	curated:reanno::Smeli:SMc03063
+aglK.Sm	maltose ABC transporter, ATPase component AglK	curated:reanno::Smeli:SMc03065
+transport: aglE.Sm aglF.Sm aglG.Sm aglK.Sm
 
 # Bdellovibrio bacteriovorus has fused malEF (Bd1227, Q6MNM0)
 # and also malG, malK.
@@ -119,6 +120,47 @@ transport: malAP
 malI	maltose transporter	curated:TCDB::Q9A612	uniprot:A0A1X9ZCC9
 transport: malI
 
+# To represent hydrolysis in the periplasm and utilization of glucose,
+# import the various transporters and PTS systems.
+import glucose.steps:ptsG-crr
+import glucose.steps:ptsG
+import glucose.steps:crr
+import glucose.steps:bglF
+import glucose.steps:manX
+import glucose.steps:manY
+import glucose.steps:manZ
+glucosePTS: ptsG-crr
+glucosePTS: bglF
+glucosePTS: ptsG crr
+glucosePTS: manX manY manZ
+
+import glucose.steps:mglA
+import glucose.steps:mglB
+import glucose.steps:mglC
+import glucose.steps:gtsA
+import glucose.steps:gtsB
+import glucose.steps:gtsC
+import glucose.steps:gtsD
+import glucose.steps:glcS
+import glucose.steps:glcT
+import glucose.steps:glcU
+import glucose.steps:glcV
+import glucose.steps:aglE
+import glucose.steps:aglF
+import glucose.steps:aglG
+import glucose.steps:aglK
+import glucose.steps:MFS_glucose
+import glucose.steps:SSS_glucose
+import glucose.steps:glcU_Firmicutes
+
+glucosetransport: mglA mglB mglC
+glucosetransport: gtsA gtsB gtsC gtsD
+glucosetransport: glcS glcT glcU glcV
+glucosetransport: aglE aglF aglG aglK
+glucosetransport: MFS_glucose
+glucosetransport: SSS_glucose
+glucosetransport: glcU_Firmicutes
+
 # MetaCyc Pathway: maltose degradation involves
 # maltose phosphorylase (releasing beta-glucose-1-phosphate and glucose)
 # and beta-phosphoglucomutase (forming glucose-6-phosphate, a central metabolite)
@@ -146,5 +188,10 @@ all: PTS mapP malP pgmB glk
 # Close homologs are sometimes annotated as maltases (which should be included)
 # or isomaltase (which should not; that refers to hydrolyzing the alpha-1-6 linkage).
 # BRENDA::Q2PCE2 seems surprising but is supported by the underlying paper
-susB	alpha-glucosidase (maltase)	EC:3.2.1.20	ignore_other:maltase
+# susB from Bacteroides thetaiotaomicron (G8JZS4) is a periplasmic maltase
+#   (it also active on longer substrates) and is important for maltose utilization
+susB	alpha-glucosidase (maltase)	EC:3.2.1.20	uniprot:G8JZS4	ignore_other:maltase
 all: transport susB glk
+
+all: susB glucosetransport glk
+all: susB glucosePTS
