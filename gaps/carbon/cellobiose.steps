@@ -144,7 +144,14 @@ glucosetransport: MFS_glucose
 glucosetransport: SSS_glucose
 glucosetransport: glcU_Firmicutes
 
-bgl	cellobiase	EC:3.2.1.21
+# AAB62870.1 is annotated in CAZy as a beta-glucosidase, but
+# but I was unable to find any data supporting this annotation.
+# In PMID:9811648, the authors of the genbank entry report knocking out this gene
+# (which they call bglA), but they did not report a phenotype.
+# This protein is 78% identical to BT3567, which
+# cleaves beta,1-2 and beta,1-3 linkages (see PMID:28343388 and fitness data);
+# and has little activity on cellobiose
+bgl	cellobiase	EC:3.2.1.21	ignore:CAZy::AAB62870.1
 all: bgl glucosePTS
 import glucose.steps:glk
 all: bgl glucosetransport glk
