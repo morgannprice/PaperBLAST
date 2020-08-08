@@ -690,7 +690,7 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
                     a({-href => $baseURL}, "Sort by name instead.")));
     } else {
       print p(small("Pathways are sorted by name.",
-                    a({-href => "${baseURL}&pathByScore=1"}, "Sort by completness instead.")));
+                    a({-href => "${baseURL}&pathByScore=1"}, "Sort by completeness instead.")));
     }
     foreach my $all (@allSorted) {
       my $path = $all->{pathway};
