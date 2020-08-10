@@ -86,6 +86,113 @@ scrB	sucrose-6-phosphate hydrolase	curated:CAZy::CAG25843.1	curated:CAZy::S68598
 # ignore fragmentary sequence of Q09123
 scrK	fructokinase	EC:2.7.1.4	ignore:SwissProt::Q09123
 
+import glucose.steps:glk
+
+# Because sucrose can be hydrolyzed in the periplasm, need
+# to represent glucose and fructose uptake
+
+import glucose.steps:ptsG-crr
+import glucose.steps:ptsG
+import glucose.steps:crr
+import glucose.steps:bglF
+import glucose.steps:manX
+import glucose.steps:manY
+import glucose.steps:manZ
+glucosePTS: ptsG-crr
+glucosePTS: bglF
+glucosePTS: ptsG crr
+glucosePTS: manX manY manZ
+
+import glucose.steps:mglA
+import glucose.steps:mglB
+import glucose.steps:mglC
+import glucose.steps:gtsA
+import glucose.steps:gtsB
+import glucose.steps:gtsC
+import glucose.steps:gtsD
+import glucose.steps:glcS
+import glucose.steps:glcT
+import glucose.steps:glcU
+import glucose.steps:glcV
+import glucose.steps:MFS_glucose
+import glucose.steps:SSS_glucose
+import glucose.steps:glcU_Firmicutes
+
+glucosetransport: mglA mglB mglC
+glucosetransport: gtsA gtsB gtsC gtsD
+glucosetransport: glcS glcT glcU glcV
+glucosetransport: aglE aglF aglG aglK
+glucosetransport: MFS_glucose
+glucosetransport: SSS_glucose
+glucosetransport: glcU_Firmicutes
+
+import fructose.steps:fruA
+import fructose.steps:fruB
+import fructose.steps:fruI
+import fructose.steps:fruD
+fructosePTS1phosphate: fruA fruB
+fructosePTS1phosphate: fruA fruI
+fructosePTS1phosphate: fruA fruD
+
+# fructose-1-phosphate from a PTS system would be utilized via 1-phosphofructokinase,
+# frcutose-1,6-bisphosphate aldolase, and triose-phosphate isomerase
+import fructose.steps:1pfk
+import fructose.steps:fba
+import fructose.steps:tpi
+
+import fructose.steps:levD
+import fructose.steps:levE
+import fructose.steps:levDE
+import fructose.steps:levF
+import fructose.steps:levG
+
+fructosePTS6phosphate: levD levE levF levG
+fructosePTS6phosphate: levDE levF levG
+
+import fructose.steps:araV
+import fructose.steps:araU
+import fructose.steps:araT
+import fructose.steps:araS
+fructosetransport: araV araU araT araS
+
+import fructose.steps:fruE
+import fructose.steps:fruF
+import fructose.steps:fruG
+import fructose.steps:fruK
+fructosetransport: fruE fruF fruG fruK
+
+import fructose.steps:frcA
+import fructose.steps:frcB
+import fructose.steps:frcC
+fructosetransport: frcA frcB frcC
+
+import fructose.steps:ffz
+fructosetransport: ffz
+import fructose.steps:glcP
+fructosetransport: glcP
+import fructose.steps:ght6
+fructosetransport: ght6
+import fructose.steps:STP6
+fructosetransport: STP6
+import fructose.steps:THT2A
+fructosetransport: THT2A
+import fructose.steps:frt1
+fructosetransport: frt1
+import fructose.steps:fruP
+fructosetransport: fruP
+import fructose.steps:BT1758
+fructosetransport: BT1758
+
+# Bacteroides thetaiotaomicron and Sphingomonas koreensis probably hydrolyze
+# sucrose in the periplasm, followed by uptake of both fructose and glucose.
+
+usefructose: fructosetransport scrK
+usefructose: fructosePTS6phosphate
+usefructose: fructosePTS1phosphate 1pfk fba tpi
+
+useglucose: glucosetransport glk
+useglucose: glucosePTS
+
 all: PTS scrB scrK
 
 # MetaCyc Pathway: sucrose degradation II (sucrose synthase)
@@ -112,10 +219,9 @@ all: transport SUS scrK galU pgmA
 # The annotation of P93291 (AtMg00260) in BRENDA is questionable
 # And the original reannotation of AO356_28590 was as sucrose 6-phosphate hydrolase,
 # but it is probably a sucrose hydrolase. Also, PMID:29808622 has evidence that
-# the related protein PFL_3237 (cscA, Q4KBP1) is a sucrose hydrolase
-ams	sucrose hydrolase (invertase)	EC:3.2.1.26	EC:3.2.1.48	term:sucrose hydrolase	ignore:BRENDA::P93291	curated:reanno::pseudo5_N2C3_1:AO356_28590	uniprot:Q4KBP1
-
-glk	glucokinase	EC:2.7.1.1	EC:2.7.1.2
+# the related protein PFL_3237 (cscA, Q4KBP1) is a sucrose hydrolase.
+# Inulinases (3.2.1.7) often cleave sucrose and so are ignored
+ams	sucrose hydrolase (invertase)	EC:3.2.1.26	EC:3.2.1.48	EC:3.2.1.80	term:sucrose hydrolase	ignore:BRENDA::P93291	curated:reanno::pseudo5_N2C3_1:AO356_28590	uniprot:Q4KBP1	ignore_other:3.2.1.7
 
 all: transport ams scrK glk
 
@@ -123,7 +229,8 @@ all: transport ams scrK glk
 # transport followed by phosphorylase, producing fructose and glucose 1-phosphate,
 # which are transformed as above
 
-scrP	sucrose phosphorylase	EC:2.4.1.7
+# glucosylglycerate phosphorylase (ycjM or b1309 or AAC74391.2) is misannotated as sucrose phosphorylase in CAZy
+scrP	sucrose phosphorylase	EC:2.4.1.7	ignore:CAZy::AAC74391.2
 
 all: transport scrP scrK pgmA
 
@@ -140,3 +247,4 @@ all: transport scrP scrK pgmA
 # may be periplasmic.  Neither the transporter nor the 3-ketoglucose
 # reductases are understood.
 
+all: ams useglucose usefructose
