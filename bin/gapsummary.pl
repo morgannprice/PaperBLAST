@@ -304,8 +304,8 @@ sub MergeHits($$$$$$);
                              && $_->{locusId} ne $merge->{locusId2} } @cand;
             push @cand, $merge;
             # Re-sort and re-truncate the list
-            @cand = sort { $b->{score} <=> $a->{score}
-                             || $a->{fromCurated} <=> $b->{fromCurated}
+            @cand = sort { ($b->{score} || 0) <=> ($a->{score} || 0)
+                             || ($a->{fromCurated} || 0) <=> ($b->{fromCurated}||0)
                              || $b->{maxBits} <=> $a->{maxBits}
                              || $b->{locusId} cmp $a->{locusId} } @cand;
             @cand = splice(@cand, 0, $maxCand) if @cand > $maxCand;
