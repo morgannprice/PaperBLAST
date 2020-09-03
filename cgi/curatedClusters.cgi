@@ -961,7 +961,8 @@ sub TransporterMatch($$$) {
       # or may appear as "glucose-binding"
       # or because another term like "6-phosphate" could be present as the next word.
       # That last issue is not handled.
-      my $b = "[,/ ]"; # pattern for word boundary
+      # Allow : because of cases like gluconate:H+ symporter
+      my $b = "[,/ :]"; # pattern for word boundary
       if ($desc =~ m!^$pattern$b!i # at beginning
           || $desc =~ m!$b$pattern$b!i # in middle
           || $desc =~ m!$b$pattern$!i # at end
