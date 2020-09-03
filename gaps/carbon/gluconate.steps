@@ -1,0 +1,75 @@
+# Transporters were identified using
+# query: transporter:gluconate:D-gluconate
+
+# A TRAP type transporter for gluconate is described in Sinorhizobium meliloti (PMID:19060150)
+# SMa0249 (gntA, Q930R3) is the small permease component
+# SMa0250 (gntB, Q930R2) is the large permease component
+# SMa0252 (gntC, Q930R1) is the periplasmic solute-binding component
+# Fitness data identified related systems in Azospirillum brasilense Sp245, Pseudomona stutzeri RCH2, Acidovorax sp. GW101-3H11
+#   AZOBR_RS15925 = AZOBR_p130075 = G8AR26 is the small permease component; it was originally
+#     annotated as a pseudogene
+#   AZOBR_RS15920 is the large permease component
+#   AZOBR_RS15915 = G8AR24 is the solute receptor (DctP-like) 
+# In psRCH2, these are Psest_2123, Psest_2124, Psest_2125 (GFF2080:GFF2082); the small permease component
+#     is fused to gluconokinase
+# In Acidovorax, these are Ac3H11_3228 (A0A165IVI0), Ac3H11_3227 (A0A165IWV9), Ac3H11_3226 (A0A165IVH1)
+gntA	gluconate TRAP transporter, small permease component	uniprot:Q930R3	uniprot:G8AR26	curated:reanno::psRCH2:GFF2080	uniprot:A0A165IVI0
+gntB	gluconate TRAP transporter, large permease component	uniprot:Q930R2	curated:reanno::azobra:AZOBR_RS15920	curated:reanno::psRCH2:GFF2081	uniprot:A0A165IWV9
+gntC	gluconate TRAP transporter, periplasmic solute-binding component	uniprot:Q930R1	uniprot:G8AR24	curated:reanno::psRCH2:GFF2082	uniprot:A0A165IVH1
+transport: gntA gntB gntC
+
+# PTS systems (forming 6-phosphogluconate)
+# Ignore TC 4.A.6.1.14 / Q8DR76 which transports disaccharides of glucuronate
+
+gntEIIA	gluconate PTS system, IIA component	curated:TCDB::Q82ZC8
+gntEIIB	gluconate PTS system, IIB component	curated:TCDB::Q82ZC7
+gntEIIC	gluconate PTS system, IIC component	curated:TCDB::Q82ZC5
+gntEIID	gluconate PTS system, IID component	curated:TCDB::Q82ZC6
+PTS: gntEIIA gntEIIB gntEIIC gntEIID
+
+
+gntT	gluconate:H+ symporter GntT	curated:SwissProt::P39344	curated:SwissProt::P39835	curated:TCDB::P0AC94	curated:TCDB::P0AC96	curated:TCDB::P12012	curated:reanno::BFirm:BPHYT_RS16725	curated:reanno::Cup4G11:RR42_RS28835
+transport: gntT
+
+ght3	gluconate transporter Ght3	curated:CharProtDB::CH_091200
+transport: ght3
+
+# Ignore CharProtDB::CH_122791 (PTH1), not actually characterized
+# Ignore Gluconate transport inducer 1 (O14367)
+# Ignore the non-specific transporter ClC-5
+
+# Gluconate is converted to gluconate-6-phosphate by gluconate kinase,
+# and then catabolized by either the Entner-Doudoroff pathway (edd and
+# eda) or the oxidative pentose phosphate pathway (gnd, rpe, rpi).
+# (MetaCyc pathway D-gluconate degradation)
+#
+# Alternatively, gluconate can be oxidized in the periplasm to
+# 2-ketogluconate, see glucose degradation (oxidative)
+
+# Psest_2123 (GFF2080) is a fusion of the TRAP component and gluconate kinase (but was not given the EC number)
+# CH_125646 is annotated as gluconokinase but was not given the EC number
+gntK	D-gluconate kinase	EC:2.7.1.12	curated:reanno::psRCH2:GFF2080	ignore:BRENDA::Q61036	ignore:BRENDA::Q29502	curated:CharProtDB::CH_125646
+
+gluconate_phosphate: PTS
+gluconate_phosphate: transport gntK
+
+# This forms ribulose-5-phosphate
+gnd	6-phosphogluconate dehydrogenase, decarboxylating	EC:1.1.1.44	EC:1.1.1.343
+
+# ribulose-phosphate isomerase converts it to ribose-5-phosphate, which is a central
+# metabolic intermediate.
+import xylose.steps:rpi
+
+import glucose.steps:edd
+import glucose.steps:eda
+import glucose.steps:gadh1
+import glucose.steps:gadh2
+import glucose.steps:gadh3
+import glucose.steps:kguT
+import glucose.steps:kguK
+import glucose.steps:kguD
+
+all: gluconate_phosphate edd eda
+all: gluconate_phosphate gnd rpi
+all: gadh1 gadh2 gadh3 kguT kguK kguD edd eda
+

@@ -1,0 +1,153 @@
+# Transporters were identified using:
+# query: transporter:propionate:propanoate
+
+# Pdr12p is an exporter, ignored
+# Also ignore Best1, a Ca2+ activated anion channel
+
+putP	propionate transporter; proline:Na+ symporter	curated:SwissProt::P07117
+transport: putP
+
+SLC5A8	sodium-coupled monocarboxylate transporter	curated:SwissProt::Q8N695
+transport: SLC5A8
+
+# Shewana3_2904 (A0KZB2) from Shewanella sp. ANA-3 is important for propionate utilization;
+# it is also a lactate permease.
+# Similarly, the distantly related SO0827 from Shewanella oneidensis (Q8EIL2) is
+# important for propionate utilization.
+lctP	propionate permease	uniprot:A0KZB2	uniprot:Q8EIL2
+transport: lctP
+
+mctC	propionate:H+ symporter	curated:SwissProt::Q8NS49
+transport: mctC
+
+mctP	propionate permease	curated:TCDB::Q8VM88	curated:SwissProt::Q1M7A2
+transport: mctP
+
+# propionyl-CoA carboxylase is a heteromer, usually with alpha and beta subunits pccAB.
+# Haloferax mediterranei has a third subunit as well (pccX), which is not described here.
+
+pccA	propionyl-CoA carboxylase, alpha subunit	curated:BRENDA::P05165	curated:BRENDA::Q19842	curated:SwissProt::I3R7G3	curated:SwissProt::P0DTA4	curated:SwissProt::Q5LUF3	curated:SwissProt::Q91ZA3	curated:metacyc::MONOMER-13589	curated:metacyc::MONOMER-8606	curated:reanno::Dino:3607308	curated:reanno::PS:Dsui_0516	ignore_other:6.4.1.3
+
+pccB	propionyl-CoA carboxylase, beta subunit	curated:BRENDA::P05166	curated:BRENDA::Q20676	curated:BRENDA::Q9X4K7	curated:SwissProt::I3R7F1	curated:SwissProt::P53003	curated:SwissProt::P79384	curated:SwissProt::Q168G2	curated:SwissProt::Q3J4E3	curated:SwissProt::Q99MN9	curated:metacyc::MONOMER-13598	curated:metacyc::MONOMER-16260	curated:metacyc::MONOMER-17283	curated:metacyc::MONOMER-17284	curated:metacyc::MONOMER-8607	curated:reanno::Dino:3607303	curated:reanno::PS:Dsui_0517	ignore_other:6.4.1.3
+
+propionyl_CoA_carboxylase: pccA pccB
+
+# Acidianus brierleyi has a diverged pccA split into two pieces
+pccA1	propionyl-CoA carboxylase, biotin carboxyl carrier subunit	curated:metacyc::MONOMER-13597	ignore_other:6.4.1.3
+pccA2	propionyl-CoA carboxylase, biotin carboxylase subunit	curated:metacyc::MONOMER-13596	ignore_other:6.4.1.3
+propionyl_CoA_carboxylase: pccA1 pccA2 pccB
+
+# MetaCyc Pathway: 2-methylcitrate cycle I
+# propionate is activated to propionyl-CoA and
+# then combined with oxalacetate to give methylcitrate.
+# methylcitrate is dehydrated to cis-2-methylaconitate,
+# hydrated to (2R,3S)-2-methylisocitrate,
+# and a lyase produces pyruvate and succinate.
+# succinate would then be oxidized to oxalacetate
+# by succinate dehydrogenase (sdhABC or frdABCD), fumerase (fum),
+# and malate dehydrogenase (mdh)
+
+# Many acetyl-CoA synthetases (EC 6.2.1.1) are also propionyl-CoA synthetases
+prpE	propionyl-CoA synthetase	EC:6.2.1.17	ignore_other:6.2.1.1
+
+# P45858 is annotated by SwissProt as 2-methylcitrate synthase, but without this EC number
+prpC	2-methylcitrate synthase	EC:2.3.3.5	curated:BRENDA::P45858
+
+prpD	2-methylcitrate dehydratase	EC:4.2.1.79
+
+# Many aconitate hydratases are closely related to (2R,3S)-2-methylcitrate dehydratases
+acn	(2R,3S)-2-methylcitrate dehydratase	EC:4.2.1.99	ignore_other:4.2.1.3
+
+# Many 2-methylisocitrate lyases are closely related to isocitrate lyases
+prpB	2-methylisocitrate lyase	EC:4.1.3.30	ignore_other:4.1.3.1
+
+import succinate.steps:sdhA
+import succinate.steps:sdhB
+import succinate.steps:sdhC
+sdh: sdhA sdhB sdhC
+
+import succinate.steps:frdA
+import succinate.steps:frdB
+import succinate.steps:frdC
+import succinate.steps:frdD
+sdh: frdA frdB frdC frdD
+
+import succinate.steps:fum
+import succinate.steps:mdh
+
+
+# MetaCyc Pathway: 2-methylcitrate cycle II is a variant in which a
+# different dehydratase (acnD) and an isomerase (prpF) replace the
+# dehydratase prpD.  acnD dehydrates (2S,3S)-2-methylcitrate to
+# 2-methyl-trans-aconitate, and prpF isomerizes it to
+# cis-2-methylaconitate.
+
+# acnM from Ralstonia eutropha (Q937N8) is proposed to have this activity as well (PMID:11495997), but is
+# annotated in SwissProt as aconitase or (2R,3S)-2-methylisocitrate dehydratase instead
+acnD	2-methylcitrate dehydratase (2-methyl-trans-aconitate forming)	EC:4.2.1.117	ignore:SwissProt::Q937N8
+
+# SwissProt annotates Q937N7 with this activity, but a vague EC number
+
+# The periplasmic substrate-binding protein A0A0A1H8I4 has aconitate
+# isomerase activity but has a high Km (PMID:26293748), and its
+# periplasmic location would prevent it from participating in the
+# methylcitrate cycle.
+prpF	methylaconitate isomerase	EC:5.3.3.7	curated:SwissProt::Q937N7	ignore:SwissProt::A0A0A1H8I4
+
+# MetaCyc Pathway: propanoyl CoA degradation I starts at propanyl-CoA
+# (which can be formed by propanoate:CoA ligase) and involves
+# propionyl-CoA carboxylase (forming (S)-methylmalonyl-CoA),
+# methylmalonyl-CoA epimerase (to (R)-methylmalonyl-CoA), and
+# methylmalonyl-CoA mutase to succinyl-CoA, which is a central
+# metabolite. Note that methylmalonyl-CoA mutase requires
+# adenosylcobamide (a form of vitamin B12) for activity.
+
+# In the fitness browser reannotations, Dshi_0724 from Dinoroseobacter
+# shibae (Dino:3607309) was annotated as the epimerase because it was
+# annotated as such by SEED and it has a specific phenotype on
+# propionate, which seemed to confirm its annotation.  But Dshi_0724
+# belongs to the uncharacterized family DUF4174 / PF13778 and has a
+# signal peptide.  Also, D. shibae contains another, apparently
+# essential, epi (Dshi_2630).
+
+epi	methylmalonyl-CoA epimerase	EC:5.1.99.1	ignore:reanno::Dino:3607309
+
+# methylmalonyl-CoA mutase has a catalytic domain and a B12-binding domain.
+# These are usually found in the same protein, which we call mcmA.
+# In Metallosphaera and Pyrococcus, the B12-binding domain is a separate subunit.
+# In Propionibacterium and Methylorubrum, there is an additional subunit with
+# a catalytic domain only; this may have a protective role
+# (PMID:14734568) and is not described here.
+
+# There's also a mcm-interacting GTPase (known as MeaB or YgfD) that
+# loads B12 onto mcm and protects it from inactivation (see
+# PMC4631608); this is not described here. Some fused mcm proteins include
+# a MeaB domain as well (i.e., Q8F222, Q8Y2U5)
+
+mcmA	methylmalonyl-CoA mutase, fused catalytic and adenosylcobamide-binding components	curated:SwissProt::O86028	curated:BRENDA::P22033	curated:BRENDA::Q23381	curated:BRENDA::Q84FZ1	curated:BRENDA::Q8MI68	curated:SwissProt::P27253	curated:SwissProt::Q3J4D7	curated:metacyc::MONOMER-18293	curated:reanno::PS:Dsui_0519	curated:BRENDA::Q8F222	curated:BRENDA::Q8Y2U5	ignore_other:5.4.99.2
+
+mcm_large	methylmalonyl-CoA mutase, large (catalytic) subunit	curated:BRENDA::A4YEG1	curated:BRENDA::O74009	curated:BRENDA::P11653	ignore_other:5.4.99.2
+
+mcm_small	methylmalonyl-CoA mutase, small (adenosylcobamide-binding) subunit	curated:BRENDA::A4YIE3	curated:BRENDA::O58013	ignore_other:5.4.99.2
+
+mutase: mcmA
+mutase: mcm_large mcm_small
+
+# MetaCyc Pathway: propanoyl-CoA degradation II:
+# propionyl-CoA is oxidized to acrylyl-CoA, hydrated
+# to 3-hydroxypropionyl-CoA, hydrolzed to 3-hydroxypropionate,
+# oxidized to 3-oxopropionate (malonate semialdehyde), and
+# oxidized to acetyl-CoA and CO2.
+
+pco	propanyl-CoA oxidase	EC:1.3.3.6
+hpcD	3-hydroxypropionyl-coA dehydratase	EC:4.2.1.116
+dddA	3-hydroxypropionate dehydrogenase	EC:1.1.1.59
+
+# methylmalonate semialdehyde dehydrogenase often has this activity as well
+mmsA	malonate semialdehyde dehydrogenase (CoA-acylating)	EC:1.2.1.18	ignore_other:1.2.1.27	ignore:SwissProt::Q9I702
+
+all: transport prpE prpC prpD acn prpB sdh fum mdh
+all: transport prpE prpC acnD prpF acn prpB sdh fum mdh
+all: transport prpE propionyl_CoA_carboxylase epi mutase
+all: transport prpE pco hpcD dddA mmsA
+
