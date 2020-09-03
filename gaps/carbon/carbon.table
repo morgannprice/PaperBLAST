@@ -8,6 +8,7 @@ deoxyinosine	2'-deoxyinosine catabolism
 deoxyribose	2-deoxy-D-ribose catabolism
 fructose	D-fructose catabolism
 galactose	D-galactose catabolism
+gluconate	D-gluconate catabolism
 glucose	D-glucose catabolism
 glucose6P	D-glucose-6-phosphate catabolism
 glucosamine	D-glucosamine (chitosamine) catabolism
@@ -19,6 +20,7 @@ mannitol	D-mannitol catabolism
 mannose	D-mannose catabolism
 nag	N-acetyl-D-glucosamine catabolism
 proline	L-proline catabolism
+propionate	propionate catabolism
 pyruvate	pyruvate catabolism
 sorbitol	D-sorbitol (glucitol) catabolism
 succinate	succinate catabolism
