@@ -58,6 +58,7 @@ JSON
 POSIX
 Time::HiRes
 LWP::Simple
+LWP::Protocol::https
 URI::Escape
 CGI
 DBI
