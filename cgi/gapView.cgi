@@ -1503,8 +1503,8 @@ sub ProcessUpload($) {
 # $cands should be a hash of orgId => locusId => list of candidates
 sub ShowCandidatesForStep($$$$) {
   my ($orgsSpec, $set, $stepRow, $candHash) = @_;
-  return ("","") unless defined $stepRow;
-  my $orgId = $stepRow->{orgId} || die;
+  return ("","") unless defined $stepRow && $stepRow->{orgId};
+  my $orgId = $stepRow->{orgId};
   my $locusHash = $candHash->{$orgId};
   my @work = ();
   push @work, [ $stepRow->{locusId}, $stepRow->{sysName},  $stepRow->{score} ]
