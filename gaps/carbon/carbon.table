@@ -2,6 +2,7 @@ pathwayId	desc
 all	catabolism of small carbon sources
 acetate	acetate catabolism
 alanine	L-alanine catabolism
+asparagine	L-asparagine catabolism
 aspartate	L-aspartate catabolism
 cellobiose	D-cellobiose catabolism
 deoxyinosine	2'-deoxyinosine catabolism

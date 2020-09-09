@@ -1,0 +1,65 @@
+# Transporters were identified using
+# query: transporter:asparagine:L-asparagine
+
+# ABC transporters
+
+# Various Pseudomonas have a 4-component transporter, AatJQMP (PP1071:PP1068; PA1342:PA1339 in P. aeruginosa)
+# Ignore the ortholog from P. aeruginosa, which is thought to transport related compounds
+
+aatJ	L-asparagine ABC transporter, substrate-binding component AatJ	curated:TCDB::Q88NY2	curated:reanno::pseudo13_GW456_L13:PfGW456L13_4770	curated:reanno::pseudo1_N1B4:Pf1N1B4_771	curated:reanno::pseudo3_N2E3:AO353_16290	ignore:TCDB::Q9I402
+
+aatQ	L-asparagine ABC transporter, permease component 1 (AatQ)	curated:reanno::pseudo3_N2E3:AO353_16285	curated:TCDB::Q88NY3	curated:reanno::pseudo1_N1B4:Pf1N1B4_772	curated:reanno::pseudo13_GW456_L13:PfGW456L13_4771	ignore:TCDB::Q9I403
+
+aatM	L-asparagine ABC transporter, permease component 2 (AatM)	curated:TCDB::Q88NY4	curated:reanno::pseudo13_GW456_L13:PfGW456L13_4772	curated:reanno::pseudo1_N1B4:Pf1N1B4_773	curated:reanno::pseudo3_N2E3:AO353_16280	ignore:TCDB::Q9I404
+
+aatP	L-asparagine ABC transporter, ATPase component	curated:TCDB::Q88NY5	curated:TCDB::Q9CES4	curated:reanno::pseudo13_GW456_L13:PfGW456L13_4773	curated:reanno::pseudo1_N1B4:Pf1N1B4_774	curated:reanno::pseudo3_N2E3:AO353_16275	ignore:TCDB::Q9I405
+
+transport: aatJ aatQ aatM aatP
+
+# glnQP from Lactococcus lactis, TC 3.A.1.3.25
+glnQ	L-asparagine ABC transporter, ATPase component GlnQ	curated:TCDB::Q9CES4
+glnP	L-asparagine ABC transporter, fused permease and substrate-binding components GlnP	curated:TCDB::Q9CES5
+transport: glnQ glnP
+
+# bztBACD from Rhodobacter capsulatus
+bztB	L-asparagine ABC transporter, permease component 1 (BztB)	curated:CharProtDB::CH_011913
+# Ignore similarity of bztA to general amino acid porter AapJ and to broad transporter SMc02118
+bztA	L-asparagine ABC transporter, substrate-binding component BztA	curated:TCDB::Q52663	ignore:TCDB::Q52812	ignore:reanno::Smeli:SMc02118
+bztC	L-asparagine ABC transporter, permease component 2 (BztC)	curated:TCDB::Q52665
+# Ignore similarity of bztD to broad a.a. transporter SMc02121, AapP
+bztD	L-asparagine ABC transporter, ATPase component BztD	curated:TCDB::Q52666	ignore:reanno::Smeli:SMc02121	ignore:TCDB::Q52815
+transport: bztB bztA bztC bztD
+
+# Other transporters
+
+ansP	L-asparagine permease AnsP	curated:SwissProt::P77610	curated:TCDB::P40812
+transport: ansP
+
+AGP1	L-asparagine permease AGP1	curated:CharProtDB::CH_091105
+transport: AGP1
+
+yhiT	probable L-asparagine transporter YhiT	curated:TCDB::Q8ZLD2
+transport: yhiT
+
+agcS	Probable asparagine:Na+ symporter AgcS	curated:TCDB::W0WFC6
+transport: agcS
+
+# BPHYT_RS17540 belongs to the APC (amino acid/polyamine/organocation) family of permeases
+# and is specifically important with asparagine (or glutamine) as the sole source of carbon or nitrogen
+BPHYT_RS17540	asparagine:H+ symporter	uniprot:B2SZ32
+
+# Ignored the export protein EamA
+# Ignored SLC38A3, which is a sodium/amino acid antiporter
+# Ignored gerBB (P39570), which is part of a receptor complex; it is not clear if it is
+#   actually an amino acid transporter (see PMID:24488313)
+# Ignored the non-specific human permease SLC7A8 (TC 2.A.3.8.20)
+
+# Asparagine is catabolized via hydrolysis to aspartate. Asparatate
+# can be transaminated to oxaloacetate, which is an intermediate in
+# central metabolism.
+# Isoaspartyl peptidases such as E. coli iaaA have this activity and are labeled heteromeric,
+# because the proenzyme is cleaved into two subunits; this need not be represented here.
+# TIGR00519 is not used because it hits GatD, a subunit of glutamyl-tRNA(Gln) amidotransferase
+ans	asparaginase	EC:3.5.1.1	EC:3.5.1.38	ignore_hmm:TIGR00519
+
+all: transport ans
