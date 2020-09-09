@@ -29,7 +29,7 @@ sub ReadSteps2($$) {
   # When called with doimport=0, ignores import statements, and allows rules to be incomplete
   my ($stepsFile, $doimport) = @_;
   my %imports = (); # filepathname to step object
-  my  @stepTypes = qw{term hmm EC uniprot ignore ignore_other curated};
+  my @stepTypes = qw{term hmm EC uniprot ignore ignore_hmm ignore_other curated};
   my %stepTypes = map { $_ => 1 } @stepTypes;
   my $steps = {}; # step name to hash of name, desc, and search, which is a list of pairs
   my $rules = {}; # rule name to list of lists, each element is a step name or another rule name

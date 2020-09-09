@@ -28,7 +28,7 @@ comment lines (that start with #)
 step lines, which are tab-delimited with fields step name, step description,
   and attributes of the form type:value. Examples of attributes:
     EC:1.1.1.1	                   term:search string
-    hmm:PF00001	hmm:TIGR0001
+    hmm:PF00001	hmm:TIGR0001       ignore_hmm:TIGR00519
     uniprot:Q8TPT3_METAC	   curated:reanno::Miya:8499492
     ignore:CharProtDB::CH_123581   ignore_other:EC 2.2.1.6
 
@@ -165,6 +165,8 @@ END
 
 
   my %stepHmm = (); # step => hmm => 1
+  # Ignore HMMs that might be matched by EC terms
+  my %stepIgnoreHmm = (); # step => hmm => 1
   # (@curatedInfo calls them "ids" and they are often comma delimited but here they are treated as a single id)
   my %stepCurated = (); # step => curated id => 1
   my %stepCurated2 = (); # step => curated2 id => 1
@@ -226,13 +228,20 @@ END
         foreach my $row (@$list) {
           $stepIgnore{$step}{$row->{ids}} = 1 unless exists $stepCurated{$step}{$row->{ids}};
         }
+      } elsif ($type eq "ignore_hmm") {
+        $stepIgnoreHmm{$step}{$value} = 1;
       } else {
         die "Unknown attribute type $type in step $step\n";
       }
     } # end loop over search terms
 
+    # Remove stepIgnoreHmm items from stepHmm
+    foreach my $hmm (keys %{ $stepIgnoreHmm{$step} }) {
+      delete $stepHmm{$step}{$hmm};
+    }
+
     # Ensure that there are some items that match the step
-    if (!exists $stepHmm{$step} && !exists $stepUniprot{$step}) {
+    if (keys(%{ $stepHmm{$step} }) == 0 && !exists $stepUniprot{$step}) {
       die "No curated, curated2, hmm, or uniprot items for $step\n"
         unless exists $stepCurated{$step} || exists $stepCurated2{$step};
       my @ids = grep { !exists $stepIgnore{$step}{$_} } keys %{ $stepCurated{$step} };
