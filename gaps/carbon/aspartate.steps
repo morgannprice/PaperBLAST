@@ -67,7 +67,16 @@ transport: natF natG natH bgtA
 # Added gltT from Bacillus caldotenax (CharProtDB::CH_088342), which is also an aspartate transporter
 # So, name it glt
 # Ignore Q9N280 which has a questionable annotation in BRENDA
-glt	sodium-dependent aspartate transporter	curated:SwissProt::P43003	curated:CharProtDB::CH_091614	curated:SwissProt::O35544	curated:SwissProt::O35921	curated:SwissProt::O57321	curated:SwissProt::O59010	curated:SwissProt::P24943	curated:SwissProt::P31596	curated:SwissProt::P31597	curated:SwissProt::P43004	curated:SwissProt::P43005	curated:SwissProt::P43006	curated:SwissProt::P46411	curated:SwissProt::P48664	curated:SwissProt::P51906	curated:SwissProt::P51907	curated:SwissProt::P56564	curated:SwissProt::Q9N1R2	curated:TCDB::B0W0K4	curated:TCDB::Q10901	curated:TCDB::Q8T0S9	curated:CharProtDB::CH_088342	ignore:BRENDA::Q9N280
+# But the more distantly related protein AO356_01905 (A0A0N9WTL5) also seems to be an aspartate transporter
+# Similarly, the related protein RR42_RS03990 (A0A0C4Y5S4) is specifically important for asparagine utilization.
+# Asparagine is probably cleaved in the periplasm (by RR42_RS12610 or RR42_RS26140)
+# so this is probably an aspartate transporter as well.
+# And the related protein P24944 (CH_088342) or P24943 is an aspartate transporter.
+# This cluster also includes the aspartate transporter DctA from E. coli; it is almost
+# 80% identical to Pseudomonas dicarboxylate transporters whose activity on
+# aspartate is uncertain. As these are not important for aspartate utilization (AO356_18980, AO353_02800),
+# do not mark them as ignored.
+glt	aspartate:proton symporter Glt	curated:SwissProt::P21345	curated:CharProtDB::CH_014038	uniprot:A0A0N9WTL5	uniprot:A0A0C4Y5S4	curated:CharProtDB::CH_088342	curated:SwissProt::P24943	curated:SwissProt::P43003	curated:CharProtDB::CH_091614	curated:SwissProt::O35544	curated:SwissProt::O35921	curated:SwissProt::O57321	curated:SwissProt::O59010	curated:SwissProt::P24943	curated:SwissProt::P31596	curated:SwissProt::P31597	curated:SwissProt::P43004	curated:SwissProt::P43005	curated:SwissProt::P43006	curated:SwissProt::P46411	curated:SwissProt::P48664	curated:SwissProt::P51906	curated:SwissProt::P51907	curated:SwissProt::P56564	curated:SwissProt::Q9N1R2	curated:TCDB::B0W0K4	curated:TCDB::Q10901	curated:TCDB::Q8T0S9	curated:CharProtDB::CH_088342	ignore:BRENDA::Q9N280
 transport: glt
 
 # Ignore aspartate-fumarate antiporters DcuA, DcuB, or YhiT  -- these are important for
@@ -94,13 +103,12 @@ transport: acaP
 SLC7A13	sodium-independent aspartate transporter	curated:SwissProt::Q8TCU3	curated:SwissProt::Q91WN3
 transport: SLC7A13
 
-# Cluster 9 428-437 amino acids (not heteromeric)
-# gltP or dctA from E. coli.
-# E. coli DctA is almost 80% identical to Pseudomonas dicarboxylate transporters whose activity on
-# aspartate is uncertain. As these are not important for aspartate utilization (AO356_18980, AO353_02800),
-# do not mark them as ignored.
-gltP	aspartate:proton symporter GltP	curated:SwissProt::P21345	curated:CharProtDB::CH_014038
-transport: gltP
+
+# BPHYT_RS17540 belongs to the APC (amino acid/polyamine/organocation) family of permeases
+# and is specifically important with asparagine (or glutamine) as the sole source of carbon or nitrogen.
+# Asparagine is probably cleaved in the periplasm by BPHYT_RS08815 before uptake of asparatate.
+BPHYT_RS17540	aspartate:H+ (or asparagine) symporter	uniprot:B2SZ32
+transport: BPHYT_RS17540
 
 yveA	aspartate:proton symporter YveA	curated:SwissProt::O07002
 transport: yveA

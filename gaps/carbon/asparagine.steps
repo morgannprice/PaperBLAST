@@ -44,9 +44,33 @@ transport: yhiT
 agcS	Probable asparagine:Na+ symporter AgcS	curated:TCDB::W0WFC6
 transport: agcS
 
-# BPHYT_RS17540 belongs to the APC (amino acid/polyamine/organocation) family of permeases
-# and is specifically important with asparagine (or glutamine) as the sole source of carbon or nitrogen
-BPHYT_RS17540	asparagine:H+ symporter	uniprot:B2SZ32
+# Because many of the asparaginases are cytoplasmic, allow uptake of aspartate as well
+# (Also some aspartate transporters probably transport asparagine as well)
+import aspartate.steps:peb1A
+import aspartate.steps:peb1B
+import aspartate.steps:peb1C
+import aspartate.steps:peb1D
+import aspartate.steps:natF
+import aspartate.steps:bgtB'
+import aspartate.steps:natH
+import aspartate.steps:bgtA
+import aspartate.steps:natG
+import aspartate.steps:glt
+import aspartate.steps:acaP
+import aspartate.steps:SLC7A13
+import aspartate.steps:BPHYT_RS17540
+import aspartate.steps:yveA
+import aspartate.steps:dauA
+
+transport: peb1A peb1B peb1C peb1D
+transport: natF bgtB' natH bgtA
+transport: natF natG natH bgtA
+transport: glt
+transport: acaP
+transport: SLC7A13
+transport: BPHYT_RS17540
+transport: yveA
+transport: dauA
 
 # Ignored the export protein EamA
 # Ignored SLC38A3, which is a sodium/amino acid antiporter
