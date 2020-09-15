@@ -102,8 +102,12 @@ nagtransport: ngt1
 # A purified glucosaminate dehydratase "alpha subunit" was determined to be
 # thioredoxin (SwissProt Q93HX6), which seems unlikely to physiologically relevant.
 glucosaminatelyase	glucosaminate ammonia-lyase	EC:4.3.1.9	ignore:SwissProt::Q93HX6
+
 # The entry for Q9ZU29 is erroneous (the correct accession is Q97U29)
-kdgK	2-keto-3-deoxygluconate kinase	EC:2.7.1.45	EC:2.7.1.178	ignore:BRENDA::Q9ZU29
+# EcoCyc gives 2-dehydro-3-deoxygalactonokinase (dgoK) is given this EC number as well but
+# I could not determine why. It doesn't link to the ketodeoxygluconate kinase reaction
+
+kdgK	2-keto-3-deoxygluconate kinase	EC:2.7.1.45	EC:2.7.1.178	ignore:BRENDA::Q9ZU29	ignore:ecocyc::DEHYDDEOXGALACTKIN-MONOMER
 kdgA	2-keto-3-deoxygluconate-6-phosphate aldolase    EC:4.1.2.14	EC:4.1.2.55
 all: gdh glucosaminate_transport glucosaminatelyase kdgK kdgA
 
