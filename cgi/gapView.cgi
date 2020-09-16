@@ -1294,7 +1294,7 @@ sub ShowScoreShort($) {
 sub HMMToURL($) {
   my ($hmmId) = @_;
   if ($hmmId =~ m/^TIGR/) {
-    return "http://tigrfams.jcvi.org/cgi-bin/HmmReportPage.cgi?acc=".$hmmId;
+    return "https://www.ncbi.nlm.nih.gov/Structure/cdd/".$hmmId;
   } elsif ($hmmId =~ m/^PF/) {
     my $hmmIdShort = $hmmId; $hmmIdShort =~ s/[.]\d+$//;
     return "http://pfam.xfam.org/family/".$hmmIdShort;

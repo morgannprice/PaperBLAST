@@ -166,7 +166,7 @@ close(IN) || die "Error reading $resultsFile";
 if (keys %hits > 0) {
   my $first = (values %hits)[0];
   my $URL = $hmmfile;
-  $URL = "http://tigrfams.jcvi.org/cgi-bin/HmmReportPage.cgi?acc=$hmmId" if $hmmId =~ m/^TIGR\d+$/;
+  $URL = "https://www.ncbi.nlm.nih.gov/Structure/cdd/$hmmId" if $hmmId =~ m/^TIGR\d+$/;
   $URL = "https://pfam.xfam.org/family/$hmmId" if $hmmId =~ m/^PF\d+$/;
   my @parts = (a({ -href => $URL}, escapeHTML($first->{hmmAcc})),
                "hits",
