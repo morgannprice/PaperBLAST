@@ -1,0 +1,156 @@
+# Transporters were identified using
+# query: transporter:leucine:L-leucine
+
+# ABC transporters:
+# E. coli livFGHMJ or livFGHMK (livK and livJ are alternate SBPs)
+#   and the related system livJFGHM from Streptococcus pneumoniae [but its livM is singleton 12]
+#   and the related system braCDEFG from Pseudomonas aeruginosa (braC is the SBP)
+#   and the related system braDEFG/braC3 from R. leguminosarum; braC3 (RL3540; Q1MDE9) is a secondary
+#     SBP that transports leucine/isoleucine/valine/alanine (PMID:19597156); the
+#     proximal braC might also transport leucine, not sure if this is known, so exclude it (Q9L3M3)
+#   LivH/BraD = RL3750/Q1MCU0; LivM/BraE = RL3749/Q1MCU1;
+#   LivG/BraF = RL3748/Q1MCU2; LivF/BraG = RL3747/Q1MCU3
+#   and the related system in Acidovorax sp. GW101-3H11
+#   LivF = Ac3H11_1692 (A0A165KC78), LivG = Ac3H11_1693 (A0A165KC86),
+#   LivJ = Ac3H11_2396 (A0A165KTD4; not near the other components, but strong phenotype on leucine and cofitness),
+#   LivH = Ac3H11_1695 (A0A165KC95), LivM = Ac3H11_1694 (A0A165KER0)
+
+# Synechocystis natABCDE and a related system in Anabaena (labeled with "leu" not leucine as the substrate)
+
+# Cluster 1 was a mix of livF, livG, the related braG/braF, and also natA/natE
+livF	L-leucine ABC transporter, ATPase component 1 (LivF/BraG)	curated:CharProtDB::CH_003736	curated:TCDB::P21630	curated:TCDB::Q8DQH7	uniprot:Q1MCU3	uniprot:A0A165KC78
+
+livG	L-leucine ABC transporter, ATPase component 2 (LivG/BraF)	curated:TCDB::P0A9S7	curated:TCDB::P21629	curated:TCDB::Q8DQH8	uniprot:Q1MCU2	uniprot:A0A165KC86
+
+livJ	L-leucine ABC transporter, substrate-binding component (LivJ/LivK/BraC/BraC3)	curated:SwissProt::P21175	curated:CharProtDB::CH_107418	curated:TCDB::P0AD96	curated:TCDB::Q8DQI1	uniprot:Q1MDE9	ignore:TCDB::Q9L3M3	uniprot:A0A165KTD4
+
+livH	L-leucine ABC transporter, permease component 1 (LivH/BraD)	curated:TCDB::P21627	curated:TCDB::Q8DQI0	curated:ecocyc::LIVH-MONOMER	uniprot:Q1MCU0	uniprot:A0A165KC95
+
+# LivM from Streptococcus pneumoniae lacks an N-terminal domain of unknown
+# function (DUF3382) that is found in E.coli and P. aeruginosa
+livM	L-leucine ABC transporter, permease component 2 (LivM/BraE)	curated:SwissProt::P22729	curated:TCDB::P21628	curated:TCDB::Q8DQH9	uniprot:Q1MCU1	uniprot:A0A165KER0
+
+transport: livF livG livJ livH livM
+
+# Synechocystis sp. NatABCDE; also a similar system in Anabaena
+natA	L-leucine ABC transporter, ATPase component 1 (NatA)	curated:TCDB::Q55164	curated:TCDB::Q7A2H0
+natB	L-leucine ABC transporter, substrate-binding component NatB	curated:TCDB::Q55387	curated:TCDB::Q8YVY4
+natC	L-leucine ABC transporter, permease component 1 (NatC)	curated:TCDB::P74455	curated:TCDB::Q8YY08
+natD	L-leucine ABC transporter, permease component 2 (NatD)	curated:TCDB::P74318	curated:TCDB::Q8YXD0
+natE	L-leucine ABC transporter, ATPase component 2 (NatE)	curated:TCDB::P73650	curated:TCDB::Q8YT15
+transport: natA natB natC natD natE
+
+# Homomeric transporters:
+
+leuT	L-leucine:Na+ symporter LeuT	curated:TCDB::O67854
+transport: leuT
+
+brnQ	L-leucine:Na+ symporter BrnQ/BraB	curated:TCDB::P0AD99	curated:TCDB::P19072
+transport: brnQ
+
+bcaP	L-leucine uptake transporter BcaP	curated:TCDB::S6EX81
+transport: bcaP
+
+Bap2	L-leucine permease Bap2	curated:CharProtDB::CH_091448	curated:TCDB::Q2VQZ4
+transport: Bap2
+
+AAP1	L-leucine permease AAP1	curated:CharProtDB::CH_091601
+transport: AAP1
+
+# Ignore heteromeric systems found only in animals (i.e., TC 2.A.3.8.25)
+# Ignore regulatory proteins such as SC16B_HUMAN, SSY1_YEAST
+# Ignore amino acid exporters such as leuE, yjeH, brnEF
+
+# MetaCyc Pathway: L-leucine degradation I
+# involves transamination to 4-methyl-2-oxopentanoate,
+# oxidative decarboxylation to isovaleryl-CoA (3-methylbutanoyl-CoA),
+# oxidation to 3-methylcrotonyl-CoA,
+# carboxylation to 3-methylglutaconyl-CoA,
+# hydration to hydroxymethylglutaryl-CoA,
+# and hydrolysis to acetoacetate + acetyl-CoA.
+# The acetoacetate is activated to acetoacetyl-CoA,
+# and cleaved by acetyl-CoA acetyltransferase,
+# giving 2 acetyl-CoA, for a total of 3 acetyl-CoA
+# produced.
+
+# These enzymes transfer the amino group to 2-oxoglutarate to form
+# glutamate; glutamate dehydrogenase (not included in the pathway
+# definition) can then release the ammonia. Many other paths are
+# possible but do not seem to be known (i.e., transfer to oxaloacetate
+# followed by asparatte-ammonia lyase).
+ilvE	L-leucine transaminase	EC:2.6.1.6	EC:2.6.1.42
+
+# 4-methyl-2-oxopentanoate dehydrogenases can pass electrons to
+# NAD (EC 1.2.1.25) or to ferredoxin (EC 1.2.7.7).
+# The NAD-dependent enzyme is the sum of three activities:
+# EC 1.2.4.4 (the 4-methyl-2-oxopentanoate dehydrogenase, with transfer to the lipopoyllysine residue of 2.3.1.168)
+#   which is itself heteromeric, with alpha and beta subunits
+# EC 2.3.1.168 (dihydrolipoyllysine-residue (2-methylpropanoyl)transferase)
+# EC 1.8.1.4 (dihydrolipoyl dehydrogenase, transferring electrons to NAD)
+
+bkdA	4-methyl-2-oxopentanoate dehydrogenase, E1 component alpha subunit	curated:SwissProt::P12694	curated:BRENDA::Q72GU1	curated:CharProtDB::CH_121278	curated:SwissProt::O45924	curated:SwissProt::P11178	curated:SwissProt::P9WIS3	curated:SwissProt::Q5SLR4	curated:SwissProt::Q84JL2	curated:SwissProt::Q9LPL5	curated:reanno::Smeli:SMc03201	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3540	curated:reanno::pseudo3_N2E3:AO353_26635	curated:reanno::pseudo5_N2C3_1:AO356_22990	curated:reanno::pseudo6_N2E2:Pf6N2E2_481	curated:metacyc::MONOMER-11683
+
+bkdB	4-methyl-2-oxopentanoate dehydrogenase, E1 component beta subunit	curated:CharProtDB::CH_121283	curated:SwissProt::P21953	curated:SwissProt::P9WIS1	curated:SwissProt::Q5SLR3	curated:SwissProt::Q9LDY2	curated:metacyc::MONOMER-11684	curated:reanno::Smeli:SMc03202	curated:reanno::WCS417:GFF3430	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3541	curated:reanno::pseudo5_N2C3_1:AO356_22985	curated:reanno::pseudo6_N2E2:Pf6N2E2_480	curated:BRENDA::Q9HIA4
+
+
+bkdC	4-methyl-2-oxopentanoate dehydrogenase, E2 component	EC:2.3.1.168
+
+lpd	4-methyl-2-oxopentanoate dehydrogenase, E3 component	EC:1.8.1.4
+
+# The well-characterized ferredoxin-dependent enzymes have 2 subunits (ofoAB) or 3 subunits (vorABC).
+# Genetic data identified a fused enzyme with just 1 subunit
+
+vorA	4-methyl-2-oxopentanoate:ferredoxin oxidoreductase, alpha subunit VorA	curated:SwissProt::P80907	ignore_other:1.2.7.7
+vorB	4-methyl-2-oxopentanoate:ferredoxin oxidoreductase, beta subunit VorB	curated:SwissProt::P80908	ignore_other:1.2.7.7
+vorC	4-methyl-2-oxopentanoate:ferredoxin oxidoreductase, gamma subunit VorC	curated:SwissProt::P80909	ignore_other:1.2.7.7
+
+# ofoAB is similar to low-specificity 2-oxoacid oxidoreducatses (EC 1.2.7.11); it is generally
+# not clear if these act on 4-methyl-2-oxopentanoate or not.
+ofoA	4-methyl-2-oxopentanoate:ferredoxin oxidoreductase, alpha subunit OfoA	curated:SwissProt::P72578	ignore_other:1.2.7.7	ignore_other:1.2.7.11
+
+ofoB	4-methyl-2-oxopentanoate:ferredoxin oxidoreductase, beta subunit OfoB	curated:SwissProt::P72579	ignore_other:1.2.7.7	ignore_other:1.2.7.11
+
+ofo	4-methyl-2-oxopentanoate:ferredoxin oxidoreductase, fused	curated:reanno::Cup4G11:RR42_RS19540	curated:reanno::psRCH2:GFF3452	ignore_other:1.2.7.7	ignore_other:1.2.7.11
+
+bkd: bkdA bkdB bkdC lpd
+bkd: vorA vorB vorC
+bkd: ofoA ofoB
+bkd: ofo
+
+liuA	isovaleryl-CoA dehydrogenase	EC:1.3.8.4	EC:1.3.99.10
+
+# 3-methylcrotonyl-CoA carboxylase has 2 subunits
+liuB	3-methylcrotonyl-CoA carboxylase, alpha (biotin-containing) subunit	curated:CharProtDB::CH_122249	curated:BRENDA::Q42523	curated:BRENDA::Q9I299	curated:SwissProt::Q2QMG2	curated:SwissProt::Q96RQ3	curated:SwissProt::Q99MR8	curated:reanno::SB2B:6937189	curated:reanno::Smeli:SM_b21124	curated:reanno::pseudo1_N1B4:Pf1N1B4_3984	curated:reanno::pseudo5_N2C3_1:AO356_01595	curated:reanno::pseudo6_N2E2:Pf6N2E2_2194	ignore_other:6.4.1.4
+liuD	3-methylcrotonyl-CoA carboxylase, beta subunit	curated:BRENDA::Q9I297	curated:BRENDA::Q9LDD8	curated:CharProtDB::CH_122289	curated:SwissProt::Q9HCC0	curated:SwissProt::Q9V9A7	curated:reanno::SB2B:6937191	curated:reanno::Smeli:SM_b21122	curated:reanno::psRCH2:GFF1050	curated:reanno::pseudo5_N2C3_1:AO356_01585	curated:reanno::pseudo6_N2E2:Pf6N2E2_2192	ignore_other:6.4.1.4
+
+liuC	3-methylglutaconyl-CoA hydratase	EC:4.2.1.18
+
+liuE	hydroxymethylglutaryl-CoA lyase	EC:4.1.3.4
+
+# acetyl-CoA:acetoacetyl-CoA transferase (sometimes given EC 2.8.3.9 or 2.8.3.8)
+# or succinyl-CoA:acetoacetyl-CoA transferase (EC 2.8.3.5, also known as 3-oxoacid CoA-transferase)
+# can activate acetoacetate.
+# These have an A and B subunit.
+
+atoA	acetoacetyl-CoA transferase, A subunit	curated:ecocyc::ATOD-MONOMER	curated:metacyc::HP0691-MONOMER	curated:reanno::psRCH2:GFF1045	curated:reanno::pseudo6_N2E2:Pf6N2E2_2111	ignore_other:2.8.3.5
+
+atoD	acetoacetyl-CoA transferase, B subunit	curated:ecocyc::ATOA-MONOMER	curated:metacyc::HP0692-MONOMER	curated:reanno::psRCH2:GFF1044	curated:reanno::pseudo6_N2E2:Pf6N2E2_2112	ignore_other:2.8.3.5
+
+# Alternatively, an ATP-dependent ligase to activate acetoacetate (6.2.1.16)
+aacS	acetoacetyl-CoA synthetase	EC:6.2.1.16
+
+aa_activation: atoA atoD
+aa_activation: aacS
+
+import deoxyribose.steps:atoB # acetyl-CoA acetyltransferase
+
+all: transport ilvE bkd liuA liuB liuD liuC liuE aa_activation atoB
+
+# Besides pathway I, MetaCyc describes several other pathways for
+# leucine degradation, but they are not included here.  Skip MetaCyc
+# Pathway: L-leucine degradation II because neither of the two
+# reactions is linked to sequence.  The Strickland reactions for
+# fermenting amino acids (one amino acid is oxidized, while another is
+# reduced) create energy but do not link to central
+# metabolism. Similarly, skip MetaCyc Pathway: L-leucine degradation
+# III, which utilizes only the nitrogen part.
