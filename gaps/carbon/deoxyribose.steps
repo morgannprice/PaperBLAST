@@ -55,8 +55,8 @@ garK	glycerate 2-kinase	EC:2.7.1.165	curated:reanno::psRCH2:GFF1145
 # of an enzyme from Haloferax mediterranei that also contains a "normal" catalytic subunit (see I3R3D1, I3RA72)
 # P07256 was an error in BRENDA.
 # And CharProtDB includes an odd annotation of the form "similar to acetyl-CoA acetyltransferase"
-acetylCoA_transferase	acetyl-CoA C-acetyltransferase	EC:2.3.1.9	ignore_other:2.3.1.16	ignore:BRENDA::P07256	ignore:BRENDA::I3R3D0	ignore:BRENDA::I3RA71	ignore_other:similar to acetyl-CoA acetyltransferase
+atoB	acetyl-CoA C-acetyltransferase	EC:2.3.1.9	ignore_other:2.3.1.16	ignore:BRENDA::P07256	ignore:BRENDA::I3R3D0	ignore:BRENDA::I3RA71	ignore_other:similar to acetyl-CoA acetyltransferase
 
 all: deoP deoK deoC acetald_dehyd
 
-all: deoxyribose_dehyd deoxyribonate_transport deoxyribonate_dehyd ketodeoxyribonate_cleavage garK acetylCoA_transferase
+all: deoxyribose_dehyd deoxyribonate_transport deoxyribonate_dehyd ketodeoxyribonate_cleavage garK atoB
