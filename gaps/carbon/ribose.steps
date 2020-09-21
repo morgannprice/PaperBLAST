@@ -1,0 +1,64 @@
+# Transporters were identified using:
+# query: transporter:ribose:D-ribose:D-ribofuranose:CPD-10330:CPD0-1108:D-ribopyranose:CPD-15829:CPD0-1110:CPD-15818
+
+# ABC transporters are known in E. coli, Thermotoga maritima, and Sinorhizobium meliloti
+
+# E. coli rbsABC and the related system from T. maritima
+# The fitness data identified a related system in Herbaspirillum
+#   rbsBAC = HSERO_RS11480 (D8IUD0), HSERO_RS11485 (D8IUD1), HSERO_RS11490 (D8IUD2)
+# and in various Pseudomonas
+#   rbsBAC = PS417_18405 (A0A1N7UEH6) PS417_18400 (A0A1N7TZ92) PS417_18395 (A0A1N7UNQ5)
+#     or Pf1N1B4_6035 (A0A161ZH48), Pf1N1B4_6034 (A0A166R419), Pf1N1B4_6033  (A0A166R405)
+rbsA	D-ribose ABC transporter, ATPase component RbsA	curated:CharProtDB::CH_003578	curated:TCDB::Q9X051	uniprot:D8IUD1	uniprot:A0A1N7TZ92	uniprot:A0A166R419
+rbsB	D-ribose ABC transporter, substrate-binding component RbsB	curated:CharProtDB::CH_003593	curated:TCDB::Q9X053	uniprot:D8IUD0	uniprot:A0A1N7UEH6	uniprot:A0A161ZH48
+rbsC	D-ribose ABC transporter, permease component RbsC	curated:SwissProt::P0AGI1	curated:TCDB::Q9X050	uniprot:D8IUD2	uniprot:A0A1N7UNQ5	uniprot:A0A166R405
+transport: rbsA rbsB rbsC
+
+
+# FrcABC from S. meliloti
+frcA	D-ribose ABC transporter, ATPase component FrcA	curated:SwissProt::Q9F9B0
+frcB	D-ribose ABC transporter, substrate-binding component FrcB	curated:SwissProt::Q9F9B2
+frcC	D-ribose ABC transporter, permease component FrcC	curated:SwissProt::Q9F9B1
+transport: frcA frcB frcC
+
+# The fru2 PTS system in Streptococcus agalactiae is thought to transport ribose (TC 4.A.2.1.22); it is not
+# proven that this is coupled to phosphorylation to form ribose 5-phosphate, but it seems likely
+
+fru2-IIA	D-ribose PTS, IIA component	curated:TCDB::Q3JZE3
+fru2-IIB	D-ribose PTS, IIB component	curated:TCDB::Q3JZE2
+fru2-IIC	D-ribose PTS, IIC component	curated:TCDB::Q3JZE4
+PTS: fru2-IIA fru2-IIB fru2-IIC
+
+# Homomeric transporters
+
+rbsU	probable D-ribose transporter RbsU	curated:TCDB::Q9X4M3
+transport: rbsU
+
+BT2809	D-ribose transporter	curated:reanno::Btheta:352336
+transport: BT2809
+
+LmGT2	D-ribose transporter LmGT2	curated:TCDB::O61059
+transport: LmGT2
+
+PLT5	D-ribose transporter PLT5	curated:CharProtDB::CH_091483
+transport: PLT5
+
+# MetaCyc Pathway: ribose phosphorylation (RIBOKIN-PWY)
+# includes D-ribose pyranase (rbsD) and ribokinase (rbsK).
+# D-ribofuranose 5-phosphate is a central metabolic intermediate.
+# RbsD appears to be absent or not important for fitness in many bacteria
+# that grow with ribose as the sole carbon source, so rbsD is not included.
+
+# deoxyribose kinases are sometimes annotated with the same EC number; most of these
+# sequences are thought to be ribokinases as well
+rbsK	ribokinase	EC:2.7.1.15
+
+all: transport rbsK
+all: PTS
+
+
+
+
+
+
+
