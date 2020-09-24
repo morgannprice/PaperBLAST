@@ -472,10 +472,11 @@ sub HmmToFile($) {
     foreach my $hmmdir (@hmmdir) {
       return "$hmmdir/$hmmId.hmm" if -e "$hmmdir/$hmmId.hmm";
     }
+    # also handle file names like PF11902.8.hmm from hmmId PF11902
+    my @glob = glob("../static/pfam/$hmmId.*.hmm");
+    return @glob > 0 ? $glob[0] : undef;
   }
-  # if reached
-  my @glob = glob("../static/pfam/$hmmId.*.hmm");
-  return @glob > 0 ? $glob[0] : undef;
+  return undef;
 }
 
 sub TopDivHtml($$) {
