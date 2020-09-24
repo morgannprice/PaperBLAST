@@ -78,16 +78,23 @@ if ($up) {
   exit(0);
 }
 
+$hmmId =~ s/ +$// if defined $hmmId;
+$hmmId =~ s/^ +// if defined $hmmId;
 my $hmmfile = HmmToFile($hmmId);
 my $isUploaded = defined $hmmfile && $hmmId =~ m/^hex[.]/;
-
-die "Invalid hmm id" if defined $hmmId && $hmmId !~ m/^[a-zA-Z0-9._-]+$/;
 
 if (!defined $hmmfile) {
   # print a form
   my $title = "Family Search (HMMer) vs. Papers";
   start_page('title' => $title);
-  print p("Did not find an HMM matching $hmmId") if $hmmId;
+
+  if (defined $hmmId && $hmmId ne "") {
+    if ($hmmId =~ m/^[a-zA-Z0-9._-]+$/) {
+      print p("Did not find an HMM matching $hmmId");
+    } else {
+      print p("Invalid characters in hmm id");
+    }
+  }
   print
     GetMotd(),
     start_form(-name => 'select', '-method' => "GET", -action => 'hmmSearch.cgi'),
