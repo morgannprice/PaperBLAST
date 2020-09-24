@@ -3,6 +3,7 @@ all	catabolism of small carbon sources
 acetate	acetate catabolism
 alanine	L-alanine catabolism
 arabinose	L-arabinose catabolism
+arginine	L-arginine catabolism
 asparagine	L-asparagine catabolism
 aspartate	L-aspartate catabolism
 cellobiose	D-cellobiose catabolism
@@ -17,6 +18,7 @@ glucose6P	D-glucose-6-phosphate catabolism
 glucosamine	D-glucosamine (chitosamine) catabolism
 glutamate	L-glutamate catabolism
 glycerol	glycerol catabolism
+histidine	L-histidine catabolism
 lactose	lactose catabolism
 leucine	L-leucine catabolism
 maltose	D-maltose catabolism

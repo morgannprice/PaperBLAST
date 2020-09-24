@@ -1,0 +1,144 @@
+# Transporters were identified using
+# query: transporter:histidine:L-histidine:his
+
+# ABC transporters:
+# E. coli hisPMQJ (hisPMQ can also act with another SBP, argT, but argT does not bind arginine)
+# Salmonella has a very similar system
+# Pseudomonas aeruginosa PA5125-PA5155 (which is related to hisPMQJ)
+#   and also PA5503-PA5505 (MetIQN in TCDB)
+# Acidovorax GW101-3H11 has a system with two permease subunits and two SBPs
+# NatABCDE (TC 3.A.1.4.2) is described as a possible his transporter
+# Rhizobium meliloti has aapJQMP
+# Sinorhizobium meliloti has hutWVX and also a 4-component system related to aapJQMP
+# Pseudomonas fluorescens FW300-N2E3 has a system similar to hutWVX
+# Synechocystis has bgtAB  (bgtB has fused SBP and permease components)
+# Burkholderia phytofirmans PsJN has BPHYT_RS24000:BPHYT_RS24015
+
+# hisPMQJ from E.coli/Salmonella and PA5125-PA5155 from Pseudomona aeruginosa
+# A similar system in Pseudomonas fluorescens FW300-N2C3 is annotated as a lysine transporte
+# but may well transport histidine, so it is ignored.
+hisP	L-histidine ABC transporter, ATPase component HisP	curated:CharProtDB::CH_003210	curated:SwissProt::P02915	curated:TCDB::Q9HU32	ignore:reanno::pseudo5_N2C3_1:AO356_09895
+hisM	L-histidine ABC transporter, permease component 1 (HisM)	curated:SwissProt::P0A2I7	curated:SwissProt::P0AEU3	curated:TCDB::Q9HU29	ignore:reanno::pseudo5_N2C3_1:AO356_09910
+hisQ	L-histidine ABC transporter, permease component 2 (HisQ)	curated:SwissProt::P0A2I9	curated:SwissProt::P52094	curated:TCDB::Q9HU30	ignore:reanno::pseudo5_N2C3_1:AO356_09905
+hisJ	L-histidine ABC transporter, substrate-binding component HisJ	curated:CharProtDB::CH_014295	curated:CharProtDB::CH_018185	curated:TCDB::Q9HU31	ignore:reanno::pseudo5_N2C3_1:AO356_09900
+transport: hisP hisM hisQ hisJ
+
+# PA5503-PA5505 in P. aeruginosa (MetIQN in TCDB)
+PA5503	L-histidine ABC transporter, ATPase component	curated:TCDB::Q9HT70
+PA5504	L-histidine ABC transporter, permease component	curated:TCDB::Q9HT69
+PA5505	L-histidine ABC transporter, substrate-binding component	curated:TCDB::Q9HT68
+transport: PA5503 PA5504 PA5505
+
+# 5-component 2-SBP system in Acidovorax sp. GW101-3H11
+Ac3H11_2562	L-histidine ABC transporter, substrate-binding component 1	curated:reanno::acidovorax_3H11:Ac3H11_2562
+Ac3H11_2561	L-histidine ABC transporter, permease component 1	curated:reanno::acidovorax_3H11:Ac3H11_2561
+Ac3H11_2560	L-histidine ABC transporter, ATPase component	curated:reanno::acidovorax_3H11:Ac3H11_2560
+Ac3H11_2555	L-histidine ABC transporter, substrate-binding component 2	curated:reanno::acidovorax_3H11:Ac3H11_2555 
+Ac3H11_2554	ABC transporter for L-Histidine, permease component 2	curated:reanno::acidovorax_3H11:Ac3H11_2554 
+transport: Ac3H11_2562 Ac3H11_2561 Ac3H11_2560 Ac3H11_2555 Ac3H11_2554
+
+# Synechocystis sp. NatABCDE; a similar system in Anabaena is not included as it appears to use
+# some other SBP for histidine (but the non-SPB components are marked ignore)
+natA	L-histidine ABC transporter, ATPase component 1 (NatA)	curated:TCDB::Q55164	ignore:TCDB::Q7A2H0
+natB	L-histidine ABC transporter, substrate-binding component NatB	curated:TCDB::Q55387
+natC	L-histidine ABC transporter, permease component 1 (NatC)	curated:TCDB::P74455	ignore:TCDB::Q8YY08
+natD	L-histidine ABC transporter, permease component 2 (NatD)	curated:TCDB::P74318	ignore:TCDB::Q8YXD0
+natE	L-histidine ABC transporter, ATPase component 2 (NatE)	curated:TCDB::P73650	ignore:TCDB::Q8YT15
+transport: natA natB natC natD natE
+
+# aapJQMP from R. meliloti and S. meliloti
+
+aapJ	L-histidine ABC transporter, substrate-binding component AapJ	curated:reanno::Smeli:SMc02118	curated:TCDB::Q52812
+aapQ	L-histidine ABC transporter, permease component 1 (AapQ)	curated:reanno::Smeli:SMc02119	curated:TCDB::Q52813
+aapM	L-histidine ABC transporter, permease component 2 (AapM)	curated:reanno::Smeli:SMc02120	curated:TCDB::Q52814
+aapP	L-histidine ABC transporter, ATPase component AapP	curated:reanno::Smeli:SMc02121	curated:TCDB::Q52815
+transport: aapJ aapQ aapM aapP
+
+# hutVWX from Sinorhizobium meliloti, Pseudomonas fluorescens FW300-N2C3
+hutV	L-histidine ABC transporter, ATPase component HutV	curated:TCDB::Q9KKE1	curated:reanno::pseudo5_N2C3_1:AO356_09610
+hutW	L-histidine ABC transporter, permease component HutW	curated:reanno::pseudo5_N2C3_1:AO356_09615	curated:TCDB::Q9KKE2
+hutX	L-histidine ABC transporter, substrate-binding component HutX	curated:TCDB::Q9KKE3	curated:reanno::pseudo5_N2C3_1:AO356_09620
+transport: hutV hutW hutX
+
+# bgtAB from Synechocystis
+bgtA	L-histidine ABC transporter, ATPase component BgtA	curated:TCDB::P73721
+bgtB	L-histidine ABC transporter, fused substrate-binding and permease components (BgtB/BgtAB)	curated:TCDB::P73544	curated:TCDB::Q8YSA2
+transport: bgtA bgtB
+
+# BPHYT_RS24000:BPHYT_RS24015 from Burkholderia phytofirmans PsJN is specifically
+# important for histidine utilization. (There's no fitness data for _RS24015.)
+BPHYT_RS24000	L-histidine ABC transporter, substrate-binding component	uniprot:B2TBJ6
+BPHYT_RS24005	L-histidine ABC transporter, permease component 1	uniprot:B2TBJ7
+BPHYT_RS24010	L-histidine ABC transporter, permease component 2	uniprot:B2TBJ8
+BPHYT_RS24015	L-histidine ABC transporter, ATPase component	uniprot:B2TBJ9
+transport: BPHYT_RS24000 BPHYT_RS24005 BPHYT_RS24010 BPHYT_RS24015
+
+# Homomeric transporters
+
+# Ignored exporters and porins, and vacuolar transporters, and mitochondrial amino acid carriers
+# MctP (TC 2.A.21.4.1) is described as a potential histidine transporter, but the evidence is weak, and homologs
+#   with fitness data do not have a relevant phenotype, so do not include.
+
+
+permease	L-histidine permease	curated:SwissProt::A2RI97	curated:CharProtDB::CH_091109	curated:CharProtDB::CH_091412	curated:TCDB::P43059	curated:TCDB::Q46065	curated:reanno::pseudo3_N2E3:AO353_12275
+transport: permease
+
+Ga0059261_1577	L-histidine transporter	curated:reanno::Korea:Ga0059261_1577
+transport: Ga0059261_1577
+
+S15A3	L-histidine transporter	curated:SwissProt::O09014	curated:SwissProt::Q8BPX9	curated:SwissProt::Q8IY34	curated:SwissProt::Q8N697	curated:SwissProt::Q924V4
+transport: S15A3
+
+LAT2	L-histidine transporter	curated:SwissProt::Q9WVR6	curated:SwissProt::O34739	curated:TCDB::Q26594	curated:TCDB::Q9NA91
+transport: LAT2
+
+LHT	L-histidine transporter	curated:SwissProt::Q9FKS8	curated:SwissProt::Q9LRB5	curated:SwissProt::Q9SX98	curated:TCDB::Q84WE9
+transport: LHT
+
+SLC38A3	L-histidine:Na+ symporter	curated:CharProtDB::CH_091437	curated:CharProtDB::CH_091510
+transport: SLC38A3
+
+PTR2	L-histidine:H+ symporter	curated:SwissProt::P46032	curated:TCDB::Q43390
+transport: PTR2
+
+# MetaCyc Pathway: L-histidine degradation I involves deamination to
+# urocanate, hydration to 4-imidazolone-5-propanoate, ring-opening
+# hydrolysis to N-formiminoglutamate, and hydrolysis to formamide and
+# glutamate. Formamide can be cleaved to formate and ammonia, but it
+# could also be secreted, so this is not described. Similarly, formate
+# may be oxidized to CO2 or secreted. Glutamate is one non-specific
+# aminotransferase reaction from central metabolism.
+hutH	histidine ammonia-lyase	EC:4.3.1.3
+hutU	urocanase	EC:4.2.1.49
+hutI	imidazole-5-propionate hydrolase	EC:3.5.2.7
+hutG	N-formiminoglutamate formiminohydrolase	EC:3.5.3.8
+all: transport hutH hutU hutI hutG
+
+# MetaCyc Pathway: L-histidine degradation II also involves conversion
+# to N-formiminoglutamate, but then it is deaminated to
+# N-formylglutamate, and hydrolyzed to formate and glutamate.
+hutF	N-formiminoglutamate deiminase	EC:3.5.3.13
+hutG'	N-formylglutamate amidohydrolase	EC:3.5.1.68
+all: transport hutH hutU hutI hutH hutF hutG'
+
+# MetaCyc Pathway: L-histidine degradation III also involves
+# conversion to N-formiminoglutamate, but then the formamide group is
+# transferred to tetrahydrofolate, to give glutamate and
+# 5-formimino-THF. A cyclodeaminase converts 5-formimino-THF to
+# 5,10-methenyl-THF, a cyclohydrolase produces N10-formyl-THF, and
+# deformylase regenerates THF, releasing formate.
+#
+# It seems to be present only in animals so is not described
+
+# MetaCyc Pathway: L-histidine degradation IV involves the
+# intermediate 3-(imidazol-5-yl)lactate, but the downstream reactions
+# are not known, so it is not included.
+
+# MetaCyc Pathway: L-histidine degradation V is an animal pathway that
+# ends at 3-(imidazol-5-yl)lactate, so it is not included
+
+# MetaCyc Pathway: L-histidine degradation VI describes side pathways
+# in animals, in which imidazole-5-propionate can be oxidized to
+# hydantoin-5-propionate or 4-oxoglutamarate. The 4-oxoglutamarate
+# spontaneously deaminates to 2-oxoglutarate. This pathway is only
+# known in animals so it is not included.
