@@ -1,0 +1,44 @@
+# Ethanol can pass through biological membranes, so no transporter is required.
+
+import acetate.steps:acs # acetyl-CoA synthetase
+import acetate.steps:ackA # acetate kinase
+import acetate.steps:pta # phosphate acetyltransferase
+
+# MetaCyc Pathway: ethanol degradation I involves oxidation to
+# acetaldehyde and to acetyl-CoA
+
+# CH_121261 seems to be a sequence fragment
+etoh-dh-nad	ethanol dehydrogenase (NAD(P))	EC:1.1.1.1	ignore:CharProtDB::CH_121261	EC:1.1.1.71
+etoh-dh-c	ethanol dehydrogenase (cytochrome c)	EC:1.1.2.8	ignore_other:1.1.2.8
+
+# Bacterial quinone-dependent enzymes (EC 1.1.5.5) have 3 subunits.
+# (The enzyme from Zyomomona is NAD-dependent, but is misannotated as quinone-dependent in MetaCyc.)
+adhAqn	ethanol dehydrogenase (quinone), subunit I	curated:BRENDA::Q44002	curated:BRENDA::P18278	curated:BRENDA::Q93RE9	curated:SwissProt::O05542	curated:SwissProt::P28036	ignore_other:1.1.2.8
+adhBqn	ethanol dehydrogenase (quinone), subunit II	curated:SwissProt::P0A388	curated:SwissProt::Q47945	ignore_other:1.1.2.8
+adhSqn	ethanol dehydrogenase (quinone), subunit III	curated:SwissProt::O05544
+
+etoh-dh-qn: adhAqn adhBqn adhSqn
+
+etoh-dh: etoh-dh-nad
+etoh-dh: etoh-dh-c
+etoh-dh: etoh-dh-qn
+
+# Many enzymes are multifunctional alcohol/acetaldehyde dehydrogenases,
+# and many close homologs have just one annotation.
+# 1.2.1.57 is acylating butanal dehydrogenase, which may also act on acetaldehyde
+# Q2XQZ7 is probably misannotated
+ald-dh-CoA	acetaldehyde dehydrogenase, acylating	EC:1.2.1.10	ignore_other:1.1.1.1	ignore_other:1.1.1.71	ignore_other:1.2.1.57	ignore:BRENDA::Q2XQZ7
+
+all: etoh-dh ald-dh-CoA
+
+# In MetaCyc Pathway: ethanol degradation II, acetaldehyde is oxidized
+# to acetate, not acetyl-CoA. It can then by activated by acs (or ackA/pta)
+adh	acetaldehyde dehydrogenase (not acylating)	EC:1.2.1.3
+all: etoh-dh adh acs
+all: etoh-dh adh ackA pta
+
+# MetaCyc Pathway: ethanol degradation III, beginning with ethanol
+# monooxygenase, is only known in metazoans, so it is not included
+
+# MetaCyc Pathway: ethanol degradation IV, beginning with ethanol
+# peroxidase, is only known in metazoans, so it is not included.
