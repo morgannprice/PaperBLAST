@@ -65,44 +65,28 @@ transport: Can1
 # Outer membrane porins (oprD2 and "artM", TC 1.B.6.2.7) were ignored
 # A family of metazoan amino acid transporters (TC 2.A.3.8) was ignored
 
-# Succinate dehydrogenase subunits
-import succinate.steps:sdhA
-import succinate.steps:sdhB
-import succinate.steps:sdhC
-import succinate.steps:frdA
-import succinate.steps:frdB
-import succinate.steps:frdC
-import succinate.steps:frdD
-sdh: sdhA sdhB sdhC
-sdh: frdA frdB frdC frdD
+# GABA (gamma-aminobutyrate) is a common intermediate
+import putrescine.steps:gabT # gamma-aminobutyrate transaminase
+import putrescine.steps:gabD # succinate semialdehyde dehydrogenase
+GABA_utilization: gabT gabD
 
-import succinate.steps:fum # fumarase
-import succinate.steps:mdh # malate dehydrogenase, to oxaloacetate
-import succinate.steps:mae # malate dehydrogenase, to pyruvate
+# putrescine is a common intermediate
+import putrescine.steps:patA # putrescine aminotransferase
+import putrescine.steps:puo # putrescine oxidase
+import putrescine.steps:patD # gamma-aminobutyraldehyde dehydrogenase
+# MetaCyc does not list putrescine catabolism with glutamylated intermediates
+# (puuABCD) as a pathway for arginine utilization, but it is logical that
+# arginine could be converted to putrescine and catabolized this way.
+# Fitness data suggests that puuA is involved in arginine utilization
+# in Pseudomonas fluorescens FW300-N2E3 and in Pseudomonas simiae WCS417
+import putrescine.steps:puuA
+import putrescine.steps:puuB
+import putrescine.steps:puuC
+import putrescine.steps:puuD
 
-succinate_utilization: sdh fum mdh
-succinate_utilization: sdh fum mae
-
-# gamma-aminobutyrate is a common intermediate, and can be oxidized to succinate
-# via succinate semialdehyde
-gabT	gamma-aminobutyrate transaminase	EC:2.6.1.19	EC:2.6.1.96
-# This may be either NADH or NADPH dependent, forming succinate in either case
-# Close homologs in Pseudomonas or Klebsiella are annotated as glutarate-semialdehyde dehydrogenases (1.2.1.20)
-# or aldehyde dehydrogenases (1.2.1.3); Q9I6M5 is annotated as glutarate-semialdehyde dehydrogenase
-# but with no EC number.
-# Q8BUF0 appears to be misannotated in BRENDA
-gabD	succinate semialdehyde dehydrogenase	EC:1.2.1.79	EC:1.2.1.24	EC:1.2.1.16	ignore:BRENDA::Q8BUF0	ignore_other:1.2.1.20	ignore_other:1.2.1.3	ignore:SwissProt::Q9I6M5
-GABA_utilization: gabT gabD succinate_utilization
-
-# Putrescine is a common intermediate, and can be oxidized to gamma-aminobutyrate
-# via gamma-aminobutyraldehyde.
-# another transaminases converts it to succinate semialdehyde,
-# and a dehydrogenase forms succinate.
-
-# Many close homologs of patA are GABA aminotransferases (EC 2.6.1.19), so ignore those
-patA	putrescine aminotransferase	EC:2.6.1.82	curated:metacyc::MONOMER-17	ignore_other:2.6.1.19
-patD	gamma-aminobutyraldehyde dehydrogenase	EC:1.2.1.19
-putrescine_utilization:  patA patD GABA_utilization
+putrescine_utilization: patA patD GABA_utilization
+putrescine_utilization: puo patD GABA_utilization
+putrescine_utilization: puuA puuB puuC puuD GABA_utilization
 
 # Proline is an intermediate, and is consumed by conversion to glutamate
 # dehydrogenase and L-glutamate 5-semialdeyde dehydrogenase.
