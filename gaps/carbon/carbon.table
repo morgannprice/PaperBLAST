@@ -27,6 +27,7 @@ mannitol	D-mannitol catabolism
 mannose	D-mannose catabolism
 myoinositol	myo-inositol catabolism
 nag	N-acetyl-D-glucosamine catabolism
+phenylacetate	phenylacetate catabolism
 proline	L-proline catabolism
 propionate	propionate catabolism
 putrescine	putrescine catabolism
@@ -36,4 +37,5 @@ sorbitol	D-sorbitol (glucitol) catabolism
 succinate	succinate catabolism
 sucrose	sucrose catabolism
 trehalose	trehalose catabolism
+tyrosine	L-tyrosine catabolism
 xylose	D-xylose catabolism

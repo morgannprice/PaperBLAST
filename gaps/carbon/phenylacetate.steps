@@ -1,0 +1,236 @@
+# Transporters were identified using
+# query: transporter:phenylacetate
+
+# TCDB::B6HIC2 is likely to be a phenylacetate transporter
+paaT	phenylacetate transporter Paa	curated:TCDB::B6H9Q3	curated:TCDB::Q8NKG7	ignore:TCDB::B6HIC2
+transport: paaT
+
+ppa	phenylacetate permease ppa	curated:TCDB::O50471
+transport: ppa
+
+# In Paraburkholderia bryophila 376MFSha3.1, is specifically important for phenylacetate utilization.
+# It is similar to E. coli aroP, a proton symporter for aromatic amino acids
+H281DRAFT_04042	phenylacetate:H+ symporter	uniprot:A0A2Z5MFR8
+transport: H281DRAFT_04042
+
+# The porin phaK was not included
+
+import deoxyribose.steps:atoB # acetyl-CoA acetyltransferase 
+
+# MetaCyc pathway phenylacetate degradation I (aerobic). A ligase
+# activates it to phenylacetyl-CoA, an oxygen-dependent 1,2-epoxidase
+# forms 1,2-epoxyphenylacetyl-CoA, an isomerase forms
+# 2-oxepin-2(3H)-ylideneacetyl-CoA, a ring-opening hydrolase forms
+# 3-oxo-5,6-didehydrosuberyl-CoA semialdehyde, a dehydrogenase forms
+# 3-oxo-5,6-didehydrosuberyl-CoA, a thiolase forms
+# trans-2,3-dehydroadipyl-CoA and acetyl-CoA, a hydratase forms
+# (3S)-hydroxyadipyl-CoA, a dehydrogenaes forms 3-oxoadipyl-CoA, and a
+# thiolase forms suiccinyl-CoA and acetyl-CoA.
+
+paaK	phenylacetate-CoA ligase	EC:6.2.1.30
+
+paaA	phenylacetyl-CoA 1,2-epoxidase, subunit A	curated:SwissProt::P76077	curated:metacyc::MONOMER-15947
+paaB	phenylacetyl-CoA 1,2-epoxidase, subunit B	curated:SwissProt::P76078	curated:metacyc::MONOMER-15948
+paaC	phenylacetyl-CoA 1,2-epoxidase, subunit C	curated:BRENDA::P76079	curated:metacyc::MONOMER-15949
+paaE	phenylacetyl-CoA 1,2-epoxidase, subunit E	curated:SwissProt::P76081	curated:metacyc::MONOMER-15950
+
+paaG	1,2-epoxyphenylacetyl-CoA isomerase	EC:5.3.3.18
+
+# paaZ is a fusion protein of a hydrolsae and aldehyde dehydrogenase domains
+paaZ1	oxepin-CoA hydrolase	EC:3.3.2.12
+
+# Some of these dehydrogenases are closely related to
+# 3,4-dehydroadipyl-CoA semialdehyde dehydrogenases (see boxD below),
+# which perform a similar reaction.
+
+paaZ2	3-oxo-5,6-didehydrosuberyl-CoA semialdehyde dehydrogenase	EC:1.2.1.91	ignore_other:1.2.1.77
+
+# PaaJ is a thiolase with two activities that are linked to two different EC numbers, which is
+# why it is listed twice.
+# (Also, the product of the first thiolase reaction should be 3,4-dihydroadipyl-CoA, not 2,3-dihydro-,
+#  so there is probably a second isomerization step, which might be catalyzed by paaG or by paaJ itself)
+# In BRENDA, Q845J3 is misannotated as paaJ; it is probably an accessory protein for assembly of the epoxidase
+#	(paaD, not included here)
+# In Burkholderia phytofirmans PsJN, this enzyme is BPHYT_RS17345 (B2SYZ2)
+# In Paraburkholderia bryophila 376MFSha3.1, it is H281DRAFT_05723 (A0A2Z5MFE9)
+# In Herbaspirillum seropedicae, it is HSERO_RS20660 (D8ITH5)
+paaJ1	3-oxo-5,6-dehydrosuberyl-CoA thiolase	EC:2.3.1.223	ignore_other:2.3.1.174	ignore:BRENDA::Q845J3	uniprot:B2SYZ2	uniprot:A0A2Z5MFE9	uniprot:D8ITH5
+
+# This reaction is associated with EC 4.2.1.17, which is very broad (enoyl-CoA hydratase)
+# BPHYT_RS17335 was misannotated, it is ech
+# H281DRAFT_04594 (A0A2Z5MCI7) from Paraburkholderia bryophila 376MFSha3.1 is required for phenylacetate utilization
+# and is distantly related to E. coli paaF
+paaF	2,3-dihydroadipyl-CoA hydratase	curated:BRENDA::P76082	curated:metacyc::MONOMER-15953	ignore:reanno::BFirm:BPHYT_RS17335	uniprot:A0A2Z5MCI7
+# HP15_2693 (GFF2749) is involved in phenylalanine degradation via phenylacetyl-CoA and
+# likely has this activity
+
+# This step is described by 1.1.1.35, a broader term for 3-hydroxyacyl-CoA dehydrogenases
+# HP15_1512 (GFF1550) is annotated as enoyl-CoA hydratase but likely as 3-hydroxyacyl-CoA dehydrogenase
+# activity as well.
+paaH	3-hydroxyadipyl-CoA dehydrogenase	EC:1.1.1.35	curated:reanno::Marino:GFF2749	ignore:reanno::Marino:GFF1550
+
+# Enzymes from B. phytofirmans and P. bryophila and H. seropedicae are included, as for paaJ1 above
+paaJ2	3-oxoadipyl-CoA thiolase	EC:2.3.1.174	ignore_other:2.3.1.223	uniprot:B2SYZ2	uniprot:A0A2Z5MFE9	uniprot:D8ITH5
+
+aerobic-pathway: paaK paaA paaB paaC paaE paaG paaZ1 paaZ2 paaJ1 paaF paaH paaJ2
+
+# MetaCyc pathway phenylacetate degradation II (anaerobic).  A ligase
+# activates it to phenylacetyl-CoA, a dehydrogenase forms
+# phenylglyoxyl-CoA, a hydrolase forms phenylglyoxylate [this step is
+# not linked to sequence], and an oxidoreductase forms benzoyl-CoA and
+# CO2.
+
+# phenylacetyl-CoA oxidoreductase has three subunits, padBCD
+# TCDB 5.A.3.11.1 / Q5P037 describes a related system, not the system from Thauera aromatica
+# (and I'm not sure if those sequences are actually characterized.)
+# That system is (see N-terminal sequences in PMID:10336636)
+# 93 kDa protein: TTPNxPtGVtKVAtY = padB = Tharo_1297 = A0A2R4BLL6
+# 27 kDa protein: TRYAMVADLRRxVGxQTxTAAxKHTNATPP = padC = Tharo_1296 = A0A2R4BLY8
+# 26 kDa protein: kRGVQPELQPFtDAr = padD = Tharo_1295 = A0A2R4BLZ0 
+
+padB	phenylacetyl-CoA dehydrogenase, PadB subunit	uniprot:A0A2R4BLL6
+padC	phenylacetyl-CoA dehydrogenase, PadC subunit	uniprot:A0A2R4BLY8	ignore:TCDB::Q5P036
+padD	phenylacetyl-CoA dehydrogenase, PadD subunit	uniprot:A0A2R4BLZ0	ignore:TCDB::Q5P0H8
+phenylacetyl-CoA-dehydrogenase: padB padC padD
+
+# phenylglyoxylyl-CoA hydrolase (EC 3.1.2.25) has not been linked to sequence and is omitted.
+# This activity is likely provided by one of the subunits of PadBCD in any case (PMID:10336636)
+
+# phenylglyoxylate dehydrogenase has 5 subunits, padEFGHI, in Aromatoleum evansii
+
+padG	phenylglyoxylate dehydrogenase, alpha subunit	curated:SwissProt::Q8L3B1
+padI	phenylglyoxylate dehydrogenase, beta subunit	curated:SwissProt::Q8L3A9
+padE	phenylglyoxylate dehydrogenase, gamma subunit	curated:SwissProt::Q8L3B3
+padF	phenylglyoxylate dehydrogenase, delta subunit	curated:SwissProt::Q8L3B2
+padH	phenylglyoxylate dehydrogenase, epsilon subunit	curated:SwissProt::Q8L3B0
+
+phenylglyoxylate-dehydrogenase: padG padI padE padF padH
+
+# The benzoyl-CoA is degraded by MetaCyc Pathway: benzoyl-CoA
+# degradation II (anaerobic) or III (see below).  Pathway II involves
+# benzoyl-CoA reductase to cyclohex-1,5-diene-1-carbonyl-CoA, a
+# hydratase to 6-hydroxycyclohex-1-ene-1-carbonyl-CoA, a dehydrogenase
+# to 6-oxocyclohex-1-ene-1-carbonyl-CoA, a hydrolase to
+# 2-hydroxy-6-oxocycloheane-1-carbonyl-CoA, a ring-opening hydrolase
+# to 3-hydroxypimeloyl-CoA [the last two steps are both catalyzed by
+# oah], a dehydrogenase to 3-oxopimeloyl-CoA [not linked to sequence],
+# and an acetyltransferase to glutaryl-CoA + acetyl-CoA. Breakdown of
+# glutaryl-CoA is described in another pathway below.
+
+# Benzoyl-CoA reduction is energetically unfavorable. There are two
+# classes of reductases: class I enzymes (bcrABCD) use ATP to drive
+# the reaction, while class II enzymes (bamBCDEFGHI) are thought to us
+# an electron bifurcation.  Ignore SYN_02587 / Q2LQN9 from Syntrophus
+# aciditrophicus, which can oxidize cyclohex-1,5-diene-1-carbonyl-CoA
+# to benzoyl-CoA but seems to lack a mechanism to drive benzoyl-CoA
+# reduction.
+
+# Thauera aromatica has BrcABCD; a similar system in Rhodopseudomonas palustris is known as badFEDG;
+# and a similar system in Azoarcus is known as BzdQONP (see PMC516837 and Genbank AF521665).
+# [The curated entries for Azoarcus, in BRENDA, are from another strain and are not
+#  quite identical to the protein sequences in AF521665]
+
+bcrA	ATP-dependent benzoyl-CoA reductase, alpha subunit	curated:SwissProt::O87876	curated:BRENDA::O07462	curated:BRENDA::Q8VUG0	ignore_other:1.3.7.8
+bcrB	ATP-dependent benzoyl-CoA reductase, beta subunit	curated:SwissProt::O87875	curated:BRENDA::O07461	curated:BRENDA::Q8VUG2	ignore_other:1.3.7.8
+bcrC	ATP-dependent benzoyl-CoA reductase, gamma subunit	curated:SwissProt::O87874	curated:BRENDA::O07460	curated:BRENDA::Q8VUG3	ignore_other:1.3.7.8
+bcrD	ATP-dependent benzoyl-CoA reductase, delta subunit	curated:SwissProt::O87877	curated:BRENDA::O07463	curated:BRENDA::Q8VUG1	ignore_other:1.3.7.8
+benzoyl-CoA-reductase: bcrA bcrB bcrC bcrD
+
+# bamBCDEFGHI has been described in Geobacter metallireducens (PMID:30674680)
+# There is also a paper about the enzyme from Desulfocarcina cetonica but
+# I could not find those sequences.
+bamB	class II benzoyl-CoA reductase, BamB subunit	uniprot:Q39TV8 # Gmet_2087
+bamC	class II benzoyl-CoA reductase, BamC subunit	uniprot:Q39TV9 # Gmet_2086
+bamD	class II benzoyl-CoA reductase, BamD subunit	uniprot:Q39TW0 # Gmet_2085
+bamE	class II benzoyl-CoA reductase, BamE subunit	uniprot:Q39TW1 # Gmet_2084
+bamF	class II benzoyl-CoA reductase, BamF subunit	uniprot:Q39TW2 # Gmet_2083
+bamG	class II benzoyl-CoA reductase, BamG subunit	uniprot:Q39TW4 # Gmet_2081
+bamH	class II benzoyl-CoA reductase, BamH subunit	uniprot:Q39TW5 # Gmet_2080
+bamI	class II benzoyl-CoA reductase, BamI subunit	uniprot:Q39TW6 # Gmet_2079
+benzoyl-CoA-reductase: bamB bamC bamD bamE bamF bamG bamH bamI
+
+dch	cyclohexa-1,5-diene-1-carboxyl-CoA hydratase	EC:4.2.1.100
+had	6-hydroxycyclohex-1-ene-1-carbonyl-CoA dehydrogenase	EC:1.1.1.368
+oah	6-oxocyclohex-1-ene-1-carbonyl-CoA hydratase	EC:3.7.1.21
+# 3-hydroxypimeloyl-CoA dehydrogenase is omitted, as it has not been linked to sequence
+pimB	3-oxopimeloyl-CoA:CoA acetyltransferase	curated:metacyc::MONOMER-20679
+
+# MetaCyc Pathway: benzoyl-CoA degradation III (anaerobic) also begins
+# with benzoyl-CoA reductase forming
+# cyclohex-1,5-diene-1-carboxyl-CoA. This is further reduced to
+# cyclohex-1-ene-1-carboxyl-CoA, hydrated to
+# 2-hydroxy-cyclohexane-1-carbonyl-CoA, oxidized to
+# 2-ketocyclohexane-1-carbonyl-CoA, and cleaved by a ring-opening
+# hydrolase to pimeloyl-CoA. Pimeloyl-CoA is oxidized to
+# 2,3-didehydropimeloyl-CoA, hydrated to 3-hydroxypimeloyl-CoA, which
+# is also an intermediate in pathway II. As in pathway II,
+# 3-hydroxypimeloyl-CoA is oxidized to 3-oxopimeloyl-CoA and cleaved
+# by a thiolase to glutaryl-CoA and acetyl-CoA.
+
+# This reaction runs in reverse (1,5-diene to cyclohex-1-ene-1-carbonyl-CoA)
+Ch1CoA	cyclohex-1-ene-1-carbonyl-CoA dehydrogenase	EC:1.3.8.10
+
+badK	cyclohex-1-ene-1-carboxyl-CoA hydratase	curated:metacyc::MONOMER-943
+
+badH	2-hydroxy-cyclohexanecarboxyl-CoA dehydrogenase	curated:metacyc::MONOMER-893
+
+badI	2-ketocyclohexanecarboxyl-CoA hydrolase	curated:metacyc::MONOMER-892
+
+# EC 1.3.1.62
+pimD	pimeloyl-CoA dehydrogenase, large subunit	curated:metacyc::MONOMER-20676
+pimC	pimeloyl-CoA dehydrogenase, small subunit	curated:metacyc::MONOMER-20677
+
+# 6-carboxyhex-2-enoyl-CoA is another name for 2,3-didehydropimeloyl-CoA
+pimF	6-carboxyhex-2-enoyl-CoA hydratase	curated:metacyc::MONOMER-20678
+
+# Although MetaCyc links the oxidation of phenylacetyl-CoA to
+# benzoyl-CoA to anaerobic conditions, neither phenylacetyl-CoA nor
+# phenylglyoxylate dehydrogenase seem to be oxygen sensitive.  So, we
+# also allow for aerobic consumption of the benzoyl-CoA, as described
+# in MetaCyc Pathway: benzoyl-CoA degradation I (aerobic). The first
+# step is an epoxidase that forms 2,3-epoxy-2-3-dihydrobenzoyl-CoA; a
+# dihydrolase forms cis-3,4-dihydroadipyl-CoA semialdehyde and
+# formate; a dehydrogenaes forms cis-3,4-dehydroadipyl-CoA; and an
+# unknown isomerase forms trans-2,3-dehydroadipyl-CoA. This is
+# converted to succinyl-CoA as in the anaerobic pathway above (paaF,
+# paaH, and paaJ2).
+
+# From EC 1.14.13.208
+boxA	benzoyl-CoA epoxidase, subunit A	curated:SwissProt::Q9AIX6
+boxB	benzoyl-CoA epoxidase, subunit B	curated:SwissProt::Q9AIX7
+
+boxC	2,3-epoxybenzoyl-CoA dihydrolase	EC:4.1.2.44
+
+# This reaction is similar to that of 3,4-dehydroadipyl-CoA semialdehyde dehydrogenases (see paaZ2 above)
+boxD	3,4-dehydroadipyl-CoA semialdehyde dehydrogenase	EC:1.2.1.77	ignore_other:1.2.1.91
+
+# The gene for 3,4-dehydroadipyl-CoA isomerase is not known
+
+# MetaCyc Pathway: glutaryl-CoA degradation -- glutaryl-CoA is
+# oxidized to (E)-glutaconyl-CoA and oxidatively decarboxylated to
+# crotonyl-CoA (both by the same enzyme), hydrated to
+# 3-hydroxybutanoyl-CoA, oxidized to acetoacetyl-CoA, and cleaved to
+# two acetyl-CoA.
+
+gcdH	glutaryl-CoA dehydrogenase	EC:1.3.8.6
+
+# Q97MS7 is misannotated in BRENDA
+# BPHYT_RS17335 was misannotated as paaF; it is very similar to the crotonase H16_A3307, which
+# is a different explanation for its role in phenylacetate utilization
+ech	(S)-3-hydroxybutanoyl-CoA hydro-lyase	EC:4.2.1.150	ignore:BRENDA::Q97MS7	curated:reanno::BFirm:BPHYT_RS17335
+
+# HP15_1512 (GFF1550) is annotated as enoyl-CoA hydratase but likely does this as well
+fadB	(S)-3-hydroxybutanoyl-CoA dehydrogenase	EC:1.1.1.35	ignore:reanno::Marino:GFF1550
+
+glutaryl-CoA-degradation: gcdH ech fadB atoB
+
+benzoyl-CoA-degradation: benzoyl-CoA-reductase dch had oah pimB glutaryl-CoA-degradation
+
+benzoyl-CoA-degradation: benzoyl-CoA-reductase Ch1CoA badK badH badI pimD pimC pimF glutaryl-CoA-degradation
+
+benzoyl-CoA-degradation: boxA boxB boxC boxD paaF paaH paaJ2
+
+via-benzoyl-CoA: paaK phenylacetyl-CoA-dehydrogenase phenylglyoxylate-dehydrogenase benzoyl-CoA-degradation
+
+all: transport aerobic-pathway
+all: transport via-benzoyl-CoA
