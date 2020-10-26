@@ -296,6 +296,16 @@ if ($query =~ m/^transporter:(.+)$/) {
           a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec"}, $pathInfo{$pathSpec}{desc}))
     unless $format;
 
+  # Show step description
+  die "Unknown step $step" unless defined $steps->{steps}{$step};
+  print p(b("Definition of", i($step)));
+  print start_ul();
+  foreach my $search (@{ $steps->{steps}{$step}{search} }) {
+    my ($type,$value) = @$search;
+    print li($type,$value)."\n";
+  }
+  print end_ul(), "\n";
+
   foreach my $query (@queries) {
     if ($query->{type} eq "curated") {
       my $ids = $query->{query};
