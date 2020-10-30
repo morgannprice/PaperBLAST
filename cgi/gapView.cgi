@@ -1001,7 +1001,8 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
     }
 
     my @cand = ReadSumCand($sumpre,"");
-    @cand = grep { $_->{locusId} eq $locusSpec || $_->{locusId2} eq $locusSpec} @cand;
+    @cand = grep { $_->{orgId} eq $orgId
+                     && ($_->{locusId} eq $locusSpec || $_->{locusId2} eq $locusSpec)} @cand;
     if (@cand == 0) {
       print p("Not a candidate for any step in $setDesc"),"\n";
     } else {
