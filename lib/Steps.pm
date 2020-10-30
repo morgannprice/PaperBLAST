@@ -61,9 +61,9 @@ sub ReadSteps2($$) {
       $toget =~ s/#.*//;
       $toget =~ s/\s+$//;
       my @pieces = split /:/, $toget;
-      die "Invalid import line in $stepsFile\n$line\n(should be of the form\nimport stepsfile:step)\n"
+      die "Invalid import line in $stepsFile\n$line\n(should be of the form\nimport stepsfile:step step step)\n"
         unless @pieces == 2;
-      my ($importFileName, $stepName) = @pieces;
+      my ($importFileName, $stepNames) = @pieces;
       die "Invalid import file $importFileName in $stepsFile\n"
         unless $importFileName =~ m/^[a-zA-Z0-9._-]+$/;
       my $importFilePathName = $importFileName;
@@ -74,20 +74,25 @@ sub ReadSteps2($$) {
       }
       die "Unknown import file $importFilePathName\nfrom line $line\nin steps file $stepsFile\n"
         unless -e $importFilePathName;
+      my @stepNames = split / /, $stepNames;
       if ($doimport) {
         $imports{$importFilePathName} = ReadSteps2($importFilePathName, 0)
           if !exists $imports{$importFilePathName};
         my $stepsImport = $imports{$importFilePathName};
-        die "Steps file $stepsFile imports unknown step $stepName from $importFilePathName\n"
-          unless exists $stepsImport->{steps}{$stepName};
-        die "Steps file $stepsFile imports step $stepName that already exists\n"
-          if exists $steps->{$stepName} || exists $rules->{$stepName};
-        # Load the step.
-        my $stepObj = $stepsImport->{steps}{$stepName};
-        $stepObj->{i} = $nSteps++; # renumber
-        $steps->{$stepName} = $stepObj;
+        foreach my $stepName (@stepNames) {
+          die "Steps file $stepsFile imports unknown step $stepName from $importFilePathName\n"
+            unless exists $stepsImport->{steps}{$stepName};
+          die "Steps file $stepsFile imports step $stepName that already exists\n"
+            if exists $steps->{$stepName} || exists $rules->{$stepName};
+          # Load the step.
+          my $stepObj = $stepsImport->{steps}{$stepName};
+          $stepObj->{i} = $nSteps++; # renumber
+          $steps->{$stepName} = $stepObj;
+        }
       } else {
-        $steps->{$stepName} = {}; # empty object
+        foreach my $stepName (@stepNames) {
+          $steps->{$stepName} = {}; # empty object
+        }
       }
     } elsif ($line =~ m/\t/) {
       my @F = split /\t/, $line;
