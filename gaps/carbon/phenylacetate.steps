@@ -54,7 +54,8 @@ paaZ2	3-oxo-5,6-didehydrosuberyl-CoA semialdehyde dehydrogenase	EC:1.2.1.91	igno
 # In Burkholderia phytofirmans PsJN, this enzyme is BPHYT_RS17345 (B2SYZ2)
 # In Paraburkholderia bryophila 376MFSha3.1, it is H281DRAFT_05723 (A0A2Z5MFE9)
 # In Herbaspirillum seropedicae, it is HSERO_RS20660 (D8ITH5)
-paaJ1	3-oxo-5,6-dehydrosuberyl-CoA thiolase	EC:2.3.1.223	ignore_other:2.3.1.174	ignore:BRENDA::Q845J3	uniprot:B2SYZ2	uniprot:A0A2Z5MFE9	uniprot:D8ITH5
+# In Marinobacter adhaerens, it is HP15_2695 (GFF2751)
+paaJ1	3-oxo-5,6-dehydrosuberyl-CoA thiolase	EC:2.3.1.223	ignore_other:2.3.1.174	ignore:BRENDA::Q845J3	uniprot:B2SYZ2	uniprot:A0A2Z5MFE9	uniprot:D8ITH5	curated:reanno::Marino:GFF2751
 
 # This reaction is associated with EC 4.2.1.17, which is very broad (enoyl-CoA hydratase)
 # BPHYT_RS17335 was misannotated, it is ech
@@ -69,8 +70,9 @@ paaF	2,3-dihydroadipyl-CoA hydratase	curated:BRENDA::P76082	curated:metacyc::MON
 # activity as well.
 paaH	3-hydroxyadipyl-CoA dehydrogenase	EC:1.1.1.35	curated:reanno::Marino:GFF2749	ignore:reanno::Marino:GFF1550
 
-# Enzymes from B. phytofirmans and P. bryophila and H. seropedicae are included, as for paaJ1 above
-paaJ2	3-oxoadipyl-CoA thiolase	EC:2.3.1.174	ignore_other:2.3.1.223	uniprot:B2SYZ2	uniprot:A0A2Z5MFE9	uniprot:D8ITH5
+# Enzymes from B. phytofirmans and P. bryophila and H. seropedicae
+# and M. adhaerens are included, as for paaJ1 above
+paaJ2	3-oxoadipyl-CoA thiolase	EC:2.3.1.174	ignore_other:2.3.1.223	uniprot:B2SYZ2	uniprot:A0A2Z5MFE9	uniprot:D8ITH5	curated:reanno::Marino:GFF2751
 
 aerobic-pathway: paaK paaA paaB paaC paaE paaG paaZ1 paaZ2 paaJ1 paaF paaH paaJ2
 

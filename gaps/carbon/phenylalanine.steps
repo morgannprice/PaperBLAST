@@ -1,0 +1,154 @@
+# Transporters were identified using
+# query: transporter:phenylalanine:L-phenylalanine:phe
+
+# In E. coli, the ABC transporter livFGHMJ or livFGHMK transports phenylalanine.
+# livJ and livK are alternate substrate binding proteins that are similar to each other
+#
+# A related system in Pseudomonas fluorescens FW300-N2E2 is also important for phenylalanine utlization
+# (Pf6N2E2_2921 = livK = A0A160A0J6; Pf6N2E2_2923 = livH = A0A0D9B2B6; Pf6N2E2_2924 = livM = A0A159ZYE0;
+#  Pf6N2E2_2925 = livG = A0A159ZWS6; Pf6N2E2_2926 = livF = A0A159ZWL6)
+# And ignore the orthologs in Pseudomonas aeruginosa (the bra system), which transports various
+# amino acids and might transport phenylalanine.
+
+livF	L-phenylalanine ABC transporter, ATPase component 1 (LivF)	curated:CharProtDB::CH_003736	uniprot:A0A159ZWL6	ignore:TCDB::P21630
+
+livG	L-phenylalanine ABC transporter, ATPase component 2 (LivG)	curated:TCDB::P0A9S7	uniprot:A0A159ZWS6	ignore:TCDB::P21629
+
+livH	L-phenylalanine ABC transporter, permease component 1 (LivH)	curated:ecocyc::LIVH-MONOMER	uniprot:A0A0D9B2B6	ignore:TCDB::P21627
+
+livM	L-phenylalanine ABC transporter, permease component 2 (LivM)	curated:SwissProt::P22729	uniprot:A0A159ZYE0	ignore:TCDB::P21628
+
+livJ	L-phenylalanine ABC transporter, substrate-binding component LivJ/LivK	curated:CharProtDB::CH_107418	curated:TCDB::P0AD96	uniprot:A0A160A0J6	ignore:SwissProt::P21175
+
+transport: livF livG livH livM livJ
+
+# non-specific eukaryotic transporters (i.e., Q01650) and the related serine/threonine exchanger SteT were excluded
+# amino acid exporters such as yddG were excluded
+
+# RR42_RS33495 from Cupriavidus basilensis FW507-4G11 (A0A0C4YP23) is the phenylalanine transporter
+# Ignore A2RMP5, an ortholog from another Lactococcus
+aroP	L-phenylalanine:H+ symporter AroP	curated:TCDB::P15993	curated:TCDB::F2HN33	curated:TCDB::P24207	curated:TCDB::Q2VQZ4	curated:TCDB::Q46065	uniprot:A0A0C4YP23	ignore:SwissProt::A2RMP5
+
+transport: aroP
+
+# Steps for acetoacetate utilization
+import leucine.steps:atoA atoD aacS
+aa_activation: atoA atoD
+aa_activation: aacS
+import deoxyribose.steps:atoB # acetyl-CoA acetyltransferase
+acetoacetate_utilization: aa_activation atoB
+
+# Steps for tyrosine utilization
+import tyrosine.steps:HPD hmgA maiA fahA
+tyrosine-utilization: HPD hmgA maiA fahA acetoacetate_utilization
+
+# Steps for phenylacetate utilization
+import phenylacetate.steps:paaK paaA paaB paaC paaE paaG paaZ1 paaZ2 paaJ1 paaF paaH paaJ2 padG padI padE padF padH padB padC padD bcrA bcrB bcrC bcrD bamB bamC bamD bamE bamF bamG bamH bamI dch had oah pimB Ch1CoA badK badH badI pimD pimC pimF gcdH ech fadB boxA boxB boxC boxD
+
+phenylglyoxylate-dehydrogenase: padG padI padE padF padH
+phenylacetyl-CoA-dehydrogenase: padB padC padD
+
+glutaryl-CoA-degradation: gcdH ech fadB atoB
+
+benzoyl-CoA-reductase: bcrA bcrB bcrC bcrD
+benzoyl-CoA-reductase: bamB bamC bamD bamE bamF bamG bamH bamI
+
+benzoyl-CoA-degradation: benzoyl-CoA-reductase dch had oah pimB glutaryl-CoA-degradation
+benzoyl-CoA-degradation: benzoyl-CoA-reductase Ch1CoA badK badH badI pimD pimC pimF glutaryl-CoA-degradation
+benzoyl-CoA-degradation: boxA boxB boxC boxD paaF paaH paaJ2
+
+#phenylacetate-utilization: paaK paaA paaB paaC paaE paaG paaZ1 paaZ2 paaJ1 paaF paaH paaJ2
+#phenylacetate-utilization: paaK phenylacetyl-CoA-dehydrogenase phenylglyoxylate-dehydrogenase benzoyl-CoA-degradation
+
+phenylacetyl-CoA-utilization: paaA paaB paaC paaE paaG paaZ1 paaZ2 paaJ1 paaF paaH paaJ2
+phenylacetyl-CoA-utilization: phenylacetyl-CoA-dehydrogenase phenylglyoxylate-dehydrogenase benzoyl-CoA-degradation
+
+# Several pathways involve transamination to phenylpyruvate
+ARO8	L-phenylalanine transaminase	EC:2.6.1.1	EC:2.6.1.27	EC:2.6.1.57	ignore:BRENDA::Q845W8	ignore:BRENDA::A0A060PQX5	ignore:SwissProt::P52878	ignore:BRENDA::O57946
+
+# Phenylpyruvate can be decarboxylated to phenylacetaldehyde by the typical
+# homomeric enzyme, or by a heterodimer reported in Streptomyces virginiae
+# (see PMID:28719183)
+
+ARO10	phenylpyruvate decarboxylase	EC:4.1.1.43	ignore:BRENDA::A0A222AKA3
+
+# The alpha subunit is MF179145 = A0A222AKA3 (which appears in BRENDA)
+PPDCalpha	phenylpyruvate decarboxylase, alpha subunit	curated:BRENDA::A0A222AKA3
+# The beta subunit is not curated but is MF179146 = ASO76824.1, identical in sequence to G1UHX5
+PPDCbeta	phenylpyruvate decarboxylase, beta subunit	uniprot:G1UHX5
+
+phenylpyruvate-decarboxylase: ARO10
+phenylpyruvate-decarboxylase: PPDCalpha PPDCbeta
+
+# Although it is not described in MetaCyc, a common way to catabolize
+# phenylalanine is transaminatino to phenylpyruvate and then
+# phenylpyruvate:ferredoxin oxidoreductase, which forms
+# phenylacetyl-CoA. This enzyme is usually known as
+# indolepyruvate:ferredoxin oxidoreductase, but it acts on
+# phenylpyruvate as well (PMID:8206994).
+
+
+# phenylpyruvate:ferredoxin oxidoreductase has both heterodimeric
+# (iorA/iorB) and fused (iorAB) forms.
+
+iorA	phenylpyruvate:ferredoxin oxidoreductase, IorA subunit	curated:BRENDA::O07835	curated:BRENDA::Q6LZB6	curated:BRENDA::Q6M0F5	curated:SwissProt::P80910
+
+iorB	phenylpyruvate:ferredoxin oxidoreductase, IorB subunit	curated:BRENDA::O07836	curated:BRENDA::Q6LZB5	curated:BRENDA::Q6M0F6	curated:SwissProt::P80911
+
+# A fused enzyme is also described in Phaeobacter gallaeciensis (ior1 from PMC3346364 = A9ERV7 = I7EJ57)
+iorAB	phenylpyruvate:ferredoxin oxidoreductase, fused IorA/IorB	curated:reanno::BFirm:BPHYT_RS02015	curated:reanno::Marino:GFF880	uniprot:I7EJ57
+
+phenylpyruvate-fd-oxidoreductase: iorA iorB
+phenylpyruvate-fd-oxidoreductase: iorAB
+
+all: transport ARO8 phenylpyruvate-fd-oxidoreductase phenylacetyl-CoA-utilization
+
+# Aromatoleum aromaticum uses transamination to phenylpyruvate, a lyase to phenylacetaldehyde,
+# and a phenylacetaldehyde:ferredoxin oxidoreductase
+# (as well as a phenylacetaldehyde dehydrogenase), see PMID:24214948
+# The enzyme is ebA5005 = Q5P143
+
+pfor	phenylacetaldeyde:ferredoxin oxidoreductase	EC:1.2.7.5	uniprot:Q5P143
+
+all: transport ARO8 phenylpyruvate-decarboxylase pfor paaK phenylacetyl-CoA-utilization
+
+# MetaCyc Pathway: L-phenylalanine degradation II (anaerobic) involves
+# an aminotransferase (to 3-phenyl-2-oxopropanoate), a carboxy-lyase
+# (to phenylacetaldehyde), and a dehydrogenase to phenylacetate.
+
+pad-dh	phenylacetaldehyde dehydrogenase	EC:1.2.1.39
+
+all: transport ARO8 phenylpyruvate-decarboxylase pad-dh paaK phenylacetyl-CoA-utilization
+
+# MetaCyc Pathway: L-phenylalanine degradation I (aerobic) involves a
+# monooxygenase (PAH), which oxidizes it to tyrosine. PAH has a
+# tetrahydropterin co-substrate, which it hydroxylates at position
+# 4a. The tetrahydropterin is regenerated by a dehydratase and a
+# reductase. In Pseudomonas, the cosubstrate is
+# (6R)-L-threo-5,6,7,8-tetrahydroneopterin, also known as
+# tetrahydromonapterin; in Chlorobaculum tepidum, it is
+# (6R)-L-threo-5,6,7,8-tetrahydrobiopterin.
+
+PAH	phenylalanine 4-monooxygenase	EC:1.14.16.1
+PCBD	pterin-4-alpha-carbinoalamine dehydratase	EC:4.2.1.96
+# 1.5.1.34 describes tetrahydrobiopterin reductases,
+# while 1.5.1.50 describes bacterial dihydromonapterin reductases (folM in E. coli)
+QDPR	6,7-dihydropteridine reductase	EC:1.5.1.34	EC:1.5.1.50	ignore:SwissProt::P26353	ignore:BRENDA::P15888	ignore:SwissProt::Q01234
+
+all: transport PAH PCBD QDPR tyrosine-utilization
+
+# MetaCyc Pathway: L-phenylalanine degradation III is known only in
+# fungi and ends at 2-phenylethanol, without utilization of the
+# carbon, so it is not included.
+
+# MetaCyc Pathway: L-phenylalanine degradation IV (mammalian, via side
+# chain) is known only in mammals and does not feed carbon to central
+# metabolism, so it is not included.
+
+# MetaCyc Pathway: L-phenylalanine degradation V describes PAH in
+# plants, with 10-formyl-THF as the likely alternative to
+# tetrahydrobiopterin. It is not included.
+
+# MetaCyc Pathway: L-phenylalanine degradation VI (reductive Stickland
+# reaction) describes reduction to 3-phenylpropionate, without
+# utilization of the carbon, so it is not included.
