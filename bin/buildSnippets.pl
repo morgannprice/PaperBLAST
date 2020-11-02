@@ -110,28 +110,34 @@ sub ProcessArticle($$$);
       } else {
         open(IN, "<", $file) || die "Cannot read $file";
       }
-      my $firstline = <IN>;
-      chomp $firstline;
-      # firstline  should begin and end with ">" if it does not, keep reading lines until it does
-      die "xml file $file does not begin with <\n"
-        unless $firstline =~ m/^</;
-      while ($firstline !~ m/>$/) {
-        my $line = <IN>;
-        die "Cannot read successor line from $file -- bad header?" unless $line;
-        chomp $line;
-        $firstline .= " $line";
-      }
-      die "First line(s) of $file should be: <articles> or <!DOCTYPE ...>\n"
-        unless $firstline eq "<articles>" || $firstline =~ m/^<!DOCTYPE.*>/;
+      my $isFirst = 1;
       while(my $line = <IN>) {
         chomp $line;
-        next if $line eq "";
+        if ($isFirst) {
+          $isFirst = 0;
+          # first line should begin with "<"
+          die "xml file $file does not begin with <\n"
+            unless $line =~ m/^</;
+          # and end with ">", or keep reading until it does
+          while ($line !~ m/>$/) {
+            my $extraLine = <IN>
+              || die "Cannot read successor line from $file -- bad header?";
+            chomp $extraLine;
+            $line .= " $extraLine";
+          }
+          # ignore the entire !DOCTYPE tag
+          next if $line =~ m/^<!DOCTYPE.*>/;
+        }
+
         if ($line eq "</articles>") {
           next;
           last;
         }
         # sometimes there is an xml-stylesheet before the <article>
         $line =~ s/^<[?]xml-stylesheet .*[?]>//;
+        # ignore <articles> tag, sometimes on a line before the <article>
+        $line =~ s/^<articles>//;
+        # now line should be empty or should be the article, or the beginning of an article
         next if $line eq "";
         $line =~ m/^<article[> ]/ || die "File $file does not begin with an article: " . substr($line, 0, 100);
         my @lines = ( $line );
