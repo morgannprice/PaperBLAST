@@ -1,0 +1,170 @@
+# Transporters were identified using:
+# query: transporter:4-hydroxybenzoate:p-hydroxybenzoate:4-hydroxybenzoic acid:p-hydroxybenzoic acid
+
+pcaK	4-hydroxybenzoate transporter pcaK	curated:SwissProt::Q43975	curated:SwissProt::Q51955
+transport: pcaK
+
+# The primary substrate for this system is 4-chlorobenzoate, but TCDB
+# reports that binding of that substrate to fcbT1 is inhibited by 1 mM
+# 4-hydroxybenzoate, suggesting a reasonable affinity for
+# 4-hydroxybenzoate as wel.
+
+fcbT1	tripartite 4-hydroxybenzoate transporter, substrate-binding component FcbT1	curated:TCDB::Q9RBR1
+fcbT2	tripartite 4-hydroxybenzoate transporter, small DctQ-like component FcbT2	curated:TCDB::Q9RBR0
+fcbT3	tripartite 4-hydroxybenzoate transporter, large permease subunit FcbT3	curated:TCDB::Q9RBQ9
+transport: fcbT1 fcbT2 fcbT3
+
+# Ignore efflux pumps such as aaeB (distantly related to Pf6N2E2_2879
+
+# Putative NodT/MFP/FUSC type efflux systems are important for utilization --
+# it is not clear if these are involved in efflux or uptake.
+# So, ignore.
+
+# 3-oxoadipate is an intermediate in the ortho-cleavage pathway
+
+# MetaCyc Pathway: 3-oxoadipate degradation
+# involves activation by CoA (using succinyl-CoA) and a thiolase
+# (succinyltransferase) reaction that splits it to
+# acetyl-CoA and succinyl-CoA.
+
+# Two different types of 3-oxoadipate CoA-transferases (EC 2.8.3.6) are known.
+# They are both heteromeric with each subunit containing a CoA-transferase domain
+# Ignore 2.8.3.5, 3-oxoacid CoA-transferase, usually active on shorter substrates but who knows?
+
+pcaI	3-oxoadipate CoA-transferase subunit A (PcaI)	curated:CharProtDB::CH_021928	ignore_other:2.8.3.6	ignore_other:2.8.3.5
+pcaJ	3-oxoadipate CoA-transferase subunit B (PcaJ)	curated:BRENDA::P0A102	ignore_other:2.8.3.6	ignore_other:2.8.3.5
+3-oxodipate-CoA-transferase: pcaI pcaJ
+
+catI	3-oxoadipate CoA-transferase subunit A (CatI)	curated:SwissProt::Q8VPF3	curated:reanno::WCS417:GFF1318	curated:reanno::pseudo13_GW456_L13:PfGW456L13_4592	curated:reanno::pseudo3_N2E3:AO353_17195	ignore_other:2.8.3.6	ignore_other:2.8.3.5
+catJ	3-oxoadipate CoA-transferase subunit B (CatJ)	curated:SwissProt::Q8VPF2	curated:reanno::WCS417:GFF1319	curated:reanno::pseudo13_GW456_L13:PfGW456L13_4591	curated:reanno::pseudo3_N2E3:AO353_17200	ignore_other:2.8.3.6	ignore_other:2.8.3.5
+3-oxodipate-CoA-transferase: catI catJ
+
+pcaF	succinyl-CoA:acetyl-CoA C-succinyltransferase	EC:2.3.1.174
+
+3-oxoadipate-degradation: 3-oxodipate-CoA-transferase pcaF
+
+# 2-hydroxypenta-2,4-dienoate is an intermediate in the para-cleavage pathwa
+#
+# MetaCyc Pathway: 2-hydroxypenta-2,4-dienoate degradation
+# In this pathway, hhydroxypentadienoate is hydrated to
+# (S)-4-hydroxy-2-oxopentanoate, an aldolase cleaves it
+# to pyruvate and acetaldehyde, and an acetaldehyde
+# dehydrogenase forms acetate.
+
+mhpD	2-hydroxypentadienoate hydratase	EC:4.2.1.80
+# Q2XQZ7 is misannotated in BRENDA
+mhpE	4-hydroxy-2-oxovalerate aldolase	EC:4.1.3.39	ignore:BRENDA::Q2XQZ7
+
+import ethanol.steps:ald-dh-CoA adh # acetaldehyde dehydrogenase, acylating or not
+acetaldehyde-degradation: ald-dh-CoA
+acetaldehyde-degradation: adh
+
+2-hydroxypenta-2,4-dienoate-degradation: mhpD mhpE acetaldehyde-degradation
+
+# Anaerobic degradation of 4-hydroxybenzoate is via benzoyl-CoA.
+# Our rule also allow for the aerobic pathway for degradation of
+# benzoyl-CoA.  (It's not clear if this is correct or not.)
+
+import deoxyribose.steps:atoB # acetyl-CoA acetyltransferase 
+import phenylacetate.steps:gcdH ech fadB bcrA bcrB bcrC bcrD bamB bamC bamD bamE bamF bamG bamH bamI dch had oah pimB Ch1CoA badK badH badI pimD pimC pimF boxA boxB boxC boxD paaF paaH paaJ2
+glutaryl-CoA-degradation: gcdH ech fadB atoB
+benzoyl-CoA-reductase: bcrA bcrB bcrC bcrD
+benzoyl-CoA-reductase: bamB bamC bamD bamE bamF bamG bamH bamI
+benzoyl-CoA-degradation: benzoyl-CoA-reductase dch had oah pimB glutaryl-CoA-degradation
+benzoyl-CoA-degradation: benzoyl-CoA-reductase Ch1CoA badK badH badI pimD pimC pimF glutaryl-CoA-degradation
+benzoyl-CoA-degradation: boxA boxB boxC boxD paaF paaH paaJ2
+
+# An aerobic route for degradation of 4-hydroxybenzoate is
+# 4-hydroxybenzoate 3-monooxygenase, which forms protocatechuate
+# (3,4-dihydroxybenzoate), which can be broken down by several different
+# pathways.
+pobA	4-hydroxybenzoate 3-monooxygenase	EC:1.14.13.2	EC:1.14.13.33
+
+# MetaCyc Pathway: protocatechuate degradation I (meta-cleavage
+# pathway) In this pathway, a 4,5-dioxygenase splits protocatechuate
+# to 4-carboxy-2-hydroxymuconate-6-semialdehyde. (In solution, this is
+# in the hemiacetal form.) The semialdehyde is oxidized to
+# 2-pyrone-4,6-dicarboxylate (with oxygen in the ring), hydrolyzed to
+# (1E)-4-oxobut-1-ene-1,2,4-tricarboxylate, tautomerized to
+# (1E,3E)-4-hydroxybuta-1,3-diene-1,2,4-tricarboxylate, hydrated to
+# 2-hydroxy-4-oxobutane-1,2,4-tricarboxylate (4-oxalocitramalate), and
+# split by ana ldolase to pyruvate and oxaloacetate.
+
+ligA	protocatechuate 4,5-dioxygenase, alpha subunit	curated:metacyc::MONOMER-15116	curated:metacyc::MONOMER-3165	ignore_other:1.13.11.8
+ligB	protocatechuate 4,5-dioxygenase, beta subunit	curated:BRENDA::G2IQQ3	curated:metacyc::MONOMER-15117	curated:metacyc::MONOMER-3166	ignore_other:1.13.11.8
+
+ligC	2-hydroxy-4-carboxymuconate-6-semialdehyde dehydrogenase	EC:1.1.1.312
+ligI	2-pyrone-4,6-dicarboxylate hydrolase	EC:3.1.1.57
+
+# This isomerization can occur spontaneously, but the enzyme is probably required for good growth
+# (i.e., fitness data for utilization of 4-vinylphenol or gallic acid)
+# This enzyme is named gllD in MetaCyc.
+# Note that ligU = UniProt Q0KJL4 is reported to carry out a different isomerization of 4-oxalomesaconate
+# as part of this pathway. I believe this is just a question of whether to treat the product
+# as the enol form (in UniProt) or the keto form (in MetaCyc).
+ligU	4-oxalomesaconate tautomerase	EC:5.3.2.8	curated:SwissProt::Q0KJL4
+# SwissProt G2IQQ5 = ligJ is described as using the enol form,
+# (3Z)-2-oxo-4-carboxy-3-hexenedioate, of the substrate, but it yields the same product
+ligJ	4-carboxy-2-hydroxymuconate hydratase	EC:4.2.1.83	curated:SwissProt::G2IQQ5
+ligK	4-oxalocitramalate aldolase	EC:4.1.3.17
+
+protocatechuate-degradation: ligA ligB ligC ligI ligU ligJ ligK
+
+# MetaCyc Pathway: protocatechuate degradation II (ortho-cleavage pathway)
+
+# A 3,4-oxygenase cleaves the ring to 3-carboxy-cis,cis-muconate, a
+# cycloisomerase forms 4-carboxymuconolactone
+# (2-carboxy-2,5-dihydro-5-oxofuran-2-yl)-acetate), a decarboxylase
+# forms 3-oxoadipate enol lactone
+# ((4,5-dihydro-5-oxofuran-2-yl)-acetate), and a hydrolase forms
+# 3-oxoadipate. 3-oxoadipate utilization is described above.
+
+pcaH	protocatechuate 3,4-dioxygenase, alpha subunit	curated:BRENDA::A0A193DXA9	curated:BRENDA::A8I4B7	curated:BRENDA::I0DHJ0	curated:BRENDA::Q0SH26	curated:CharProtDB::CH_121294	curated:metacyc::MONOMER-14209	curated:metacyc::MONOMER-3186	ignore_other:1.13.11.3
+pcaG	protocatechuate 3,4-dioxygenase, beta subunit	curated:BRENDA::A0A193DXP2	curated:BRENDA::A8I4B3	curated:BRENDA::I0DHJ1	curated:BRENDA::Q0SH27	curated:CharProtDB::CH_121290	curated:metacyc::MONOMER-14210	curated:metacyc::MONOMER-3185	ignore_other:1.13.11.3
+
+# RR42_RS32055 (A0A0C4YE08) is a somewhat diverged pcaB, confirmed by fitness data
+pcaB	3-carboxymuconate cycloisomerase	EC:5.5.1.2	uniprot:A0A0C4YE08
+pcaC	4-carboxymuconolactone decarboxylase	EC:4.1.1.44
+pcaD	3-oxoadipate enol-lactone hydrolase	EC:3.1.1.24
+
+protocatechuate-degradation: pcaH pcaG pcaB pcaC pcaD 3-oxoadipate-degradation
+
+# MetaCyc Pathway: protocatechuate degradation III (para-cleavage pathway)
+
+# In this pathway, a 2-3 dioxygenase forms
+# (2Z,4Z)-2-hydroxy-5-carboxymuconate-6-semialdehyde, which spontaneously decarbxylates to
+# (2Z,4E)-2-hydroxy-6-oxohexa-2,4-dienoate, also known as 2-hydroxymuconate-6-semialdehyde.
+# A dehydrogenase forms 2-hydroxymuconate, a tautomerase forms
+# (3E)-2-oxohex-3-enedioate (2-oxalocrotonate), and a decarboxylase yields
+# 2-hydroxypenta-2,4-dienoate, whose degradation is described above.
+
+praA	protocatechuate 2,3-dioxygenase	curated:metacyc::MONOMER-15106
+# 1.2.1.32 is 2-aminomuconate 6-semialdehyde dehydrogenase, but it is also reported
+# to act on 2-hydroxymuconate-6-semialdehyde; also in many cases,
+# the two EC numbers are very similar
+praB	2-hydroxymuconate 6-semialdehyde dehydrogenase	EC:1.2.1.85	EC:1.2.1.32
+praC	2-hydroxymuconate tautomerase	EC:5.3.2.6
+praD	2-oxohex-3-enedioate decarboxylase	EC:4.1.1.77
+
+protocatechuate-degradation: praA praB praC praD 2-hydroxypenta-2,4-dienoate-degradation
+
+all: transport pobA protocatechuate-degradation
+
+# Activation of 4-hydroxybenzoate to 4-hydroxybenzoyl-CoA
+# and reduction to benzoyl-CoA is part of
+# MetaCyc Pathway: phenol degradation II (anaerobic)
+
+# benzoyl-CoA ligases (6.2.1.25) may have this activity as well, i.e. see PMID:12897012
+# (discussing Q8GQN9)
+# Q8VUF1 (probably a benzoyl-CoA ligase) is misannotated in BRENDA as benzoyl-CoA reductase
+hcl	4-hydroxybenzoyl-CoA ligase	EC:6.2.1.27	curated:SwissProt::Q8GQN9	ignore_other:6.2.1.25	ignore:BRENDA::Q8VUF1
+
+hcrA	4-hydroxybenzoyl-CoA reductase, alpha subunit	curated:SwissProt::O33819	curated:metacyc::MONOMER-14376	curated:metacyc::MONOMER-17404	ignore_other:1.1.7.1	ignore_other:1.3.7.9
+
+hcrB	4-hydroxybenzoyl-CoA reductase, beta subunit	curated:SwissProt::O33820	curated:metacyc::MONOMER-14377	curated:metacyc::MONOMER-17405	ignore_other:1.1.7.1	ignore_other:1.3.7.9
+
+hcrC	4-hydroxybenzoyl-CoA reductase, gamma subunit	curated:SwissProt::O33818	curated:metacyc::MONOMER-14378	curated:metacyc::MONOMER-17403	ignore_other:1.1.7.1	ignore_other:1.3.7.9
+
+# 1.3.7.9 has been transferred to 1.1.7.1, but currently the annotations still use 1.3.7.9
+
+all: transport hcl hcrA hcrB hcrC benzoyl-CoA-degradation
