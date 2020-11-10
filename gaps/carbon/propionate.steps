@@ -43,9 +43,9 @@ propionyl_CoA_carboxylase: pccA1 pccA2 pccB
 # methylcitrate is dehydrated to cis-2-methylaconitate,
 # hydrated to (2R,3S)-2-methylisocitrate,
 # and a lyase produces pyruvate and succinate.
-# succinate would then be oxidized to oxalacetate
-# by succinate dehydrogenase (sdhABC or frdABCD), fumerase (fum),
-# and malate dehydrogenase (mdh)
+# (We consider succinate as a central intermediate,
+# as most organisms can activate it to succinyl-CoA
+# or can oxidize it to fumarate and convert that to oxaloacetate.)
 
 # Many acetyl-CoA synthetases (EC 6.2.1.1) are also propionyl-CoA synthetases
 prpE	propionyl-CoA synthetase	EC:6.2.1.17	ignore_other:6.2.1.1
@@ -60,21 +60,6 @@ acn	(2R,3S)-2-methylcitrate dehydratase	EC:4.2.1.99	ignore_other:4.2.1.3
 
 # Many 2-methylisocitrate lyases are closely related to isocitrate lyases
 prpB	2-methylisocitrate lyase	EC:4.1.3.30	ignore_other:4.1.3.1
-
-import succinate.steps:sdhA
-import succinate.steps:sdhB
-import succinate.steps:sdhC
-sdh: sdhA sdhB sdhC
-
-import succinate.steps:frdA
-import succinate.steps:frdB
-import succinate.steps:frdC
-import succinate.steps:frdD
-sdh: frdA frdB frdC frdD
-
-import succinate.steps:fum
-import succinate.steps:mdh
-
 
 # MetaCyc Pathway: 2-methylcitrate cycle II is a variant in which a
 # different dehydratase (acnD) and an isomerase (prpF) replace the
@@ -146,8 +131,8 @@ dddA	3-hydroxypropionate dehydrogenase	EC:1.1.1.59
 # methylmalonate semialdehyde dehydrogenase often has this activity as well
 mmsA	malonate semialdehyde dehydrogenase (CoA-acylating)	EC:1.2.1.18	ignore_other:1.2.1.27	ignore:SwissProt::Q9I702
 
-all: transport prpE prpC prpD acn prpB sdh fum mdh
-all: transport prpE prpC acnD prpF acn prpB sdh fum mdh
+all: transport prpE prpC prpD acn prpB
+all: transport prpE prpC acnD prpF acn prpB
 all: transport prpE propionyl_CoA_carboxylase epi mutase
 all: transport prpE pco hpcD dddA mmsA
 

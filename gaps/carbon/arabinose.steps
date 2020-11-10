@@ -81,10 +81,12 @@ glycolaldehyde_dehydrogenase: aldA
 glycolaldehyde_dehydrogenase: aldox_large aldox_med aldox_small
 
 # Malate oxidation
-import succinate.steps:mae
-import succinate.steps:mdh
-
+# BRENDA annotation of Q9T0H6 seems questionable
+mae	malate dehydrogenase (oxaloacetate-decarboxylating)	EC:1.1.1.38	EC:1.1.1.40	EC:1.1.1.39	ignore:BRENDA::Q9T0H6
 malate_oxidation: mae
+
+# Include NAD(P)H and quinone-dependent dehydrogenases
+mdh	malate dehydrogenase	EC:1.1.1.37	EC:1.1.5.4	EC:1.1.1.82	EC:1.1.1.299
 malate_oxidation: mdh
 
 # MetaCyc pathway L-arabinose degradation I involves isomerization
@@ -127,7 +129,7 @@ all: transport xacB xacC xacD xacE xacF
 # glycolate and then to glyoxylate, and combined with acetyl-CoA by
 # malate synthase. malate dehydrogenases can convert the malate to
 # oxaloacetate or pyruvate (which are both central intermediates).
-# (Other pathways for glyxoylate assimilation are known and not
+# (Other pathways for glyxoylate assimilation are known but are not
 #  represented here.)
 
 # Q97U28 is the same protein but with 14 more N-terminal a.a., and is annotated with 4.1.2.55 only
