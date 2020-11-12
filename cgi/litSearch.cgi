@@ -240,8 +240,8 @@ my $title = "PaperBLAST";
 start_page('title' => $title);
 print <<END
 <SCRIPT src="../static/pb.js"></SCRIPT>
-<SCRIPT src="http://fit.genomics.lbl.gov/d3js/d3.min.js"></SCRIPT>
-<SCRIPT src="http://fit.genomics.lbl.gov/images/fitblast.js"></SCRIPT>
+<SCRIPT src="https://fit.genomics.lbl.gov/d3js/d3.min.js"></SCRIPT>
+<SCRIPT src="https://fit.genomics.lbl.gov/images/fitblast.js"></SCRIPT>
 END
   ;
 
@@ -391,7 +391,7 @@ if (!defined $seq && ! $more_subjectId) {
                    NAME="#fitness">Fitness BLAST:</A>
                 <SPAN ID="fitblast_short"><SMALL>loading...</SMALL></SPAN>
                 <SCRIPT>
-                var server_root = "http://fit.genomics.lbl.gov/";
+                var server_root = "https://fit.genomics.lbl.gov/";
                 var seq = "$seq";
                 fitblast_load_short("fitblast_short", server_root, seq);
                 </SCRIPT>
