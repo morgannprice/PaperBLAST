@@ -102,13 +102,24 @@ asd_S_ferredoxin	reductive sulfuration of L-asparate semialdehyde, ferredoxin co
 # MA1715 or DvMF_0044
 asd_S_perS	putative persulfide forming protein	uniprot:Y1715_METAC	curated:reanno::Miya:8499265
 
-# Methanogens have a short homolog of MetE that transfers methyl groups to methionine.
+# Methanogens have a short homolog of MetE that transfers methyl groups from methylcobalamin
+# (not 5-methyltetrahydrofolates) to homocysteine to form methionine.
 # The physiological donor is suspected to be a corrinoid protein (see PMID:10469143)
 # but this is not proven. 
-# We also suspect that this pathway is how Dehalococcoides form methionine, with CoFeSP as the
-# corrinoid protein, but that is not proven.
-# (And Dehalococcoides short metE is highly divergent from the methanogen protein)
-metE'	Methylcobalamin:homocysteine methyltransferase	term:Methylcobalamin:homocysteine methyltransferase
+# We named this family of "core" methioine synthases MesA, see
+#	https://doi.org/10.1101/2020.04.21.054031
+mesA	Methylcobalamin:homocysteine methyltransferase MesA	curated:SwissProt::P55299
+
+# Dehalococcoides has a (distantly related) core methionine synthase, see PMC7005905
+# We named this family MesB.
+mesB	Methylcobalamin:homocysteine methyltransferase MesB	uniprot:A0A0V8M4G6
+
+# Genetic evidence shows that ACIAD3523 and Ga0059261_2929 are methionine synthases,
+# see PMC2290942 and https://doi.org/10.1101/2020.04.21.054031
+# They require mesX (ACIAD3524 or Ga0059261_2928) and oxygen for activity, but not
+# 5-methyltetrahydrofolates or cobalamin
+mesD	oxygen-dependent methionine synthase, methyltransferase component MesD	uniprot:Q6F6Z8	uniprot:A0A2M8WFA5
+mesX	oxygen-dependent methionine synthase, putative oxygenase component MesX	uniprot:Q6F6Z7	uniprot:A0A2M8WFB3
 
 #Rules
 asparate_semialdehyde: asp_kinase asd
@@ -125,6 +136,10 @@ B12_reactivation: B12_reactivation_domain
 B12_reactivation: B12_reactivation_RamA
 methionine_synthase: metH B12_reactivation
 methionine_synthase: split_metH_1 split_metH_2 split_metH_3 B12_reactivation
-methionine_synthase: metE' B12_reactivation
+# It is possible that corrinoid-dependent methionine synthases would require B12 reactivation,
+# but this is not proven. Some methanogens with mesA seem tolack RamA, so it is not included.
+methionine_synthase: mesA
+methionine_synthase: mesB
 methionine_synthase: metE
+methionine_synthase: mesD mesX
 all: homocysteine methionine_synthase 
