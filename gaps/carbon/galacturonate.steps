@@ -1,0 +1,68 @@
+# Transporters were identified using
+# query: transporter:galacturonate:D-galacturonate:galaturonate:D-galaturonate:D-galactopyranuronate:CPD-12523:CPD-12524:CPD-15633
+
+
+# BT4105 (Q8A0B6), CA265_RS19855 (A0A1X9Z948), Pf1N1B4_5129 (A0A166QG26), and HSERO_RS23010 (D8IX31) are related
+# proteins with specific phenotypes on D-galacturonate
+exuT	D-galacturonate transporter ExuT	curated:SwissProt::P0AA78	curated:TCDB::P0AA78	curated:TCDB::P94774	uniprot:Q8A0B6	uniprot:A0A1X9Z948	uniprot:A0A166QG26	uniprot:D8IX31
+transport: exuT
+
+gatA	D-galacturonate transporter gatA	curated:TCDB::A2R3H2
+transport: gatA
+
+PS417_04205	D-galacturonate transporter	curated:reanno::WCS417:GFF828
+transport: PS417_04205
+
+
+# MetaCyc Pathway: D-galacturonate degradation I
+# In this pathway, galacturonate is isomerized to
+# tagaturonate (a keto sugar), reduced to
+# D-altronate, dehydrated to 2-dehydro-3-deoxy-D-gluconate,
+# phosphorylated to 2-dehydro-3-deoxy-D-gluconate 6-phosphate,
+# and cleaved by the Entner-Doudoroff aldolase (eda) to
+# D-glyceraldehyde 3-phosphate and pyruvate
+
+uxaC	D-galacturonate isomerase	EC:5.3.1.12
+uxaB	tagaturonate reductase	EC:1.1.1.58
+uxaA	D-altronate dehydratase	EC:4.2.1.7
+import glucosamine.steps:kdgK # 2-keto-3-deoxygluconate kinase
+import glucose.steps:eda # 2-keto-3-deoxygluconate 6-phosphate aldolase
+all: transport uxaC uxaB uxaA kdgK eda
+
+# MetaCyc Pathway: D-galacturonate degradation II In this pathway,
+# galacturonate is oxidized to galactaro-1,5-lactone, isomerized to
+# the 1,4-lactone, isomerized to 5-dehydro-4-deoxy-D-glucarate
+# (equivalent to a lactonase reaction and dehydration across C2-3),
+# dehydrated/decarboxylated to 2,5-dioxopentanoate (also known as
+# alpha-ketoglutarate semialdehyde), and oxidized to 2-oxoglutarate.
+
+udh	D-galacturonate dehydrogenase	EC:1.1.1.203
+gli	D-galactarolactone isomerase	EC:5.4.1.4
+# BRENDA misannotates gli as gci
+gci	D-galactarolactone cycloisomerase	EC:5.5.1.27	ignore:BRENDA::A9CEQ7
+kdgD	5-dehydro-4-deoxyglucarate dehydratase	EC:4.2.1.41
+import xylose.steps:dopDH # 2,5-dioxopentanonate dehydrogenase
+all: transport udh gli gci kdgD dopDH
+
+# A similar pathway, but with D-galactarate as the intermediate, has
+# also been described (PMID:30249705). As above, galacturonate is
+# oxidized to the 1,5-lactone, but then a lactonase hydrolyzes it to
+# meso-galactarate, and a dehydratase forms
+# 5-keto-4-deoxyglucarate. As above, this is decarboxylated/dehydrated
+# to 2,5-dioxopentanonate and oxidized to 2-oxoglutarate.
+
+# Two families of D-galactaro-1,5-lactonase were described, uxuL and uxuF.
+# All of these proteins are active on D-glucaro-1,5-lactone as well,
+# although PSPTO_2765 is much more active on galactaro,1-5-lactone.
+# UxuL = Rpic_4446 PSPTO_1052
+# UxuF = Bcep1808_2255 BMULJ_02167 Bcep18194_A5499 PSPTO_2765
+# PS417_17365 (GFF3393) and HSERO_RS15795 were inferred from mutant phenotype
+uxuL	D-galactaro-1,5-lactonase (UxuL or UxuF)	uniprot:B2UIY8	uniprot:Q888H2	uniprot:A4JG52	uniprot:A0A0H3KPX2	uniprot:Q39EM3	uniprot:Q881W7	curated:reanno::WCS417:GFF3393	curated:reanno::HerbieS:HSERO_RS15795
+
+# Q8EMJ9 is the D-threo-forming enzyme, and is misannotated in BRENDA
+garD	meso-galactarate dehydratase (L-threo-forming) GarD	EC:4.2.1.42	ignore:BRENDA::Q8EMJ9
+
+all: transport udh uxuL garD kdgD dopDH
+ 
+# MetaCyc Pathway: D-galacturonate degradation III via galactonate is
+# not included, as it is reported only in fungi.

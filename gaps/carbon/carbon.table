@@ -13,6 +13,7 @@ deoxyribose	2-deoxy-D-ribose catabolism
 ethanol	ethanol catabolism
 fructose	D-fructose catabolism
 galactose	D-galactose catabolism
+galacturonate	D-galacturonate catabolism
 gluconate	D-gluconate catabolism
 glucose	D-glucose catabolism
 glucose6P	D-glucose-6-phosphate catabolism
@@ -37,7 +38,6 @@ pyruvate	pyruvate catabolism
 rhamnose	L-rhamnose catabolism
 ribose	D-ribose catabolism
 sorbitol	D-sorbitol (glucitol) catabolism
-succinate	succinate catabolism
 sucrose	sucrose catabolism
 trehalose	trehalose catabolism
 tyrosine	L-tyrosine catabolism
