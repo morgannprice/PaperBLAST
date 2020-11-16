@@ -109,7 +109,7 @@ all: transport araA araB araD rpe rpi
 # (acting on the furanose form, not the usual pyranose form?)
 # to a 1,4-lactone, hydrolysis by a lactonase, two dehydration
 # reactions 2,5-dioxopentanonate (a-ketoglutarate semialdehyde),
-# and oxidation to 2-oxoglutarate., which is a centarl intermediate.
+# and oxidation to 2-oxoglutarate., which is a central intermediate.
 # Fitness data suggests that L-arabinose 1-epimerase (mutarotase) may also be involved,
 # perhaps in creating the correct epimer for the 1-dehydrogenase, but
 # that is not represented here.
