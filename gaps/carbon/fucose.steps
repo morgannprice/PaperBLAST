@@ -1,0 +1,38 @@
+# Transporters were identified using
+# query: transporter:L-fucose:L-fucopyranose:CPD-10329:CPD0-1107:CPD-15619
+
+fucP	L-fucose:H+ symporter FucP	curated:SwissProt::P11551
+transport: fucP
+
+# An ABC transporter was annotated in Sinorhizobium meliloti
+# based on fitness data and also from expression data.
+# Expression of the substrate-binding component (SM_b21103) 
+# is induced by L-fucose or D-fucose (PMC1635973)
+
+SM_b21103	ABC transporter for L-Fucose, substrate-binding component	curated:reanno::Smeli:SM_b21103
+SM_b21104	ABC transporter for L-Fucose, permease component 1	curated:reanno::Smeli:SM_b21104
+SM_b21105	ABC transporter for L-Fucose, permease component 2	curated:reanno::Smeli:SM_b21105
+SM_b21106	ABC transporter for L-Fucose, ATPase component	curated:reanno::Smeli:SM_b21106
+transport: SM_b21103 SM_b21104 SM_b21105 SM_b21106
+
+# MetaCyc pathway: fucose degradation
+# A mutarotase converts the beta-pyranose to the alpha-pyranose form,
+# an isomerase produces L-fuculose, a kinase forms L-fuculose
+# 1-phosphate, and an aldolase produces glycerone phosphate and
+# (S)-lactaldehyde.  lactaldehyde might be oxidized to lactate and
+# secreted (or oxidized to pyruvate); or, it might be reduced to
+# propane-1,2-diol and secreted.  tpi converts glycerone-phosphate to
+# glyceraldehyde 3-phosphate.
+
+fucU	L-fucose mutarotase FucU	EC:5.1.3.29
+fucI	L-fucose isomerase FucI	EC:5.3.1.25
+fucK	L-fucose kinase FucK	EC:2.7.1.51
+fucA	L-fuculose-phosphate aldolase FucA	EC:4.1.2.17
+
+import rhamnose.steps:aldA fucO
+lactaldehyde-conversion: aldA # oxidation to lactate
+lactaldehyde-conversion: fucO # reduction to propanediol
+
+import fructose.steps:tpi # triose-phsophate isomerase
+
+all: transport fucU fucI fucK fucA tpi lactaldehyde-conversion
