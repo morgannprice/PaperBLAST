@@ -105,63 +105,19 @@ sub ProcessArticle($$$);
     my $nSeen = 0;
     foreach my $file (@files) {
       $gunzip = $file =~ m/[.]gz$/;
+      my $fhIn;
       if ($gunzip) {
-        open(IN, "zcat $file |") || die "Cannot run zcat on $file";
+        open($fhIn, "zcat $file |") || die "Cannot run zcat on $file";
       } else {
-        open(IN, "<", $file) || die "Cannot read $file";
+        open($fhIn, "<", $file) || die "Cannot read $file";
       }
-      my $isFirst = 1;
-      while(my $line = <IN>) {
-        chomp $line;
-        if ($isFirst) {
-          $isFirst = 0;
-          # first line should begin with "<"
-          die "xml file $file does not begin with <\n"
-            unless $line =~ m/^</;
-          # and end with ">", or keep reading until it does
-          while ($line !~ m/>$/) {
-            my $extraLine = <IN>
-              || die "Cannot read successor line from $file -- bad header?";
-            chomp $extraLine;
-            $line .= " $extraLine";
-          }
-          # ignore the entire !DOCTYPE tag
-          next if $line =~ m/^<!DOCTYPE.*>/;
-        }
-
-        if ($line eq "</articles>") {
-          next;
-          last;
-        }
-        # sometimes there is an xml-stylesheet before the <article>
-        $line =~ s/^<[?]xml-stylesheet .*[?]>//;
-        # ignore <articles> tag, sometimes on a line before the <article>
-        $line =~ s/^<articles>//;
-        # now line should be empty or should be the article, or the beginning of an article
-        next if $line eq "";
-        $line =~ m/^<article[> ]/ || die "File $file does not begin with an article: " . substr($line, 0, 100);
-        my @lines = ( $line );
-        while ($lines[-1] !~ m!</article>!) {
-          $line = <IN>;
-          if (defined $line) {
-            chomp $line;
-            push @lines, $line;
-          } else {
-            last;
-          }
-        }
-        if ($lines[-1] !~ m!</article>!) {
-          print STDERR "Last article is truncated? Starts with " . substr($lines[0], 0, 100);
-        }
-        # without recover, get errors like
-        # :1: parser error : Premature end of data in tag p line 1
-        # l 2004 news article &#x0201c;Reaching across the Border with the SBRP&#x0201d; [
-        my $dom = XML::LibXML->load_xml(string => join("\n",@lines), recover => 1);
+      my $state = {};
+      while (my $dom = ReadXMLArticle($fhIn, $state)) {
         $n++;
         print STDERR "Parsed $n articles\n" if ($n % 1000) == 0;
         $nSeen += &ProcessArticle($dom, \%pmc2pm, \%papers);
       }
-      close(IN) || die "Error reading $file" . ($gunzip ? " . with zcat" : "")
+      close($fhIn) || die "Error reading $file" . ($gunzip ? " . with zcat" : "")
     }
     print STDERR "Processed $n articles with $nSeen relevant pmcIds\n";
     close(OUT) || die "Error writing to $outfile";

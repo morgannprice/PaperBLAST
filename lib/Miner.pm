@@ -13,7 +13,7 @@ our (@ISA,@EXPORT);
 @EXPORT = qw( RemoveWideCharacters TextSnippets NodeText
               XMLFileToText TextFileToText PDFFileToText
               ElsevierFetch CrossrefToURL CrossrefFetch
-              DomToPMCId FetchPubMed );
+              DomToPMCId FetchPubMed ReadXMLArticle);
 
 sub RemoveWideCharacters($) {
     my ($text) = @_;
@@ -158,7 +158,7 @@ sub CrossrefToURL {
 # returns empty on failure and returns the reported Content-Type on success
 sub CrossrefFetch($$$$) {
     my ($URL, $type, $file, $jour) = @_;
-    print STDERR "Fetching $jour $URL $file\n"; # XXX
+    print STDERR "Fetching $jour $URL $file\n";
     my $request = HTTP::Request->new("GET" => $URL);
     $request->header("CR-Clickthrough-Client-Token" => "e5a0777f-ac991935-bc17d839-edb4695c");
     my $ua = LWP::UserAgent->new;
@@ -294,6 +294,73 @@ sub FetchPubMed {
       if $iTry == $maxTries;
   }
   return @out;
+}
+
+# Given a file handle and a state object, return DOM objects, or undef if there are no more to read
+# For the first call with a file handle, the state object should be empty
+sub ReadXMLArticle($$) {
+  my ($fh, $state) = @_;
+  die unless ref $state;
+  $state->{isFirst} = 1 unless exists $state->{isFirst}; # no longer used
+
+  while (my $line = <$fh>) {
+    # Because of carriage return (\r) characters, do not use chomp.
+    # Also, carriage returns within line can create much confusion with debugging output,
+    # so turn into spaces
+    $line =~ s/[\r\n]+$//;
+    $line =~ s/\r/ /g;
+    next if $line eq "";
+
+    # May need to skip past <articles> or <!DOCTYPE ...> or <?xml-stylesheet ...>
+    
+    # first line should begin with "<"
+    # It should end with ">" (and possibly with whitespace) but there
+    # could be continuation lines
+    die "xml file entry does not begin with < -- $line"
+      unless $line =~ m/^</;
+    while ($line !~ m/>\s*$/) {
+      my $extraLine = <$fh>
+        || die "Cannot read successor line in xml -- bad header?";
+      $extraLine =~ s/[\r\n]+$//;
+      $extraLine =~ s/\r/ /g;
+      $line .= " $extraLine";
+    }
+    next if $line =~ m/^<!DOCTYPE.*>/;
+
+    # sometimes there is an xml-stylesheet before the <article>
+    $line =~ s/^<[?]xml-stylesheet .*[?]>//;
+    # ignore <articles> tag, sometimes on a line before the <article>
+    $line =~ s/^<articles>//;
+
+    next if $line eq "";
+
+    return undef if $line eq "</articles>"; # end of file
+
+    # now line should be empty or should be the article, or the beginning of an article
+
+    $line =~ m/^<article[> ]/ || die "xml entry does not begin with <article> -- " . substr($line, 0, 100);
+    my @lines = ( $line );
+    until ($lines[-1] =~ m!</article>!) {
+      $line = <$fh>;
+      if (defined $line) {
+        $line =~ s/[\r\n]+$//;
+        $line =~ s/\r/ /g;
+        push @lines, $line;
+      } else {
+        last;
+      }
+    }
+
+    my $entry = join("\n", @lines);
+    print STDERR "Last article is truncated? Starts with " . substr($lines[0], 0, 100) . "\n"
+      unless $entry =~ m!</article>!;
+    $entry =~ s/\s*$//; # the xml parser does not like trailing whitespace
+    # without recover, get errors like
+    # :1: parser error : Premature end of data in tag p line 1
+    # l 2004 news article &#x0201c;Reaching across the Border with the SBRP&#x0201d; [
+    return XML::LibXML->load_xml(string => $entry, recover => 1);
+  }
+  return undef;
 }
 
 1;

@@ -177,7 +177,7 @@ if (exists $dosteps{"am"}) {
   foreach my $i (0..(scalar(@sets)-1)) {
     my $out = "$workdir/am_$i.words";
     my @in = map "$indir/am/$_", @{ $sets[$i] };
-    print CMDS "cat " . join(" ", @in) . " | $Bin/words.pl > $out\n";
+    print CMDS "$Bin/words.pl -in " . join(" ", @in) . " > $out\n";
     print LIST "$out\n";
   }
   close(CMDS) || die "Error writing to $cmdsfile";
