@@ -41,6 +41,14 @@ transport: snatA
 # Serine ammonia-lyase converts serine to pyruvate and ammonia
 # via 2-aminoprop-2-enoate and 2-iminopropanoate.
 
+# Monomeric form (the heteromeric form is not in the database)
 sdaB	L-serine ammonia-lyase	EC:4.3.1.17
 
-all: transport sdaB
+# Heteromeric iron-cluster-containing form
+sdhA	FeS-containing L-serine dehydratase, alpha subunit	uniprot:P33073	ignore_other:4.3.1.17
+sdhB	FeS-containing L-serine dehydratase, beta subunit	uniprot:P33074	ignore_other:4.3.1.17
+
+serine-ammonia-lyase: sdaB
+serine-ammonia-lyase: sdhA sdhB
+
+all: transport serine-ammonia-lyase
