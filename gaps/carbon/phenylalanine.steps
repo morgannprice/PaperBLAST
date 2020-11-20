@@ -81,7 +81,7 @@ phenylpyruvate-decarboxylase: ARO10
 phenylpyruvate-decarboxylase: PPDCalpha PPDCbeta
 
 # Although it is not described in MetaCyc, a common way to catabolize
-# phenylalanine is transaminatino to phenylpyruvate and then
+# phenylalanine is transamination to phenylpyruvate and then
 # phenylpyruvate:ferredoxin oxidoreductase, which forms
 # phenylacetyl-CoA. This enzyme is usually known as
 # indolepyruvate:ferredoxin oxidoreductase, but it acts on
