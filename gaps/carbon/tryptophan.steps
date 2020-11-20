@@ -1,0 +1,263 @@
+# Transporters were identified using
+# query: transporter:tryptophan:L-tryptophan:trp
+#
+# Serine/threonine exchangers and non-specific eukaryotic amino acid transporters were ignored
+
+# Four-part transporter (bioMNY-type) with 2 ATPase (A1/A2) components, a transmembrane (T) component,
+# and a substrate-specific (S) component.
+# The A1A2T components are not specific to tryptophan
+trpP	energy-coupling factor transporter, tryptophan-specific (S) component TrpP	curated:SwissProt::O07515
+# Orthologs may be annotated as ecfA1 or cbiO; these have the same function
+# (but might not be part of a tryptophan transporting system)
+ecfA1	energy-coupling factor transporter, ATPase 1 (A1) component	uniprot:P40735	ignore:TCDB::Q839D5	ignore:SwissProt::Q035B2	ignore:SwissProt::A2RI01	ignore:SwissProt::Q5M243	ignore:TCDB::Q03PY5	ignore:metacyc::G12WB-158-MONOMER	ignore:SwissProt::Q03ZL6	
+# Orthologs may be annotated as ecfA2 or cbiO2; these have the same function
+ecfA2	energy-coupling factor transporter, ATPase 2 (A2) component	uniprot:P70970	ignore:TCDB::Q839D4	ignore:SwissProt::Q5M244	ignore:SwissProt::A2RI02	ignore:SwissProt::Q035B3	ignore:TCDB::Q03PY6	ignore:metacyc::G12WB-159-MONOMER	ignore:SwissProt::Q03ZL5
+# Ignore EcfT proteins from other bacteria
+ecfT	energy-coupling factor transporter, transmembrane (T) component	uniprot:P70972	ignore:TCDB::I7BV49	ignore:SwissProt::Q5M245	ignore:SwissProt::A2RI03	ignore:SwissProt::Q035B4	ignore:metacyc::G12WB-160-MONOMER	ignore:TCDB::Q03PY7	ignore:SwissProt::Q03ZL4
+transport: trpP ecfA1 ecfA2 ecfT
+
+# AO353_05930 (A0A0N9WG97) from Pseudomonas fluorescens FW300-N2E3 is related to aroP and
+#   is specifically improtant for tryptophan utilization (although more so if Trp is the nitrogen source).
+# PfGW456L13_4291 (A0A293QSB2) from P. fluorescens GW4560-L13 is related to aroP and
+#   is specifically important for tryptophan utilization.
+#	Unfortunately A0A293QSB2 is no longer in UniProt; the closest remaining sequence is
+#	Q4KIP0 (only 87% identical)
+# FywP (A2RMP5) may well be a tryptophan transporter as well, so ignore
+aroP	tryptophan:H+ symporter AroP	curated:TCDB::P15993	curated:TCDB::F2HN33	curated:TCDB::Q2VQZ4	curated:TCDB::Q46065	uniprot:A0A0N9WG97	uniprot:Q4KIP0	ignore:SwissProt::A2RMP5	ignore:reanno::pseudo5_N2C3_1:AO356_18530
+transport: aroP
+
+tnaB	tryptophan:H+ symporter TnaB	curated:CharProtDB::CH_000783	curated:SwissProt::Q02DS7	curated:TCDB::P0AAD2
+transport: tnaB
+
+TAT	tryptophan permease	curated:CharProtDB::CH_091156	curated:CharProtDB::CH_091631
+transport: TAT
+
+tnaT	tryptophan:Na+ symporter TnaT	curated:TCDB::O50649
+transport: tnaT
+
+# Tryptophan catabolism often involves anthranilate (2-aminobenzoate),
+# 3-hydroxyanthranilate, or catechol (1,2-dihydroxybenzene) as
+# intermediates
+
+# Some steps of catechol degradation are shared with 4-hydroxybenzoate
+# degradation:
+
+# mhpD is (2Z)-2-hydroxypenta-2,4-dienoate hydratase
+# mhpE is (S)-4-hydroxy-2-oxopentanoate aldolase
+# praB is 2-hydroxymuconate 6-semialdehyde dehydrogenase
+# praC is 2-hydroxymuconate tautomerase
+# praD is 2-oxohex-3-enedioate decarboxylase
+# pcaD is 3-oxoadipate enol-lactone hydrolase
+# pcaIJ is a heteromeric 3-oxoadipate CoA-transferase
+# catIJ is another heteromeric 3-oxoadipate CoA-transferase
+# pcaF is succinyl-CoA:acetyl-CoA C-succinyltransferase
+import 4-hydroxybenzoate.steps:mhpD mhpE praB praC praD pcaD pcaI pcaJ catI catJ pcaF
+
+3-oxodipate-CoA-transferase: pcaI pcaJ
+3-oxodipate-CoA-transferase: catI catJ
+3-oxoadipate-degradation: 3-oxodipate-CoA-transferase pcaF
+
+# acetaldehyde is also an intermediate, and is oxidized to acetyl-CoA
+# or acetate
+import ethanol.steps:ald-dh-CoA adh # acetaldehyde dehydrogenase, acylating or not
+acetaldehyde-degradation: ald-dh-CoA
+acetaldehyde-degradation: adh
+
+# (2Z)-2-hydroxypenta-2,4-dienoate (HPD) is a an intermediate in
+# degradation via catechol or 3-hydroxyanthranilate.
+
+# MetaCyc Pathway: 2-hydroxypenta-2,4-dienoate degradation.
+# A hydratase forms (S)-4-hydroxy-2-oxopentanoate and an aldolase
+# cleaves it to pyruvate and acetaldehyde.  The acetaldehyde is
+# oxidized to acetyl-CoA (or acetate).
+
+# mhpD is (2Z)-2-hydroxypenta-2,4-dienoate hydratase
+# mhpE is (S)-4-hydroxy-2-oxopentanoate aldolase, yielding pyruvate and acetaldehyde
+HPD-degradation: mhpD mhpE acetaldehyde-degradation
+
+# Catechol degradation
+
+# MetaCyc Pathway: catechol degradation I (meta-cleavage pathway)
+# A dioxygenase converts catechol to
+# (2Z,4E)-2-hydroxy-6-oxohexa-2,4-dienoate (also known as
+# 2-hydroxymuconate-6-semialdehyde), and a hydrolase cleaves it to
+# formate and (2Z)-2-hydroxypenta-2,4-dienoate (HPD).
+
+# BRENDA misannotates P23103 as the P. putida xylE (that should be, P06622)
+xylE	catechol 2,3-dioxygenase	EC:1.13.11.2	ignore:BRENDA::P23103
+xylF	2-hydroxymuconate semialdehyde hydrolase	EC:3.7.1.9
+catechol-degradation: xylE xylF HPD-degradation
+
+# MetaCyc Pathway: catechol degradation II (meta-cleavage pathway)
+# also involves the dioxygenase to 2-hydroxymuconate-6-semialdehyde.
+# Then, a dehydrogenase forms (2Z,4E)-2-hydroxyhexa-2,4-dienedioate
+# (2-hydroxymuconate), a tautomerase forms (3E)-2-oxohex-3-enedioate
+# (2-oxalocrotonate), and a decarboxylase yields
+# 2-hydroxypenta-2,4-dienoate (HPD).
+
+# praB is 2-hydroxymuconate 6-semialdehyde dehydrogenase
+# praC is 2-hydroxymuconate tautomerase
+# praD is 2-oxohex-3-enedioate decarboxylase
+catechol-degradation: xylE praB praC praD HPD-degradation
+
+# MetaCyc Pathway: catechol degradation III (ortho-cleavage pathway)
+# A 1,2-dioxygenase forms cis,cis-muconate, a cycloisomerase forms
+# (+)-muconolactone, an isomerase converts this to
+# (4,5-dihydro-5-oxofuran-2-yl)-acetate (also known as 3-oxodipate
+# enol lactone), a hydrolase cleaves this to 3-oxoadipate, a
+# CoA-transferase activates this to 3-oxoadipyl-CoA, and a thiolase
+# cleaves it to succinyl-CoA and acetyl-CoA.
+
+# Ignore two protein fragments for catA
+catA	catechol 1,2-dioxygenase	EC:1.13.11.1	ignore:CharProtDB::CH_012040	ignore:SwissProt::P83715
+catB	muconate cycloisomerase	EC:5.5.1.1
+catC	muconolactone isomerase	EC:5.3.3.4
+# pcaD is 3-oxoadipate enol-lactone hydrolase
+catechol-degradation: catA catB catC pcaD 3-oxoadipate-degradation
+
+# 3-hydroxyanthranilate (2-amino-3-hydroxybenzoate) is an intermediate
+# in anthranilate or tryptophan degradation
+
+# This pathway for 3-hydroxyanthranilate degradation is part of
+# MetaCyc Pathway: anthranilate degradation IV (aerobic)
+# and MetaCyc Pathway: L-tryptophan degradation XII (Geobacillus).
+# A dioxygenase cleaves the aromatic ring,  yielding 2-amino-3-carboxymuconate
+# 6-semialdehyde. A decarboxylase forms (2Z,4E)-2-aminomuconate
+# semialdehyde, a dehydrogenase forms (2Z,4E)-2-aminomuconate, a
+# deaminase forms (3E)-2-oxo-3-hexenedioate (also known as
+# 2-oxalocrotonate), and a decarboxylase forms
+# (2Z)-2-hydroxypenta-2,4-dienoate (HPD).
+
+nbaC	3-hydroxyanthranilate 3,4-dioxygenase	EC:1.13.11.6
+nbaD	2-amino-3-carboxymuconate-6-semialdehyde decarboxylase	EC:4.1.1.45
+nbaE	2-aminomuconate 6-semialdehyde dehydrogenase	EC:1.2.1.32
+nbaF	2-aminomuconate deaminase	EC:3.5.99.5
+nbaG	2-oxo-3-hexenedioate decarboxylase	EC:4.1.1.77
+
+3-hydroxyanthranilate-degradation: nbaC nbaD nbaE nbaF nbaG HPD-degradation
+
+# MetaCyc Pathway: anthranilate degradation I (aerobic)
+# A dioxygenase cleaves off carbon dioxide and ammonia, leaving catechol.
+# There are two forms of the dioxygenase, antABC or 4-subunit andAabcd.
+
+antA	anthranilate 1,2-dioxygenase (deaminating, decarboxylating), large subunit AntA	curated:SwissProt::O85673	curated:reanno::WCS417:GFF4629	curated:reanno::pseudo13_GW456_L13:PfGW456L13_2740	curated:reanno::pseudo3_N2E3:AO353_05950	ignore_other:1.14.12.1
+
+antB	anthranilate 1,2-dioxygenase (deaminating, decarboxylating), small subunit AntB	curated:SwissProt::O85674	curated:reanno::WCS417:GFF4630	curated:reanno::pseudo13_GW456_L13:PfGW456L13_2739	curated:reanno::pseudo3_N2E3:AO353_05955	ignore_other:1.14.12.1
+
+antC	anthranilate 1,2-dioxygenase (deaminating, decarboxylating), electron transfer component AntC	curated:SwissProt::O85675	curated:reanno::WCS417:GFF4631	curated:reanno::pseudo13_GW456_L13:PfGW456L13_2738	ignore_other:1.14.12.1
+
+anthranilate-dioxygenase: antA antB antC
+
+andAa	anthranilate 1,2-dioxygenase (deaminating, decarboxylating), ferredoxin--NAD(+) reductase component AndAa	curated:SwissProt::Q84BZ0	ignore_other:1.14.12.1
+
+andAb	anthranilate 1,2-dioxygenase (deaminating, decarboxylating), ferredoxin subunit AndAb	curated:SwissProt::Q84BZ1	ignore_other:1.14.12.1
+
+andAc	anthranilate 1,2-dioxygenase (deaminating, decarboxylating), large subunit AndAc	curated:SwissProt::Q84BZ3	ignore_other:1.14.12.1
+
+andAd	athranilate 1,2-dioxygenase (deaminating, decarboxylating), small subunit AndAd	curated:SwissProt::Q84BZ2	ignore_other:1.14.12.1
+
+anthranilate-dioxygenase: andAa andAb andAc andAd
+
+anthranilate-degradation: anthranilate-dioxygenase catechol-degradation
+
+# MetaCyc Pathway: anthranilate degradation II (aerobic) involves
+# activation to anthraniloyl-CoA and reduction of the aromatic ring by
+# anthraniloyl-CoA monooxygenase/reductase, which yields
+# 2-amino-5-oxocyclohex-1-enecarboxyl-CoA.  Degradation of this
+# compound is thought to involve hydrolysis to a linear 3-oxoacyl-CoA
+# compound followed by beta oxidation (see PMC95408), but this pathway
+# is not worked out.  It is not described here.
+
+# MetaCyc Pathway: anthranilate degradation III (anaerobic)
+# Anthranilate is activated to anthraniloyl-CoA and reduced to
+# benzoyl-CoA by anthraniloyl-CoA reductase.  This reductase does not
+# seem to have been linked to sequence, so this pathway is not
+# described here.
+
+# MetaCyc Pathway: anthranilate degradation IV (aerobic)
+# involves an anthranilate hydroxylase (monooxygenase), yielding
+# 3-hydroxyanthranilate. This can be degraded by
+# a 3,4-dioxygenase as described above.
+
+hpaH	anthranilate 3-monooxygenase (hydroxylase), FADH2-dependent	EC:1.14.14.8
+anthranilate-degradation: hpaH 3-hydroxyanthranilate-degradation
+
+# MetaCyc Pathway: L-tryptophan degradation I (via anthranilate)
+# A dioxygenase opens the non-aromatic ring, to N-formyl-L-kynureine,
+# a hydrolase yields L-kynurenine (and formate),
+# and a hydrolase yields anthranilate and L-alanine.
+kynA	tryptophan 2,3-dioxygenase	EC:1.13.11.11	EC:1.13.11.52
+# MONOMER-19595 is involved in echinomycin biosynthesis and its molecular function
+# is controversial, see the MetaCyc entry.
+kynB	kynurenine formamidase	EC:3.5.1.9	ignore:metacyc::MONOMER-19595
+kyn	kynureninase	EC:3.7.1.3
+all: transport kynA kynB kyn anthranilate-degradation
+
+# MetaCyc Pathway: L-tryptophan degradation II (via pyruvate)
+# The tryptophan is hydrolyzed to indole and pyruvate.
+# The indole may be secreted (as in E. coli).
+# MetaCyc Pathway: indole degradation to anthranil and anthranilate
+# describes a potential route for the conversion of indole
+# to anthranilate, but 2 steps lack experimental evidence
+# or have not been linked to genes, so that is
+# not described here.
+
+# MONOMER-7584 and -7541 carry out the same reaction but were not linked to the EC number
+tnaA	tryptophanase	EC:4.1.99.1	curated:metacyc::MONOMER-7584	curated:metacyc::MONOMER-7541
+all: transport tnaA
+
+# MetaCyc Pathway: L-tryptophan degradation III (eukaryotic),
+# via kynurenine 3-monooxygenase, is not thought to occur in
+# prokaryotes and is not described here.
+
+# MetaCyc Pathway: L-tryptophan degradation IV (via indole-3-lactate)
+# does not liberate any fixed carbon and is not described here.
+# indole-3-lactate could potentially be oxidized to
+# indole-3-acetate, which has a known catabolic pathway,
+# but no prokaryotes are known to consume tryptophan
+# this way.
+
+# MetaCyc Pathway: L-tryptophan degradation V (side chain pathway)
+# does not liberate any fixed carbon and is not described here.
+
+# MetaCyc Pathway: L-tryptophan degradation VI (via tryptamine)
+# does not liberate any fixed carbon and is not described here.
+# Catabolic pathways are known for the end product, indole-3-acetate,
+# but it is not clear that any prokaryotes consume tryptophan this
+# way.
+
+# MetaCyc Pathway: L-tryptophan degradation VIII (to tryptophol)
+# does not liberate any fixed carbon and is not described here.  The
+# end product (also known as indole-3-ethanol) could potentially be
+# oxidized to indole-3-acetate and consumed.
+
+# MetaCyc Pathway: L-tryptophan degradation IX
+# First, an oxygenase forms N-formyl-L-kynurenine and a hydrolase
+# forms L-kynurenine, as in pathway I.  Then, an oxygenase forms
+# 3-hydroxy-L-kynurenine, which is hydrolyzed to L-alanine and
+# 3-hydroxyanthranilate.
+
+sibC	L-kynurenine 3-monooxygenase	EC:1.14.13.9
+# 3-hydroxykynurenine hydrolase and kynurenine hydrolase
+# are described by the same EC numbe (see kyn above)
+all: transport kynA kynB sibC kyn 3-hydroxyanthranilate-degradation
+
+# MetaCyc Pathway: L-tryptophan degradation X (mammalian, via tryptamine)
+# does not liberate any fixed carbon and is not described here.
+# The catabolism of the end product, indole-3-propionate, is
+# not known. It may spontaneously oxidize to kynurate, but
+# kynurate catabolism is not reported.
+
+# MetaCyc Pathway: L-tryptophan degradation XI (mammalian, via kynurenine)
+# is not thought to occur in prokaryotes and is not described here.
+
+# MetaCyc Pathway: L-tryptophan degradation XII (Geobacillus)
+# This is similar to the pathway IX, but involves a different route
+# from L-kynurenine to 3-hydroxyanthranilate, via anthranilate.
+# Because anthranilate is an intermediate, it is already
+# described by the rule for pathway I.
+
+# MetaCyc Pathway: L-tryptophan degradation XIII (reductive Stickland reaction)
+# does not liberate any fixed carbon and is not described here.
+# As mentioned above, catabolism of the resulting indole-3-propionate
+# is not known.
