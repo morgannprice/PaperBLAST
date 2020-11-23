@@ -86,20 +86,22 @@ transport: xylF xylG xylH
 transport: xylF_Tm xylE_Tm xylK_Tm
 transport: araV araU araT araS
 
-# MetaCyc D-xylose degradation I: converts D-xylose to D-xylulose 5-phosphate,
-# and then ribulose-phosphate 3-epimerase and ribose-5-phosphate isomerase
-# (part of the pentose phosphate pathway) can covert it
-# to ribose 5-phosphate, a central intermediate
+# MetaCyc D-xylose degradation I: converts D-xylose to D-xylulose
+# 5-phosphate via an isomerase and a kinase. D-xylulose 5-phosphate is
+# an intermediate in the pentose phosphate pathway (for instance,
+# ribulose-phosphate 3-epimerase and ribose-5-phosphate isomerase can
+# cnovert it to ribose 5-phosphate, a central intermediate).
+
 xylA	xylose isomerase	EC:5.3.1.5
 # Echvi_1875 (L0FZT0) is annotated as xylulose kinase and has its strongest phentoypes on xylose
 # CA_C2612 (Q97FW4) from Clostridium acetobutylicum, was proven to be xylulose kinase (PMC2873477)
 # BT0792 (Q8A9M3) has its strongest phenotypes on xylose
 xylB	xylulokinase	EC:2.7.1.17	uniprot:L0FZT0	uniprot:Q97FW4	uniprot:Q8A9M3
-rpe	ribulose-phosphate epimerase	EC:5.1.3.1
-rpi	ribose-5-phosphate isomerase	EC:5.3.1.6
+#rpe	ribulose-phosphate epimerase	EC:5.1.3.1
+#rpi	ribose-5-phosphate isomerase	EC:5.3.1.6
 
 # MetaCyc D-xylose degradation II: reduction to xylitol and oxidation to xylulose,
-# followed by xylB, rpe, rpi to reach ribose 5-phosphate.
+# followed by xylB to D-xylulose 5-phosphate.
 # This pathway is only reported in fungi.
 xyrA	xylitol reductase	EC:1.1.1.307
 # L-iditol 2-dehydrogenases (EC 1.1.1.14) often act on xylitol as well, so ignore those
@@ -181,8 +183,8 @@ DKDP_dehydrog	D-2-deto-3-deoxypentoate dehydrogenase	uniprot:A0A4P7ABK7
 HDOP_hydrol	5-hydroxy-2,4-dioxopentanonate hydrolase	uniprot:A0A2E7P912	ignore:reanno::BFirm:BPHYT_RS34210	ignore:reanno::Smeli:SM_b21112
 # (gyaR and glcB are defined above)
 
-all: transport xylA xylB rpe rpi
-all: transport xyrA xdhA xylB rpe rpi
+all: transport xylA xylB
+all: transport xyrA xdhA xylB
 all: transport xdh xylC xad kdaD dopDH
 all: transport xdh xylC xad DKDP_aldolase glycolaldehyde_dehydrogenase gyaR glcB
 all: transport xdh xylC xad DKDP_dehydrog HDOP_hydrol gyaR glcB

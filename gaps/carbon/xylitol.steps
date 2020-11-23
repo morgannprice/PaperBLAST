@@ -26,28 +26,24 @@ transport: PLT5
 
 # xdhA is xylitol dehydrogenase
 # xylB is D-xylulokinase
-# rpe is ribulose-phosphate epimerase
-# rpi is ribose-5-phsophate isomerase
-import xylose.steps:xdhA xylB rpe rpi
+import xylose.steps:xdhA xylB
 
 # MetaCyc Pathway: xylitol degradation involves a dehydrogenase, to
-# D-xylulose, and a kinase, to xylulose-5-phosphate.  Enzymes from the
-# pentose phsophate pathway (ribulose-phsophate epimerase and
-# ribose-5-phosphate epimerase) convert this to the central metabolite
-# ribose-5-phosphate.
-all: transport xdhA xylB rpe rpi
+# D-xylulose, and a kinase, to D-xylulose-5-phosphate, which is
+# an intermediate in the pentose phosphate pathway.
+all: transport xdhA xylB
 
 # Utilization via a PTS system is not described in MetaCyc, but is
-# thought to involve a D-xylulose-5-phosphate 2-reductase (in reverse)
-# followed by rpe and rpi. See PMID:3104310 and PMID:27553222. The
-# D-xylulose-5-phosphate 2-reductase is probably provided by lmo2663
-# and/or lmo2664, but it possible that these enzymes produce
-# D-arabitol-1-phosphate instead (PMID:27553222). These enzymes are
-# related to D-arabitol-phosphate dehydrogenase (arpD) from
-# Streptococcus avium.
+# thought to involve a D-xylulose-5-phosphate 2-reductase (in
+# reverse), followed by the pentose phosphate pathway. See
+# PMID:3104310 and PMID:27553222. The D-xylulose-5-phosphate
+# 2-reductase is probably provided by lmo2663 and/or lmo2664, but it
+# possible that these enzymes produce D-arabitol-1-phosphate instead
+# (PMID:27553222). These enzymes are related to D-arabitol-phosphate
+# dehydrogenase (arpD) from Streptococcus avium.
 
 # lmo2663 = Q8Y414; lmo2664 = Q8Y413
 x5p-reductase	D-xylulose-5-phosphate 2-reductase	uniprot:Q8Y414	uniprot:Q8Y413
 
-all: PTS x5p-reductase rpe rpi
+all: PTS x5p-reductase
 

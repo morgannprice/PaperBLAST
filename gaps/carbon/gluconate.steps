@@ -40,7 +40,7 @@ transport: ght3
 
 # Gluconate is converted to gluconate-6-phosphate by gluconate kinase,
 # and then catabolized by either the Entner-Doudoroff pathway (edd and
-# eda) or the oxidative pentose phosphate pathway (gnd, rpe, rpi).
+# eda) or the oxidative pentose phosphate pathway (gnd).
 # (MetaCyc pathway D-gluconate degradation)
 #
 # Alternatively, gluconate can be oxidized in the periplasm to
@@ -53,12 +53,8 @@ gntK	D-gluconate kinase	EC:2.7.1.12	curated:reanno::psRCH2:GFF2080	ignore:BRENDA
 gluconate_phosphate: PTS
 gluconate_phosphate: transport gntK
 
-# This forms ribulose-5-phosphate
+# This forms ribulose-5-phosphate, which is an intermediate in the pentose phosphate pathway
 gnd	6-phosphogluconate dehydrogenase, decarboxylating	EC:1.1.1.44	EC:1.1.1.343
-
-# ribulose-phosphate isomerase converts it to ribose-5-phosphate, which is a central
-# metabolic intermediate.
-import xylose.steps:rpi
 
 import glucose.steps:edd
 import glucose.steps:eda
@@ -70,6 +66,6 @@ import glucose.steps:kguK
 import glucose.steps:kguD
 
 all: gluconate_phosphate edd eda
-all: gluconate_phosphate gnd rpi
+all: gluconate_phosphate gnd
 all: gadh1 gadh2 gadh3 kguT kguK kguD edd eda
 
