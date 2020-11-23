@@ -1,0 +1,53 @@
+# query: transporter:xylitol
+
+# Fused (one-component) PTS system, EII-ABC, from Streptococcus mutans,
+# forming D-xylitol-5-phsophate
+# A fairly close homolog from Streptococcus agalactiae is annotated
+# as a fructose PTS (fru1), but does not seem to have been characterized,
+# and could well be a xylitol PTS as well.
+fruI	xylitol PTS, enzyme IIABC (FruI)	curated:TCDB::Q1LZ59	ignore:TCDB::Q3K0G6
+PTS: fruI
+
+# Axl is short for arabitol and xylitol
+EIIA-Axl	xylitol PTS, enzyme IIA (EIIA-Axl)	curated:TCDB::Q71WA4
+EIIB-Axl	xylitol PTS, enzyme IIB (EIIB-Axl)	curated:TCDB::Q71WA5
+EIIC-Axl	xylitol PTS, enzyme IIC (EIIC-Axl)	curated:TCDB::Q71WA6
+PTS: EIIA-Axl EIIB-Axl EIIC-Axl
+
+# 4-component ABC transporter in Dinoroseobacter shibae
+Dshi_0546	xylitol ABC transporter, ATPase component	curated:reanno::Dino:3607124
+Dshi_0547	xylitol ABC transporter, substrate-binding component	curated:reanno::Dino:3607125
+Dshi_0548	xylitol ABC transporter, permease component 1	curated:reanno::Dino:3607126
+Dshi_0549	xylitol ABC transporter, permease component 2	curated:reanno::Dino:3607127
+transport: Dshi_0546 Dshi_0547 Dshi_0548 Dshi_0549
+
+PLT5	xylitol:H+ symporter PLT5	curated:CharProtDB::CH_091483	curated:TCDB::Q1XF07
+transport: PLT5
+
+# xdhA is xylitol dehydrogenase
+# xylB is D-xylulokinase
+# rpe is ribulose-phosphate epimerase
+# rpi is ribose-5-phsophate isomerase
+import xylose.steps:xdhA xylB rpe rpi
+
+# MetaCyc Pathway: xylitol degradation involves a dehydrogenase, to
+# D-xylulose, and a kinase, to xylulose-5-phosphate.  Enzymes from the
+# pentose phsophate pathway (ribulose-phsophate epimerase and
+# ribose-5-phosphate epimerase) convert this to the central metabolite
+# ribose-5-phosphate.
+all: transport xdhA xylB rpe rpi
+
+# Utilization via a PTS system is not described in MetaCyc, but is
+# thought to involve a D-xylulose-5-phosphate 2-reductase (in reverse)
+# followed by rpe and rpi. See PMID:3104310 and PMID:27553222. The
+# D-xylulose-5-phosphate 2-reductase is probably provided by lmo2663
+# and/or lmo2664, but it possible that these enzymes produce
+# D-arabitol-1-phosphate instead (PMID:27553222). These enzymes are
+# related to D-arabitol-phosphate dehydrogenase (arpD) from
+# Streptococcus avium.
+
+# lmo2663 = Q8Y414; lmo2664 = Q8Y413
+x5p-reductase	D-xylulose-5-phosphate 2-reductase	uniprot:Q8Y414	uniprot:Q8Y413
+
+all: PTS x5p-reductase rpe rpi
+
