@@ -21,6 +21,19 @@ Dshi_0548	xylitol ABC transporter, permease component 1	curated:reanno::Dino:360
 Dshi_0549	xylitol ABC transporter, permease component 2	curated:reanno::Dino:3607127
 transport: Dshi_0546 Dshi_0547 Dshi_0548 Dshi_0549
 
+# 4-component ABC transporter in Herbaspirillum seropedicae
+HSERO_RS17000	xylitol ABC transporter, substrate-binding component	uniprot:D8IPH7
+HSERO_RS17005	xylitol ABC transporter, permease component 1	uniprot:D8IPH8
+HSERO_RS17010	xylitol ABC transporter, permease component 2	uniprot:D8IPH9
+HSERO_RS17020	xylitol ABC transporter, ATPase component	uniprot:D8IPI1
+transport: HSERO_RS17000 HSERO_RS17005 HSERO_RS17010 HSERO_RS17020
+
+# 3-component ABC transporter in Pseudomonas simiae WCS417
+PS417_12065	xylitol ABC transporter, ATPase component	uniprot:A0A1N7TX47
+PS417_12060	xylitol ABC transporter, permease component	uniprot:A0A1N7UKA9
+PS417_12055	xylitol ABC transporter, substrate-binding component	uniprot:A0A1N7UEK0
+transport: PS417_12065 PS417_12060 PS417_12055
+
 PLT5	xylitol:H+ symporter PLT5	curated:CharProtDB::CH_091483	curated:TCDB::Q1XF07
 transport: PLT5
 
