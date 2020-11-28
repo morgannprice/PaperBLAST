@@ -9,7 +9,7 @@ use pbutils;
 my @allsteps = qw{parse pmclinks oa am elsevier crossref pubmed comb generif stats};
 my $allsteps = join(",", @allsteps);
 my $usage = <<END
-run_search.pl -in downloads [ -work work ] [ -test ]
+run_snippets.pl -in downloads [ -work work ] [ -test ]
 	[ -cache cache ] [ -cache-only ]
 	[ -steps $allsteps ]
 
