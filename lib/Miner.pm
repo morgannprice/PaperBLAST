@@ -13,7 +13,10 @@ our (@ISA,@EXPORT);
 @EXPORT = qw( RemoveWideCharacters TextSnippets NodeText
               XMLFileToText TextFileToText PDFFileToText
               ElsevierFetch CrossrefToURL CrossrefFetch
-              DomToPMCId FetchPubMed ReadXMLArticle);
+              FetchPubMed ReadXMLArticle
+              DomToIds IdsToPMCId IdsToPubmedId IdsToDOI
+              DomToPMCId
+);
 
 sub RemoveWideCharacters($) {
     my ($text) = @_;
@@ -213,40 +216,68 @@ sub PDFFileToText($) {
 # Find the pmcid, i.e. <article-id pub-id-type="pmcid">1240566</article-id>
 # or <article-id pub-id-type="pmc">2268633</article-id>
 sub DomToPMCId($) {
-    my ($dom) = @_;
+  my ($dom) = @_;
+  return IdsToPMCId(DomToIds($dom));
+}
 
-    # Find the pmcid, i.e. <article-id pub-id-type="pmcid">1240566</article-id>
+sub DomToIds($) {
+    my ($dom) = @_;
     # First, use an XPath query to find article-id objects with pub-id-type attributes,
     my @ids = $dom->findnodes(qq{//article-id[attribute::pub-id-type]});
     if (@ids == 0) {
         @ids = $dom->findnodes(qq{/article/front/article-meta/article-id[attribute::pub-id-type]});
     }
-    if (@ids == 0) {
-        print STDERR "Warning: no article-id elements in dom\n";
-        return undef;
-    }
+    print STDERR "Warning: no article-id elements in dom\n"
+      if @ids == 0;
+    return @ids;
+}
 
-    # then get the pmcid value, if any
-    foreach my $id (@ids) {
-        foreach my $attr ($id->attributes) {
-            if ($attr->nodeName eq "pub-id-type"
-                && ($attr->getValue eq "pmcid" || $attr->getValue eq "pmc")) {
-                return $id->textContent;
-            }
-        }
+sub IdsToPMCId(@) {
+  my @ids = @_;
+  foreach my $id (@ids) {
+    foreach my $attr ($id->attributes) {
+      if ($attr->nodeName eq "pub-id-type"
+          && ($attr->getValue eq "pmcid" || $attr->getValue eq "pmc")) {
+        return $id->textContent;
+      }
     }
+  }
 
-    # or, return the PPR id for preprints
-    foreach my $id (@ids) {
-        foreach my $attr ($id->attributes) {
-            if ($attr->nodeName eq "pub-id-type"
-                && $attr->getValue eq "archive") {
-              return $id->textContent if $id->textContent =~ m/^PPR/;
-            }
-        }
+  # or, return the PPR id for preprints
+  foreach my $id (@ids) {
+    foreach my $attr ($id->attributes) {
+      if ($attr->nodeName eq "pub-id-type"
+          && $attr->getValue eq "archive") {
+        return $id->textContent if $id->textContent =~ m/^PPR/;
+      }
     }
+  }
+  return undef;
+}
+               
+sub IdsToPubmedId(@) {
+  my @ids = @_;
+  foreach my $id (@ids) {
+    foreach my $attr ($id->attributes) {
+      if ($attr->nodeName eq "pub-id-type"
+          && $attr->getValue eq "pmid") {
+        return $id->textContent;
+      }
+    }
+  }
+  return undef;
+}
 
-    return undef;
+sub IdsToDOI(@) {
+  my @ids = @_;
+  foreach my $id (@ids) {
+    foreach my $attr ($id->attributes) {
+      if ($attr->nodeName eq "pub-id-type"
+          && $attr->getValue eq "doi") {
+        return $id->textContent;
+      }
+    }
+  }
 }
 
 # returns a list of XML objects, one per pm id

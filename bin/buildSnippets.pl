@@ -39,7 +39,12 @@ buildSnippets.pl -list xml_file_list -out snippets oa.papers ... refseq.papers
 END
     ;
 
-sub ProcessArticle($$$);
+my %papers = (); # pmcId => queryTerm => list of queryId
+my %pmc2pm = (); # pmcId => pmId
+my %doi2pmc = (); # doi => pmcId
+my %pm2pmc = (); # pm => pmcId
+
+sub ProcessArticle($);
 
 {
     my ($infile, $listfile, $outfile);
@@ -77,8 +82,6 @@ sub ProcessArticle($$$);
       print STDERR "Read list of " . scalar(@files) . " input files\n";
     }
 
-    my %papers = (); # pmcId => queryTerm => list of queryId
-    my %pmc2pm = (); # pmcId => pmId
     foreach my $paperfile (@paperfiles) {
         die "No such file: $paperfile\n" unless -e $paperfile;
     }
@@ -86,13 +89,15 @@ sub ProcessArticle($$$);
         open(PAPERS, "<", $paperfile) || die "Error reading $paperfile";
         while(my $line = <PAPERS>) {
             chomp $line;
-            my ($queryId, $queryTerm, $pmcId, $pmId) = split /\t/, $line;
+            my ($queryId, $queryTerm, $pmcId, $pmId, $doi) = split /\t/, $line;
             die "Not enough fields in line\n$line\nin $paperfile" unless defined $pmId;
             next if $pmcId eq "";
             $queryTerm =~ s/^"//;
             $queryTerm =~ s/"$//;
             push @{ $papers{$pmcId}{$queryTerm} }, $queryId;
             $pmc2pm{$pmcId} = $pmId;
+            $doi2pmc{$doi} = $pmcId if $doi ne "";
+            $pm2pmc{$pmId} = $pmcId if $pmId ne "";
         }
         close(PAPERS) || die "Error reading $paperfile";
     }
@@ -115,7 +120,7 @@ sub ProcessArticle($$$);
       while (my $dom = ReadXMLArticle($fhIn, $state)) {
         $n++;
         print STDERR "Parsed $n articles\n" if ($n % 1000) == 0;
-        $nSeen += &ProcessArticle($dom, \%pmc2pm, \%papers);
+        $nSeen += &ProcessArticle($dom);
       }
       close($fhIn) || die "Error reading $file" . ($gunzip ? " . with zcat" : "")
     }
@@ -124,32 +129,37 @@ sub ProcessArticle($$$);
     close(ACC) || die "Error writing to $accfile";
 }
 
-sub ProcessArticle($$$) {
-    my ($dom,$pmc2pm,$papers) = @_;
+sub ProcessArticle($) {
+    my ($dom) = @_;
 
-    # First, use an XPath query to find article-id objects with pub-id-type attributes,
-    my $pmcid = &DomToPMCId($dom);
-    return 0 if !defined $pmcid;
-    $pmcid = "PMC" . $pmcid if $pmcid =~ m/^\d/; # do not use this prefix for PPR ids
-    my $pmcLookup = $pmcid; # it may show up in a different form in the search results
-    if (!exists $papers->{$pmcLookup} && $pmcid =~ m/^PPR/) {
+    my @ids = &DomToIds($dom);
+    my $pmcId = IdsToPMCId(@ids);
+    my $pmId = IdsToPubmedId(@ids);
+    my $doi = IdsToDOI(@ids);
+    $pmcId = $pm2pmc{$pmId} if !defined $pmcId && defined $pmId && exists $pm2pmc{$pmId};
+    $pmcId = $doi2pmc{$doi} if !defined $pmcId && defined $doi && exists $doi2pmc{$doi};
+    return 0 if !defined $pmcId;
+    $pmcId = "PMC" . $pmcId if $pmcId =~ m/^\d/; # do not use this prefix for PPR ids
+
+    my $pmcLookup = $pmcId; # it may show up in a different form in the search results
+    if (!exists $papers{$pmcLookup} && $pmcId =~ m/^PPR/) {
       $pmcLookup =~ s/^PPR/PMC-/;
     }
-    return 0 if !exists $papers->{$pmcLookup};
+    return 0 if !exists $papers{$pmcLookup};
 
     my $text = &RemoveWideCharacters( &NodeText($dom) );
-    print ACC join("\t", $pmcid, $pmc2pm->{$pmcid} || "", "full")."\n";
+    print ACC join("\t", $pmcId, $pmc2pm{$pmcId} || "", "full")."\n";
 
-    while (my ($queryTerm, $queryIds) = each %{ $papers->{$pmcLookup} }) {
+    while (my ($queryTerm, $queryIds) = each %{ $papers{$pmcLookup} }) {
         my @snippets = TextSnippets($text, $queryTerm, $snippetBefore, $snippetAfter, $maxChar);
         my %queryIds = map { $_ => 1 } @$queryIds;
         my @queryIds = keys(%queryIds);
         foreach my $queryId (@queryIds) {
             foreach my $snippet (@snippets) {
-                print OUT join("\t", $pmcid, $pmc2pm->{$pmcid} || "", $queryTerm, $queryId, $snippet)."\n";
+                print OUT join("\t", $pmcId, $pmc2pm{$pmcId} || "", $queryTerm, $queryId, $snippet)."\n";
             }
         }
-        print STDERR "Warning: no snippets for $queryTerm in $pmcid\n" if scalar(@snippets) == 0;
+        print STDERR "Warning: no snippets for $queryTerm in $pmcId\n" if scalar(@snippets) == 0;
     }
     return 1;
 }
