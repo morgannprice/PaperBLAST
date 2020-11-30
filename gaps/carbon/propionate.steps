@@ -111,12 +111,12 @@ epi	methylmalonyl-CoA epimerase	EC:5.1.99.1	ignore:reanno::Dino:3607309
 
 mcmA	methylmalonyl-CoA mutase, fused catalytic and adenosylcobamide-binding components	curated:SwissProt::O86028	curated:BRENDA::P22033	curated:BRENDA::Q23381	curated:BRENDA::Q84FZ1	curated:BRENDA::Q8MI68	curated:SwissProt::P27253	curated:SwissProt::Q3J4D7	curated:metacyc::MONOMER-18293	curated:reanno::PS:Dsui_0519	curated:BRENDA::Q8F222	curated:BRENDA::Q8Y2U5	ignore_other:5.4.99.2
 
-mcm_large	methylmalonyl-CoA mutase, large (catalytic) subunit	curated:BRENDA::A4YEG1	curated:BRENDA::O74009	curated:BRENDA::P11653	ignore_other:5.4.99.2
+mcm-large	methylmalonyl-CoA mutase, large (catalytic) subunit	curated:BRENDA::A4YEG1	curated:BRENDA::O74009	curated:BRENDA::P11653	ignore_other:5.4.99.2
 
-mcm_small	methylmalonyl-CoA mutase, small (adenosylcobamide-binding) subunit	curated:BRENDA::A4YIE3	curated:BRENDA::O58013	ignore_other:5.4.99.2
+mcm-small	methylmalonyl-CoA mutase, small (adenosylcobamide-binding) subunit	curated:BRENDA::A4YIE3	curated:BRENDA::O58013	ignore_other:5.4.99.2
 
 mutase: mcmA
-mutase: mcm_large mcm_small
+mutase: mcm-large mcm-small
 
 # MetaCyc Pathway: propanoyl-CoA degradation II:
 # propionyl-CoA is oxidized to acrylyl-CoA, hydrated
@@ -125,7 +125,7 @@ mutase: mcm_large mcm_small
 # oxidized to acetyl-CoA and CO2.
 
 pco	propanyl-CoA oxidase	EC:1.3.3.6
-hpcD	3-hydroxypropionyl-coA dehydratase	EC:4.2.1.116
+hpcD	3-hydroxypropionyl-CoA dehydratase	EC:4.2.1.116
 dddA	3-hydroxypropionate dehydrogenase	EC:1.1.1.59
 
 # methylmalonate semialdehyde dehydrogenase often has this activity as well
