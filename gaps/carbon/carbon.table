@@ -23,6 +23,8 @@ glutamate	L-glutamate catabolism
 glycerol	glycerol catabolism
 histidine	L-histidine catabolism
 4-hydroxybenzoate	4-hydroxybenzoate catabolism
+Dlactate	D-lactate catabolism
+Llactate	L-lactate catabolism
 lactose	lactose catabolism
 leucine	L-leucine catabolism
 maltose	D-maltose catabolism

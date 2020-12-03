@@ -1,0 +1,58 @@
+# Transporters were identified using
+# query: transporter:D-lactate:(R)-lactate:D,L-lactic
+
+# E. coli GlcA (Q46839) is similar to LctP and is reported to transport both L- and D-lactate
+# SO_1522 (Q8EGS2) and Psest_0955 (L0GFN1) probably transport both isomers
+#  (for evidence that SO_1522 transports D-lactate, see PMID:28285200)
+lctP	D-lactate:H+ symporter LctP or LidP	curated:SwissProt::P33231	curated:reanno::WCS417:GFF4712	curated:reanno::pseudo5_N2C3_1:AO356_07550	curated:TCDB::Q46839	uniprot:Q8EGS2	uniprot:L0GFN1
+transport: lctP
+
+larD	D,L-lactic acid transporter	curated:SwissProt::F9UST3	curated:SwissProt::F9UMX3
+transport: larD
+
+mctP	D,L-lactic acid transporter	curated:TCDB::Q8VM88	curated:SwissProt::Q1M7A2
+transport: mctP
+
+PGA1_c12640	D-lactate ABC transporter, ATP-binding component	curated:reanno::Phaeo:GFF1248
+PGA1_c12650	D-lactate ABC transporter, permease component 1	curated:reanno::Phaeo:GFF1249
+PGA1_c12660	D-lactate ABC transporter, permease component 2	curated:reanno::Phaeo:GFF1250
+PGA1_c12670	D-lactate ABC transporter, substrate-binding component	curated:reanno::Phaeo:GFF1251
+transport: PGA1_c12640 PGA1_c12650 PGA1_c12660 PGA1_c12670
+
+# F8SVK1 (TC 2.A.1.6.11) seems to be a weak lactate transporter, so ignore
+
+import threonine.steps:D-LDH # D-lactate dehydrogenase
+
+D-lactate-dehydrogenase: D-LDH
+
+# Acetobacterium woodii uses an electron-bifurcating dehydrogenase for
+# growth on lactate. The Km for D-lactate is far below that for
+# L-lactate (Km of 3.6 mM vs. 112 mM; PMID:24762045), so we consider
+# it to be a D-lactate dehydrogenase.
+
+# lctB = Awo_c08710 is the small Etf subunit
+lctB	electron-transfer flavoprotein for D-lactate dehydrogenase (NAD+, ferredoxin), small subunit	curated:BRENDA::H6LBB0	ignore_other:1.3.1.110
+
+# lctC = Awo_c08720 is the large Etf subunit
+lctC	electron-transfer flavoprotein for D-lactate dehydrogenase (NAD+, ferredoxin), large subunit	curated:BRENDA::H6LBB1	ignore_other:1.3.1.110
+
+# lctD = Awo_c08730 is the LDH subunit
+lctD	D-lactate dehydrogenase (NAD+, ferredoxin), lactate dehydrogenase component	curated:BRENDA::H6LBS1	ignore_other:1.3.1.110
+D-lactate-dehydrogenase: lctB lctC lctD
+
+# glcDEF from E. coli (EC 1.1.99.14) is usually described as glycolate
+# dehydrogenase or glycolate oxidase, but it has similar activity on
+# D-lactate (SwissProt references PMID:4557653). Homologs from various
+# Proteobacteria are important for D-lactate utilization. The
+# physiological electron acceptor is not known, so terming it an
+# oxidase is questionable.
+
+glcD	D-lactate dehydrogenase, FAD-linked subunit 1 (GlcD)	curated:reanno::Cup4G11:RR42_RS17300	curated:reanno::Phaeo:GFF2925	curated:reanno::Smeli:SMc00832	curated:reanno::psRCH2:GFF3772	curated:SwissProt::P0AEP9	ignore_other:1.1.99.14
+
+glcE	D-lactate dehydrogenase, FAD-linked subunit 2 (GlcE)	curated:reanno::Cup4G11:RR42_RS17310	curated:reanno::Phaeo:GFF2924	curated:reanno::Smeli:SMc00833	curated:reanno::psRCH2:GFF3771	curated:SwissProt::P52073	ignore_other:1.1.99.14
+
+glcF	D-lactate dehydrogenase, FeS subunit GlcF	curated:reanno::Cup4G11:RR42_RS17315	curated:reanno::Phaeo:GFF2923	curated:reanno::Smeli:SMc00926	curated:reanno::psRCH2:GFF3770	curated:SwissProt::P52074	ignore_other:1.1.99.14
+
+D-lactate-dehydrogenase: glcD glcE glcF
+
+all: transport D-lactate-dehydrogenase

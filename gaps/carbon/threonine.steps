@@ -101,7 +101,12 @@ glycine-degradation: gcvP gcvT gcvH lpd
 # Ignore the protein fragment P84719
 gloA	glyoxylase I	EC:4.4.1.5	ignore:SwissProt::P84719
 gloB	hydroxyacylglutathione hydrolase (glyoxalase II)	EC:3.1.2.6
-D-LDH	D-lactate dehydrogenase	EC:1.1.1.28	EC:1.1.99.6	EC:1.1.2.4
+
+# PMID:19196979 showed that dld-II (SO_1521, Q8EGS3) is a D-lactate dehydrogenase
+# D-lactate dehydrogenases fromLactobacillus delbrueckii are annotated as
+# EC 1.1.1.345 (D-2-hydroxyacid dehydrogenase),
+# which is usually used for enzymes that prefer larger substrates.
+D-LDH	D-lactate dehydrogenase	EC:1.1.1.28	EC:1.1.99.6	EC:1.1.2.4	uniprot:Q8EGS3	curated:BRENDA::Q1GAA2	curated:BRENDA::Q48534
 methylglyoxal-degradation: gloA gloB D-LDH
 
 # acetaldehyde is an intermediate in threonine degradation
