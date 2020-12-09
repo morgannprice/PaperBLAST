@@ -90,7 +90,8 @@ iolN	2,4-diketo-inositol hydratase	curated:SwissProt::Q9WYP4
 iolO	5-dehydro-L-gluconate epimerase	curated:SwissProt::Q9WYP7
 uxaE	D-tagaturonate epimerase	EC:5.1.2.7
 uxuB	D-mannonate dehydrogenase	EC:1.1.1.57
-# D8ADB5 is nearly identical to rspA from E. coli K-12, which is reported to have
-# little activity.
-uxuA	D-mannonate dehydratase	EC:4.2.1.8	ignore:SwissProt::D8ADB5
+# Many proteins are annotated in SwissProt as "D-galactonate dehydratase family member" but
+# have little activity on D-mannonoate; it is probably not the physiological substrate
+uxuA	D-mannonate dehydratase	EC:4.2.1.8	ignore:SwissProt::A4WA78	ignore:SwissProt::A5KUH4	ignore:SwissProt::A6AMN2	ignore:SwissProt::A6M2W4	ignore:SwissProt::A6VRA1	ignore:SwissProt::A8RQK7	ignore:SwissProt::B1ELW6	ignore:SwissProt::B3PDB1	ignore:SwissProt::B5GCP6	ignore:SwissProt::B5QBD4	ignore:SwissProt::B5R541	ignore:SwissProt::B5RAG0	ignore:SwissProt::B8HCK2	ignore:SwissProt::C6CBG9	ignore:SwissProt::C6CVY9	ignore:SwissProt::C6D9S0	ignore:SwissProt::C6DI84	ignore:SwissProt::C7PW26	ignore:SwissProt::C8ZZN2	ignore:SwissProt::C9A1P5	ignore:SwissProt::C9CN91	ignore:SwissProt::C9NUM5	ignore:SwissProt::C9Y5D5	ignore:SwissProt::D0KC90	ignore:SwissProt::D0X4R4	ignore:SwissProt::D4GJ14	ignore:SwissProt::D7BPX0	ignore:SwissProt::D8ADB5	ignore:SwissProt::D9UNB2	ignore:SwissProt::E1V4Y0	ignore:SwissProt::Q1QT89	ignore:SwissProt::Q2CIN0	ignore:SwissProt::Q6DAR4	ignore:SwissProt::Q8FHC7
+
 all: transport iolG iolM iolN iolO uxaE uxuB uxuA kdgK eda
