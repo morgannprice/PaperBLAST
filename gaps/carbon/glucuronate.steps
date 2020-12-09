@@ -1,0 +1,82 @@
+# Transporters were identified using
+# query: transporter:glucuronate:D-glucuronate:D-glucopyranuronate:CPD-14488:CPD-12521:CPD-15530
+# Porin OdpF was ignored
+
+exuT	D-glucuronate:H+ symporter ExuT	curated:SwissProt::P0AA78	curated:TCDB::P0AA78	curated:TCDB::P94774
+transport: exuT
+
+# Genetic data from Pseudomonas putida suggests the involvement of a TRAP transporter:
+# dctP-like PP_1169 (Q88NN8)
+# dctQ-like PP_1168 (Q88NN9) 
+# dctM-like PP_1167 (Q88NP0) 
+# Furthermore, PP_1169 is nearly identical to Pput_1203, which binds D-glucuronate
+# (see PMC4310620 and PDB:4xfeA).
+# The related substrate-binding proteins Bpro_3107 (Q128M1) and Bamb_6123 (Q0B2F6)
+# was also shown to bind D-glucuronate (and D-galacturonate)
+
+dctP	D-glucuronate TRAP transporter, solute receptor component	uniprot:Q88NN8	curated:SwissProt::Q128M1	curated:SwissProt::Q0B2F6
+dctQ	D-glucuronate TRAP transporter, small permease component	uniprot:Q88NN9
+dctM	D-glucuronate TRAP transporter, large permease component	uniprot:Q88NP0
+transport: dctP dctQ dctM
+
+# 5-dehydro-4-deoxyglucarate is an intermediate in glucuronate catabolism.
+
+# As part of MetaCyc Pathway: D-glucuronate degradation II,
+# 5-dehydro-4-deoxyglucarate is dehydrated/decarboxylated to
+# 2,5-dioxopentanoate and oxidized to 2-oxoglutarate.
+import galacturonate.steps:kdgD # 5-dehydro-4-deoxyglucarate dehydratase
+import xylose.steps:dopDH # 2,5-dioxopentanonate dehydrogenase
+5-dehydro-4-deoxyglucarate-degradation: kdgD dopDH
+
+# The 5-dehydro-4-deoxy-D-glucarate could also be
+# consumed aldolase (garL), yielding tartronate semialdehyde and
+# pyruvate -- this is part of glucarate or galactarate utilization in
+# E. coli. Also see
+# MetaCyc Chimeric Pathway: superpathway of microbial D-galacturonate and D-glucuronate degradation
+# The tatronate semialdehyde can be oxidized to D-glycerate and
+# phosphorylated to 2-phospho-D-glycerate, which is an intermediate in
+# glycolysis.
+
+garL	5-dehydro-4-deoxy-D-glucarate aldolase	EC:4.1.2.20
+# glxR (G6278-MONOMER) is linked to this reaction but not this EC in ecocyc and metacyc
+garR	tatronate semialdehyde dehydrogenase	EC:1.1.1.60	curated:ecocyc::G6278-MONOMER
+import deoxyribose.steps:garK # glycerate 2-kinase
+5-dehydro-4-deoxyglucarate-degradation: garL garR garK
+
+# MetaCyc Pathway: D-glucuronate degradation I (via L-gulonate and xylitol) is reported only in metazoans
+#  and is not described here
+
+# MetaCyc Pathway: D-glucuronate degradation II involves a
+# dehydrogenase to D-glucaro-1,5-lactone, spontaneous rearrangement to
+# D-glucaro-1,4-lactone, cycloisomerase to
+# 5-dehydro-4-deoxy-D-glucarate, whose breakdown
+# is described above.
+
+udh	D-glucuronate dehydrogenase	EC:1.1.1.203
+gci	D-glucaro-1,4-lactone cycloisomerase	EC:5.5.1.27
+all: transport udh gci 5-dehydro-4-deoxyglucarate-degradation
+
+# Pseudomonas putida appears to use a variant pathway, with a
+# lactonase (to D-glucarate) and a dehydratase instead of the
+# cycloisomerase. The lactonase is similar to galactaro-1,5-lactonases
+# (i.e., PS417_17365 = GFF3393) so probably acts on the 1,5-lactone.
+
+PP_1170	D-glucaro-1,5-lactonase	uniprot:Q88NN7	ignore:reanno::WCS417:GFF3393
+gudD	D-glucarate dehydratase	EC:4.2.1.40
+all: transport udh PP_1170 gudD 5-dehydro-4-deoxyglucarate-degradation
+
+# EcoCyc pathway Pathway: beta-D-glucuronide and D-glucuronate
+# degradation involves D-glucuronate isomerase (to D-fructuronate)
+# followed by oxidation to D-mannonate, dehydration to
+# 2-dehydro-3-deoxy-D-gluconate, phosphorylation to
+# 2-dehydro-3-deoxy-D-gluconate 6-phosphate, and an aldolase reaction
+# to glyceraldehyde-3-phosphate and pyruvate
+
+uxaC	D-glucuronate isomerase	EC:5.3.1.12
+# uxuB is D-mannonate oxidoreductase
+# uxuA is D-mannonate dehydratase
+import myoinositol.steps:uxuB uxuA
+import glucosamine.steps:kdgK # 2-keto-3-deoxygluconate kinase
+import glucose.steps:eda # 2-keto-3-deoxygluconate 6-phosphate aldolase
+
+all: transport uxaC uxuB uxuA kdgK eda

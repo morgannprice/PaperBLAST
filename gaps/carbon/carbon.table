@@ -19,6 +19,7 @@ gluconate	D-gluconate catabolism
 glucose	D-glucose catabolism
 glucose6P	D-glucose-6-phosphate catabolism
 glucosamine	D-glucosamine (chitosamine) catabolism
+glucuronate	D-glucuronate catabolism
 glutamate	L-glutamate catabolism
 glycerol	glycerol catabolism
 histidine	L-histidine catabolism
@@ -32,6 +33,7 @@ mannitol	D-mannitol catabolism
 mannose	D-mannose catabolism
 myoinositol	myo-inositol catabolism
 nag	N-acetyl-D-glucosamine catabolism
+2-oxoglutarate	2-oxoglutarate (alpha-ketoglutarate) catabolism
 phenylacetate	phenylacetate catabolism
 phenylalanine	L-phenylalanine catabolism
 proline	L-proline catabolism
