@@ -24,13 +24,23 @@ transport: satP
 # Similarly for the system from Shewanella loihica PV-4 or P. stutzeri RCH2 (just one component annotated)
 # The V. cholerae system is VC1927-VC1929, see PMID: 22556361, but only the dctP
 # (Q9KQR9) component is curated; Q9KQS0 is dctQ; Q9KQS1 is dctM
-# Finally, ignore the system from S. amazonensis SB2B (Sama_2209:Sama_2211; )
+# In Phaeobacter inhibens, the system is important for fumarate utilization:
+# PGA1_c20670 = dctQ = I7EY26
+# PGA1_c20660 = dctM = I7DRS6
+# PGA1_c20680 = dctP = I7END8
+# Finally, ignore the system from S. amazonensis SB2B (Sama_2209:Sama_2211)
 # as we have no fitness data for succinate from this organism (but it does utilize it)
-dctQ	succinate TRAP transporter, small permease component DctQ	curated:SwissProt::O07837	curated:SwissProt::Q9HU17	curated:reanno::PV4:5208944	curated:reanno::psRCH2:GFF4196	uniprot:Q9KQS0	ignore:reanno::SB2B:6938089
-dctM	succinate TRAP transporter, large permease protein DctM	curated:SwissProt::O07838	curated:SwissProt::Q9HU16	curated:reanno::PV4:5208943	uniprot:Q9KQS1	ignore:reanno::SB2B:6938090
+dctQ	succinate TRAP transporter, small permease component DctQ	curated:SwissProt::O07837	curated:SwissProt::Q9HU17	curated:reanno::PV4:5208944	curated:reanno::psRCH2:GFF4196	uniprot:Q9KQS0	ignore:reanno::SB2B:6938089	uniprot:I7EY26
+dctM	succinate TRAP transporter, large permease protein DctM	curated:SwissProt::O07838	curated:SwissProt::Q9HU16	curated:reanno::PV4:5208943	uniprot:Q9KQS1	ignore:reanno::SB2B:6938090	uniprot:I7DRS6
 # B. subtilis DctB is similar to DctP but is probably involved in sensing, not transport, so is not included
-dctP	succinate TRAP transporter, component DctP	curated:SwissProt::P37735	curated:SwissProt::Q9HU18	curated:reanno::PV4:5208945	curated:SwissProt::Q9KQR9	ignore:reanno::SB2B:6938088
+dctP	succinate TRAP transporter, component DctP	curated:SwissProt::P37735	curated:SwissProt::Q9HU18	curated:reanno::PV4:5208945	curated:SwissProt::Q9KQR9	ignore:reanno::SB2B:6938088	uniprot:I7END8
 transport: dctQ dctM dctP
+
+# The TRAP system Dshi_1194:Dshi_1195 (A8LI82,A8LI83) is important for utilization of
+# succinate, fumarate, L-malate, and 2-oxoglutarate
+Dshi_1194	TRAP transporter for succinate, fumarate, L-malate, and 2-oxoglutarate, fused 4TM/12TM components	uniprot:A8LI82
+Dshi_1195	TRAP transporter for succinate, fumarate, L-malate, and 2-oxoglutarate, substrate-binding component	uniprot:A8LI83
+transport: Dshi_1194 Dshi_1195
 
 # Ignore mitochondrial dicarboxylate:phosphate antiporters
 # Ignore antiporters dcuA/dcuB (i.e., fumarate:succinate antiport does not facilitate utilization of succinate)
@@ -42,64 +52,17 @@ transport: dctQ dctM dctP
 # Ignore succinate efflux transporter DcuC (although it acts as a succinate:proton symporter,
 # so maybe it could suffice)
 
-# MetaCyc does not describe the catabolism of succinate, but it is
-# thought to be oxidized by the TCA cycle enzymes succinate
+# MetaCyc does not describe the catabolism of succinate-- succinate
+# itself is not a central intermediate, but succinyl-CoA is. Succinate
+# is thought to be oxidized by the TCA cycle enzymes succinate
 # dehydrogenase, fumarase (forming L-malate), and malate dehydrogenase
 # (either decarboxylating, with pyruvate as the product, or not, with
 # oxalacetate with the product; both compounds are central metabolic
-# intermediates).
+# intermediates). Since these TCA cycle reactions are part of central
+# metabolism in most prokaryotes, they are not included here.
 
-# Succinate dehydrogenase (quinone) is EC 1.3.5.1. Subunit composition
-# is most commonly SdhABCD but SdhD may not always be present and is
-# not described here.
-#
-# The menaquinone-dependent version is sometimes given as EC 1.3.5.4,
-# and it is also thought to support utilization, even though it may be
-# energetically somewhat unfavorable in the succinate-consuming
-# direction (estimated DeltaG = +15 kJ/mol, see eQuilibrator, but
-# proton movement probably makes up for this.)
-#
-# First, expression of fumarate reductase can allow sdh mutants of
-# E. coli to utilize succinate (PMID:6274999).
-#
-# Second, several succinate-utilizing organisms in the IJSEM database
-# have Chlorobium-like succinate dehydrogenases, and do not have any
-# other apparent path to consume succinate (Aquimarina longa SW024;
-# Galbibacter marinus ck-I2-15; Flavobacterium caeni LM5; Imtechella
-# halotolerans K1; Mucilaginibacter gossypii Gh-67; Mucilaginibacter
-# gossypiicola Gh-48)
+# It's also possible that malate could be decarboxylated to lactate,
+# as in malolactic fermentation by lactic acid bacteria; but this
+# might not be relevant to succinate utilization.
 
-# Many fumarate reductases have a similar subunit composition and are included within sdhABC.
-# The periplasmic fumarate reductase studied in Shewanella is not included; we don't
-# know if it (in combination with fumarate transport) would allow growth on
-# succinate.
-
-sdhA	succinate:quinol oxidoreductase SdhABC(D), flavoprotein subunit SdhA	curated:BRENDA::Q97W79	curated:BRENDA::A0QPJ3	curated:BRENDA::A0QT08	curated:BRENDA::B1YBY7	curated:BRENDA::O73937	curated:BRENDA::P0AC41	curated:BRENDA::P77943	curated:BRENDA::Q6DLZ3	curated:BRENDA::Q920L2	curated:BRENDA::Q9C4L9	curated:SwissProt::G4V4G6	curated:SwissProt::O82663	curated:SwissProt::P31040	curated:SwissProt::P47052	curated:SwissProt::Q00711	curated:SwissProt::Q0QF01	curated:SwissProt::Q6ZDY8	curated:SwissProt::Q8K2B3	curated:SwissProt::Q94523	curated:SwissProt::Q9YHT1	curated:SwissProt::Q9ZPX5	curated:TCDB::Q8KAA0	curated:SwissProt::P17412	curated:metacyc::HP0192-MONOMER	curated:metacyc::MONOMER-18284	ignore_other:1.3.5.1	ignore_other:1.3.5.4	ignore_other:succinate dehydrogenase	ignore_other:fumarate reductase	hmm:TIGR01811	hmm:TIGR01812	hmm:TIGR01816	curated:TCDB::Q65GF4
-
-sdhB	succinate:quinol oxidoreuctase SdhABC(D), iron-sulfur subunit SdhB	curated:BRENDA::A0QT07	curated:BRENDA::C4T9C3	curated:BRENDA::D2KQI9	curated:BRENDA::E2RZU1	curated:BRENDA::P21912	curated:BRENDA::Q6DLZ2	curated:BRENDA::Q8LB02	curated:BRENDA::Q8LBZ7	curated:BRENDA::Q9C4L8	curated:CharProtDB::CH_024580	curated:CharProtDB::CH_123686	curated:SwissProt::P21801	curated:SwissProt::P21914	curated:SwissProt::Q007T0	curated:SwissProt::Q6H4G3	curated:SwissProt::Q9FJP9	curated:SwissProt::Q9S827	curated:SwissProt::Q9YHT2	curated:BRENDA::Q97W78	curated:BRENDA::P77944	curated:BRENDA::A0QPJ2	curated:SwissProt::P17596	curated:metacyc::HP0191-MONOMER	curated:TCDB::Q8KAA1	curated:BRENDA::A0A0D7VBF8	ignore_other:1.3.5.1	ignore_other:1.3.5.4	ignore_other:succinate dehydrogenase	ignore_other:fumarate reductase	hmm:TIGR00384	curated:TCDB::Q65GF5
-
-sdhC	succinate:quinol oxidoreductase SdhABC(D), transmembrane cytochrome b subunit SdhC	curated:SwissProt::P70097	curated:BRENDA::Q99643	curated:SwissProt::D0VWV4	curated:SwissProt::P33421	curated:SwissProt::P41956	curated:BRENDA::F9VN12	curated:BRENDA::O73939	curated:BRENDA::P77945	curated:BRENDA::Q97W77	curated:BRENDA::A0QT10	curated:SwissProt::O53368	curated:CharProtDB::CH_024341	curated:BRENDA::P17413	curated:metacyc::HP0193-MONOMER	curated:TCDB::Q8KA99	ignore_other:1.3.5.1	ignore_other:1.3.5.4	ignore_other:succinate dehydrogenase	hmm:TIGR02970	ignore_other:fumarate reductase	hmm:TIGR02970	hmm:TIGR02046	curated:TCDB::Q65GF3
-
-sdh: sdhA sdhB sdhC
-
-# fumarate reductase from E. coli has 4 subunits. frdAB are distantly related to sdhAB
-frdA	succinate:quinol oxidoreductase FrdABCD, flavoprotein subunit FrdA	curated:BRENDA::P00363	ignore_other:1.3.5.4
-frdB	succinate:quinol oxidoreductase FrdABCD, FeS subunit FrdB	curated:CharProtDB::CH_024564	ignore_other:1.3.5.4
-frdC	succinate:quinol oxidoreductase FrdABCD, hydrophobic subunit FrdC	curated:BRENDA::P0A8Q0	ignore_other:1.3.5.4
-frdD	succinate:quinol oxidoreductase FrdABCD, hydrophobic subunit FrdD	curated:BRENDA::P0A8Q3	ignore_other:1.3.5.4
-sdh: frdA frdB frdC frdD
-
-fum	fumarase	EC:4.2.1.2
-
-# Include NAD(P)H and quinone-dependent dehydrogenases
-mdh	malate dehydrogenase	EC:1.1.1.37	EC:1.1.5.4	EC:1.1.1.82	EC:1.1.1.299
-
-# BRENDA annotation of Q9T0H6 seems questionable
-mae	malate dehydrogenase (oxaloacetate-decarboxylating)	EC:1.1.1.38	EC:1.1.1.40	EC:1.1.1.39	ignore:BRENDA::Q9T0H6
-
-# It's also possible that malate could be decarboxylated to lactate, but
-# this is known to occur in fermentative organisms and might not be
-# relevant to succinate utilization.
-
-all: transport sdh fum mdh
-all: transport sdh fum mae
+all: transport

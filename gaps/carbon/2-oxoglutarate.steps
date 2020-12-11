@@ -31,6 +31,9 @@ Psest_0084	2-oxoglutarate TRAP transporter, fused 4TM/12TM components	curated:re
 Psest_0085	2-oxoglutarate TRAP transporter, solute receptor component	curated:reanno::psRCH2:GFF85	uniprot:A8LI83	uniprot:E4PQE3
 transport: Psest_0084 Psest_0085
 
+import succinate.steps:Dshi_1194 Dshi_1195 # TRAP dicarboxylate transporter
+transport: Dshi_1194 Dshi_1195
+
 # Since this is a TCA cycle intermediate, do not represent catabolic reactions
 all: transport
  
