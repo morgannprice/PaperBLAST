@@ -48,7 +48,7 @@ use IO::Handle qw{autoflush};
 use lib "../lib";
 use Steps;
 use pbutils;
-use pbweb qw{start_page};
+use pbweb qw{start_page GetMotd};
 use FetchAssembly qw{CacheAssembly AASeqToAssembly GetMatchingAssemblies GetMaxNAssemblies};
 use File::stat;
 use DB_File;
@@ -206,6 +206,7 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
                'banner' => $banner,
                'bannerURL' => "gapView.cgi");
     print
+      GetMotd(),
       p("View 'gaps' in",
         a({-href => "gapView.cgi?set=$set&orgs=orgsFit&gaps=1"}, "35 bacteria"),
         "that grow in minimal media, or choose a genome to analyze:"),
