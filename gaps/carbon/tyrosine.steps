@@ -1,0 +1,76 @@
+# Transporters were identified using
+# query: transporter:tyrosine:L-tyrosine:tyr
+
+# The ABC transporter livFGHM (with substrate-binding component livK or livJ) may be able to
+# transport tyrosine, but it did not suffice to enable growth of a tyrosine auxotroph
+# (PMC305776), so it is not included.
+
+# The amino acid exchanger protein SteT (O34739) is not included
+# because it is not expected to support growth on tyrosine. Related
+# metazoan proteins are also not included. Similarly, 4F2_HUMAN /
+# P08195 and P_HUMAN / Q04671 are not included.
+
+# Amino acid exporters such as E. coli yddG are not included.
+
+# Porins such as opdT are not included
+
+aroP	L-tyrosine transporter (AroP/FywP)	curated:TCDB::F2HN33	curated:TCDB::P15993	curated:TCDB::Q46065	curated:reanno::pseudo5_N2C3_1:AO356_18530	curated:SwissProt::A2RMP5
+transport: aroP
+
+tyrP	Tyrosine permease	curated:TCDB::P0AAD4
+transport: tyrP
+
+TAT1	L-tyrosine permease TAT1	curated:CharProtDB::CH_091631
+transport: TAT1
+
+MCT10	L-tyrosine transporter MCT10	curated:SwissProt::Q91Y77
+transport: MCT10
+
+CAT	L-tyrosine transporter CAT	curated:TCDB::ALD51314.1
+transport: CAT
+
+tyt1	L-tyrosine:Na+ symporter Tyt1	curated:TCDB::Q8RHM5
+transport: tyt1
+
+# Steps for acetoacetate utilization
+import leucine.steps:atoA
+import leucine.steps:atoD
+import leucine.steps:aacS
+aa_activation: atoA atoD
+aa_activation: aacS
+import deoxyribose.steps:atoB # acetyl-CoA acetyltransferase
+acetoacetate_utilization: aa_activation atoB
+
+# MetaCyc Pathway: L-tyrosine degradation I involves an
+# aminotransferase to 3-(4-hydroxyphenyl)pyruvate [not included, as
+# these enzymes are often promiscuous], a dioxygenase to
+# homogentisate, another oxygenase yielding 4-maleyl-acetoacetate, and
+# isomerase to 4-fumaryl-acetoacetate, and a hydrolase to acetoacetate
+# and fumarate. Fumarate is part of the TCA cycle so its catabolism is
+# not described.
+
+# Q8EKK9 and Q9RSJ4 are misannotated in BRENDA
+HPD	4-hydroxyphenylpyruvate dioxygenase	EC:1.13.11.27	ignore:BRENDA::Q8EKK9	ignore:BRENDA::Q9RSJ4
+hmgA	homogentisate dioxygenase	EC:1.13.11.5
+maiA	maleylacetoacetate isomerase	EC:5.2.1.2
+fahA	fumarylacetoacetate hydrolase	EC:3.7.1.2
+all: transport HPD hmgA maiA fahA acetoacetate_utilization
+
+# MetaCyc Pathway: L-tyrosine degradation II involves an
+# aminotransferase to 4-hydroxyphenylpyruvate, and
+# 4-hydroxyphenylpyruvate oxidase, to 4-hydroxyphenylacetate.  The
+# oxidase has not been linked to sequence so this pathway is not
+# described here. (It would then feed into MetaCyc Pathway:
+# 4-hydroxyphenylacetate degradation)
+
+# MetaCyc Pathway: L-tyrosine degradation III is present only in fungi
+# and does not feed into central metabolism (it is for utilization of
+# the nitrogen only). It is not described here.
+
+# MetaCyc Pathway: L-tyrosine degradation IV (to 4-methylphenol) does
+# not feed into central metabolism. It is not described here.
+
+# MetaCyc Pathway: L-tyrosine degradation V (reductive Stickland
+# reaction) does not feed into central metabolism. It is not described
+# here.
+
