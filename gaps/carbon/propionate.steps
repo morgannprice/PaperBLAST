@@ -30,12 +30,12 @@ pccA	propionyl-CoA carboxylase, alpha subunit	curated:BRENDA::P05165	curated:BRE
 
 pccB	propionyl-CoA carboxylase, beta subunit	curated:BRENDA::P05166	curated:BRENDA::Q20676	curated:BRENDA::Q9X4K7	curated:SwissProt::I3R7F1	curated:SwissProt::P53003	curated:SwissProt::P79384	curated:SwissProt::Q168G2	curated:SwissProt::Q3J4E3	curated:SwissProt::Q99MN9	curated:metacyc::MONOMER-13598	curated:metacyc::MONOMER-16260	curated:metacyc::MONOMER-17283	curated:metacyc::MONOMER-17284	curated:metacyc::MONOMER-8607	curated:reanno::Dino:3607303	curated:reanno::PS:Dsui_0517	ignore_other:6.4.1.3
 
-propionyl_CoA_carboxylase: pccA pccB
+propionyl-CoA-carboxylase: pccA pccB
 
 # Acidianus brierleyi has a diverged pccA split into two pieces
 pccA1	propionyl-CoA carboxylase, biotin carboxyl carrier subunit	curated:metacyc::MONOMER-13597	ignore_other:6.4.1.3
 pccA2	propionyl-CoA carboxylase, biotin carboxylase subunit	curated:metacyc::MONOMER-13596	ignore_other:6.4.1.3
-propionyl_CoA_carboxylase: pccA1 pccA2 pccB
+propionyl-CoA-carboxylase: pccA1 pccA2 pccB
 
 # MetaCyc Pathway: 2-methylcitrate cycle I
 # propionate is activated to propionyl-CoA and
@@ -133,6 +133,6 @@ mmsA	malonate semialdehyde dehydrogenase (CoA-acylating)	EC:1.2.1.18	ignore_othe
 
 all: transport prpE prpC prpD acn prpB
 all: transport prpE prpC acnD prpF acn prpB
-all: transport prpE propionyl_CoA_carboxylase epi mutase
+all: transport prpE propionyl-CoA-carboxylase epi mutase
 all: transport prpE pco hpcD dddA mmsA
 

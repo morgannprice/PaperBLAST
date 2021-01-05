@@ -85,32 +85,35 @@ ilvE	L-leucine transaminase	EC:2.6.1.6	EC:2.6.1.42
 # The NAD-dependent enzyme is the sum of three activities:
 # EC 1.2.4.4 (the 4-methyl-2-oxopentanoate dehydrogenase, with transfer to the lipopoyllysine residue of 2.3.1.168)
 #   which is itself heteromeric, with alpha and beta subunits
-# EC 2.3.1.168 (dihydrolipoyllysine-residue (2-methylpropanoyl)transferase)
+# EC 2.3.1.168 (dihydrolipoyllysine-residue (3-methylbutanoyl)transferase)
 # EC 1.8.1.4 (dihydrolipoyl dehydrogenase, transferring electrons to NAD)
+#
+# These enzymes also act on 3-methyl-2-oxobutanoate (2-oxoisovalerate)
+# and (S)-3-methyl-2-oxopentanoate and are known as the branched-chain
+# alpha-ketoacid dehydrogenases.
 
-bkdA	4-methyl-2-oxopentanoate dehydrogenase, E1 component alpha subunit	curated:SwissProt::P12694	curated:BRENDA::Q72GU1	curated:CharProtDB::CH_121278	curated:SwissProt::O45924	curated:SwissProt::P11178	curated:SwissProt::P9WIS3	curated:SwissProt::Q5SLR4	curated:SwissProt::Q84JL2	curated:SwissProt::Q9LPL5	curated:reanno::Smeli:SMc03201	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3540	curated:reanno::pseudo3_N2E3:AO353_26635	curated:reanno::pseudo5_N2C3_1:AO356_22990	curated:reanno::pseudo6_N2E2:Pf6N2E2_481	curated:metacyc::MONOMER-11683
+bkdA	branched-chain alpha-ketoacid dehydrogenase, E1 component alpha subunit	curated:SwissProt::P12694	curated:BRENDA::Q72GU1	curated:CharProtDB::CH_121278	curated:SwissProt::O45924	curated:SwissProt::P11178	curated:SwissProt::P9WIS3	curated:SwissProt::Q5SLR4	curated:SwissProt::Q84JL2	curated:SwissProt::Q9LPL5	curated:reanno::Smeli:SMc03201	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3540	curated:reanno::pseudo3_N2E3:AO353_26635	curated:reanno::pseudo5_N2C3_1:AO356_22990	curated:reanno::pseudo6_N2E2:Pf6N2E2_481	curated:metacyc::MONOMER-11683
 
-bkdB	4-methyl-2-oxopentanoate dehydrogenase, E1 component beta subunit	curated:CharProtDB::CH_121283	curated:SwissProt::P21953	curated:SwissProt::P9WIS1	curated:SwissProt::Q5SLR3	curated:SwissProt::Q9LDY2	curated:metacyc::MONOMER-11684	curated:reanno::Smeli:SMc03202	curated:reanno::WCS417:GFF3430	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3541	curated:reanno::pseudo5_N2C3_1:AO356_22985	curated:reanno::pseudo6_N2E2:Pf6N2E2_480	curated:BRENDA::Q9HIA4
+bkdB	branched-chain alpha-ketoacid dehydrogenase, E1 component beta subunit	curated:CharProtDB::CH_121283	curated:SwissProt::P21953	curated:SwissProt::P9WIS1	curated:SwissProt::Q5SLR3	curated:SwissProt::Q9LDY2	curated:metacyc::MONOMER-11684	curated:reanno::Smeli:SMc03202	curated:reanno::WCS417:GFF3430	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3541	curated:reanno::pseudo5_N2C3_1:AO356_22985	curated:reanno::pseudo6_N2E2:Pf6N2E2_480	curated:BRENDA::Q9HIA4
 
+bkdC	branched-chain alpha-ketoacid dehydrogenase, E2 component	EC:2.3.1.168
 
-bkdC	4-methyl-2-oxopentanoate dehydrogenase, E2 component	EC:2.3.1.168
-
-lpd	4-methyl-2-oxopentanoate dehydrogenase, E3 component	EC:1.8.1.4
+lpd	branched-chain alpha-ketoacid dehydrogenase, E3 component	EC:1.8.1.4
 
 # The well-characterized ferredoxin-dependent enzymes have 2 subunits (ofoAB) or 3 subunits (vorABC).
 # Genetic data identified a fused enzyme with just 1 subunit
 
-vorA	4-methyl-2-oxopentanoate:ferredoxin oxidoreductase, alpha subunit VorA	curated:SwissProt::P80907	ignore_other:1.2.7.7
-vorB	4-methyl-2-oxopentanoate:ferredoxin oxidoreductase, beta subunit VorB	curated:SwissProt::P80908	ignore_other:1.2.7.7
-vorC	4-methyl-2-oxopentanoate:ferredoxin oxidoreductase, gamma subunit VorC	curated:SwissProt::P80909	ignore_other:1.2.7.7
+vorA	branched-chain alpha-ketoacid:ferredoxin oxidoreductase, alpha subunit VorA	curated:SwissProt::P80907	ignore_other:1.2.7.7
+vorB	branched-chain alpha-ketoacid:ferredoxin oxidoreductase, beta subunit VorB	curated:SwissProt::P80908	ignore_other:1.2.7.7
+vorC	branched-chain alpha-ketoacid:ferredoxin oxidoreductase, gamma subunit VorC	curated:SwissProt::P80909	ignore_other:1.2.7.7
 
 # ofoAB is similar to low-specificity 2-oxoacid oxidoreducatses (EC 1.2.7.11); it is generally
-# not clear if these act on 4-methyl-2-oxopentanoate or not.
-ofoA	4-methyl-2-oxopentanoate:ferredoxin oxidoreductase, alpha subunit OfoA	curated:SwissProt::P72578	ignore_other:1.2.7.7	ignore_other:1.2.7.11
+# not certain if these act on 4-methyl-2-oxopentanoate or not, but they probably do
+ofoA	branched-chain alpha-ketoacid:ferredoxin oxidoreductase, alpha subunit OfoA	curated:SwissProt::P72578	ignore_other:1.2.7.7	ignore_other:1.2.7.11
 
-ofoB	4-methyl-2-oxopentanoate:ferredoxin oxidoreductase, beta subunit OfoB	curated:SwissProt::P72579	ignore_other:1.2.7.7	ignore_other:1.2.7.11
+ofoB	branched-chain alpha-ketoacid:ferredoxin oxidoreductase, beta subunit OfoB	curated:SwissProt::P72579	ignore_other:1.2.7.7	ignore_other:1.2.7.11
 
-ofo	4-methyl-2-oxopentanoate:ferredoxin oxidoreductase, fused	curated:reanno::Cup4G11:RR42_RS19540	curated:reanno::psRCH2:GFF3452	ignore_other:1.2.7.7	ignore_other:1.2.7.11
+ofo	branched-chain alpha-ketoacid:ferredoxin oxidoreductase, fused	curated:reanno::Cup4G11:RR42_RS19540	curated:reanno::psRCH2:GFF3452	ignore_other:1.2.7.7	ignore_other:1.2.7.11
 
 bkd: bkdA bkdB bkdC lpd
 bkd: vorA vorB vorC
