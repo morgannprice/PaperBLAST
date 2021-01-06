@@ -1,6 +1,7 @@
 pathwayId	desc
 all	catabolism of small carbon sources
 acetate	acetate catabolism
+Dalanine	D-alanine catabolism
 alanine	L-alanine catabolism
 arabinose	L-arabinose catabolism
 arginine	L-arginine catabolism
