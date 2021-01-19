@@ -1,0 +1,54 @@
+# Transporters were identified using
+# query: transporter:citrulline:L-citrulline
+# Mitochondrial ornithine/citrulline exchangers were ignored.
+
+# An ABC transporter for citrulline (and arginine) was identified in
+# two strains of Pseudomonas fluorescens.
+# It is closely related to arginine transporters from other Pseudomonas, which
+# are marked ignore.
+# It is also related to the arginine/ornithine/lysine transporter of Salmonella and E. coli,
+# but citrulline is a poor substrate for the Salmonella system (PMID:1400387)
+
+AO353_03055	ABC transporter for L-Citrulline, periplasmic substrate-binding component	curated:reanno::pseudo1_N1B4:Pf1N1B4_3431	curated:reanno::pseudo3_N2E3:AO353_03055	ignore:reanno::pseudo5_N2C3_1:AO356_18700	ignore:reanno::pseudo6_N2E2:Pf6N2E2_5660	ignore:reanno::WCS417:GFF4245	ignore:TCDB::O50181
+
+AO353_03050	ABC transporter for L-Citrulline, permease component 1	curated:reanno::pseudo1_N1B4:Pf1N1B4_3432	curated:reanno::pseudo3_N2E3:AO353_03050	ignore:reanno::WCS417:GFF4244	ignore:reanno::pseudo5_N2C3_1:AO356_18705	ignore:reanno::pseudo6_N2E2:Pf6N2E2_5661	ignore:CharProtDB::CH_107317
+
+AO353_03045	ABC transporter for L-Citrulline, permease component 2	curated:reanno::pseudo1_N1B4:Pf1N1B4_3433	curated:reanno::pseudo3_N2E3:AO353_03045	ignore:reanno::pseudo5_N2C3_1:AO356_18710	ignore:reanno::pseudo6_N2E2:Pf6N2E2_5662	ignore:reanno::WCS417:GFF4243	ignore:TCDB::O50183
+
+AO353_03040	ABC transporter for L-Citrulline, ATPase component	curated:reanno::pseudo1_N1B4:Pf1N1B4_3435	curated:reanno::pseudo3_N2E3:AO353_03040	ignore:reanno::pseudo5_N2C3_1:AO356_18715	ignore:reanno::pseudo6_N2E2:Pf6N2E2_5663	ignore:TCDB::O30506
+
+transport: AO353_03055 AO353_03050 AO353_03045 AO353_03040
+
+import proline.steps:put1 # proline dehydrogenase
+import proline.steps:putA # L-glutamate 5-semialdeyde dehydrogenase
+proline-degradation: put1 putA
+
+# GABA (gamma-aminobutyrate) is a common intermediate
+import putrescine.steps:gabT # gamma-aminobutyrate transaminase
+import putrescine.steps:gabD # succinate semialdehyde dehydrogenase
+GABA-degradation: gabT gabD
+
+import putrescine.steps:patA puo patD puuA puuB puuC puuD
+putrescine-degradation: patA patD GABA-degradation
+putrescine-degradation: puo patD GABA-degradation
+putrescine-degradation: puuA puuB puuC puuD GABA-degradation
+
+import arginine.steps:rocD rocA PRO3 ocd odc orr oraS oraE ord ortA ortB arcB arcC aruF aruG astC astD astE
+
+ornithine-degradation: aruF aruG astC astD astE
+ornithine-degradation: rocD rocA
+ornithine-degradation: rocD PRO3 proline-degradation
+ornithine-degradation: ocd proline-degradation
+ornithine-degradation: odc putrescine-degradation
+ornithine-degradation: orr oraS oraE ord ortA ortB
+
+# Citrulline is converted to ornithine by ornithine
+# carbamoyltransferase (arcB) in reverse, followed by various pathways
+# of ornithine degradation (described in arginine.steps).  The
+# carbamoyltransferase reaction also yields carabmoyl-phosphate, which
+# is consumed by carbamate kinase (arcC) in reverse.
+
+all: transport arcB arcC ornithine-degradation
+
+# We also suspect that some bacteria use citrullinase to convert citrulline to ornithine,
+# but as far as we known, this enzyme has not been linked to sequence.
