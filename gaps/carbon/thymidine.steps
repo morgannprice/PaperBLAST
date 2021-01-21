@@ -1,0 +1,41 @@
+# Transporters were identified using
+# query: transporter:thymidine:deoxythymidine
+# A non-specific lysosomal transporter (TC 2.A.74.1.1 / Q60961) was ignored
+
+nupG	thymidine permease NupG/XapB	curated:CharProtDB::CH_088596	curated:SwissProt::P45562
+transport: nupG
+
+Slc29a1	thymidine transporter Slc29a1	curated:SwissProt::O54698
+transport: Slc29a1
+
+# The nupC protein from B. subtilis (P39141) was shown to be a uridine transporter (PMID:8550462)
+# and is suspected to be a thymidine transporter as well, so it is ignored.
+# A nupC-like protein from Shewanella sp. ANA-3 (Shewana3_1039, A0KU05)
+# is important for utilization of thymidine and other nucleosides.
+# A similar protein from V. cholerae (Q9KPL5) bind uridine and 2'-deoxyuridine and
+# is likely to be a thymidine transporter as well, but this is not proven.
+# The specificity of E. coli nupX (P33021, also known as yeiJ) seems to be unknown.
+nupC	thymidine permease NupC	curated:SwissProt::P0AFF2	ignore:SwissProt::P39141	uniprot:A0KU05	ignore:TCDB::Q9KPL5	ignore:SwissProt::P33021
+transport: nupC
+
+Slc28a3	thymidine:Na+ symporter SLC28A3	curated:TCDB::Q9UA35
+transport: Slc28a3
+
+# Thymidine is catabolized via thymidine phoshorylase, which yields
+# 2-deoxyribose-1-phosphate and thymine. The catabolism of thymine is
+# not represented here (it can be excreted). A phosphopentomutase
+# converts deoxyribose-1-phosphate to deoxyribose-5-phosphate and an
+# aldolase yields glyceraldehyde 3-phosphate, an intermediate in
+# glycolysis, and acetaldehyde. The acetaldehyde is oxidized to
+# acetyl-CoA.
+
+# P19663 is ignored because it is a sequence fragment
+# Many uridine phosphorylases (EC 2.4.2.3) are also deoxyuridine phosphorylases and thymidine phosphyrylases, so
+# hits to these are ignored
+deoA	thymidine phosphorylase DeoA	EC:2.4.2.2	EC:2.4.2.4	ignore:SwissProt::P19663	ignore_other:2.4.2.3
+
+import deoxyinosine.steps:deoB # phosphopentomutase
+
+import deoxyribose.steps:acetald_dehyd # acetaldehyde dehydrogenase
+
+all: transport deoA deoB acetald_dehyd
