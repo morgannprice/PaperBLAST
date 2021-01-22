@@ -4,6 +4,12 @@
 # Salmonella deoP is near deoK and can enhance growth of E. coli on deoxyribose, even
 # though it is not essential for deoxyribose utilization in Salmonella, see PMC94358
 deoP	deoxyribose transporter	uniprot:A0A5K1UX94
+transport: deoP
+
+# The best-known pathway for deoxyribose utilizatoin involves a
+# kinase forming deoxyribose-5-phosphate, an aldolase, forming
+# glyceraldehyde 3-phosphate (an intermediate in glycolysis)
+# and acetaldehyde, and acetaldehyde dehydrogenase to acetyl-CoA.
 
 # EC 2.7.1.15 (ribose kinase) includes enzymes known to act on deoxyribose.
 deoK	deoxyribokinase	EC:2.7.1.229	EC:2.7.1.15
@@ -20,21 +26,29 @@ deoC	deoxyribose-phosphate aldolase	EC:4.1.2.4
 # Also, many enzymes are bifunctional alcohol/acetaldehyde dehydrogenases and these
 # may be annotated as 1.1.1.1 or 1.1.1.71 only, so ignore hits to those as well.
 # Also, EC 1.2.1.3 also describes aldehyde dehydrogenases with broad substrate ranges; those hits are also ignored.
-acetald_dehyd	acetaldehyde dehydrogenase	EC:1.2.1.10	curated:reanno::Koxy:BWI76_RS21985	ignore:BRENDA::Q2XQZ7	ignore_other:1.2.1.87	ignore_other:1.2.1.57	ignore_other:1.1.1.1	ignore_other:1.1.1.71	ignore_other:1.2.1.3	curated:CharProtDB::CH_003797
+acetald-dehyd	acetaldehyde dehydrogenase	EC:1.2.1.10	curated:reanno::Koxy:BWI76_RS21985	ignore:BRENDA::Q2XQZ7	ignore_other:1.2.1.87	ignore_other:1.2.1.57	ignore_other:1.1.1.1	ignore_other:1.1.1.71	ignore_other:1.2.1.3	curated:CharProtDB::CH_003797
+
+# Another pathway involves periplasmic oxidation to deoxyribonate,
+# cytoplasmic oxidation to 2-deoxy-3-ketoribonate, and a cleavage
+# enzyme that uses acetyl-CoA to yield glyceryl-CoA and acetoacetate.
+# The glyceryl-CoA is apparently hydrolyzed to glycerate and then
+# phosphorylated by a kinase, yielding 2-phospho-D-glycerate, an
+# intermediate in glycolysis. The acetoacetate is activated to
+# acetoacetyl-CoA and cleaved to two acetyl-CoA.
 
 # This three-component periplasmic (probably) dehydrogenase seems to be non-specific, but
 # it is the only known way to convert deoxyribose to deoxyribonate.
-# (Oxidative damage of DNA and archaeal glycolysis also be sources of deoxyribonate.)
+# (Oxidative damage of DNA and archaeal glycolysis may also be sources of deoxyribonate.)
 # It probably forms 1,5-lactone, but since that is uncertain,
 # the lactonase is not included in this pathway definition
-drdehyd_alpha	2-deoxy-D-ribose dehydrogenase, alpha subunit	term:deoxy%ribose dehydrogenase%alpha	ignore_other:vanillin dehydrogenase
-drdehyd_beta	2-deoxy-D-ribose dehydrogenase, beta subunit	term:deoxy%ribose dehydrogenase%beta	ignore_other:vanillin dehydrogenase
-drdehyd_cytc	2-deoxyribose-D dehydrogenase, cytochrome c component	term:cytochrome%deoxyribose dehydrogenase	ignore_other:vanillin dehydrogenase
-deoxyribose_dehyd: drdehyd_alpha drdehyd_beta drdehyd_cytc
+drdehyd-alpha	2-deoxy-D-ribose dehydrogenase, alpha subunit	term:deoxy%ribose dehydrogenase%alpha	ignore_other:vanillin dehydrogenase
+drdehyd-beta	2-deoxy-D-ribose dehydrogenase, beta subunit	term:deoxy%ribose dehydrogenase%beta	ignore_other:vanillin dehydrogenase
+drdehyd-cytc	2-deoxyribose-D dehydrogenase, cytochrome c component	term:cytochrome%deoxyribose dehydrogenase	ignore_other:vanillin dehydrogenase
+deoxyribose-dehyd: drdehyd-alpha drdehyd-beta drdehyd-cytc
 
-deoxyribonate_transport	2-deoxy-D-ribonate transporter	term:deoxy%ribonate transporter
+deoxyribonate-transport	2-deoxy-D-ribonate transporter	term:deoxy%ribonate transporter
 
-deoxyribonate_dehyd	2-deoxy-D-ribonate 3-dehydrogenase	term:2-deoxy-D-ribonate 3-dehydrogenase
+deoxyribonate-dehyd	2-deoxy-D-ribonate 3-dehydrogenase	term:2-deoxy-D-ribonate 3-dehydrogenase
 
 # The cleavage enzyme produces glyceroyl-CoA and acetoacetate
 # The enzyme for the conversion of glyceroyl-CoA to glycerate is not known.
@@ -42,11 +56,16 @@ deoxyribonate_dehyd	2-deoxy-D-ribonate 3-dehydrogenase	term:2-deoxy-D-ribonate 3
 # and so is not listed here -- it might involve a CoA transferase (i.e., PS417_10525 and PS417_10520)
 # or a acetoacetyl-CoA synthetase (EC 6.2.1.16)
 
-ketodeoxyribonate_cleavage	2-deoxy-3-keto-D-ribonate cleavage enzyme	term:2-deoxy-3-keto-D-ribonate cleavage enzyme	term:2-deoxy-3-keto-D-ribonoate cleavage enzyme
+ketodeoxyribonate-cleavage	2-deoxy-3-keto-D-ribonate cleavage enzyme	term:2-deoxy-3-keto-D-ribonate cleavage enzyme	term:2-deoxy-3-keto-D-ribonoate cleavage enzyme
 
 # Produces 2-phospho-D-glycerate, an intermediate in glycolysis
 # psRCH2:GFF1145 is believed to do this reaction but was not annotated with this this EC number
 garK	glycerate 2-kinase	EC:2.7.1.165	curated:reanno::psRCH2:GFF1145
+
+# Acetoacetate activation is described in leucine.steps
+import leucine.steps:atoA atoD aacS
+aa-activation: atoA atoD
+aa-activation: aacS
 
 # Produces 2 acetyl-CoA from acetoacetyl-CoA and CoA.
 # 2.3.1.16 describes a broader range of beta-ketothiolases.
@@ -56,6 +75,6 @@ garK	glycerate 2-kinase	EC:2.7.1.165	curated:reanno::psRCH2:GFF1145
 # And CharProtDB includes an odd annotation of the form "similar to acetyl-CoA acetyltransferase"
 atoB	acetyl-CoA C-acetyltransferase	EC:2.3.1.9	ignore_other:2.3.1.16	ignore:BRENDA::P07256	ignore:BRENDA::I3R3D0	ignore:BRENDA::I3RA71	ignore_other:similar to acetyl-CoA acetyltransferase
 
-all: deoP deoK deoC acetald_dehyd
+all: transport deoK deoC acetald-dehyd
 
-all: deoxyribose_dehyd deoxyribonate_transport deoxyribonate_dehyd ketodeoxyribonate_cleavage garK atoB
+all: deoxyribose-dehyd deoxyribonate-transport deoxyribonate-dehyd ketodeoxyribonate-cleavage garK aa-activation atoB
