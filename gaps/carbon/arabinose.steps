@@ -80,15 +80,6 @@ import xylose.steps:glcB # malate synthase
 glycolaldehyde_dehydrogenase: aldA
 glycolaldehyde_dehydrogenase: aldox_large aldox_med aldox_small
 
-# Malate oxidation
-# BRENDA annotation of Q9T0H6 seems questionable
-mae	malate dehydrogenase (oxaloacetate-decarboxylating)	EC:1.1.1.38	EC:1.1.1.40	EC:1.1.1.39	ignore:BRENDA::Q9T0H6
-malate_oxidation: mae
-
-# Include NAD(P)H and quinone-dependent dehydrogenases
-mdh	malate dehydrogenase	EC:1.1.1.37	EC:1.1.5.4	EC:1.1.1.82	EC:1.1.1.299
-malate_oxidation: mdh
-
 # MetaCyc pathway L-arabinose degradation I involves isomerization
 # to L-ribulose, phosphorylation, and 4-epimerase to D-xylulose 5-phosphate,
 # which is an intermediate in the pentose phosphate pathway.
@@ -124,8 +115,7 @@ all: transport xacB xacC xacD xacE xacF
 # 2-dehydro-3-deoxy-L-arabinonate, followed by KDG aldolase to
 # pyruvate and glycolaldehyde.  The glycolaldehyde is oxidized to
 # glycolate and then to glyoxylate, and combined with acetyl-CoA by
-# malate synthase. malate dehydrogenases can convert the malate to
-# oxaloacetate or pyruvate (which are both central intermediates).
+# malate synthase (which is a TCA cycle intermediate).
 # (Other pathways for glyxoylate assimilation are known but are not
 #  represented here.)
 
@@ -133,4 +123,4 @@ all: transport xacB xacC xacD xacE xacF
 # And a similar enzyme from S. acidcaldarius is thought to perform this reaction as well (PMC2962468)
 KDG_aldolase	2-dehydro-3-deoxy-L-arabinonate aldolase	EC:4.1.2.18	ignore:BRENDA::Q97U28	curated:BRENDA::Q4JC35
 
-all: transport xacB xacC xacD KDG_aldolase glycolaldehyde_dehydrogenase gyaR glcB malate_oxidation
+all: transport xacB xacC xacD KDG_aldolase glycolaldehyde_dehydrogenase gyaR glcB
