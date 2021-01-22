@@ -36,6 +36,6 @@ deoA	thymidine phosphorylase DeoA	EC:2.4.2.2	EC:2.4.2.4	ignore:SwissProt::P19663
 
 import deoxyinosine.steps:deoB # phosphopentomutase
 
-import deoxyribose.steps:acetald_dehyd # acetaldehyde dehydrogenase
+import deoxyribose.steps:acetald-dehyd # acetaldehyde dehydrogenase
 
-all: transport deoA deoB acetald_dehyd
+all: transport deoA deoB acetald-dehyd
