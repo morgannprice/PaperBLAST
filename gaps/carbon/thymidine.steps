@@ -12,7 +12,7 @@ transport: Slc29a1
 # and is suspected to be a thymidine transporter as well, so it is ignored.
 # A nupC-like protein from Shewanella sp. ANA-3 (Shewana3_1039, A0KU05)
 # is important for utilization of thymidine and other nucleosides.
-# A similar protein from V. cholerae (Q9KPL5) bind uridine and 2'-deoxyuridine and
+# A similar protein from V. cholerae (Q9KPL5) binds uridine and 2'-deoxyuridine and
 # is likely to be a thymidine transporter as well, but this is not proven.
 # The specificity of E. coli nupX (P33021, also known as yeiJ) seems to be unknown.
 nupC	thymidine permease NupC	curated:SwissProt::P0AFF2	ignore:SwissProt::P39141	uniprot:A0KU05	ignore:TCDB::Q9KPL5	ignore:SwissProt::P33021
