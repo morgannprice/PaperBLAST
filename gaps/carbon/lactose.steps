@@ -51,8 +51,50 @@ import galactose.steps:tpi
 tag16P_aldolase: lacD
 tag16P_aldolase: gatY gatZ
 
-# MetaCyc Pathway: lactose degradation II
-# is not represented becaus the 3-ketoglycoside pathway is too poorly understood
+# MetaCyc Pathway: lactose degradation II involves oxidation of
+# lactose to 3'-ketolactose by a periplasmic 3-component
+# dehydrogenase, hydrolysis by a periplasmic enzyme (LacACB) to
+# 3-keto-beta-D-galactose and D-glucopyranose, and hypothetical
+# reduction of the 3-ketogalactose. Liberation of glucose is probably
+# sufficient for growth, and DUF1080 (PF06439) was recently identified
+# as a family of 3-ketoglycoside hydrolases. Fitness data identified
+# CCNA_01705 as the 3'-ketolactose hydrolase.
+
+
+# LacACB from Caulobacter is the best studied, but a related system
+# from Pedobacter is also required for lactose utilization.  EC
+# 1.1.99.13 includes 3-ketoglycoside dehydrogenases more broadly.
+# Other types of periplasmic 3-ketoglycoside dehydrogenases have been
+# reported (ThuAB from Agrobacterium and Sinorhizobium and BT2158 from
+# Bacteroides thetaiotaomicron) but these do not seem to be involved
+# in lactose utilization.
+
+lacA'	periplasmic lactose 3-dehydrogenase, LacA subunit	curated:reanno::Caulo:CCNA_01706	curated:reanno::Pedo557:CA265_RS15345	ignore_other: 1.1.99.13
+lacC'	periplasmic lactose 3-dehydrogenase, LacC subunit	curated:reanno::Caulo:CCNA_01707	curated:reanno::Pedo557:CA265_RS15340	ignore_other: 1.1.99.13
+lacB'	periplasmic lactose 3-dehydrogenase, cytochrome c component (LacB)	curated:reanno::Caulo:CCNA_01704	curated:reanno::Pedo557:CA265_RS15360	ignore_other: 1.1.99.13
+klh	periplasmic 3'-ketolactose hydrolase	curated:reanno::Caulo:CCNA_01705
+
+import glucose.steps:MFS_glucose SSS_glucose glcU_Firmicutes PAST-A SemiSWEET SWEET1 mglA mglB mglC gtsA gtsB gtsC gtsD glcS glcT glcU glcV aglE aglF aglG aglK ptsG-crr bglF ptsG crr manX manY manZ gdh gnl gadh1 gadh2 gadh3 kguT kguK kguD edd eda glk
+
+glucose-transport: MFS_glucose
+glucose-transport: SSS_glucose
+glucose-transport: glcU_Firmicutes
+glucose-transport: PAST-A
+glucose-transport: SemiSWEET
+glucose-transport: SWEET1
+glucose-transport: mglA mglB mglC
+glucose-transport: gtsA gtsB gtsC gtsD
+glucose-transport: glcS glcT glcU glcV
+glucose-transport: aglE aglF aglG aglK
+glucose-PTS: ptsG-crr
+glucose-PTS: bglF
+glucose-PTS: ptsG crr
+glucose-PTS: manX manY manZ
+
+# glk is glucokinase
+glucose-utilization: glucose-transport glk
+glucose-utilization: glucose-PTS
+glucose-utilization: gdh gnl gadh1 gadh2 gadh3 kguT kguK kguD edd eda
 
 # MetaCyc Pathway: lactose degradation III -- beta-galactosidase,
 # forming glucose and galactose, and then galactose utilization
@@ -89,9 +131,10 @@ galM	galactose 1-epimerase	EC:5.1.3.3
 galactose_util: galM galK galT galE pgmA
 galactose_util: galdh lactonase dgoD dgoK dgoA
 
-import glucose.steps:glk
 all: transport bgal galactose_util glk
 
 # The actual rule for PTS based utilization
 all: PTS pbgal lacA lacB lacC tag16P_aldolase tpi
 
+# The actual rule for the 3'-ketolactose pathway
+all: lacA' lacC' lacB' klh glucose-utilization
