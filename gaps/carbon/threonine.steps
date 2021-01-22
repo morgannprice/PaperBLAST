@@ -142,10 +142,9 @@ methylglyoxal-degradation: yvgN aldA L-LDH
 # MetaCyc Pathway: methylglyoxal degradation VI
 # is not thought to occur in prokaryotes and is not described here.
 
-# MetaCyc Pathway: methylglyoxal degradation VII
-# involves a methylglyoxal oxidase that converts it
-# to pyruvate. This enzyme has not been linked to sequence,
-# so this pathway is not described here.
+# MetaCyc Pathway: methylglyoxal degradation VII involves a
+# methylglyoxal oxidase that converts it to pyruvate. This pathway is
+# not thought to occur in prokaryotes and is not described here.
 
 # MetaCyc Pathway: L-threonine degradation I 
 # A threonine dehydratase forms 2-iminubutanoate, which is deaminated
