@@ -30,6 +30,10 @@ bztC	L-asparagine ABC transporter, permease component 2 (BztC)	curated:TCDB::Q52
 bztD	L-asparagine ABC transporter, ATPase component BztD	curated:TCDB::Q52666	ignore:reanno::Smeli:SMc02121	ignore:TCDB::Q52815
 transport: bztB bztA bztC bztD
 
+# AapJQMP from Rhizobium leguminosarum is described in glutamate.steps
+import glutamate.steps:aapJ aapQ aapM aapP
+transport: aapJ aapQ aapM aapP
+
 # Other transporters
 
 ansP	L-asparagine permease AnsP	curated:SwissProt::P77610	curated:TCDB::P40812

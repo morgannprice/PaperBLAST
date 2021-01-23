@@ -62,6 +62,10 @@ transport: natF bgtB' natH bgtA
 natG	aspartate ABC transporter, permease component 1 (NatG)	curated:TCDB::Q8YPM8
 transport: natF natG natH bgtA
 
+# AapJQMP from Rhizobium leguminosarum is described in glutamate.steps
+import glutamate.steps:aapJ aapQ aapM aapP
+transport: aapJ aapQ aapM aapP
+
 # The original cluster was entirely eukaryotic except for gltPh from Pyrococcus horikoshii
 # Added gltT from Bacillus caldotenax (CharProtDB::CH_088342), which is also an aspartate transporter
 # So, name it glt

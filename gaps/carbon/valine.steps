@@ -8,7 +8,7 @@
 # livJFGHM from Streptococcus pneumoniae
 # braCDEFG from Pseudomonas aeruginosa (braC is the SBP)
 # braCDEFG or braC3/braDEFG from R. leguminosarum
-#    proximal braC (Q9L3M3) transports leucine (PMC135202)
+#    proximal braC (Q9L3M3) transports leucine (PMC135202), and likely valine as well
 #    braC3 (RL3540; Q1MDE9) is a secondary SBP that transports leucine/isoleucine/valine/alanine (PMID:19597156)
 #    LivH/BraD = RL3750/Q1MCU0; LivM/BraE = RL3749/Q1MCU1;
 #    LivG/BraF = RL3748/Q1MCU2; LivF/BraG = RL3747/Q1MCU3

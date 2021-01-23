@@ -45,6 +45,15 @@ bztB	L-glutamate ABC transporter, permease component 1 (BztB)	curated:CharProtDB
 bztC	L-glutamate ABC transporter, permease component 2 (BztC)	curated:TCDB::Q52665
 transport: bztA bztB bztC gltL
 
+# In Rhizobium leguminosarum, a broad-specificity amino acid ABC transporter is known as braCDEFG
+# (A homologous system from Pseudomonas is thought to have a narrower substrate range.)
+braC	ABC transporter for glutamate, histidine, arginine, and other amino acids, substrate-binding component BraC	curated:TCDB::Q9L3M3
+braD	ABC transporter for glutamate, histidine, arginine, and other amino acids, permease component 1 (BraD)	uniprot:Q1MCU0
+braE	ABC transporter for glutamate, histidine, arginine, and other amino acids, permease component 2 (BraE)	uniprot:Q1MCU1
+braF	ABC transporter for glutamate, histidine, arginine, and other amino acids, ATPase component 1 (BraF)	uniprot:Q1MCU2
+braG	ABC transporter for glutamate, histidine, arginine, and other amino acids, ATPase component 2 (BraG)	uniprot:Q1MCU3
+transport: braC braD braE braF braG
+
 # GlnQP from Lactococcus lactis, TC 3.A.1.3.25, has just two components:
 #   glnP has fused permease and substrate-binding domains, and glnQ is similar to gltL
 glnP	L-glutamate ABC transporter, fused permease and substrate-binding components GlnP	curated:TCDB::Q9CES5
@@ -61,6 +70,14 @@ gtrA	tripartite L-glutamate:Na+ symporter, small membrane component GtrA	curated
 gtrB	tripartite L-glutamate:Na+ symporter, large membrane component GtrB	curated:TCDB::P74224
 gtrC	tripartite L-glutamate:Na+ symporter, substrate-binding component GtrC	curated:TCDB::P74223
 transport: gtrA gtrB gtrC
+
+# aapJQMP from Rhizobium leguminosarum (a very similar system from S. meliloti is ignored)
+
+aapJ	ABC transporter for amino acids (Asp/Asn/Glu/Pro/Leu), substrate-binding component AapJ	curated:TCDB::Q52812	ignore:reanno::Smeli:SMc02118
+aapQ	ABC transporter for amino acids (Asp/Asn/Glu/Pro/Leu), permease component 1 (AapQ)	curated:TCDB::Q52813	ignore:reanno::Smeli:SMc02119
+aapM	ABC transporter for amino acids (Asp/Asn/Glu/Pro/Leu), permease component 2 (AapM)	curated:TCDB::Q52814	ignore:reanno::Smeli:SMc02120
+aapP	ABC transporter for amino acids (Asp/Asn/Glu/Pro/Leu), ATPase component AapP	curated:TCDB::Q52815	ignore:reanno::Smeli:SMc02121	
+transport: aapJ aapQ aapM aapP
 
 # Homomeric transporters
 

@@ -6,10 +6,12 @@
 # These systems are generally homologous, but the two permease components also similar to each other.
 # To simplify the analysis, these were clustered at 40% identity.
 #
+# A 5-component transporter is also known, BraCDEFG from Rhizobium leguminosarum
+
 # In a related system in Synechocystis, there is just one permease component fused to the
 # substrate-binding component. The fusion protein is known as BgtB or BgtAB;
 # BgtA is the ATPase component.
-
+#
 # Distantly related proteins from Chlamydia (ARTJ_CHLTR, ARTJ_CHLPN) are annotated as artJ but
 # are not actually characterized, and the other components of this
 # system seem to be absent. These were not included.
@@ -40,6 +42,10 @@ transport: artJ artM artP artQ
 bgtB	L-arginine ABC transporter, fused substrate-binding and permease components (BgtB/BgtAB)	curated:TCDB::P73544	curated:TCDB::Q8YSA2
 
 transport: bgtB artP
+
+# braCDEFG from Rhizobium leguminosarum is described in glutamate.steps
+import glutamate.steps:braC braD braE braF braG
+transport: braC braD braE braF braG
 
 # Homomeric transporters
 

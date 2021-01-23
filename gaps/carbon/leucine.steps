@@ -7,7 +7,7 @@
 #   and the related system braCDEFG from Pseudomonas aeruginosa (braC is the SBP)
 #   and the related system braDEFG/braC3 from R. leguminosarum; braC3 (RL3540; Q1MDE9) is a secondary
 #     SBP that transports leucine/isoleucine/valine/alanine (PMID:19597156); the
-#     proximal braC might also transport leucine, not sure if this is known, so exclude it (Q9L3M3)
+#     proximal braC (Q9L3M3) is also thought to be involved in leucine transport (PMC135202)
 #   LivH/BraD = RL3750/Q1MCU0; LivM/BraE = RL3749/Q1MCU1;
 #   LivG/BraF = RL3748/Q1MCU2; LivF/BraG = RL3747/Q1MCU3
 #   and the related system in Acidovorax sp. GW101-3H11
@@ -22,7 +22,7 @@ livF	L-leucine ABC transporter, ATPase component 1 (LivF/BraG)	curated:CharProtD
 
 livG	L-leucine ABC transporter, ATPase component 2 (LivG/BraF)	curated:TCDB::P0A9S7	curated:TCDB::P21629	curated:TCDB::Q8DQH8	uniprot:Q1MCU2	uniprot:A0A165KC86
 
-livJ	L-leucine ABC transporter, substrate-binding component (LivJ/LivK/BraC/BraC3)	curated:SwissProt::P21175	curated:CharProtDB::CH_107418	curated:TCDB::P0AD96	curated:TCDB::Q8DQI1	uniprot:Q1MDE9	ignore:TCDB::Q9L3M3	uniprot:A0A165KTD4
+livJ	L-leucine ABC transporter, substrate-binding component (LivJ/LivK/BraC/BraC3)	curated:SwissProt::P21175	curated:CharProtDB::CH_107418	curated:TCDB::P0AD96	curated:TCDB::Q8DQI1	uniprot:Q1MDE9	curated:TCDB::Q9L3M3	uniprot:A0A165KTD4
 
 livH	L-leucine ABC transporter, permease component 1 (LivH/BraD)	curated:TCDB::P21627	curated:TCDB::Q8DQI0	curated:ecocyc::LIVH-MONOMER	uniprot:Q1MCU0	uniprot:A0A165KC95
 
@@ -39,6 +39,10 @@ natC	L-leucine ABC transporter, permease component 1 (NatC)	curated:TCDB::P74455
 natD	L-leucine ABC transporter, permease component 2 (NatD)	curated:TCDB::P74318	curated:TCDB::Q8YXD0
 natE	L-leucine ABC transporter, ATPase component 2 (NatE)	curated:TCDB::P73650	curated:TCDB::Q8YT15
 transport: natA natB natC natD natE
+
+# AapJQMP from Rhizobium leguminosarum is described in glutamate.steps
+import glutamate.steps:aapJ aapQ aapM aapP
+transport: aapJ aapQ aapM aapP
 
 # Homomeric transporters:
 

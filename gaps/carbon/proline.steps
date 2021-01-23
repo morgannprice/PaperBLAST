@@ -47,6 +47,10 @@ HSERO_RS00895	proline ABC transporter, ATPase component 1	uniprot:D8J1T6
 HSERO_RS00900	proline ABC transporter, ATPase component 2	uniprot:D8IUY7
 transport: HSERO_RS00870 HSERO_RS00885 HSERO_RS00890 HSERO_RS00895 HSERO_RS00900
 
+# AapJQMP from Rhizobium leguminosarum is described in glutamate.steps
+import glutamate.steps:aapJ aapQ aapM aapP
+transport: aapJ aapQ aapM aapP
+
 # Other transporters:
 
 # Cluster 1 456-627 amino acids (not heteromeric)

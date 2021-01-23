@@ -8,7 +8,7 @@
 #   and also PA5503-PA5505 (MetIQN in TCDB)
 # Acidovorax GW101-3H11 has a system with two permease subunits and two SBPs
 # NatABCDE (TC 3.A.1.4.2) is described as a possible his transporter
-# Rhizobium meliloti has aapJQMP
+# Rhizobium leguminosarum has aapJQMP
 # Sinorhizobium meliloti has hutWVX and also a 4-component system related to aapJQMP
 # Pseudomonas fluorescens FW300-N2E3 has a system similar to hutWVX
 # Synechocystis has bgtAB  (bgtB has fused SBP and permease components)
@@ -46,13 +46,17 @@ natD	L-histidine ABC transporter, permease component 2 (NatD)	curated:TCDB::P743
 natE	L-histidine ABC transporter, ATPase component 2 (NatE)	curated:TCDB::P73650	ignore:TCDB::Q8YT15
 transport: natA natB natC natD natE
 
-# aapJQMP from R. meliloti and S. meliloti
+# aapJQMP from Rhizobium leguminosarum and Sinorhizobium meliloti
 
 aapJ	L-histidine ABC transporter, substrate-binding component AapJ	curated:reanno::Smeli:SMc02118	curated:TCDB::Q52812
 aapQ	L-histidine ABC transporter, permease component 1 (AapQ)	curated:reanno::Smeli:SMc02119	curated:TCDB::Q52813
 aapM	L-histidine ABC transporter, permease component 2 (AapM)	curated:reanno::Smeli:SMc02120	curated:TCDB::Q52814
 aapP	L-histidine ABC transporter, ATPase component AapP	curated:reanno::Smeli:SMc02121	curated:TCDB::Q52815
 transport: aapJ aapQ aapM aapP
+
+# braCDEFG from Rhizobium leguminosarum is described in glutamate.steps
+import glutamate.steps:braC braD braE braF braG
+transport: braC braD braE braF braG
 
 # hutVWX from Sinorhizobium meliloti, Pseudomonas fluorescens FW300-N2C3
 hutV	L-histidine ABC transporter, ATPase component HutV	curated:TCDB::Q9KKE1	curated:reanno::pseudo5_N2C3_1:AO356_09610
