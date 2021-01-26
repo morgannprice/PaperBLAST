@@ -38,9 +38,10 @@ SLC5A8	sodium-coupled pyruvate transporter	curated:SwissProt::Q3ZMH1	curated:Swi
 transport: SLC5A8
 
 
-# Cluster 4 includes DctP from Nostoc, Rhodobacter; associated with dctQ and dctM
+# DctP from Nostoc, Rhodobacter; associated with dctQ and dctM
 # Similar to TakP (Q3J1R2), which is misannotated and not characterized
-dctP	pyruvate TRAP transporter, component	curated:SwissProt::Q8YSQ6	curated:TCDB::D5ALT6	ignore:SwissProt::Q3J1R2
+# The related protein Q48AL6 = CPS_0129 was shown to bind calcium-pyruvate (PMC4310620)
+dctP	pyruvate TRAP transporter, substrate-binding component	curated:SwissProt::Q8YSQ6	curated:TCDB::D5ALT6	ignore:SwissProt::Q3J1R2	uniprot:Q48AL6
 
 # Cluster 8 184-190 amino acids (heteromeric)
 dctQ	pyruvate TRAP transporter, small permease component	curated:TCDB::D5ATK0	curated:TCDB::Q8YSQ8

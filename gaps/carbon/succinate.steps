@@ -33,7 +33,8 @@ transport: satP
 dctQ	succinate TRAP transporter, small permease component DctQ	curated:SwissProt::O07837	curated:SwissProt::Q9HU17	curated:reanno::PV4:5208944	curated:reanno::psRCH2:GFF4196	uniprot:Q9KQS0	ignore:reanno::SB2B:6938089	uniprot:I7EY26
 dctM	succinate TRAP transporter, large permease protein DctM	curated:SwissProt::O07838	curated:SwissProt::Q9HU16	curated:reanno::PV4:5208943	uniprot:Q9KQS1	ignore:reanno::SB2B:6938090	uniprot:I7DRS6
 # B. subtilis DctB is similar to DctP but is probably involved in sensing, not transport, so is not included
-dctP	succinate TRAP transporter, component DctP	curated:SwissProt::P37735	curated:SwissProt::Q9HU18	curated:reanno::PV4:5208945	curated:SwissProt::Q9KQR9	ignore:reanno::SB2B:6938088	uniprot:I7END8
+# Q2IUT5 = RPB_3329, A3QCW5 = Shew_1446 = 5208945, and Q8ECK4 = SO_3134 were shown to bind succinate (PMC4310620)
+dctP	succinate TRAP transporter, component DctP	curated:SwissProt::P37735	curated:SwissProt::Q9HU18	curated:reanno::PV4:5208945	curated:SwissProt::Q9KQR9	ignore:reanno::SB2B:6938088	uniprot:I7END8	uniprot:Q2IUT5	uniprot:Q8ECK4
 transport: dctQ dctM dctP
 
 # The TRAP system Dshi_1194:Dshi_1195 (A8LI82,A8LI83) is important for utilization of

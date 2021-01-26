@@ -31,7 +31,8 @@ transport: maeN
 # it is still possible that this system transports L-malate, so it is marked ignore.
 dctM	L-malate TRAP transporter, large permease component DctM	curated:SwissProt::O07838	curated:reanno::PV4:5208943	curated:SwissProt::Q9HU16	uniprot:I7DRS6	ignore:reanno::SB2B:6938090
 
-dctP	L-malate TRAP transporter, substrate-binding component DctP	curated:SwissProt::A3QCW5	curated:SwissProt::P37735	curated:SwissProt::Q9KQR9	curated:SwissProt::Q9HU18	uniprot:I7END8	ignore:reanno::SB2B:6938088
+# Q9HVH5  = PA4616 is a malate-binding substrate-binding protein (PMC4310620)
+dctP	L-malate TRAP transporter, substrate-binding component DctP	curated:SwissProt::A3QCW5	curated:SwissProt::P37735	curated:SwissProt::Q9KQR9	curated:SwissProt::Q9HU18	uniprot:I7END8	ignore:reanno::SB2B:6938088	uniprot:Q9HVH5	curated:reanno::PV4:5208945
 
 dctQ	L-malate TRAP tranpsorter, small permease component DctQ	curated:SwissProt::O07837	curated:reanno::PV4:5208944	uniprot:I7EY26	ignore:reanno::SB2B:6938089
 
