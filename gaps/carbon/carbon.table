@@ -1,7 +1,7 @@
 pathwayId	desc
 all	catabolism of small carbon sources
 acetate	acetate catabolism
-Dalanine	D-alanine catabolism
+D-alanine	D-alanine catabolism
 alanine	L-alanine catabolism
 arabinose	L-arabinose catabolism
 arginine	L-arginine catabolism
@@ -20,7 +20,7 @@ galactose	D-galactose catabolism
 galacturonate	D-galacturonate catabolism
 gluconate	D-gluconate catabolism
 glucose	D-glucose catabolism
-glucose6P	D-glucose-6-phosphate catabolism
+glucose-6-P	D-glucose-6-phosphate catabolism
 glucosamine	D-glucosamine (chitosamine) catabolism
 glucuronate	D-glucuronate catabolism
 glutamate	L-glutamate catabolism
@@ -28,17 +28,17 @@ glycerol	glycerol catabolism
 histidine	L-histidine catabolism
 isoleucine	L-isoleucine catabolism
 4-hydroxybenzoate	4-hydroxybenzoate catabolism
-Dlactate	D-lactate catabolism
-Llactate	L-lactate catabolism
+D-lactate	D-lactate catabolism
+L-lactate	L-lactate catabolism
 lactose	lactose catabolism
 leucine	L-leucine catabolism
 lysine	L-lysine catabolism
-Lmalate	L-malate catabolism
+L-malate	L-malate catabolism
 maltose	D-maltose catabolism
 mannitol	D-mannitol catabolism
 mannose	D-mannose catabolism
 myoinositol	myo-inositol catabolism
-nag	N-acetyl-D-glucosamine catabolism
+NAG	N-acetyl-D-glucosamine catabolism
 2-oxoglutarate	2-oxoglutarate (alpha-ketoglutarate) catabolism
 phenylacetate	phenylacetate catabolism
 phenylalanine	L-phenylalanine catabolism
@@ -48,7 +48,7 @@ putrescine	putrescine catabolism
 pyruvate	pyruvate catabolism
 rhamnose	L-rhamnose catabolism
 ribose	D-ribose catabolism
-Dserine	D-serine catabolism
+D-serine	D-serine catabolism
 serine	L-serine catabolism
 sorbitol	D-sorbitol (glucitol) catabolism
 succinate	succinate catabolism
