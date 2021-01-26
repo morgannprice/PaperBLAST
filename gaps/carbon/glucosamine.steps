@@ -49,42 +49,25 @@ transport: SLC2A2
 import glucose.steps:gdh
 
 # NAG kinase, NAG deacetylase, and glucosamine-6-phosphate isomerase/deaminase
-import nag.steps:nagK
-import nag.steps:nagA
-import nag.steps:nagB
+import NAG.steps:nagK nagA nagB
 
 # NAG PTS systems
-import nag.steps:nagEcba
-import nag.steps:nagF
-import nag.steps:nagEcb
-import nag.steps:crr
-import nag.steps:ptsB
-import nag.steps:ptsC
-import nag.steps:nagEIIA
-import nag.steps:nagPcb
-nagPTS: nagEcba
-nagPTS: nagF nagEcb
-nagPTS: crr ptsB ptsC
-nagPTS: nagEIIA nagPcb
+import NAG.steps:nagEcba nagF nagEcb crr ptsB ptsC nagEIIA nagPcb
+nag-PTS: nagEcba
+nag-PTS: nagF nagEcb
+nag-PTS: crr ptsB ptsC
+nag-PTS: nagEIIA nagPcb
 
 # NAG ABC transporters
-import nag.steps:SMc02869
-import nag.steps:SMc02872
-import nag.steps:SMc02871
-import nag.steps:SMc02873
-import nag.steps:ngcE
-import nag.steps:ngcF
-import nag.steps:ngcG
-nagtransport: SMc02869 SMc02872 SMc02871 SMc02873
-nagtransport: ngcE ngcF ngcG
+import NAG.steps:SMc02869 SMc02872 SMc02871 SMc02873 ngcE ngcF ngcG
+nag-transport: SMc02869 SMc02872 SMc02871 SMc02873
+nag-transport: ngcE ngcF ngcG
 
 # NAG transporters
-import nag.steps:nagP
-import nag.steps:nag3
-import nag.steps:ngt1
-nagtransport: nagP
-nagtransport: nag3
-nagtransport: ngt1
+import NAG.steps:nagP nag3 ngt1
+nag-transport: nagP
+nag-transport: nag3
+nag-transport: ngt1
 
 # The glucosaminate pathway involves the periplasmic glucose dehydrogenase (gdh).
 # It is not clear if this forms glucosaminate directly or forms a lactone intermediate.
@@ -136,5 +119,5 @@ all: PTS nagB
 # Shewana3_3111 (A0KZW6), Sama_0947 (A1S448), and Echvi_1106 (L0FVP4)
 
 nagX	transmembrane glucosamine N-acetyltransferase NagX	uniprot:A0KZW6	uniprot:A1S448	uniprot:L0FVP4
-all: nagX nagtransport nagK nagA nagB
-all: nagX nagPTS nagA nagB
+all: nagX nag-transport nagK nagA nagB
+all: nagX nag-PTS nagA nagB
