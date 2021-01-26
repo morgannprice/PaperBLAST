@@ -27,13 +27,11 @@ PTS: treEIIA treB
 # A system similar that from T. thermophilus, in Pyrococcus furiosus, also transports trehalose
 # see PMC2685544
 
-# Cluster 4 411-450 amino acids (heteromeric)
 thuE	trehalose ABC transporter, substrate-binding component ThuE	curated:TCDB::G4FGN8	curated:TCDB::O51923	curated:TCDB::Q72H68	curated:TCDB::Q9R9Q7	curated:SwissProt::Q7LYW7
 
-# Cluster 2 275-328 amino acids (6/7 heteromeric), with Sulfolobus treT removed
+# (Removed Sulfolobus treT, which is related but is described separately)
 thuF	trehalose ABC transporter, permease component 1 (ThuF)	curated:SwissProt::O51924	curated:SwissProt::P9WG03	curated:TCDB::G4FGN7	curated:TCDB::O51924	curated:TCDB::Q72H67	curated:reanno::Smeli:SM_b20326
 
-# Cluster 3 274-280 amino acids (heteromeric), with S. mutans malG removed
 thuG	trehalose ABC transporter, permease component 2 (ThuG)	curated:SwissProt::Q7LYX6	curated:SwissProt::P9WG01	curated:TCDB::G4FGN6	curated:TCDB::Q72H66	curated:reanno::Smeli:SM_b20327
 
 thuK	trehalose ABC transporter, ATPase component ThuK	curated:SwissProt::P9WQI3	curated:SwissProt::Q9YGA6	curated:TCDB::Q72L52	curated:TCDB::Q9R9Q4	curated:TCDB::Q9X103	
@@ -70,13 +68,14 @@ treU	trehalose ABC transporter, permease component 2 (TreU)	curated:TCDB::Q97ZC1
 treV	trehalose ABC transporter, ATPase component TreV	curated:TCDB::Q97ZC0
 transport: treS treT treU treV
 
-# S. meliloti aglEFGK
+# S. meliloti aglEFGK. Use the suffix to avoid confusion with the glucose transporter, which is realted
+# but includes a different set of sequences.
 # Ignore similarity to Slr0529, which may also transport trehalose
-aglE	trehalose ABC transporter, substrate-binding component AglE	curated:TCDB::Q9Z3R5	ignore:TCDB::Q55471
-aglF	trehalose ABC transporter, permease component 1 (AglF)	curated:reanno::Smeli:SMc03062
-aglG	trehalose ABC transporter, permease component 2 (AglG)	curated:reanno::Smeli:SMc03063
-aglK	trehalose ABC trehalose, ATPase component AglK	curated:reanno::Smeli:SMc03065
-transport: aglE aglF aglG aglK
+aglE'	trehalose ABC transporter, substrate-binding component AglE	curated:TCDB::Q9Z3R5	ignore:TCDB::Q55471
+aglF'	trehalose ABC transporter, permease component 1 (AglF)	curated:reanno::Smeli:SMc03062
+aglG'	trehalose ABC transporter, permease component 2 (AglG)	curated:reanno::Smeli:SMc03063
+aglK'	trehalose ABC trehalose, ATPase component AglK	curated:reanno::Smeli:SMc03065
+transport: aglE' aglF' aglG' aglK'
 
 # For the system in Bdellovibrio bacteriovorus, just one protein (fused MalEF) seems to have been studied,
 #   and did not have access to the paper, so did not include.
@@ -94,49 +93,58 @@ transport: TRET1
 # by a PTS system, or taken up and phosphorylated
 
 # Import the various transporters and PTS systems
-# (This is a hack; it would be better to be able to import a rule and rename it)
-import glucose.steps:ptsG-crr
-import glucose.steps:ptsG
-import glucose.steps:crr
-import glucose.steps:bglF
-import glucose.steps:manX
-import glucose.steps:manY
-import glucose.steps:manZ
-glucosePTS: ptsG-crr
-glucosePTS: bglF
-glucosePTS: ptsG crr
-glucosePTS: manX manY manZ
+import glucose.steps:MFS_glucose SSS_glucose glcU_Firmicutes PAST-A SemiSWEET SWEET1 mglA mglB mglC gtsA gtsB gtsC gtsD glcS glcT glcU glcV aglE aglF aglG aglK ptsG-crr bglF ptsG crr manX manY manZ gdh gnl gadh1 gadh2 gadh3 kguT kguK kguD edd eda glk
 
-import glucose.steps:mglA
-import glucose.steps:mglB
-import glucose.steps:mglC
-import glucose.steps:gtsA
-import glucose.steps:gtsB
-import glucose.steps:gtsC
-import glucose.steps:gtsD
-import glucose.steps:glcS
-import glucose.steps:glcT
-import glucose.steps:glcU
-import glucose.steps:glcV
-import glucose.steps:MFS_glucose
-import glucose.steps:SSS_glucose
-import glucose.steps:glcU_Firmicutes
+glucose-transport: MFS_glucose
+glucose-transport: SSS_glucose
+glucose-transport: glcU_Firmicutes
+glucose-transport: PAST-A
+glucose-transport: SemiSWEET
+glucose-transport: SWEET1
+glucose-transport: mglA mglB mglC
+glucose-transport: gtsA gtsB gtsC gtsD
+glucose-transport: glcS glcT glcU glcV
+glucose-transport: aglE aglF aglG aglK
+glucose-PTS: ptsG-crr
+glucose-PTS: bglF
+glucose-PTS: ptsG crr
+glucose-PTS: manX manY manZ
 
-glucosetransport: mglA mglB mglC
-glucosetransport: gtsA gtsB gtsC gtsD
-glucosetransport: glcS glcT glcU glcV
-glucosetransport: aglE aglF aglG aglK
-glucosetransport: MFS_glucose
-glucosetransport: SSS_glucose
-glucosetransport: glcU_Firmicutes
+# glk is glucokinase
+glucose-utilization: glucose-transport glk
+glucose-utilization: glucose-PTS
+glucose-utilization: gdh gnl gadh1 gadh2 gadh3 kguT kguK kguD edd eda
 
-import glucose.steps:glk
+# Besides the pathways in MetaCyc, trehalose degradation via 3-ketotrehalose has been reported
+# in Bacteriodes thetaiotaomicron and other bacteria. This involves a periplasmic
+# 3-dehydrogenase (BT2158 or the lacACB-like system CA265_RS15345 or Echvi_1847),
+# a periplasmic 3-ketoglycoside hydrolase from the DUF1080 family (i.e. BT2157),
+# which forms glucose and 3-ketoglucose, and uptake of the resulting glucose.
+# The fate of the 3-ketoglucose is not understood, but its utilization might
+# not be necessary.
+
+BT2158	periplasmic trehalose 3-dehydrogenase (BT2158)	curated:reanno::Btheta:351686
+
+# These gene names are from the homologous system in Caulobacter crescentus, which is required for
+# lactose utilization; but Caulobacter crescentus does not grow with trehalose as the sole
+# source of carbon, and Caulobacter LacACB may not be active on trehalsoe.
+lacA	periplasmic trehalose 3-dehydrogenase, LacA subunit	curated:reanno::Pedo557:CA265_RS15345	curated:reanno::Cola:Echvi_1847	ignore_other:1.1.99.13
+lacC	periplasmic trehalose 3-dehydrogenase, LacC subunit	curated:reanno::Pedo557:CA265_RS15340	curated:reanno::Cola:Echvi_1848	ignore_other:1.1.99.13
+lacB	periplasmic trehalose 3-dehydrogenase, cytochrome c subunit (LacB)	curated:reanno::Pedo557:CA265_RS15360	curated:reanno::Cola:Echvi_1841	ignore_other:1.1.99.13
+
+trehalose-3-dehydrogenase: BT2158
+trehalose-3-dehydrogenase: lacA lacC lacB
+
+# BT2157 (351686) is required for utilization of trehalose (or 3-ketotrehalose) and
+# hydrolyzes 3-ketotrehalose. CA265_RS22975 and Echvi_2921 are similar proteins that are
+# involved in trehalose utilization.
+klh	3-ketotrehalose hydrolase	curated:reanno::Btheta:351685	curated:reanno::Pedo557:CA265_RS22975	curated:reanno::Cola:Echvi_2921
+all: trehalose-3-dehydrogenase  klh glucose-utilization
 
 # In this pathway, the trehalase should be extracellular
 # PGA1_c07890 (I7EUW4) is important for trehalose and cellobiose utilization, probably cytoplasmic
 treF	trehalase	EC:3.2.1.28	uniprot:I7EUW4
-all: treF glucosePTS
-all: treF glucosetransport glk
+all: treF glucose-utilization
 
 # MetaCyc Pathway: trehalose degradation I (low osmolarity)
 # After PTS, trehalose 6-phosphate hydrolase forms D-glucose 6-phosphate and D-glucose
