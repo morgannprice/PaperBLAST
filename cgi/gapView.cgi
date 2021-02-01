@@ -154,7 +154,7 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
     if ($error) {
       start_page('title' => 'Upload Error in GapMind',
                  'banner' => $banner,
-                 'bannerURL' => "gapView.cgi");
+                 'bannerURL' => "gapView.cgi?set=${set}");
       print p(HTML::Entities::encode($error));
       Finish();
     }
@@ -204,18 +204,21 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
     # mode: Front page
     start_page('title' => "GapMind: Automated annotation of $setDesc",
                'banner' => $banner,
-               'bannerURL' => "gapView.cgi");
+               'bannerURL' => "gapView.cgi?set=${set}");
+    my $exampleURL = "gapView.cgi?set=${set}&orgs=orgsFit";
+    $exampleURL .= "&gaps=1" if $set eq "aa";
+    my $exampleTitle = $set eq "aa" ? "View 'gaps' in" : "View results for";
     print
       GetMotd(),
-      p("View 'gaps' in",
-        a({-href => "gapView.cgi?set=$set&orgs=orgsFit&gaps=1"}, "35 bacteria"),
-        "that grow in minimal media, or choose a genome to analyze:"),
+      p($exampleTitle,
+        a({ -href => $exampleURL }, "35 bacteria that grow in minimal media,"),
+        "or choose a genome to analyze:"),
       start_form(-method => 'get', -action => "gapView.cgi", -autocomplete => 'on'),
       hidden(-name => 'set', -value => $set, -override => 1),
       p("Genome database to search:",
         popup_menu(-name => 'gdb', -values => \@gdbs, -labels => \%gdb_labels, -default => $gdbs[0])),
       p(textfield(-name => 'gquery', -value => '', -size => 50, -maxlength => 200)),
-      p(small("Example:", a({-href => "gapView.cgi?gdb=NCBI&gquery=Desulfovibrio vulgaris"}, "Desulfovibrio vulgaris"))),
+      p(small("Example:", a({-href => "gapView.cgi?set=${set}&gdb=NCBI&gquery=Desulfovibrio vulgaris"}, "Desulfovibrio vulgaris"))),
       p(submit(-name => "findgenome", -value => 'Find Genome')),
       end_form,
       start_form(-method => 'post', -action => "gapView.cgi", -autocomplete => 'on'),
@@ -262,7 +265,7 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
     # mode: The analysis is already running
     start_page('title' => 'Analysis in progress',
                'banner' => $banner,
-               'bannerURL' => "gapView.cgi");
+               'bannerURL' => "gapView.cgi?set=${set}");
     print
       p("Analysis of $setDesc is already underway. Please check",
         a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set"}, "here"),
@@ -274,7 +277,7 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
     # mode: Run the analysis
     start_page('title' => "Analyzing $setDesc",
                'banner' => $banner,
-               'bannerURL' => "gapView.cgi");
+               'bannerURL' => "gapView.cgi?set=${set}");
     print "\n";
     unless (-e "$orgpre.org") {
       # Try to load the organism
@@ -301,7 +304,8 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
     my $timeStart = time();
     my @statusMsg = ();
     push @statusMsg, "Analyzing $setDesc in", scalar(@orgs), "genomes.";
-    push @statusMsg, "This should take around", (15 * scalar(@orgs)), "seconds."
+    my $nSec = $set eq "aa" ? 15 : 45;
+    push @statusMsg, "This should take around", ($nSec * scalar(@orgs)), "seconds."
       if $set eq "aa";
     print p(@statusMsg), "\n";
     my @cmds = ();
@@ -422,7 +426,7 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
   my $nOrgs = scalar(@orgs);
   start_page('title' => $title,
              'banner' => $banner,
-             'bannerURL' => "gapView.cgi");
+             'bannerURL' => "gapView.cgi?set=${set}");
   print "\n";
 
   # Fetch the marker comparisons and known gaps
@@ -1792,9 +1796,13 @@ sub FaaToDb($$) {
 }
 
 sub Finish() {
+  my $set = param("set") || "aa";
+  my $otherSet = $set eq "aa" ? "carbon" : "aa";
+  my $otherDesc = $otherSet eq "aa" ? "GapMind for amino acid biosynthesis" : "GapMind for catabolism of small carbon sources (beta)";
   print
     h3("Related tools"),
     start_ul(),
+    li(a{ -href => "gapView.cgi?set=$otherSet" }, $otherDesc),
     li(a({ -href => "litSearch.cgi" }, "PaperBLAST: Find papers about a protein or its homologs")),
     li(a({ -href => "genomeSearch.cgi", -title => "Search a genome for proteins that are related to a query term" },
          "Curated BLAST for Genomes")),
@@ -1833,7 +1841,7 @@ Gaps may be due to:
 
 <P>GapMind relies on the predicted proteins in the genome and does not search the six-frame translation. In most cases, you can search the six-frame translation by clicking on links to Curated BLAST for each step definition (in the per-step page).
 
-<P>For more information, see the <A HREF="https://www.biorxiv.org/content/10.1101/741918v1" title="GapMind: Automated annotation of amino acid biosynthesis">preprint</A>.
+<P>For more information, see the <A HREF="https://msystems.asm.org/content/5/3/e00291-20" title="GapMind: Automated annotation of amino acid biosynthesis">paper from 2019</A> on GapMind for amino acid biosynthesis, or view the <A HREF="https://github.com/morgannprice/PaperBLAST">source code</A>.
 
 <P>If you notice any errors or omissions in the step descriptions, or any questionable results, please
 <A HREF="mailto:$email">let us know</A>.
