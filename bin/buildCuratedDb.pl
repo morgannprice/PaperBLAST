@@ -8,6 +8,7 @@ use lib "$RealBin/../lib";
 use pbutils qw{ReadFastaEntry ReadTable SqliteImport};
 sub DoSqliteCmd($$);
 
+my $staticDir = "$RealBin/../static";
 my $usage = <<END
 buildCurateDb.pl -dir tmp/path.aa
 
@@ -16,11 +17,15 @@ curated.faa.info, curated2.faa, and hetero.tab. If you don't want to
 inlude pfam hits (used by curatedClusters.cgi, but not by GapMind
 itself), set pfam.hits.tab to be empty.
 
+Also uses metacyc.reaction_compounds and metacyc.reaction_links from
+static/
+
 Optional arguments:
 -curated dir/curated.faa
 -curated2 dir/curated2.faa
 -hetero dir/hetero.tab
 -pfamhits dir/pfam.hits.tab
+-static $staticDir
 -out dir/curated.db
 END
 ;
@@ -32,11 +37,13 @@ die $usage
                     'curated2=s' => \$curated2File,
                     'hetero=s' => \$heteroFile,
                     'pfamhits=s' => \$pfamHitsFile,
+                    'static=s' => \$staticDir,
                     'out=s' => \$dbFile)
   && @ARGV == 0
   && defined $dir;
 
 die "No such directory: $dir\n" unless -d $dir;
+die "No such directory: $staticDir\n" unless -d $staticDir;
 
 $curatedFile = "$dir/curated.faa" unless defined $curatedFile;
 my $curatedInfoFile = "$curatedFile.info";
@@ -44,8 +51,11 @@ $curated2File = "$dir/curated2.faa" unless defined $curated2File;
 $heteroFile = "$dir/hetero.tab" unless defined $heteroFile;
 $pfamHitsFile = "$dir/pfam.hits.tab" unless defined $pfamHitsFile;
 $dbFile = "$dir/curated.db" unless defined $dbFile;
+my $reactionLinksFile = "$staticDir/metacyc.reaction_links";
+my $reactionCompoundsFile = "$staticDir/metacyc.reaction_compounds";
 
-foreach my $file ($curatedFile, $curatedInfoFile, $curated2File, $heteroFile, $pfamHitsFile) {
+foreach my $file ($curatedFile, $curatedInfoFile, $curated2File, $heteroFile, $pfamHitsFile,
+                  $reactionLinksFile, $reactionCompoundsFile) {
   die "No such file: $file\n" unless -e $file;
 }
 
@@ -57,9 +67,11 @@ my $schema = "$RealBin/../lib/curated.sql";
 system("sqlite3 $tmpDbFile < $schema") == 0
   || die "Error loading schema $schema into $tmpDbFile -- $!";
 
+# the orgs and id2s fields are optional
 my @info = ReadTable($curatedInfoFile, ["ids", "length", "descs"]);
 my @curatedInfo = map { $_->{descs} =~ s/\r */ /g;
-                        [ $_->{ids}, $_->{length}, $_->{descs} ]
+                        [ $_->{ids}, $_->{length}, $_->{descs},
+                          $_->{id2s} || "", $_->{orgs} || "" ]
                       } @info;
 SqliteImport($tmpDbFile, "CuratedInfo", \@curatedInfo);
 print STDERR "Loaded CuratedInfo\n";
@@ -106,9 +118,59 @@ while (my $line = <$fhHits>) {
 SqliteImport($tmpDbFile, "CuratedPFam", \@pfamHits);
 print STDERR "Loaded CuratedPFam\n";
 
+my @compoundInReaction = ();
+my %crKey = (); # rxnId::cmpId::side must be unique
+open (my $fhCompounds, "<", $reactionCompoundsFile)
+  || die "Cannot read $reactionCompoundsFile";
+while (my $line = <$fhCompounds>) {
+  chomp $line;
+  my @F = split /\t/, $line;
+  my $rxnId = shift @F;
+  my $rxnLocation = shift @F;
+  foreach my $spec (@F) {
+    my ($side, $coeff, $compartment, $cmpId, $cmpDesc) = split /:/, $spec;
+    die unless defined $cmpDesc;
+    my $key = join("::", $rxnId, $cmpId, $side);
+    push @compoundInReaction, [ $rxnId, $rxnLocation, $cmpId, $cmpDesc,
+                                $side, $coeff, $compartment ]
+      unless exists $crKey{$key};
+    $crKey{$key} = 1;
+  }
+}
+close($fhCompounds) || die "Error reading $reactionCompoundsFile";
+SqliteImport($tmpDbFile, "CompoundInReaction", \@compoundInReaction);
+
+my %idToIds = ();
+foreach my $info (@info) {
+  my $curatedIds = $info->{ids};
+  foreach my $id (split /,/, $curatedIds) {
+    $idToIds{$id} = $curatedIds;
+  }
+}
+
+my @enzymeForReaction = ();
+my %erKey = (); # curatedIds ::: $rxnId should be unique
+open(my $fhRxnLinks, "<", $reactionLinksFile)
+  || die "Error reading $reactionLinksFile";
+my $nEnzSkip = 0;
+while (my $line = <$fhRxnLinks>) {
+  chomp $line;
+  my ($rxnId, $enzDesc, $id) = split /\t/, $line;
+  if (!exists $idToIds{$id}) {
+    $nEnzSkip++;
+  } else {
+    my $curatedIds = $idToIds{$id};
+    my $key = join(":::", $curatedIds, $rxnId);
+    push @enzymeForReaction, [ $curatedIds, $rxnId, $enzDesc ]
+      unless exists $erKey{$key};
+    $erKey{$key} = 1;
+  }
+}
+close($fhRxnLinks) || die "Error reading $reactionLinksFile";
+SqliteImport($tmpDbFile, "EnzymeForReaction", \@enzymeForReaction);
+
 system("cp $tmpDbFile $dbFile") == 0 || die "Copying $tmpDbFile to $dbFile failed: $!";
 unlink($tmpDbFile);
 print STDERR "Built curated database $dbFile\n";
-
 
 

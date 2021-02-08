@@ -6,11 +6,14 @@
 CREATE TABLE CuratedInfo(
   /* To handle curation of the identical sequence in different databases,
      curatedIds is a comma-delimited composite such as "SwissProt::P0C079,ecocyc::EG10836-MONOMER".
-     Similarly, descs is delimited with ";;" (in the same order as the ids)
+     Similarly, descs, id2s, and orgs are delimited with ";; " (in the same order as the ids)
+     orgs and ids2 may be missing, in which case they are the empty string
   */
   curatedIds TEXT PRIMARY KEY,
   seqLength INT NOT NULL,
-  descs TEXT NOT NULL
+  descs TEXT NOT NULL,
+  id2s TEXT NOT NULL, /* empty string if missing */
+  orgs TEXT NOT NULL /* empty string if missing */
 );
 
 CREATE TABLE CuratedSeq(
@@ -46,7 +49,23 @@ CREATE TABLE Hetero(
   comment TEXT
 );
 
+/* Links of reactions to compounds */
+CREATE Table CompoundInReaction(
+  rxnId TEXT NOT NULL, /* metacyc:metacycRxnId or RHEA:number */
+  rxnLocation TEXT NTO NULL,
+  cmpId TEXT NOT NULL, /* a metacyc compound id */
+  cmpDesc TEXT NOT NULL,
+  side INT NOT NULL, /* -1 for left side, +1 for right side */
+  coefficient TEXT NOT NULL, /* usually a number, but sometimes an expression like 'n' or 'n+1' */
+  compartment TEXT NOT NULL, /* the empty string, NIL, CYTOSOL, In, OUT, MEMBRANE, MIDDLE, PM-BAC-NEG */
+  PRIMARY KEY (rxnId,cmpId,side)
+);
 
+CREATE TABLE EnzymeForReaction(
+  curatedIds TEXT NOT NULL,
+  rxnId TEXT NOT NULL,
+  enzDesc TEXT NOT NULL,
+  PRIMARY KEY (curatedIds,rxnId)
+);
+CREATE INDEX 'EnzymeByReaction' on EnzymeForReaction (rxnId,curatedIds);
 
-  
-  
