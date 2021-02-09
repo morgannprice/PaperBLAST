@@ -155,18 +155,24 @@ open(my $fhRxnLinks, "<", $reactionLinksFile)
 my $nEnzSkip = 0;
 while (my $line = <$fhRxnLinks>) {
   chomp $line;
-  my ($rxnId, $enzDesc, $id) = split /\t/, $line;
-  if (!exists $idToIds{$id}) {
-    $nEnzSkip++;
-  } else {
-    my $curatedIds = $idToIds{$id};
-    my $key = join(":::", $curatedIds, $rxnId);
-    push @enzymeForReaction, [ $curatedIds, $rxnId, $enzDesc ]
-      unless exists $erKey{$key};
-    $erKey{$key} = 1;
+  my @F = split /\t/, $line;
+  my $rxnId = shift @F;
+  my $enzDesc = shift @F;
+  foreach my $id (@F) {
+    if (!exists $idToIds{$id}) {
+      $nEnzSkip++;
+    } else {
+      my $curatedIds = $idToIds{$id};
+      my $key = join(":::", $curatedIds, $rxnId);
+      push @enzymeForReaction, [ $curatedIds, $rxnId, $enzDesc ]
+        unless exists $erKey{$key};
+      $erKey{$key} = 1;
+    }
   }
 }
 close($fhRxnLinks) || die "Error reading $reactionLinksFile";
+print STDERR "Warning: skipped $nEnzSkip entries from $reactionLinksFile with unknown protein ids\n"
+  if $nEnzSkip > 0;
 SqliteImport($tmpDbFile, "EnzymeForReaction", \@enzymeForReaction);
 
 system("cp $tmpDbFile $dbFile") == 0 || die "Copying $tmpDbFile to $dbFile failed: $!";
