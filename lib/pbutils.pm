@@ -14,7 +14,7 @@ our (@ISA,@EXPORT);
              CuratedMatch CuratedWordMatch
              IdToUniqId FetchSeqs UniqIdToSeq
              FetchCuratedInfo
-             SQLiteLine!;
+             SQLiteLine SqliteImport!;
 
 sub read_list($) {
   my ($file) = @_;
@@ -393,6 +393,7 @@ sub FetchCuratedInfo($$) {
   return \@out;
 }
 
+# Quoting for import statements with sqlite3
 sub SQLiteLine {
   my @F = @_;
   my @out = ();
@@ -406,6 +407,28 @@ sub SQLiteLine {
     push @out, $val;
   }
   return join("\t", @out) . "\n";
+}
+
+sub DoSqliteCmd($$) {
+  my ($dbFile, $cmd) = @_;
+  open(my $fhSql, "|-", "sqlite3", $dbFile)
+    || die "Cannot run sqlite3 on $dbFile: $!\n";
+  print $fhSql ".mode tabs\n";
+  print $fhSql $cmd."\n";
+  close($fhSql) || die "Error running $cmd on $dbFile\n";
+}
+
+# data is a list of rows, each of which must be a list of column names in the correct order
+sub SqliteImport($$$) {
+  my ($dbFile, $tableName, $data) = @_;
+  my $tmpFile = ($ENV{TMPDIR} || "/tmp") . "/sqliteImport.$$.tab";
+  open (my $fhTmp, ">", $tmpFile) || die "Cannot write to $tmpFile";
+  foreach my $row (@$data) {
+    print $fhTmp SQLiteLine(@$row);
+  }
+  close($fhTmp) || die "Error writing to $tmpFile";
+  DoSqliteCmd($dbFile, ".import $tmpFile $tableName");
+  unlink($tmpFile);
 }
 
 1;
