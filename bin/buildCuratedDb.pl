@@ -10,7 +10,7 @@ sub DoSqliteCmd($$);
 
 my $staticDir = "$RealBin/../static";
 my $usage = <<END
-buildCurateDb.pl -dir tmp/path.aa
+buildCuratedDb.pl -dir tmp/path.aa
 
 Assumes that the directory already contains curated.faa,
 curated.faa.info, curated2.faa, and hetero.tab. If you don't want to
@@ -108,8 +108,24 @@ while (my ($header, $seq) = ReadFastaEntry($fhFaa, $state)) {
 close($fhFaa) || die "Error reading $curated2File";
 SqliteImport($tmpDbFile, "Curated2", \@curated2);
 
+# heteroFile has one entry per id, so the same sequence could be listed
+# several times (from different databases)
 my @heteroIn = ReadTable($heteroFile, ["db","protId","comment"]);
-my @hetero = map [ $_->{db} . "::" . $_->{protId}, $_->{comment} ], @heteroIn;
+my %hetero = (); # curatedIds to list of comments
+foreach my $row (@heteroIn) {
+  my $id = $row->{db} . "::" . $row->{protId};
+  die "Entry for unknown protein $id in $heteroFile\n"
+    unless exists $idToIds{$id};
+  push @{ $hetero{$idToIds{$id}} }, $row->{comment};
+}
+my @hetero = (); # curatedIds to comment
+foreach my $curatedIds (sort keys %hetero) {
+  # Most comments are empty (they just show that protein is part of a complex)
+  # As of February 2021, only SwissProt has comments, so there wouldn't be
+  # more than one, but in case it happens, join them together
+  my @comments = grep { $_ ne "" } @{ $hetero{$curatedIds} };
+  push @hetero, [ $curatedIds, join(". ", @comments) ];
+}
 SqliteImport($tmpDbFile, "Hetero", \@hetero);
 print STDERR "Loaded Hetero\n";
 
@@ -207,5 +223,6 @@ SqliteImport($tmpDbFile, "TransporterSubstrate", \@transporterSubstrate);
 system("cp $tmpDbFile $dbFile") == 0 || die "Copying $tmpDbFile to $dbFile failed: $!";
 unlink($tmpDbFile);
 print STDERR "Built curated database $dbFile\n";
+
 
 

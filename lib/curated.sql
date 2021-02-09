@@ -45,7 +45,7 @@ CREATE TABLE Curated2(
 
 /* Only heteromeric proteins are included */
 CREATE TABLE Hetero(
-  curatedId TEXT PRIMARY KEY, /* i.e., "BRENDA::P38540" -- just one id */
+  curatedIds TEXT PRIMARY KEY,
   comment TEXT
 );
 
