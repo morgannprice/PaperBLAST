@@ -69,3 +69,8 @@ CREATE TABLE EnzymeForReaction(
 );
 CREATE INDEX 'EnzymeByReaction' on EnzymeForReaction (rxnId,curatedIds);
 
+/* Links of transporters to substrates (TCDB only) */
+CREATE TABLE TransporterSubstrate(
+  curatedIds TEXT NOT NULL,
+  substrate TEXT NOT NULL
+);

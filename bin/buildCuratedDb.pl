@@ -17,8 +17,8 @@ curated.faa.info, curated2.faa, and hetero.tab. If you don't want to
 inlude pfam hits (used by curatedClusters.cgi, but not by GapMind
 itself), set pfam.hits.tab to be empty.
 
-Also uses metacyc.reaction_compounds and metacyc.reaction_links from
-static/
+Also uses some files from static/ -- metacyc.reaction_compounds,
+metacyc.reaction_links, TCDB.curated_parsed
 
 Optional arguments:
 -curated dir/curated.faa
@@ -53,9 +53,10 @@ $pfamHitsFile = "$dir/pfam.hits.tab" unless defined $pfamHitsFile;
 $dbFile = "$dir/curated.db" unless defined $dbFile;
 my $reactionLinksFile = "$staticDir/metacyc.reaction_links";
 my $reactionCompoundsFile = "$staticDir/metacyc.reaction_compounds";
+my $tcdbFile = "$staticDir/TCDB.curated_parsed";
 
 foreach my $file ($curatedFile, $curatedInfoFile, $curated2File, $heteroFile, $pfamHitsFile,
-                  $reactionLinksFile, $reactionCompoundsFile) {
+                  $reactionLinksFile, $reactionCompoundsFile, $tcdbFile) {
   die "No such file: $file\n" unless -e $file;
 }
 
@@ -69,6 +70,15 @@ system("sqlite3 $tmpDbFile < $schema") == 0
 
 # the orgs and id2s fields are optional
 my @info = ReadTable($curatedInfoFile, ["ids", "length", "descs"]);
+# some other inputs have just 1 id, instead of the full ids, so build
+# the mapping
+my %idToIds = ();
+foreach my $info (@info) {
+  my $curatedIds = $info->{ids};
+  foreach my $id (split /,/, $curatedIds) {
+    $idToIds{$id} = $curatedIds;
+  }
+}
 my @curatedInfo = map { $_->{descs} =~ s/\r */ /g;
                         [ $_->{ids}, $_->{length}, $_->{descs},
                           $_->{id2s} || "", $_->{orgs} || "" ]
@@ -140,14 +150,6 @@ while (my $line = <$fhCompounds>) {
 close($fhCompounds) || die "Error reading $reactionCompoundsFile";
 SqliteImport($tmpDbFile, "CompoundInReaction", \@compoundInReaction);
 
-my %idToIds = ();
-foreach my $info (@info) {
-  my $curatedIds = $info->{ids};
-  foreach my $id (split /,/, $curatedIds) {
-    $idToIds{$id} = $curatedIds;
-  }
-}
-
 my @enzymeForReaction = ();
 my %erKey = (); # curatedIds ::: $rxnId should be unique
 open(my $fhRxnLinks, "<", $reactionLinksFile)
@@ -174,6 +176,33 @@ close($fhRxnLinks) || die "Error reading $reactionLinksFile";
 print STDERR "Warning: skipped $nEnzSkip entries from $reactionLinksFile with unknown protein ids\n"
   if $nEnzSkip > 0;
 SqliteImport($tmpDbFile, "EnzymeForReaction", \@enzymeForReaction);
+
+# Transporters to substrates
+my @transporterSubstrate = ();
+open(my $fhTCDB, "<", $tcdbFile) || die "Cannot read $tcdbFile";
+my $nSkipTCDB = 0;
+while (my $line = <$fhTCDB>) {
+  chomp $line;
+  my ($db, $protId, $tcdb_class, undef, $desc, $org, $seq, $comment, $pmIds) = split /\t/, $line;
+  die unless defined $pmIds;
+  die unless $db eq "TCDB";
+  my $id = "$db" . "::" . $protId;
+  if (exists $idToIds{$id}) {
+    my @comments = split /_:::_/, $comment;
+    foreach my $c (@comments) {
+      if ($c =~ m/^SUBSTRATES: (.*)$/) {
+        my $substrate = $1;
+        push @transporterSubstrate, [ $idToIds{$id}, $substrate ];
+      }
+    }
+  } else {
+    $nSkipTCDB++;
+  }
+}
+close($fhTCDB) || die "Error reading $tcdbFile";
+print STDERR "Skipped $nSkipTCDB unknown identifiers in $tcdbFile\n"
+  if $nSkipTCDB > 0;
+SqliteImport($tmpDbFile, "TransporterSubstrate", \@transporterSubstrate);
 
 system("cp $tmpDbFile $dbFile") == 0 || die "Copying $tmpDbFile to $dbFile failed: $!";
 unlink($tmpDbFile);
