@@ -3,7 +3,8 @@
 # All parameters are optional. Without parameters, shows a query input page.
 #
 # Parameters:
-# set -- which database of curated proteins (defaults to gaps2, i.e. using ../tmp/path.gaps2/curated.faa*)
+# set -- which database of curated proteins (defaults to carbon, i.e. using
+#	../tmp/path.carbon/curated.db and curated.faa.udb)
 #
 # Specify which proteins to cluster using a query:
 #	query -- what term to search for, or transporter:compound:compound...
@@ -38,20 +39,21 @@ use HTML::Entities;
 use IO::Handle qw{autoflush};
 use List::Util qw{min max};
 
-sub IsHetero($);
+sub GetHetero($$);
+sub HeteroToText($);
 sub MatchRows($$$);
-sub FaaToDb($$);
-# The first argument is a "compound" id which is a list of ids
-sub CompoundInfoToHtml($$$);
-sub TransporterSearch($$$);
+sub CuratedToHtml($$); # curatedIds, sequence
+sub TransporterSearch($$);
 sub TSVPrint($$$);
-sub TransporterMatch($$$);
+sub TransporterMatch($$);
+sub FormatClose($$$$$);
+
 my $maxHits = 250;
 my $nCPU = 8;
 
 my $minHmmCoverageGood = 0.8;
 
-my $set = param('set') || "gaps2";
+my $set = param('set') || "carbon";
 $set =~ m/^[a-zA-Z0-9._-]+$/ || die "Invalid set $set";
 
 my $query = param('query') || "";
@@ -96,12 +98,11 @@ if ($pathSpec ne "") {
 }
 
 my $curatedFaa = "$queryPath/curated.faa";
-die "No such file: $curatedFaa" unless -e $curatedFaa;
-
-my $hetFile = "$queryPath/hetero.tab";
-die "No such file: $hetFile" unless -e $hetFile;
-my @het = ReadTable($hetFile, ["db","protId","comment"]);
-my %hetComment = map { $_->{db} . "::" . $_->{protId} => $_->{comment} } @het;
+my $curatedDb = "$queryPath/curated.db";
+my $curatedUdb = "$queryPath/curated.faa.udb";
+foreach my $file ($curatedFaa, $curatedDb, $curatedUdb) {
+  die "No such file: $file" unless -e $file;
+}
 
 my $blastall = "../bin/blast/blastall";
 my $formatdb = "../bin/blast/formatdb";
@@ -134,10 +135,6 @@ if ($format eq "") {
 
 autoflush STDOUT 1; # show preliminary results
 
-unless (NewerThan("$curatedFaa.db", $curatedFaa)) {
-  print p("Reformatting the sequence database"), "\n" unless $format;
-  FaaToDb($curatedFaa, "$curatedFaa.db");
-}
 
 if ($query eq "" && $pathSpec eq "") {
   print
@@ -163,51 +160,17 @@ if ($query eq "" && $pathSpec eq "") {
   exit(0);
 }
 
-# Fetch curated sequences
-my @curatedInfo = ReadTable("$curatedFaa.info", ["ids","length","descs"]);
-# will also have orgs and id2s if a newer file
-my %curatedInfo = map { $_->{ids} => $_ } @curatedInfo;
-die "Sorry, this version of the database does not store organism information"
-  if $byorg && !exists $curatedInfo[0]{orgs};
-my %seqsAll;
-tie %seqsAll, "DB_File", "$curatedFaa.db", O_RDONLY, 0666, $DB_HASH
-  || die "Cannot open file $curatedFaa.db -- $!";
-# Some sequences are in the query file, and not from curated.faa
+my $dbhC = DBI->connect("dbi:SQLite:dbname=$curatedDb","","",{ RaiseError => 1 }) || die $DBI::errstr;
+
+# The the list of matching sequences.
+# Most of these ids are from curatedIds
+my @hits = (); # Hits from matching curated descriptions
+
+# uniprotId => sequence, for the hitIds that are from UniProt, not from curated
 my %uniprotSeq = ();
-my @hitIds = ();
 
-my %idToIds = ();
-foreach my $ids (keys %curatedInfo) {
-  foreach my $id (split /,/, $ids) {
-    $idToIds{$id} = $ids;
-  }
-}
-
-my %curatedPfam = (); # ids => list of hits, in arbitrary order
-# Each hit is a hash that includes hmmName, hmmAcc, evalue, bits, seqFrom, seqTo, seqLen, hmmFrom, hmmTo, hmmLen
-my $pfamFile = "$queryPath/pfam.hits.tab";
-if (-e $pfamFile) {
-  open (my $fh, "<", $pfamFile) || die "Cannot read $pfamFile";
-  while(my $line = <$fh>) {
-    chomp $line;
-    my ($ids, $hmmName, $hmmAcc, $evalue, $bits, $seqFrom, $seqTo, $seqLen, $hmmFrom, $hmmTo, $hmmLen)
-      = split /\t/, $line;
-    die "Invalid line $line in $pfamFile" unless $hmmLen =~ m/^\d+$/;
-    push @{ $curatedPfam{$ids} }, { 'hmmName' => $hmmName,
-                                    'hmmAcc' => $hmmAcc,
-                                    'evalue' => $evalue,
-                                    'bits' => $bits,
-                                    'seqFrom' => $seqFrom,
-                                    'seqTo' => $seqTo,
-                                    'seqLen' => $seqLen,
-                                    'hmmFrom' => $hmmFrom,
-                                    'hmmTo' => $hmmTo,
-                                    'hmmLen' => $hmmLen };
-  }
-  close($fh) || die "Error reading $pfamFile";
-}
-
-my %hitHmm = (); # hits from HMMs
+# Remember which hits were from HMMs
+my %hitHmm = (); # hits from HMMs (as curatedIds)
 my %hitHmmGood = (); # hits from HMMs with high coverage
 # hits from other rules (except uniprots not in the curated database which are in %uniprotSeq)
 my %hitRule = ();
@@ -218,48 +181,35 @@ if ($query =~ m/^transporter:(.+)$/) {
   my $queryShow = $compoundSpec; $queryShow =~ s!:! / !g;
   print p("Searching for transporters for", HTML::Entities::encode($queryShow)),
     "\n" unless $format;
-  my $sqldb = "../data/litsearch.db";
-  my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
-  my $staticDir = "../static";
-  my $chits = TransporterMatch($dbh, $staticDir, $compoundSpec);
-  my %idsHit = ();
-  foreach my $chit (@$chits) {
-    my $id = $chit->{db} . "::" . $chit->{protId};
-    if (!exists $idToIds{$id}) {
-      print p("Curated entry $id ($chit->{desc}) is excluded because it is not in the table of characterized proteins"), "\n"
-        unless $format;
-    } else {
-      $idsHit{ $idToIds{$id} } = 1;
-    }
-  }
-  if (scalar(keys %idsHit) == 0) {
+  my $chits = TransporterMatch($dbhC, $compoundSpec);
+  if (@$chits == 0) {
     print p("Sorry, no transporters were found. Please try a different query.")
       unless $format;
   } else {
-    print p("Found", scalar(@$chits), "transporters with", scalar(keys %idsHit), "different sequences") 
+    print p("Found", scalar(@$chits), "transporters")
       unless $format;
   }
-  @hitIds = sort keys %idsHit;
+  @hits = @$chits;
 } elsif ($query ne "") { # find similar proteins
   my $wordStatement = $wordMode ? " as complete word(s)" : "";
   print p("Searching for", b(HTML::Entities::encode($query)), $wordStatement),
     p("Or try", a({-href => "curatedClusters.cgi?set=${set}"}, "another search")),
     "\n"
       unless $format;
-  my $hits = MatchRows(\@curatedInfo, $query, $wordMode);
-  if (@$hits > $maxHits) {
+  my $chits = MatchRows($dbhC, $query, $wordMode);
+  if (@$chits > $maxHits) {
     print p("Found over $maxHits proteins with matching descriptions. Please try a different query.");
     print end_html;
     exit(0);
-  } elsif (@$hits == 0) {
+  } elsif (@$chits == 0) {
     print p("Sorry, no hits were found")
       unless $format;
   } else {
-    my $nHetero = scalar(grep IsHetero($_), map { $_->{ids} } @$hits);
-    print p("Found " . scalar(@$hits) . " characterized proteins with matching descriptions. $nHetero of these are heteromeric.")
+    my $nHetero = scalar(grep defined GetHetero($dbhC, $_), map { $_->{curatedIds} } @$chits);
+    print p("Found " . scalar(@$chits) . " characterized proteins with matching descriptions. $nHetero of these are heteromeric.")
       unless $format;
   }
-  @hitIds = map $_->{ids}, @$hits;
+  @hits = @$chits;
 } elsif ($pathSpec eq "all") { # show list of pathways
   die if $step ne "";
   print p("Pathways for", $pathInfo{all}{desc}),
@@ -308,10 +258,12 @@ if ($query =~ m/^transporter:(.+)$/) {
 
   foreach my $query (@queries) {
     if ($query->{type} eq "curated") {
-      my $ids = $query->{query};
-      die "Unknown identifier $ids in query for $step" unless exists $seqsAll{$ids};
-      push @hitIds, $ids;
-      $hitRule{$ids} = 1;
+      my $curatedIds = $query->{query};
+      my $row = $dbhC->selectrow_hashref("SELECT * from CuratedInfo WHERE curatedIds = ?",
+                                        {}, $curatedIds);
+      die "Unknown identifier $curatedIds in query for $step" unless defined $row;
+      push @hits, $row;
+      $hitRule{$curatedIds} = 1;
     } elsif ($query->{type} eq "hmm") {
       my $hmm = $query->{query};
       my $hmmFile = $queryPath. "/" . $query->{file};
@@ -329,37 +281,32 @@ if ($query =~ m/^transporter:(.+)$/) {
         chomp $line;
         next if $line =~ m/^#/;
         my @F = split /\s+/, $line;
-      my ($ids, undef, $hitlen, $hmmName, undef, $hmmLen, $seqeval, $seqscore, undef, undef, undef, undef, $domeval, $domscore, undef, $qbeg, $qend, $hitbeg, $hitend) = @F;
+      my ($curatedIds, undef, $hitlen, $hmmName, undef, $hmmLen, $seqeval, $seqscore, undef, undef, undef, undef, $domeval, $domscore, undef, $qbeg, $qend, $hitbeg, $hitend) = @F;
         die "Cannot parse hmmsearch line $line"
-          unless defined $hitend && $hitend > 0 && $hmmLen > 0 && $ids ne "";
-        die "Unknown id $ids reported by hmmsearch" unless exists $curatedInfo{$ids};
+          unless defined $hitend && $hitend > 0 && $hmmLen > 0 && $curatedIds ne "";
+        my $row = $dbhC->selectrow_hashref("SELECT * from CuratedInfo WHERE curatedIds = ?",
+                                          {}, $curatedIds);
+        die "Unknown id $curatedIds reported by hmmsearch" unless defined $row;
         my $highCoverage = ($qend-$qbeg+1)/$hmmLen >= $minHmmCoverageGood;
-        $hitHmmGood{$ids} = 1 if $highCoverage;
+        $hitHmmGood{$curatedIds} = 1 if $highCoverage;
         # if in close mode, ignore low-coverage HMM-only hits
         if ($highCoverage || ! $closeMode) {
-          $hitHmm{$ids} = 1;
-          push @hitIds, $ids;
+          $hitHmm{$curatedIds} = 1;
+          push @hits, $row;
         }
       }
       close($fhHits) || die "Error reading $hitsFile";
     } elsif ($query->{type} eq "uniprot") {
-      my $id = "SwissProt::" . $query->{query};
-      if (exists $idToIds{$id}) {
-        print p("Warning: uniprot rule $query->{query} is already in curated"), "\n";
-        push @hitIds, $idToIds{$id};
-        $hitRule{ $idToIds{$id} } = 1;
-      } else {
-        $id =~ s/SwissProt/UniProt/;
-        my $desc = $query->{desc};
-        $desc =~ s/^(rec|sub)name: full=//i;
-        $desc =~ s/ *[{][A-Z0-9:|.-]+[}] *//g;
-        $desc =~ s/altname: full=//i;
-        $desc =~ s/;? *$//;
-        $curatedInfo{$id} = { 'ids' => $id, 'descs' => $desc,
-                              'length' => length($query->{sequence}) };
-        $uniprotSeq{$id} = $query->{sequence};
-        push @hitIds, $id;
-      }
+      my $id = "UniProt::" . $query->{query}; # XXX no way to tell that this SwissProt is known, does this matter?
+      my $desc = $query->{desc};
+      $desc =~ s/^(rec|sub)name: full=//i;
+      $desc =~ s/ *[{][A-Z0-9:|.-]+[}] *//g;
+      $desc =~ s/altname: full=//i;
+      $desc =~ s/;? *$//;
+      my $row = { 'curatedIds' => $id, 'descs' => $desc,
+                  'seqLength' => length($query->{sequence}) };
+      push @hits, $row;
+      $uniprotSeq{$id} = $query->{sequence};
     } elsif ($query->{type} eq "curated2") {
       ; # curated2 means not actually characterized, so skip that
     } elsif ($query->{type} eq "ignore") {
@@ -369,10 +316,10 @@ if ($query =~ m/^transporter:(.+)$/) {
     }
   }
   print p("Sorry, no curated sequences were found matching any of", scalar(@queries),
-          "rules for step $step") if @hitIds == 0;
+          "rules for step $step") if @hits == 0;
 
   # Remove hits that match ignore (this should only happen for HMM hits)
-  @hitIds = grep !exists $ignore{ $_ }, @hitIds;
+  @hits = grep { !exists $ignore{ $_->{curatedIds} } } @hits;
 } elsif ($pathSpec ne "") {
   die "Unknown pathway $pathSpec" unless exists $pathInfo{$pathSpec};
   my @steps = sort { $a->{i} <=> $b->{i} } values %{ $steps->{steps} };
@@ -388,24 +335,27 @@ if ($query =~ m/^transporter:(.+)$/) {
   die "Invalid mode for curatedClusters.cgi";
 }
 
-if (@hitIds == 0) {
+if (@hits == 0) {
   print end_html;
   exit(0);
 }
 
 # Fetch the hits' sequences
 my %seqs = ();
-foreach my $id (@hitIds) {
-  if (exists $seqsAll{$id}) {
-    $seqs{$id} = $seqsAll{$id};
-  } elsif (exists $uniprotSeq{$id}) {
+foreach my $hit (@hits) {
+  my $id = $hit->{curatedIds};
+  if (exists $uniprotSeq{$id}) {
     $seqs{$id} = $uniprotSeq{$id};
   } else {
-    die "No sequence for $id in $curatedFaa.db";
+    my ($seq) = $dbhC->selectrow_array("SELECT seq FROM CuratedSeq WHERE curatedIds = ?",
+                                      {}, $id);
+    die "curatedIds $id has no sequence" unless defined $seq;
+    $seqs{$id} = $seq;
   }
 }
-my %hitsUniq = map { $_ => 1 } @hitIds;
-die unless scalar(keys %seqs) == scalar(keys %hitsUniq);
+my %hitInfo = map { $_->{curatedIds} => $_ } @hits;
+die "Seqs " . join(" ", keys %seqs) . "\nhits " . join(" ", keys %hitInfo)
+  unless scalar(keys %seqs) == scalar(keys %hitInfo);
 print p("Fetched " . scalar(keys %seqs) . " sequences"), "\n"
   unless $format;
 
@@ -416,7 +366,6 @@ foreach my $id (sort keys %seqs) {
 close($fhFaa) || die "Error writing to $tmpPre.faa";
 
 if ($closeMode && $pathSpec && $step) {
-  die "No such file: $curatedFaa.udb" unless -e "$curatedFaa.udb";
   my $minIdClose = 0.4;
   my $minCovClose = 0.7;
   print p("Running ublast to find other characterized proteins with",
@@ -424,7 +373,7 @@ if ($closeMode && $pathSpec && $step) {
           "identity and",
           ($minCovClose*100)."%",
           "coverage"), "\n";
-  my $cmd = "$usearch -ublast $tmpPre.faa -db $curatedFaa.udb -evalue 0.001 -blast6out $tmpPre.close -threads $nCPU -quiet -id $minIdClose -query_cov $minCovClose";
+  my $cmd = "$usearch -ublast $tmpPre.faa -db $curatedUdb -evalue 0.001 -blast6out $tmpPre.close -threads $nCPU -quiet -id $minIdClose -query_cov $minCovClose";
   system($cmd) == 0 || die "Error running\n$cmd\n-- $!";
   my @close = ();
   open (my $fhClose, "<", "$tmpPre.close") || die "Cannot read $tmpPre.close";
@@ -435,7 +384,6 @@ if ($closeMode && $pathSpec && $step) {
     push @close, { 'query' => $query, 'subject' => $subject, 'identity' => $identity,
                    'qbeg' => $qbeg, 'qend' => $qend, 'sbeg' => $sbeg, 'send' => $send,
                    'eval' => $eval, 'bits' => $bits };
-    die "Unknown subject $subject" unless exists $curatedInfo{$subject};
   }
   close($fhClose) || die "Error reading $tmpPre.close";
   unlink("$tmpPre.faa");
@@ -447,7 +395,7 @@ if ($closeMode && $pathSpec && $step) {
                   $subjectSeen{$subject} = 1;
                   ! $seen; } @close;
   my $nHitsAll = scalar(@close);
-  @close = grep !exists $hitsUniq{ $_->{subject} }, @close;
+  @close = grep !exists $hitInfo{ $_->{subject} }, @close;
   my $nPreIgnore = scalar(@close);
   my @ignore = grep exists $ignore{ $_->{subject} }, @close;
   @close = grep !exists $ignore{ $_->{subject} }, @close;
@@ -468,32 +416,15 @@ if ($closeMode && $pathSpec && $step) {
     print p("(Sequences that are similar to these will not be high-confidence candidates for", i($step).".)");
   }
   foreach my $close (@close) {
-    my $subject = $close->{subject};
-    my $query = $close->{query};
-    my $queryDesc = CompoundInfoToHtml($query, $curatedInfo{$query}, $seqs{$query});
+    print FormatClose($dbhC, $close, \%hitInfo, \%seqs, "black");
 
-    my $idString = int($close->{identity})."%";
-    my $covString =   "Amino acids $close->{sbeg}:$close->{send}/$curatedInfo{$subject}{length}"
-      . " are $idString identical to $close->{qbeg}:$close->{qend}/$curatedInfo{$query}{length}"
-        . " of the $step protein";
-
-    my $subjectShort = $subject; $subjectShort =~ s/,.*//;
-    print p({ -style => 'margin-bottom: 0em;' },
-            CompoundInfoToHtml($subject, $curatedInfo{$subject}, $seqsAll{$subject})
-                . ", " . small($subjectShort),
-            br(),
-            a({-title => $covString}, "$idString identical to")),
-           p({-style => 'margin-left: 5em; margin-top: 0em; font-size: 90%;'},
-                CompoundInfoToHtml($query, $curatedInfo{$query}, $seqs{$query})),
-           "\n";
   }
-
   if (@hitHmmGoodOnly > 0) {
     print h3("HMM-only sequences");
     print p("(Since these sequences' annotations are outside the definition for", i($step).",",
             "HMM hits that are over 40% similar to these sequences will be scored as moderate confidence.)");
     foreach my $hit (@hitHmmGoodOnly) {
-      print p(CompoundInfoToHtml($hit, $curatedInfo{$hit}, $seqs{$hit}))."\n";
+      print p(CuratedToHtml($hitInfo{$hit}, $seqs{$hit}))."\n";
     }
   }
 
@@ -501,22 +432,7 @@ if ($closeMode && $pathSpec && $step) {
     print h3("Close but ignored sequences");
     print p("(Sequences that are similar to these will still be high-confidence candidates for", i($step).".)");
     foreach my $close (@ignore) {
-      my $subject = $close->{subject};
-      my $query = $close->{query};
-      my $queryDesc = CompoundInfoToHtml($query, $curatedInfo{$query}, $seqs{$query});
-
-      my $idString = int($close->{identity})."%";
-      my $covString =   "Amino acids $close->{sbeg}:$close->{send}/$curatedInfo{$subject}{length}"
-        . " are $idString identical to $close->{qbeg}:$close->{qend}/$curatedInfo{$query}{length}"
-          . " of the $step protein";
-
-      print p({ -style => 'margin-bottom: 0em; color: darkgrey;', },
-              CompoundInfoToHtml($subject, $curatedInfo{$subject}, $seqsAll{$subject}),
-              br(),
-              a({-title => $covString}, "$idString identical to")),
-                p({-style => 'margin-left: 5em; margin-top: 0em; font-size: 90%; color: darkgrey;'},
-                  CompoundInfoToHtml($query, $curatedInfo{$query}, $seqs{$query})),
-                    "\n";
+      print FormatClose($dbhC, $close, \%hitInfo, \%seqs, "darkgrey");
     }
   }
 
@@ -589,7 +505,7 @@ my $hmmColor = $hasSeqRule ? "red" : "black";
 # mark hits from Hmm only
 foreach my $ids (keys %hitHmm) {
   if (!exists $hitRule{$ids}) {
-    $curatedInfo{$ids}{descs} .= exists $hitHmmGood{$ids} ?
+    $hitInfo{$ids}{descs} .= exists $hitHmmGood{$ids} ?
       span({-style => "color: $hmmColor;"}, " (from HMM only)")
         : " (low-coverage HMM hit)";
   }
@@ -646,7 +562,7 @@ if ($byorg) { # show by organism
   # simplify organisms (so that they will hopefully be consistent across databases)
   my %orgIds = (); # organism => ids => 1
   foreach my $ids (keys %idsToCluster) {
-    my $info = $curatedInfo{$ids} || die;
+    my $info = $hitInfo{$ids} || die;
     my @orgs = split /;; /, $info->{orgs};
     my %orgU = ();
     push @orgs, "Organism unknown" if @orgs == 0;
@@ -672,7 +588,7 @@ if ($byorg) { # show by organism
         my $URL = "curatedSim.cgi?set=$set&path=$pathSpec&ids=$ids&$idsLeftSpec";
         $clusterShow = a({ -href => $URL }, $clusterShow);
       }
-      print p(CompoundInfoToHtml($ids, $curatedInfo{$ids}, $seqs{$ids}),
+      print p(CuratedToHtml($hitInfo{$ids}, $seqs{$ids}),
               "($clusterShow)"), "\n";
     }
   }
@@ -683,9 +599,9 @@ if ($byorg) { # show by organism
       my ($seed) = grep $cluster->{$_}, @ids;
       my $clusterId = $idsToCluster{$seed} || die;
       die unless defined $seed;
-      my $nHetero = scalar(grep IsHetero($_), @ids);
+      my $nHetero = scalar(grep defined GetHetero($dbhC, $_), @ids);
       my $sz = scalar(@ids);
-      my @len = map $curatedInfo{$_}{length}, @ids;
+      my @len = map $hitInfo{$_}{seqLength}, @ids;
       my @clusterHeader = ($clusterId, min(@len) . "-" .max(@len), "amino acids");
       if ($nHetero ==  $sz) {
         push @clusterHeader, "(heteromeric)";
@@ -703,20 +619,20 @@ if ($byorg) { # show by organism
         if ($format eq "") {
           my @idsLeft = grep { $_ ne $id } @ids;
           my $idsLeftSpec = join("&", map "ids=$_", @idsLeft);
-          print p(CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id})
+          print p(CuratedToHtml($hitInfo{$id}, $seqs{$id})
                   . ", "
                   . small(a({ -href => "curatedSim.cgi?set=$set&path=$pathSpec&ids=$id&$idsLeftSpec" },
                     "Compare to cluster")));
         } elsif ($format eq "rules") {
-          my $isHetero = IsHetero($id) ? " (heteromeric)" : "";
-          print "# $id $curatedInfo{$id}{id2s} $curatedInfo{$id}{descs} $curatedInfo{$id}{orgs}$isHetero\n";
+          my $het = HeteroToText(GetHetero($dbhC, $id));
+          print "# $id $hitInfo{$id}{id2s} $hitInfo{$id}{descs} $hitInfo{$id}{orgs}$het\n";
         } elsif ($format eq "tsv") {
           $clusterId =~ s/ //;
-          TSVPrint($clusterId, $id, $curatedInfo{$id});
+          TSVPrint($clusterId, $id, $hitInfo{$id});
         }
       }
       if ($format eq "rules") {
-        my $desc = $curatedInfo{$seed}{descs} || "No description";
+        my $desc = $hitInfo{$seed}{descs} || "No description";
         $desc =~ s/ ;;.*//;
         $clusterId =~ s/ //;
         print join("\t", $clusterId,
@@ -726,13 +642,13 @@ if ($byorg) { # show by organism
     } # end if @ids > 1
   }
   if (@singletons > 0) {
-    my $nHetero = scalar(grep IsHetero($_), @singletonIds);
+    my $nHetero = scalar(grep defined GetHetero($dbhC, $_), @singletonIds);
     my $nSingle = scalar(@singletonIds);
     print h3("Singletons ($nHetero/$nSingle heteromeric)") unless $format;
     foreach my $id (@singletonIds) {
       my $singleId = $idsToCluster{$id} || die;
       if ($format eq "") {
-        my $show = CompoundInfoToHtml($id, $curatedInfo{$id}, $seqs{$id});
+        my $show = CuratedToHtml($hitInfo{$id}, $seqs{$id});
         if (exists $sim{$id}) {
           my @simto = sort keys %{ $sim{$id} };
           my $sim = $simto[0] || die;
@@ -743,16 +659,16 @@ if ($byorg) { # show by organism
         }
         print p($show), "\n";
       } elsif ($format eq "rules") {
-        my $isHetero = IsHetero($id) ? " (heteromeric)" : "";
-        print "\n# $singleId $id $curatedInfo{$id}{id2s} $curatedInfo{$id}{descs} $curatedInfo{$id}{orgs}$isHetero\n";
+        my $het = HeteroToText(GetHetero($dbhC, $id));
+        print "\n# $singleId $id $hitInfo{$id}{id2s} $hitInfo{$id}{descs} $hitInfo{$id}{orgs}$het\n";
         my $short = $id; $short =~ s/,.*//;
-        my $desc = $curatedInfo{$id}{descs};
+        my $desc = $hitInfo{$id}{descs};
         $desc =~ s/;; .*//;
         $singleId =~ s/ //;
         print join("\t", $singleId, $desc, "curated:$short")."\n";
       } elsif ($format eq "tsv") {
         $singleId =~ s/ //;
-        TSVPrint($singleId, $id, $curatedInfo{$id});
+        TSVPrint($singleId, $id, $hitInfo{$id});
       }
     }
   }
@@ -761,44 +677,35 @@ print end_html unless $format;
 exit(0);
 
 sub MatchRows($$$) {
-  my ($curatedInfo, $query, $word) = @_;
+  my ($dbhC, $query, $word) = @_;
   die "Searching for empty term"
     unless defined $query && $query ne "";
-  my $regexp = quotemeta($query);
-  $regexp =~ s/\\%/.*/g;
-  my @match = grep { $_->{descs} =~ m/$regexp/i } @$curatedInfo;
-  return $word ? CuratedWordMatch(\@match, $query, "descs") : \@match;
-}
-
-sub FaaToDb($$) {
-  my ($faaIn, $db) = @_;
-  my %seqs;
-  tie %seqs, "DB_File", $db, O_CREAT|O_RDWR, 0666, $DB_HASH
-    || die "Cannot write to file $db -- $!";
-  open (my $fh, "<", $faaIn) || die "Cannot read $faaIn";
-  my $state = {};
-  while (my ($header, $seq) = ReadFastaEntry($fh, $state)) {
-    $header =~ s/ .*//;
-    $seqs{$header} = $seq;
+  my $chits = $dbhC->selectall_arrayref("SELECT * from CuratedInfo WHERE descs LIKE ?",
+                                       { Slice => {} }, "%" . $query . "%");
+  my @out = ();
+  foreach my $chit (@$chits) {
+    my @descs = split /;; /, $chit->{descs};
+    my @list = map { { 'desc' => $_ } } @descs;
+    my $matches = CuratedWordMatch(\@list, $query, 'desc');
+    push @out, $chit if @$matches > 0;
   }
-  close($fh) || die "Error reading $faaIn";
-  untie %seqs;
-  die "Error writing to file $db" unless NewerThan($db, $faaIn);
+  return \@out;
 }
 
-sub CompoundInfoToHtml($$$) {
-  my ($compoundId, $info, $seq) = @_;
-  die unless $compoundId;
-  die "No info for $compoundId" unless $info;
-  die "no seq for $compoundId" unless $seq;
-  my @ids = split /,/, $compoundId;
+sub CuratedToHtml($$) {
+  my ($info, $seq) = @_;
+  die "Undefined info" unless defined $info;
+  die "No curatedIds for info" unless $info->{curatedIds};
+  my $curatedIds = $info->{curatedIds};
+  die "no seq for $curatedIds" unless $seq;
+  my @ids = split /,/, $curatedIds;
   die unless @ids > 0;
   my @descs = split /;; /, $info->{descs};
-  my @orgs = split /;; /, $info->{orgs} if defined $info->{orgs};
-  my @id2s = split /;; /, $info->{id2s} if defined $info->{id2s};
+  my @orgs = split /;; /, $info->{orgs} if $info->{orgs} ne "";
+  my @id2s = split /;; /, $info->{id2s} if $info->{id2s} ne "";
 
   die "Mismatched length of ids and descs" unless scalar(@ids) == scalar(@descs);
-  my $len = $info->{length};
+  my $len = $info->{seqLength};
   die unless $len;
   my @genes;
   for (my $i = 0; $i < @ids; $i++) {
@@ -813,8 +720,6 @@ sub CompoundInfoToHtml($$$) {
     $gene->{organism} = $orgs[$i] if @orgs > 0;
     AddCuratedInfo($gene);
     $gene->{HTML} = GeneToHtmlLine($gene);
-    $gene->{HTML} .= " (" . a({ -title => $hetComment{$id} }, "heteromeric") . ")"
-      if exists $hetComment{$id};
     push @genes, $gene;
   }
   @genes = sort { $a->{priority} <=> $b->{priority} } @genes;
@@ -825,8 +730,10 @@ sub CompoundInfoToHtml($$$) {
   my @links = ();
   push @links, a({-href => "litSearch.cgi?query=$query"}, "PaperBLAST");
   push @links, a({-href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=$query"}, "CDD");
-  if (exists $curatedPfam{$compoundId}) {
-    my @rows = sort { $a->{seqFrom} <=> $b->{seqFrom} } @{ $curatedPfam{$compoundId} };
+  my $pfamHits = $dbhC->selectall_arrayref("SELECT * FROM CuratedPFam WHERE curatedIds == ?",
+                                           { Slice => {} }, $curatedIds);
+  if (@$pfamHits > 0) {
+    my @rows = sort { $a->{seqFrom} <=> $b->{seqFrom} } @$pfamHits;
     my @pfams = ();
     foreach my $row (@rows) {
       my $pfam = $row->{hmmAcc}; $pfam =~ s/[.]\d+$//;
@@ -834,174 +741,181 @@ sub CompoundInfoToHtml($$$) {
       my $cov = ($row->{hmmTo} - $row->{hmmFrom} + 1) / $row->{hmmLen};
       my $covPercent = int(0.5 + 100 * $cov);
       push @pfams, a({ -href => "http://pfam.xfam.org/family/${pfam}#pfamContent",
-                       -title => "amino acids $row->{seqFrom}:$row->{seqTo} (${covPercent}% coverage of $row->{hmmAcc}, E = $row->{bits})" },
+                       -title => "amino acids $row->{seqFrom}:$row->{seqTo} (${covPercent}% coverage of $row->{hmmAcc}, $row->{bits} bits)" },
                      $row->{hmmName});
     }
     push @pieces, small("PFams:", join(", ", @pfams));
   }
+  my $hetComment = "";
+  $hetComment = a({ -title => GetHetero($dbhC, $curatedIds) }, b("Heteromeric")) . ", "
+    if defined GetHetero($dbhC, $curatedIds);
   return join("<BR>", @pieces,
-                small($len, "amino acids: ", join(", ", @links)));
+                small($hetComment . $len, "amino acids: ",
+                      join(", ", @links)));
 }
 
-sub IsHetero($) {
-  my ($ids) = @_;
-  my @ids = split /,/, $ids;
-  foreach my $id (@ids) {
-    return 1 if exists $hetComment{$id};
+my %heteroCache;
+
+# Returns undef if not heteromeric; otherwise returns the comment (but it is usually empty)
+sub GetHetero($$) {
+  my ($dbhC, $curatedIds) = @_;
+  unless (exists $heteroCache{$curatedIds}) {
+    my $row = $dbhC->selectrow_arrayref("SELECT comment FROM Hetero WHERE curatedIds = ?",
+                                        {}, $curatedIds);
+    $heteroCache{$curatedIds} = defined $row ? $row->[0] : undef;
   }
-  return 0;
+  return $heteroCache{$curatedIds};
 }
 
-sub TransporterMatch($$$) {
-  my ($dbh, $staticDir, $compoundSpec) = @_;
+sub TransporterMatch($$) {
+  my ($dbhC, $compoundSpec) = @_;
   my @compoundList = split /:/, $compoundSpec;
   my %compoundList = map { $_ => 1, lc($_) => 1 } @compoundList;
 
-  # metacyc files linking reactions to compounds and to protein(s)
-  my $reactionCompoundsFile = "$staticDir/metacyc.reaction_compounds";
-  my $reactionProteinsFile = "$staticDir/metacyc.reaction_links";
-
-  my %rxnCompounds = (); # rxnId => compounds with side, coefficient, compartment, compoundId, and compoundName
-  my %rxnLocation = ();
-  open(my $fhc, "<", $reactionCompoundsFile) || die "Cannot read $reactionCompoundsFile";
-  while (my $line = <$fhc>) {
-    chomp $line;
-    my @F = split /\t/, $line;
-    my $rxnId = shift @F;
-    my $rxnLoc = shift @F;
-    $rxnLocation{$rxnId} = $rxnLoc;
-    my @cmp = ();
-    foreach my $f (@F) {
-      my @pieces = split /:/, $f;
-      my $side = shift @pieces;
-      my $coefficient = shift @pieces;
-      my $compartment = shift @pieces;
-      my $compoundId = shift @pieces;
-      my $compoundName = join(":", @pieces) || "";
-      push @cmp, { 'side' => $side, 'coefficient' => $coefficient,
-                   'compartment' => $compartment,
-                   'compoundId' => $compoundId, 'compoundName' => $compoundName };
+  # Find MetaCyc reactions that match the compound (as id or as compound name)
+  # and have the compound in two different compartments.
+  # (Punt on PTS.)
+  my %metacycSaved = ();
+  foreach my $compound (@compoundList) {
+    my $cmpRxns = $dbhC->selectall_arrayref("SELECT * FROM CompoundInReaction WHERE cmpId = ? OR cmpDesc LIKE ?",
+                                         { Slice => {} }, $compound, $compound);
+    my %rxnAt = (); # rxnId => compartment => 1 for this compound
+    foreach my $row (@$cmpRxns) {
+      $rxnAt{ $row->{rxnId} }{ $row->{compartment} } = 1;
     }
-    $rxnCompounds{$rxnId} = \@cmp;
-  }
-  close($fhc) || die "Error reading $reactionCompoundsFile";
-
-  my %rxnProt = (); # rxnId => list of subunits of the form metacyc::id
-  my %rxnName = ();
-  open (my $fhp, "<", $reactionProteinsFile) || die "Cannot read $reactionProteinsFile";
-  while (my $line = <$fhp>) {
-    chomp $line;
-    my @F = split /\t/, $line;
-    my $rxnId = shift @F;
-    my $rxnName = shift @F;
-    push @{ $rxnProt{$rxnId} }, @F;
-    $rxnName{$rxnId} = $rxnName;
-  }
-  close($fhp) || die "Error reading $reactionProteinsFile";
-
-  my @out = (); # list of rows from CuratedGene
-  my %metacycSaved = (); # protId => 1 for entries already in @out
-
-  # Find the MetaCyc reactions that match the compound, either as compoundId or compoundName,
-  # and determine if they are transport reactions, that is, the compound appears
-  # with two different locations.
-  # (For now ignore PTS)
-  foreach my $rxnId (keys %rxnCompounds) {
-    my $cmps = $rxnCompounds{$rxnId};
-    my @cmpMatch = grep { exists $compoundList{$_->{compoundId}}
-                            || exists $compoundList{$_->{compoundName}}
-                              || exists $compoundList{lc($_->{compoundName})} } @$cmps;
-    my %compartments = map { $_->{compartment} => 1 } @cmpMatch;
-    my @compartments = grep { $_ ne "" } (keys %compartments);
-    my %compartmentsAll = map { $_->{compartment} => 1 } @$cmps;
-    my @compartmentsAll = grep { $_ ne "" } (keys %compartmentsAll);
-    # The same compound on both sides, or, this compound on one side and something else on the other
-    my $use = (@cmpMatch > 1 && @compartments > 1)
-      || (@cmpMatch > 0 && @compartments > 0 && @compartmentsAll > 1);
-    if ($use) {
-      # Compound of interest in more than one compartment
-      # So find all the proteins for this reaction
-      my $protids = $rxnProt{$rxnId};
-      foreach my $protid (@$protids) {
-        my $id = $protid; $id =~ s/^metacyc:://;
-        next if exists $metacycSaved{$id};
-        $metacycSaved{$id} = 1;
-        my $chit = $dbh->selectrow_hashref(qq{ SELECT * FROM CuratedGene WHERE db="metacyc" AND protId=? },
-                                           {}, $id);
-        if (defined $chit) {
-          push @out, $chit;
-        } else {
-          print p("Skipped unknown metacyc id $id");
-        }
+    while (my ($rxnId, $compartments) = each %rxnAt) {
+      next unless keys(%$compartments) > 1;
+      my $curatedIdsList = $dbhC->selectcol_arrayref("SELECT * from EnzymeForReaction WHERE rxnId = ?",
+                                                    {}, $rxnId);
+      foreach my $curatedIds (@$curatedIdsList) {
+        $metacycSaved{$curatedIds} = 1;
       }
     }
   }
 
-  my $tcdbs = $dbh->selectall_arrayref("SELECT * FROM CuratedGene WHERE db = 'TCDB';",
+  # Find entries in TCDB
+  my %tcdbSaved = ();
+  my $tcdbs = $dbhC->selectall_arrayref("SELECT * FROM TransporterSubstrate",
                                        { Slice => {} });
   foreach my $tcdb (@$tcdbs) {
-    my @comments = split /_:::_/, $tcdb->{comment};
-    my $keep = 0;
-    foreach my $comment (@comments) {
-      if ($comment =~ m/^SUBSTRATES: (.*)$/) {
-        my @substrates = split /, /, $1;
-        foreach my $substrate (@substrates) {
-          $keep = 1 if exists $compoundList{lc($substrate)};
-        }
-      }
+    my @substrates = split /, /, $tcdb->{substrate};
+    foreach my $substrate (@substrates) {
+      $tcdbSaved{$tcdb->{curatedIds}} = 1
+        if exists $compoundList{lc($substrate)};
     }
-    push @out, $tcdb if $keep;
   }
 
   # Search the description for words transport, transporter, exporter, porter, permease, import
-  my $chits = $dbh->selectall_arrayref(
-    qq{SELECT * FROM CuratedGene WHERE db IN ("SwissProt","CharProtDB","BRENDA","reanno","ecocyc")
-       AND (desc LIKE "%transport%"
-            OR desc LIKE "%porter%"
-            OR desc LIKE "%import%"
-            OR desc LIKE "%permease%"
-            OR desc like "%PTS system%")},
+  my @out = ();
+  my $chits = $dbhC->selectall_arrayref(
+    qq{SELECT * FROM CuratedInfo WHERE
+            descs LIKE "%transport%"
+            OR descs LIKE "%porter%"
+            OR descs LIKE "%import%"
+            OR descs LIKE "%permease%"
+            OR descs like "%PTS system%";},
     { Slice => {} });
   foreach my $chit (@$chits) {
-    my $desc = $chit->{desc};
+    my @curatedIds = split /,/, $chit->{curatedIds};
+    my @descs = split /;; /, $chit->{descs};
     my $keep = 0;
-    foreach my $cmp (@compoundList) {
-      my $pattern = quotemeta($cmp);
-      # doing a word-based check this is tricky because substrates may be separated by "/", without spaces
-      # or may appear as "glucose-binding"
-      # or because another term like "6-phosphate" could be present as the next word.
-      # That last issue is not handled.
-      # Allow : because of cases like gluconate:H+ symporter
-      my $b = "[,/ :]"; # pattern for word boundary
-      if ($desc =~ m!^$pattern$b!i # at beginning
-          || $desc =~ m!$b$pattern$b!i # in middle
-          || $desc =~ m!$b$pattern$!i # at end
-          || $desc =~ m!^$pattern-(binding|specific)!i # at beginning
-          || $desc =~ m!$b$pattern-(binding|specific)!i) { # in middle
-        $keep = 1;
+    foreach my $i (0..(scalar(@curatedIds) - 1)) {
+      my $curatedId = $curatedIds[$i];
+      my $db = $curatedId; $db =~ s/:.*//;
+      # TCDB and MetaCyc were handled above
+      next unless $db eq "SwissProt" || $db eq "CharProtDB" || $db eq "BRENDA"
+        || $db eq "reanno" || $db eq "ecocyc";
+      my $desc = $descs[$i];
+      next unless $desc =~ m/transport/i
+        || $desc =~ m/porter/i
+          || $desc =~ m/import/i
+            || $desc =~ m/permease/i
+              || $desc =~ m/PTS system/i;
+      foreach my $cmp (@compoundList) {
+        my $pattern = quotemeta($cmp);
+        # doing a word-based check this is tricky because substrates may be separated by "/", without spaces
+        # or may appear as "glucose-binding"
+        # or because another term like "6-phosphate" could be present as the next word.
+        # That last issue is not handled.
+        # Allow : because of cases like gluconate:H+ symporter
+        my $b = "[,/ :]"; # pattern for word boundary
+        if ($desc =~ m!^$pattern$b!i # at beginning
+            || $desc =~ m!$b$pattern$b!i # in middle
+            || $desc =~ m!$b$pattern$!i # at end
+            || $desc =~ m!^$pattern-(binding|specific)!i # at beginning
+            || $desc =~ m!$b$pattern-(binding|specific)!i) { # in middle
+          $keep = 1;
+        }
       }
     }
     push @out, $chit if $keep;
   }
 
+  # Add items not already found via curated descriptions
+  my %curatedIds = map { $_->{curatedIds} => 1 } @out;
+  my @add = keys %metacycSaved;
+  push @add, keys %tcdbSaved;
+  foreach my $curatedIds (sort @add) {
+    if (!exists $curatedIds{$curatedIds}) {
+      my $row = $dbhC->selectrow_hashref("SELECT * from CuratedInfo WHERE curatedIds = ?",
+                                         { Slice => {} }, $curatedIds);
+      push @out, $row if defined $row;
+      $curatedIds{$curatedIds} = 1;
+    }
+  }
   return \@out;
 }
 
 my $nSeqShow = 0;
 sub TSVPrint($$$) {
-  my ($cluster, $id, $info) = @_;
+  my ($cluster, $ids, $info) = @_;
   $nSeqShow++;
-  my @ids = split /,/, $id;
+  my @ids = split /,/, $ids;
   die unless @ids > 0;
   my @descs = split /;; /, $info->{descs};
   my @orgs = split /;; /, $info->{orgs} if defined $info->{orgs};
   my @id2s = split /;; /, $info->{id2s} if defined $info->{id2s};
   # fields Sequence Cluster id id2 desc organism
 
+  my $het = GetHetero($dbhC, $ids);
+  $het = "heteromer" if defined $het && $het eq "";
   foreach my $i (0..(scalar(@ids)-1)) {
     print join("\t", $nSeqShow, $cluster,
-               $ids[$i], $id2s[$i] || "", $descs[$i], $orgs[$i],
-               exists $hetComment{$ids[$i]} ? $hetComment{$ids[$i]} || "heteromer" : "")."\n";
+               $ids[$i], $id2s[$i] || "", $descs[$i], $orgs[$i], $het)."\n";
   }
 }
 
+sub FormatClose($$$$$) {
+  my ($dbhC, $close, $queryInfos, $seqs, $color) = @_;
+  my $subject = $close->{subject};
+  my $query = $close->{query};
+  my $subjectInfo = $dbhC->selectrow_hashref("SELECT * FROM CuratedInfo WHERE curatedIds = ?",
+                                             {}, $subject);
+  die "Unknown close hit $subject" unless defined $subjectInfo;
+  my ($subjectSeq) = $dbhC->selectrow_array("SELECT seq FROM CuratedSeq WHERE curatedIds = ?",
+                                           {}, $subject);
+  die "Unknown close hit $subject" unless defined $subjectSeq;
+  my $queryInfo = $queryInfos->{$query} || die;
+
+  my $idString = int($close->{identity})."%";
+  my $covString =   "Amino acids $close->{sbeg}:$close->{send}/$subjectInfo->{seqLength}"
+    . " are $idString identical to $close->{qbeg}:$close->{qend}/$queryInfo->{seqLength}"
+    . " of the $step protein";
+
+  my $subjectShort = $subject; $subjectShort =~ s/,.*//;
+  return p({ -style => "margin-bottom: 0em; color: $color" },
+          CuratedToHtml($subjectInfo, $subjectSeq)
+          . ", " . small($subjectShort),
+          br(),
+          a({-title => $covString}, "$idString identical to")),
+            p({-style => "margin-left: 5em; margin-top: 0em; font-size: 90%; color: $color"},
+              CuratedToHtml($queryInfo, $seqs->{$query})),
+           "\n";
+}
+
+sub HeteroToText($) {
+  my ($het) = @_;
+  return "" unless defined $het;
+  $het = "heteromeric" if $het eq "";
+  return " " . $het;
+}
