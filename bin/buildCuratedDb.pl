@@ -112,12 +112,17 @@ SqliteImport($tmpDbFile, "Curated2", \@curated2);
 # several times (from different databases)
 my @heteroIn = ReadTable($heteroFile, ["db","protId","comment"]);
 my %hetero = (); # curatedIds to list of comments
+my $nUnknownHetero = 0;
 foreach my $row (@heteroIn) {
   my $id = $row->{db} . "::" . $row->{protId};
-  die "Entry for unknown protein $id in $heteroFile\n"
-    unless exists $idToIds{$id};
-  push @{ $hetero{$idToIds{$id}} }, $row->{comment};
+  if (exists $idToIds{$id}) {
+    push @{ $hetero{$idToIds{$id}} }, $row->{comment};
+  } else {
+    $nUnknownHetero++;
+  }
 }
+print STDERR "Warning: skipped $nUnknownHetero entries from $heteroFile with unknown protein ids\n"
+  if $nUnknownHetero > 0;
 my @hetero = (); # curatedIds to comment
 foreach my $curatedIds (sort keys %hetero) {
   # Most comments are empty (they just show that protein is part of a complex)
