@@ -368,6 +368,13 @@ sub FindCuratedMatching($$) {
   my ($dbhC, $query) = @_;
   die "Searching for empty term"
     unless defined $query && $query ne "";
+  if ($query =~ m/^[0-9][.][0-9-]+[.][0-9-]+[.][A-Za-z]?[0-9-]*$/) {
+    return $dbhC->selectall_arrayref(qq{ SELECT * from ECToCurated
+                                         JOIN CuratedInfo USING (curatedIds)
+                                         WHERE ec = ? },
+                                     { Slice => {} }, $query);
+  }
+  # else
   my $rows = $dbhC->selectall_arrayref("SELECT * from CuratedInfo WHERE descs LIKE ?",
                                        { Slice => {} }, "%" . $query . "%");
   return CuratedWordMatch($rows, $query, "descs");
@@ -377,6 +384,13 @@ sub FindCurated2Matching($$) {
   my ($dbhC, $query) = @_;
   die "Searching for empty term"
     unless defined $query && $query ne "";
+  if ($query =~ m/^[0-9][.][0-9-]+[.][0-9-]+[.][A-Za-z]?[0-9-]*$/) {
+    return $dbhC->selectall_arrayref(qq{ SELECT * from ECToCurated2
+                                         JOIN Curated2 USING (protId)
+                                         WHERE ec = ? },
+                                     { Slice => {} }, $query);
+  }
+  #else
   my $rows = $dbhC->selectall_arrayref("SELECT * from Curated2 WHERE desc LIKE ?",
                                        { Slice => {} }, "%" . $query . "%");
   return CuratedWordMatch($rows, $query, "desc");
