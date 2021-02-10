@@ -16,6 +16,14 @@ CREATE TABLE CuratedInfo(
   orgs TEXT NOT NULL /* empty string if missing */
 );
 
+/* Make it possible to go from an individual curated id to the combination curatedIds.
+   Trivial cases (with curatedId = curatedIds) are included
+*/
+CREATE TABLE CuratedIdToIds(
+  curatedId TEXT PRIMARY KEY,
+  curatedIds TEXT NOT NULL
+);
+
 CREATE TABLE CuratedSeq(
   curatedIds TEXT PRIMARY KEY,
   seq TEXT NOT NULL

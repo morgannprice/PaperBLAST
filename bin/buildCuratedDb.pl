@@ -73,10 +73,12 @@ my @info = ReadTable($curatedInfoFile, ["ids", "length", "descs"]);
 # some other inputs have just 1 id, instead of the full ids, so build
 # the mapping
 my %idToIds = ();
+my @idToIds = ();
 foreach my $info (@info) {
   my $curatedIds = $info->{ids};
   foreach my $id (split /,/, $curatedIds) {
     $idToIds{$id} = $curatedIds;
+    push @idToIds, [ $id, $curatedIds ];
   }
 }
 my @curatedInfo = map { $_->{descs} =~ s/\r */ /g;
@@ -85,6 +87,7 @@ my @curatedInfo = map { $_->{descs} =~ s/\r */ /g;
                       } @info;
 SqliteImport($tmpDbFile, "CuratedInfo", \@curatedInfo);
 print STDERR "Loaded CuratedInfo\n";
+SqliteImport($tmpDbFile, "CuratedIdToIds", \@idToIds);
 
 my @curatedSeq = ();
 open(my $fhFaa, "<", $curatedFile) || die "Cannot read $curatedFile\n";
