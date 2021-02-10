@@ -72,17 +72,20 @@ Optional arguments:
   default, it looks for this in dir/curated.faa
 -curatedDb curated.db -- the file of characterized
   sequences. By default, it looks for this in dir/curated.db
+-uniprot uniprot.tsv -- tab-delimited file with cache of uniprot
+  sequences. By default, it looks for this in dir/curated.db
 -debug
 END
 ;
 
-  my ($stepsFile, $outDir, $hmmDir, $curatedFaa, $curatedDb);
+  my ($stepsFile, $outDir, $hmmDir, $curatedFaa, $curatedDb, $uniprotFile);
   die $usage
     unless GetOptions('steps=s' => \$stepsFile,
                       'outdir=s' => \$outDir,
                       'hmmdir=s' => \$hmmDir,
                       'curated=s' => \$curatedFaa,
                       'curatedDb=s' => \$curatedDb,
+                      'uniprot=s' => \$uniprotFile,
                       'debug' => \$debug)
       && defined $stepsFile && defined $outDir && defined $hmmDir;
   foreach my $dir ($outDir,$hmmDir) {
@@ -90,6 +93,8 @@ END
   }
   $curatedFaa = "$outDir/curated.faa" unless defined $curatedFaa;
   $curatedDb = "$outDir/curated.db" unless defined $curatedDb;
+  $uniprotFile = "$outDir/uniprot.tsv" unless defined $uniprotFile;
+
   @hmmIn = map "$hmmDir/$_", @hmmIn;
   foreach my $file ($stepsFile, @hmmIn, $curatedFaa, $curatedDb) {
     die "No such file: $file\n" unless -e $file;
@@ -121,6 +126,13 @@ END
   }
 
   my $dbhC = DBI->connect("dbi:SQLite:dbname=$curatedDb","","",{ RaiseError => 1 }) || die $DBI::errstr;
+  my @uniprot;
+  if (-e $uniprotFile) {
+    print STDERR "Reading uniprot cache from $uniprotFile (remove it if broken)\n"
+      if $debug;
+    @uniprot = ReadTable($uniprotFile, ["uniprotId", "desc", "seq"])
+  }
+  my %uniprot = map { $_->{uniprotId} => $_ } @uniprot;
 
   # Check that each step or rule is used as a dependency, except for the rule named all
   my %dep = ();
@@ -229,18 +241,26 @@ END
     }
   }
 
-  # Collect descriptions and sequences of uniprot ids
-  my %uniprotSeq = ();
-  my %uniprotDesc = ();
+  # Collect descriptions and sequences of uniprot ids not already known
   while (my ($step, $uniprotHash) = each %stepUniprot) {
     foreach my $uniprotId (keys %$uniprotHash) {
-      next if exists $uniprotSeq{$uniprotId};
+      next if exists $uniprot{$uniprotId};
       my ($seq, $desc) = FetchUniProtSequence($uniprotId);
       die "Cannot fetch uniprot sequence for identifier $uniprotId, is it invalid?\n" unless $seq;
-      $uniprotSeq{$uniprotId} = $seq;
-      $uniprotDesc{$uniprotId} = $desc;
+      $uniprot{$uniprotId} = { 'uniprotId' => $uniprotId,
+                               'desc' => $desc,
+                               'seq' => $seq };
     }
   }
+
+  # Rewrite the uniprot cache
+  open (my $fhCache, ">", $uniprotFile)
+    || die "Cannot write to $uniprotFile\n";
+  print $fhCache join("\t", qw{uniprotId desc seq})."\n";
+  foreach my $uniprotId (sort keys %uniprot) {
+    print $fhCache join("\t", $uniprotId, $uniprot{$uniprotId}{desc}, $uniprot{$uniprotId}{seq})."\n";
+  }
+  close($fhCache) || die "Error writing $uniprotFile";
 
   # Collect metadata about HMMs and fetch them
   my %hmmInfo = (); # hmmId => hash of file, desc
@@ -312,10 +332,10 @@ END
       print $fhO join("\t", $step, "hmm", $hmmId, $hmmInfo{$hmmId}{desc}, $hmmInfo{$hmmId}{file}, "")."\n";
     }
     foreach my $uniprotId (sort keys %{ $stepUniprot{$step} }) {
-      die unless exists $uniprotSeq{$uniprotId} && exists $uniprotDesc{$uniprotId};
+      die unless exists $uniprot{$uniprotId};
       print $fhO join("\t", $step, "uniprot",
-                      $uniprotId, $uniprotDesc{$uniprotId},
-                      "", $uniprotSeq{$uniprotId})."\n";
+                      $uniprotId, $uniprot{$uniprotId}{desc},
+                      "", $uniprot{$uniprotId}{seq})."\n";
     }
     foreach my $id (sort keys %{ $stepCurated{$step} }) {
       next if exists $stepIgnore{$step}{$id};
