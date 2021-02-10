@@ -6,7 +6,7 @@ use Getopt::Long;
 use FindBin qw{$RealBin};
 use lib "$RealBin/../lib";
 use pbutils qw{ReadFastaEntry ReadTable SqliteImport};
-sub DoSqliteCmd($$);
+sub DescToEc($);
 
 my $staticDir = "$RealBin/../static";
 my $usage = <<END
@@ -228,9 +228,71 @@ print STDERR "Skipped $nSkipTCDB unknown identifiers in $tcdbFile\n"
   if $nSkipTCDB > 0;
 SqliteImport($tmpDbFile, "TransporterSubstrate", \@transporterSubstrate);
 
+# EC numbers for each curated item
+my %ecCurated = (); # ec => curatedIds => 1
+foreach my $info (@info) {
+  my @descs = split /;; /, $info->{descs};
+  foreach my $desc (@descs) {
+    foreach my $ec (DescToEc($desc)) {
+      $ecCurated{$ec}{ $info->{ids} } = 1;
+    }
+  }
+}
+my @ecCurated = ();
+foreach my $ec (sort keys %ecCurated) {
+  my @curatedIds = sort keys %{ $ecCurated{$ec} };
+  foreach my $curatedIds (@curatedIds) {
+    push @ecCurated, [ $ec, $curatedIds ];
+  }
+}
+SqliteImport($tmpDbFile, "ECToCurated", \@ecCurated);
+
+my %ecCurated2 = (); # ec => protId => 1
+foreach my $row (@curated2) {
+  my ($protId, $desc, $seq) = @$row;
+  foreach my $ec (DescToEc($desc)) {
+    $ecCurated2{$ec}{$protId} = 1;
+  }
+}
+my @ecCurated2 = ();
+foreach my $ec (sort keys %ecCurated2) {
+  my @protIds = sort keys %{ $ecCurated2{$ec} };
+  foreach my $protId (@protIds) {
+    push @ecCurated2, [ $ec, $protId ];
+  }
+}
+SqliteImport($tmpDbFile, "ECToCurated2", \@ecCurated2);
+
 system("cp $tmpDbFile $dbFile") == 0 || die "Copying $tmpDbFile to $dbFile failed: $!";
 unlink($tmpDbFile);
 print STDERR "Built curated database $dbFile\n";
+
+# Does not guarantee that results are unique
+# Finds EC numbers of the form EC 1.1.1.1 or EC:1.1.1.1, delimited with
+# spaces, commas, semicolons, spaces, or brackets i.e. " EC 1.1.1.1,"
+# It also allows identifiers like this 3.2.1.20|3.2.1.28 (appears in CAZy)
+
+sub DescToEc($) {
+  my ($desc) = @_;
+  my @ecSeen = ();
+  my @words = split /[ |]/, $desc;
+  foreach my $word (@words) {
+    # Removing leading ( or [
+    $word =~ s/^[\(\[]//;
+    # Remove leading EC: (the space case does not arise)
+    $word =~ s/^EC://i;
+    # Remove trailing , ; ) ]
+    $word =~ s/[,;\)\]]+$//;
+    # allow non-specific identifiers like 1.1.1.-
+    # allow BRENDA identifiers like 3.2.1.B4, sucrose-6-phosphate hydrolase
+    # or metacyc identifiers like 4.4.1.m
+    push @ecSeen, $word
+      if $word =~ m/^\d+[.][0-9-]+[.][0-9-]+[.][0-9-]+$/
+        || $word =~ m/^\d+[.][0-9]+[.][0-9]+[.][A-Z][0-9]+$/
+        || $word =~ m/^d+[.]\d+[.]\d+[.][a-z]$/;
+  }
+  return @ecSeen;
+}
 
 
 

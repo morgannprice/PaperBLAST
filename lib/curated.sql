@@ -46,7 +46,7 @@ CREATE INDEX 'PFamByIds' on CuratedPFam ('curatedIds');
 CREATE INDEX 'CuratedByPFam' on CuratedPFam ('hmmAcc');
 
 CREATE TABLE Curated2(
-  protId TEXT PRIMARY KEY,
+  protId TEXT PRIMARY KEY, /* SwissProt identifier */
   desc TEXT NOT NULL,
   seq TEXT NOT NULL
 );
@@ -82,3 +82,17 @@ CREATE TABLE TransporterSubstrate(
   curatedIds TEXT NOT NULL,
   substrate TEXT NOT NULL
 );
+
+/* EC numbers to id in the Curated or Curated2 tables */
+CREATE TABLE ECToCurated(
+  ec TEXT NOT NULL,
+  curatedIds TEXT NOT NULL,
+  PRIMARY KEY (ec, curatedIds)
+);
+
+CREATE TABLE ECToCurated2(
+  ec TEXT NOT NULL,
+  protId TEXT NOT NULL,
+  PRIMARY KEY (ec, protId)
+);
+
