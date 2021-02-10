@@ -10,10 +10,17 @@ use lib "$Bin/../lib";
 use Steps qw{ReadSteps FetchUniProtSequence};
 use pbutils qw{ReadTable ReadFastaEntry CuratedWordMatch};
 
-# This uses the pre-loaded rows, not a database handle like pbutils::CuratedMatch
-# The arguments are a reference to the curated rows (containing desc and ids) and a reference to a list of ids
-# Returns a reference to a list of rows
-sub WordMatchRows($$);
+# The arguments are a handle to the curated database, and the query term
+# They perform word-based matching.
+# They return a reference to a list of rows (hashes), either from CuratedInfo or Curated2
+sub FindCuratedMatching($$);
+sub FindCurated2Matching($$);
+
+# database handle and curatedId to curatedIds, or undef if unknown
+sub CuratedIdToIds($$);
+
+# database handle and curatedIds to a row from CuratedInfo, or undef if unkown
+sub CuratedIdsToInfo($$);
 
 my $debug;
 
@@ -61,31 +68,30 @@ The hmm directory must contain these files:
 @hmmIn
 
 Optional arguments:
--curated curated.faa -- the file of characterized
-  sequences. curated.faa.info must also exist. By default, it looks
-  for this in dir/curated.faa
--curated2 curated2.faa -- the file of curated sequences. By default,
-  it looks for this in dir/curated.faa
+-curated curated.faa -- the file of characterized sequences. By
+  default, it looks for this in dir/curated.faa
+-curatedDb curated.db -- the file of characterized
+  sequences. By default, it looks for this in dir/curated.db
 -debug
 END
 ;
 
-  my ($stepsFile, $outDir, $hmmDir, $curatedFaa, $curated2Faa);
+  my ($stepsFile, $outDir, $hmmDir, $curatedFaa, $curatedDb);
   die $usage
     unless GetOptions('steps=s' => \$stepsFile,
                       'outdir=s' => \$outDir,
                       'hmmdir=s' => \$hmmDir,
                       'curated=s' => \$curatedFaa,
-                      'curated2=s' => \$curated2Faa,
+                      'curatedDb=s' => \$curatedDb,
                       'debug' => \$debug)
       && defined $stepsFile && defined $outDir && defined $hmmDir;
   foreach my $dir ($outDir,$hmmDir) {
     die "No such directory: $dir\n" unless -d $dir;
   }
   $curatedFaa = "$outDir/curated.faa" unless defined $curatedFaa;
-  $curated2Faa = "$outDir/curated2.faa" unless defined $curated2Faa;
+  $curatedDb = "$outDir/curated.db" unless defined $curatedDb;
   @hmmIn = map "$hmmDir/$_", @hmmIn;
-  foreach my $file ($stepsFile, @hmmIn, $curatedFaa, "$curatedFaa.info", $curated2Faa) {
+  foreach my $file ($stepsFile, @hmmIn, $curatedFaa, $curatedDb) {
     die "No such file: $file\n" unless -e $file;
   }
   my $hmmfetch = "$Bin/hmmfetch";
@@ -114,36 +120,7 @@ END
     $pfToAcc{$pf} = $acc;
   }
 
-  my @curatedInfo = ReadTable("$curatedFaa.info", ["ids","length","descs"]);
-  my %curatedInfo = map { $_->{ids} => $_ } @curatedInfo;
-  # And add individual ids
-  foreach my $row (@curatedInfo) {
-    my $ids = $row->{ids};
-    my @ids = split /,/, $ids;
-    if (@ids > 1) {
-      foreach my $id (@ids) {
-        $curatedInfo{$id} = $row;
-      }
-    }
-  }
-
-  # Load curated2. For each item, store ids, length, descs, seq
-  open(my $fh2, "<", $curated2Faa) || die "Cannot read $curated2Faa\n";
-  my $state2 = {};
-  my @curated2 = ();
-  while (my ($header,$seq) = ReadFastaEntry($fh2, $state2)) {
-    my @words = split / /, $header;
-    my $id = shift @words;
-    die unless defined $id && $id ne "";
-    push @curated2, { 'ids' => $id,
-                      'length' => length($seq),
-                      'descs' => join(" ", @words),
-                      'seq' => $seq };
-  }
-  close($fh2) || die "Error reading $curated2Faa\n";
-  my %curated2 = map { $_->{ids} => $_ } @curated2;
-  die "Duplicate identifiers in $curated2Faa\n"
-    unless scalar(keys %curated2) == scalar(@curated2);
+  my $dbhC = DBI->connect("dbi:SQLite:dbname=$curatedDb","","",{ RaiseError => 1 }) || die $DBI::errstr;
 
   # Check that each step or rule is used as a dependency, except for the rule named all
   my %dep = ();
@@ -163,15 +140,13 @@ END
       unless exists $dep{$rule} || $rule eq "all";
   }
 
-
   my %stepHmm = (); # step => hmm => 1
   # Ignore HMMs that might be matched by EC terms
   my %stepIgnoreHmm = (); # step => hmm => 1
-  # (@curatedInfo calls them "ids" and they are often comma delimited but here they are treated as a single id)
-  my %stepCurated = (); # step => curated id => 1
-  my %stepCurated2 = (); # step => curated2 id => 1
+  my %stepCurated = (); # step => curated id => info
+  my %stepCurated2 = (); # step => curated2 id => info
   my %stepUniprot = (); # step => uniprot => 1
-  my %stepIgnore = (); # step => curated id => 1
+  my %stepIgnore = (); # step => curated id => info
 
   foreach my $step (sort keys %$steps) {
     my $desc = $steps->{$step}{desc};
@@ -180,15 +155,15 @@ END
       my ($type, $value) = @$row;
 
       if ($type eq "EC" || $type eq "term") {
-        my $curated = WordMatchRows(\@curatedInfo, $value);
+        my $curated = FindCuratedMatching($dbhC, $value);
         print STDERR "Warning: $step\t$desc: no curated hits for $value\n"
           unless @$curated;
         foreach my $row (@$curated) {
-          $stepCurated{$step}{$row->{ids}} = 1;
+          $stepCurated{$step}{$row->{curatedIds}} = $row;
         }
-        my $curated2 = WordMatchRows(\@curated2, $value);
+        my $curated2 = FindCurated2Matching($dbhC, $value);
         foreach my $row (@$curated2) {
-          $stepCurated2{$step}{$row->{ids}} = 1;
+          $stepCurated2{$step}{$row->{protId}} = $row;
         }
         print STDERR "Warning: $step\t$desc: no curated hits or TIGRFam for EC:$value\n"
           if $type eq "EC" && @$curated == 0 && !exists $ecTIGR{$value};
@@ -203,10 +178,10 @@ END
       } elsif ($type eq "term") {
         ;
       } elsif ($type eq "curated") {
-        my $ids = $curatedInfo{$value}{ids}
-          || die "No curated id matches $value\n";
-        # Use the standard combined identifier
-        $stepCurated{$step}{$ids} = 1;
+        my $curatedIds = CuratedIdToIds($dbhC, $value);
+        die "Unknown curated id $value" unless defined $curatedIds;
+        my $info = CuratedIdsToInfo($dbhC, $curatedIds);
+        $stepCurated{$step}{$curatedIds} = $info;
       } elsif ($type eq "hmm") {
         $stepHmm{$step}{$value} = 1;
       } elsif ($type eq "uniprot") {
@@ -214,19 +189,21 @@ END
           unless $value =~ m/^[0-9A-Z_]+$/;
         $stepUniprot{$step}{$value} = 1;
       } elsif ($type eq "ignore") {
-        if (!exists $curatedInfo{$value}) {
+        my $curatedIds = CuratedIdToIds($dbhC, $value);
+        if (!defined $curatedIds) {
           print STDERR "Warning: No curated id matches the ignore $value for step $step\n";
         } else {
-          my $ids = $curatedInfo{$value}{ids};
-          $stepIgnore{$step}{$ids} = 1;
+          my $info = CuratedIdsToInfo($dbhC, $curatedIds);
+          $stepIgnore{$step}{$curatedIds} = $info;
         }
       } elsif ($type eq "ignore_other") {
         # ignore curated items that match the term unless they have already matched
-        my $list = WordMatchRows(\@curatedInfo, $value);
+        my $list = FindCuratedMatching($dbhC, $value);
         print STDERR "Warning: no curated hits for $value (used in ignore_other for $step)\n"
           unless @$list > 0;
         foreach my $row (@$list) {
-          $stepIgnore{$step}{$row->{ids}} = 1 unless exists $stepCurated{$step}{$row->{ids}};
+          $stepIgnore{$step}{$row->{curatedIds}} = $row
+            unless exists $stepCurated{$step}{$row->{curatedIds}};
         }
       } elsif ($type eq "ignore_hmm") {
         $stepIgnoreHmm{$step}{$value} = 1;
@@ -313,16 +290,13 @@ END
       }
     }
   }
+
   my %curatedSeq = (); # curated id to sequence for relevant items
-  open (my $fhFaa, "<", $curatedFaa) || die "Cannot read $curatedFaa";
-  my $state = {};
-  while (my ($header, $sequence) = ReadFastaEntry($fhFaa, $state)) {
-    my $id = $header; $id =~ s/ .*//;
-    next unless exists $curatedFetch{$id};
-    die "Duplicate sequence for $id in $curatedFaa" if exists $curatedSeq{$id};
-    die "Non-matching lengths for $id -- $curatedFaa vs. $curatedFaa.info"
-      unless length($sequence) == $curatedInfo{$id}{length};
-    $curatedSeq{$id} = $sequence;
+  foreach my $curatedIds (keys %curatedFetch) {
+    my ($seq) = $dbhC->selectrow_array("SELECT seq FROM CuratedSeq WHERE curatedIds = ?",
+                                      {}, $curatedIds);
+    die "No sequence for $curatedIds" unless defined $seq && $seq ne "";
+    $curatedSeq{$curatedIds} = $seq;
   }
 
   my $outFile = $stepsFile;
@@ -345,32 +319,54 @@ END
     }
     foreach my $id (sort keys %{ $stepCurated{$step} }) {
       next if exists $stepIgnore{$step}{$id};
-      die unless exists $curatedInfo{$id} && exists $curatedSeq{$id};
+      my $info = $stepCurated{$step}{$id};
+      die unless exists $curatedSeq{$id};
       print $fhO join("\t", $step, "curated",
-                      $id, $curatedInfo{$id}{descs}, "", $curatedSeq{$id})."\n";
+                      $id, $info->{descs}, "", $curatedSeq{$id})."\n";
     }
     foreach my $id (sort keys %{ $stepCurated2{$step} }) {
-      die unless exists $curated2{$id};
+      my $info = $stepCurated2{$step}{$id};
       print $fhO join("\t", $step, "curated2",
-                      $id, $curated2{$id}{descs}, "", $curated2{$id}{seq})."\n";
+                      $id, $info->{desc}, "", $info->{seq})."\n";
     }
     foreach my $id (sort keys %{ $stepIgnore{$step} }) {
-      die unless exists $curatedInfo{$id};
+      my $info = $stepIgnore{$step}{$id};
+      die unless exists $curatedSeq{$id};
       print $fhO join("\t", $step, "ignore",
-                      $id, $curatedInfo{$id}{descs}, "", $curatedSeq{$id})."\n";
+                      $id, $info->{descs}, "", $curatedSeq{$id})."\n";
     }
   }
   close($fhO) || die "Error writing to $outFile\n";
   print STDERR "Wrote $outFile\n";
 }
 
-sub WordMatchRows($$) {
-  my ($list, $query) = @_;
+sub FindCuratedMatching($$) {
+  my ($dbhC, $query) = @_;
   die "Searching for empty term"
     unless defined $query && $query ne "";
-  my $regexp = quotemeta($query);
-  $regexp =~ s/\\%/.*/g;
-  my @match = grep { $_->{descs} =~ m/$regexp/i } @$list;
-  die "Too many hits in the curated file for $query\n" if @match >= 10000;
-  return CuratedWordMatch(\@match, $query, "descs");
+  my $rows = $dbhC->selectall_arrayref("SELECT * from CuratedInfo WHERE descs LIKE ?",
+                                       { Slice => {} }, "%" . $query . "%");
+  return CuratedWordMatch($rows, $query, "descs");
+}
+
+sub FindCurated2Matching($$) {
+  my ($dbhC, $query) = @_;
+  die "Searching for empty term"
+    unless defined $query && $query ne "";
+  my $rows = $dbhC->selectall_arrayref("SELECT * from Curated2 WHERE desc LIKE ?",
+                                       { Slice => {} }, "%" . $query . "%");
+  return CuratedWordMatch($rows, $query, "desc");
+}
+
+sub CuratedIdToIds($$) {
+  my ($dbhC, $curatedId)  = @_;
+  my ($curatedIds) = $dbhC->selectrow_array("SELECT curatedIds FROM curatedIdToIds WHERE curatedId = ?",
+                                            {}, $curatedId);
+  return ($curatedIds);
+}
+
+sub CuratedIdsToInfo($$) {
+  my ($dbhC, $curatedIds) = @_;
+  return $dbhC->selectrow_hashref("SELECT * from CuratedInfo WHERE curatedIds = ?",
+                                  { Slice => {} }, $curatedIds);
 }
