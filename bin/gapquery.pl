@@ -104,10 +104,12 @@ END
     die "No such executable: $x\n" unless -x $x;
   }
 
+  print STDERR "Reading $stepsFile\n" if $debug;
   my $st = ReadSteps($stepsFile);
   my $steps = $st->{steps};
   my $rules = $st->{rules};
 
+  print STDERR "Reading HMM info\n" if $debug;
   my @tigrinfo = ReadTable("$hmmDir/tigrinfo", ["tigrId","ec","definition","type"]);
   my %tigrinfo = map { $_->{tigrId} => $_ } @tigrinfo;
   my %ecTIGR = ();
@@ -160,6 +162,7 @@ END
   my %stepUniprot = (); # step => uniprot => 1
   my %stepIgnore = (); # step => curated id => info
 
+  print STDERR "Fetching matching items\n" if $debug;
   foreach my $step (sort keys %$steps) {
     my $desc = $steps->{$step}{desc};
     my $l = $steps->{$step}{search};
@@ -241,6 +244,7 @@ END
     }
   }
 
+  print STDERR "Fetching UniProt sequences (not already cached)\n" if $debug;
   # Collect descriptions and sequences of uniprot ids not already known
   while (my ($step, $uniprotHash) = each %stepUniprot) {
     foreach my $uniprotId (keys %$uniprotHash) {
@@ -253,7 +257,7 @@ END
     }
   }
 
-  # Rewrite the uniprot cache
+  print STDERR "Rewriting the UniProt cache\n" if $debug;
   open (my $fhCache, ">", $uniprotFile)
     || die "Cannot write to $uniprotFile\n";
   print $fhCache join("\t", qw{uniprotId desc seq})."\n";
@@ -262,7 +266,7 @@ END
   }
   close($fhCache) || die "Error writing $uniprotFile";
 
-  # Collect metadata about HMMs and fetch them
+  print STDERR "Collect metadata about HMMs and fetch them\n" if $debug;
   my %hmmInfo = (); # hmmId => hash of file, desc
   while (my ($step, $hmmHash) = each %stepHmm) {
     foreach my $hmmId (keys %$hmmHash) {
@@ -301,7 +305,7 @@ END
     }
   }
 
-  # Collect sequences of curated items
+  print STDERR "Fetching curated sequences\n" if $debug;
   my %curatedFetch = (); # all curated items in stepCurated or stepIgnore
   foreach my $stepHash (\%stepCurated, \%stepIgnore) {
     foreach my $idHash (values %$stepHash) {
