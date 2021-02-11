@@ -65,6 +65,7 @@ my $tmpDbFile = "$tmpDir/buildCuratedDb.$$.db";
 print STDERR "Building temporary database $tmpDbFile\n";
 
 my $schema = "$RealBin/../lib/curated.sql";
+unlink($tmpDbFile);
 system("sqlite3 $tmpDbFile < $schema") == 0
   || die "Error loading schema $schema into $tmpDbFile -- $!";
 
