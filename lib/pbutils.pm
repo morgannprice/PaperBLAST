@@ -394,10 +394,12 @@ sub FetchCuratedInfo($$) {
 }
 
 # Quoting for import statements with sqlite3
+# Note that undef is silently converted to the empty string.
 sub SQLiteLine {
   my @F = @_;
   my @out = ();
   foreach my $val (@F) {
+    $val = "" if !defined $val;
     if ($val =~ m/"/) {
       $val =~ s/"/""/g;
       $val = '"' . $val . '"';
