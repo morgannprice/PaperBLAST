@@ -13,7 +13,8 @@ my $usage = <<END
 Usage: buildStepsDb.pl -set set [ -dir tmp/set.aa ]
 
 Assumes that the directory already contains curated.db and *.query for
-each step. Does not check for consistency between *.query and curated.db.
+each step as well as any related HMM models. Does not check for
+consistency between *.query and curated.db.
 END
 ;
 
