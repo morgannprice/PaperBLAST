@@ -159,7 +159,7 @@ foreach my $pathwayId (sort keys %queries) {
     my $queryType = $row->{type};
     my $desc = $row->{desc};
     my $seq = $row->{sequence};
-    my ($curatedIds, $uniprotId, $protId, $hmmId);
+    my ($curatedIds, $uniprotId, $protId, $hmmId, $hmmFileName);
     if ($queryType eq "curated" || $queryType eq "ignore") {
       $curatedIds = $row->{query};
     } elsif ($queryType eq "curated2") {
@@ -168,13 +168,15 @@ foreach my $pathwayId (sort keys %queries) {
       $uniprotId = $row->{query};
     } elsif ($queryType eq "hmm") {
       $hmmId = $row->{query};
-      $hmmFileName{$hmmId} = $row->{file}
-        || die "Empty file for hmm $hmmId for pathway $pathwayId step $stepId";
+      die "Empty file for hmm $hmmId for pathway $pathwayId step $stepId"
+        unless $row->{file};
+      $hmmFileName = $row->{file};
+      $hmmFileName{$hmmId} = $row->{file};
     } else {
       die "Unknown query type $queryType for pathway $pathwayId step $stepId";
     }
     push @queries, [ $pathwayId, $stepId, $queryId, $queryType,
-                     $curatedIds, $uniprotId, $protId, $hmmId, $desc, $seq ];
+                     $curatedIds, $uniprotId, $protId, $hmmId, $hmmFileName, $desc, $seq ];
     $queryId++;
   }
 }
