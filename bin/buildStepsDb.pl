@@ -151,6 +151,7 @@ SqliteImport($tmpDbFile, "StepPart", \@stepParts);
 # Build StepQuery table
 my @queries = ();
 my $queryId = 0;
+my %hmmFileName = (); # hmm id => hmm file (name only, no path information)
 foreach my $pathwayId (sort keys %queries) {
   foreach my $row (@{ $queries{$pathwayId} }) {
     my $stepId = $row->{step};
@@ -166,6 +167,8 @@ foreach my $pathwayId (sort keys %queries) {
       $uniprotId = $row->{query};
     } elsif ($queryType eq "hmm") {
       $hmmId = $row->{query};
+      $hmmFileName{$hmmId} = $row->{file}
+        || die "Empty file for hmm $hmmId for pathway $pathwayId step $stepId";
     } else {
       die "Unknown query type $queryType for pathway $pathwayId step $stepId";
     }
@@ -227,6 +230,22 @@ foreach my $gdb (sort keys %markerSeq) {
   }
 }
 SqliteImport($tmpDbFile, "KnownGapMarker", \@markerSeq);
+
+# Build the HMM table
+my $dbhS = DBI->connect("dbi:SQLite:dbname=$tmpDbFile","","",{ RaiseError => 1 }) || die $DBI::errstr;
+my $hmmInsertStatement = $dbhS->prepare(qq{ INSERT INTO HMM VALUES(?,?) });
+foreach my $hmmId (sort keys %hmmFileName) {
+  my $hmmFile = "$workDir/" . $hmmFileName{$hmmId};
+  die "Model for $hmmId should be in $hmmFile\n"
+    unless -e $hmmFile;
+  open(my $fhH, "<", $hmmFile) || die "Cannot read $hmmFile";
+  my @lines = <$fhH>;
+  close($fhH) || die "Error reading $hmmFile";
+  die "$hmmFile for $hmmId is empty" unless @lines > 0;
+  $hmmInsertStatement->execute($hmmId, join("", @lines))
+    || die "Failed ot insert into HMM";
+}
+$dbhS->disconnect();
 
 system("cp $tmpDbFile $stepsDb") == 0 || die "Copying $tmpDbFile to $stepsDb failed: $!";
 unlink($tmpDbFile);
