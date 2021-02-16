@@ -70,10 +70,10 @@ CREATE TABLE StepQuery(
       ignore means that similarity to a characterized protein that is
       not part of the step does not lower the score) */
   queryType TEXT NOT NULL,
-  /* Use empty instead of NULL */
+  /* Use empty instead of NULL for missing fields */
   curatedIds TEXT NOT NULL,
-  uniprotId TEXT NOT NULL, /* includes curated2 as well */
-  protId TEXT NOT NULL,
+  uniprotId TEXT NOT NULL,
+  protId TEXT NOT NULL, /* for curated2 */
   hmmId TEXT NOT NULL, /* i.e., PF02965 */
   hmmFileName TEXT NOT NULL, /* i.e., PF02965.17 */
   /* The description is redundant with information in the curated database for
