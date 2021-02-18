@@ -125,15 +125,17 @@ if (exists $dosteps{"ecocyc"}) {
         $ecocyc_URL = <URL>;
         chomp $ecocyc_URL;
         close(URL) || die "Error reading ecocyc.URL";
-        die "Invalid URL in $ecocyc_URL" unless $ecocyc_URL =~ m/^http|ftp/;
+        die "Invalid URL in $ecocyc_URL" unless $ecocyc_URL =~ m/^http|ftp/
+          || -e $ecocyc_URL;
         print STDERR "URL for ecocyc: $ecocyc_URL\n";
       }
     }
-    if (defined $ecocyc_URL) {
+    $ecocyc_URL = "ecoli.tar.gz" if !defined $ecocyc_URL;
+    if (-e $ecocyc_URL) {
+      print STDERR "Using manually downloaded tarball $ecocyc_URL for ecocyc\n";
+      &maybe_run("cp $ecocyc_URL $dir/");
+    } else {
       &maybe_wget($ecocyc_URL, "$dir/ecoli.tar.gz");
-    } elsif (-e "ecoli.tar.gz") {
-      print STDERR "No URL for EcoCyc found -- using manually downloaded tarball\n";
-      &maybe_run("cp ecoli.tar.gz $dir/");
     }
 }
 
