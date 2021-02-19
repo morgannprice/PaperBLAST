@@ -60,14 +60,13 @@ foreach my $row (@sumRules) {
   push @{ $sumRules{$row->{orgId}} }, $row;
 }
 
-print join("\t", qw{orgId pathway rule requiredPath requiredRule requiredStep not genomeName comment})."\n";
+print join("\t", qw{orgId pathwayId ruleId requiredPathwayId requiredRuleId requiredStepId isNot comment})."\n";
 foreach my $org (@orgs) {
   my $orgId = $org->{orgId};
   my $warns = CheckReqs($sumRules{$orgId}, $sumSteps{$orgId}, $reqs);
   foreach my $warn (@$warns) {
     print join("\t", $orgId, $warn->{pathwayId}, $warn->{ruleId},
                $warn->{requiredPathwayId}, $warn->{requiredRuleId} || "", $warn->{requiredStepId} || "",
-               $warn->{isNot}, "", $warn->{comment})."\n";
-    #XXX genomeName sould ultimately be remove
+               $warn->{isNot}, $warn->{comment})."\n";
   }
 }
