@@ -21,7 +21,9 @@ CREATE TABLE Rule(
   PRIMARY KEY (pathwayId, ruleId)
 );
 
-/* A rule can be satisified by any of its instances */
+/* A rule can be satisified by any of its instances.  The instances
+   are in the order in the steps file; this also puts the rules in the
+   correct order so that dependencies come first */
 CREATE TABLE RuleInstance(
   pathwayId TEXT NOT NULL,
   ruleId TEXT NOT NULL,
