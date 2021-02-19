@@ -3,19 +3,17 @@
 use strict;
 use Getopt::Long;
 use List::Util qw{min max};
-use FindBin qw{$Bin};
-use lib "$Bin/../lib";
+use FindBin qw{$RealBin};
+use DBI;
+use lib "$RealBin/../lib";
 use pbutils qw{ReadTable};
 use Steps qw{ReadSteps ReadOrgTable ReadOrgProtein ParseOrgLocus};
 
 my $maxCand = 5;
 my @weightsDef = (-2,-0.1,1); # default weights for rules with low/medium/high candidates
-my $infoFile = "curated.faa.info";
 my $fOverlap = 0.5;
-my $stepDir = ".";
-my $queryDir = ".";
 my $usage = <<END
-Usage: gapsummary.pl -pathways his met ... pro -orgs orgprefix
+Usage: gapsummary.pl -set set -orgs orgprefix
   -hits hitsfile -revhits revhitsfile -out summary
 
 The hits and revhites files are from gapsearch.pl and gaprevsearch.pl
@@ -27,7 +25,7 @@ Currently, the score of a candidate for a step is defined as
 
 2: blast to a characterized protein at above 40% identity and 80%
    coverage and bits >= otherBits+10,
-   or hmm match and 80% coverage and !(otherIdentity >= 40 &
+   or, hmm match and 80% coverage and not(otherIdentity >= 40 &
    otherCoverage >= 0.75)
 1: blast to a characterized or curated protein at above 30% id. and
    80% cov. and bits >= otherBits, or blast above 40% id. and 70%
@@ -49,13 +47,12 @@ a tie, it chooses the path with the highest total score (see -weights
 below). If there is still a tie, it chooses the longer path.
 
 Optional arguments:
--info $infoFile -- made by curatedFaa.pl with the -curatedids
-  option
--stepDir $stepDir -- which directory the *.steps files are in
--queryDir $queryDir -- which directory the *.query files are in
+-pathway pathwayId -- score only the queries for this pathway
+-dbDir dbDir -- which directory the input databases are in
+  (defaults to $RealBin/../tmp/path.set/)
 -maxCand $maxCand -- number of candidates for each step to keep
--weights weightLow weightMedium weightHigh -- the weight for
-  each type of step. The default is @weightsDef.
+-weights @weightsDef - the weight for
+  each type of step.
 -overlap $fOverlap -- ignore hits to other sequences that do not
    overlap at least this fraction of the original hit's alignment.
 END
@@ -93,31 +90,30 @@ sub FindSplit($$$);
 sub MergeHits($$$$$$);
 
 {
-  my @pathways;
-  my @weights;
+
   my ($hitsFile, $revhitsFile, $orgprefix, $outpre);
+  my ($queryDir, $set, $pathSpec, $dbDir);
+  my @weights;
   die $usage
-    unless GetOptions('pathways=s{1,}' => \@pathways,
+    unless GetOptions('set=s' => \$set,
                       'orgs=s' => \$orgprefix,
                       'hits=s' => \$hitsFile,
                       'revhits=s' => \$revhitsFile,
                       'out=s' => \$outpre,
-                      'info=s' => \$infoFile,
-                      'stepDir=s' => \$stepDir,
-                      'queryDir=s' => \$queryDir,
+                      'pathway=s' => \$pathSpec,
+                      'dbDir=s' => \$dbDir,
                       'maxCand=i' => \$maxCand,
                       'weights=f{3,3}' => \@weights,
                       'overlap=f' => \$fOverlap)
-      && @pathways > 0 && defined $orgprefix
+      && defined $set && defined $orgprefix
       && defined $hitsFile && defined $revhitsFile && defined $outpre;
   @weights = @weightsDef unless @weights;
   die "Must have 3 weights\n" unless @weights == 3;
   die "Weight(low) is above Weight(medium)\n" if $weights[0] > $weights[1];
   die "Weight(medium) is above Weight(high)\n" if $weights[1] > $weights[2];
-  foreach my $dir ($stepDir, $queryDir) {
-    die "No such directory: $dir\n" unless -d $dir;
-  }
-  foreach my $file ($hitsFile, $revhitsFile, $infoFile) {
+  $dbDir = "$RealBin/../tmp/path.$set" unless defined $dbDir;
+  die "No such directory: $dbDir\n" unless -d $dbDir;
+  foreach my $file ($hitsFile, $revhitsFile) {
     die "No such file: $file\n" unless -s $file;
   }
   die "-maxCand must be at least 1\n" unless $maxCand >= 1;
@@ -138,91 +134,112 @@ sub MergeHits($$$$$$);
   }
   close($fhIn) || die "Error reading $aaIn\n";
 
-  my %pathways = (); # steps and rules items for each pathway
-  my %queryDesc = (); # id => desc
-  my %ignore = (); # pathwayId => step => id => 1
-  my %blastQuery = (); # pathwayId => step => id => 1
-  my %hmmQuery = (); # pathwayId => step => hmm
-  my %hmmToStep = (); # hmm => pathwayId => step => 1
-  my %queryToStep = (); # curated id => pathwayId => step => 1
-  foreach my $pathId (@pathways) {
-    die "Duplicate pathway $pathId\n" if exists $pathways{$pathId};
-    my $stepFile = "$stepDir/$pathId.steps";
-    my $queryFile = "$queryDir/$pathId.query";
-    foreach my $file ($stepFile, $queryFile) {
-      die "No such file: $file\n" unless -e $file;
-    }
-    $pathways{$pathId} = ReadSteps($stepFile);
-    my @header = qw{step type query desc file sequence};
-    my @queries = ReadTable($queryFile, \@header);
-    foreach my $query (@queries) {
-      my $id = $query->{query};
-      my $type = $query->{type};
-      my $step = $query->{step};
-      $id = "uniprot:" . $id if $type eq "uniprot";
-      $id = "curated2:" . $id if $type eq "curated2";
-      if ($type eq "curated" || $type eq "curated2" || $type eq "uniprot") {
-        $blastQuery{$pathId}{$step}{$id} = 1;
-        $queryToStep{$id}{$pathId}{$step} = 1;
-        $ignore{$pathId}{$step}{$id} = 1;
-      } elsif ($type eq "hmm") {
-        $hmmQuery{$pathId}{ $step }{ $id } = 1;
-        $hmmToStep{$id}{$pathId}{$step} = 1;
-      } elsif ($type eq "ignore") {
-        $ignore{$pathId}{$step}{$id} = 1;
+  my $dbhC = DBI->connect("dbi:SQLite:dbname=${dbDir}/curated.db","","",{ RaiseError => 1 }) || die $DBI::errstr;
+  my $dbhS = DBI->connect("dbi:SQLite:dbname=${dbDir}/steps.db","","",{ RaiseError => 1 }) || die $DBI::errstr;
+
+  my %pathwayDesc = (); # pathwayId to desc
+  foreach my $row (@{ $dbhS->selectall_arrayref("SELECT * from Pathway", { Slice => {} }) }) {
+    $pathwayDesc{$row->{pathwayId}} = $row->{desc};
+  }
+  if (defined $pathSpec) {
+    die "Unknown pathway $pathSpec" unless exists $pathwayDesc{$pathSpec};
+  }
+  my %pathwaySteps = (); # pathwayId to list of stepids
+  foreach my $pathwayId (keys %pathwayDesc) {
+    $pathwaySteps{$pathwayId} = $dbhS->selectcol_arrayref("SELECT stepId FROM Step WHERE pathwayId = ?",
+                                                          {}, $pathwayId);
+  }
+
+  # Load queries
+  my %queryDesc = (); # blast queryId => desc
+  my %queryLength = (); # blast queryId => protein length
+  # a queryId is as in the output of gapsearch.pl -- curatedIds, uniprot:uniprotId, curated2:protId
+  my %blastQuery = (); # pathwayId => stepId => queryId => 1
+  my %blastToStep = (); # blast queryId => pathwayId => stepId => 1
+  my %hmmQuery = (); # pathwayId => stepId => hmmId => 1
+  my %hmmToStep = (); # hmmId => pathwayId => stepId => 1
+  my %hmmDesc = ();
+  # This includes both proteins assigned to the step (which implies that an other hit is ok)
+  # and explicitly ignored items
+  my %ignore = (); # pathwayId => stepId => queryId => 1
+
+  foreach my $row (@{ $dbhS->selectall_arrayref("SELECT * from StepQuery", { Slice => {} }) }) {
+    next if defined $pathSpec && $row->{pathwayId} ne $pathSpec;
+    my $queryType = $row->{queryType} || die;
+    my $pathwayId = $row->{pathwayId} || die;
+    my $stepId = $row->{stepId} || die;
+
+    if ($queryType eq "ignore") {
+      my $id = $row->{curatedIds} || die;
+      $ignore{$pathwayId}{$stepId}{$id} = 1;
+    } elsif ($queryType eq "hmm") {
+      my $hmmId = $row->{hmmId} || die;
+      $hmmQuery{$pathwayId}{$stepId}{$hmmId} = 1;
+      $hmmToStep{$hmmId}{$pathwayId}{$stepId} = 1;
+      $hmmDesc{$hmmId} = $row->{desc};
+    } else {
+      my $id;
+      if ($row->{queryType} eq "curated") {
+        $id = $row->{curatedIds} || die;
+      } elsif ($row->{queryType} eq "uniprot") {
+        $id = "uniprot:" . ($row->{uniprotId} || die);
+      } elsif ($row->{queryType} eq "curated2") {
+        $id = "curated2:" . ($row->{protId} || die);
       } else {
-        die "Unknown query type $type in $queryFile\n";
+        die "Unknown query type $row->{queryType}";
       }
-      # And save descriptions
-      if ($type eq "curated" || $type eq "curated2" || $type eq "uniprot" || $type eq "hmm") {
-        if (exists $queryDesc{$id}) {
-          die "Mismatch for description of $id in $queryFile -- $queryDesc{$id} vs. $query->{desc}\n"
-            unless $queryDesc{$id} eq $query->{desc};
-        } else {
-          $queryDesc{$id} = $query->{desc};
-        }
+      $blastQuery{$pathwayId}{$stepId}{$id} = 1;
+      $blastToStep{$id}{$pathwayId}{$stepId} = 1;
+      $ignore{$pathwayId}{$stepId}{$id} = 1;
+      # And save the description
+      if (exists $queryDesc{$id}) {
+        die "Mismatching descriptions for $id"
+          unless $queryDesc{$id} eq $row->{desc};
+      } else {
+        $queryDesc{$id} = $row->{desc} || die;
+        $queryLength{$id} = length($row->{seq})
+          || die "length of seq for $id is 0";
       }
     }
   }
 
   # Both hits and revhits initially have locusId of the form orgId:locusId
   # This is converted to an orgId and a locusId below
-  my @hitFields = qw{locusId type curatedId bits locusBegin locusEnd cBegin cEnd cLength identity};
+  my @hitFields = qw{locusId type queryId bits locusBegin locusEnd qBegin qEnd qLength identity};
   my @hits = ReadTable($hitsFile, \@hitFields);
-  # add the fromCurated field to all blast hits -- these are lower priority because
+  # add the fromCurated2 field to all blast hits -- these are lower priority because
   # the reference protein is not actually characterized
   foreach my $hit (@hits) {
     if ($hit->{type} eq "blast") {
-      $hit->{fromCurated} = $hit->{curatedId} =~ m/^curated2:/ ? 1 : 0;
+      $hit->{fromCurated2} = $hit->{queryId} =~ m/^curated2:/ ? 1 : 0;
     }
   }
   my @revFields = qw{locusId otherId bits locusBegin locusEnd otherBegin otherEnd otherIdentity};
   my @revhits = ReadTable($revhitsFile, \@revFields);
 
-  my @curatedInfoFields = qw{ids length descs};
-  my %curatedInfo = map { $_->{ids} => $_ } ReadTable($infoFile, \@curatedInfoFields);
-
-  my %hits; # orgId => pathwayId => step => locusId => list of relevant hits
+  my %hits; # orgId => pathwayId => stepId => locusId => list of relevant hits
   foreach my $hit (@hits) {
-    my $curatedId = $hit->{curatedId};
+    my $queryId = $hit->{queryId};
     my ($orgId, $locusId) = ParseOrgLocus($hit->{locusId});
     $hit->{orgId} = $orgId;
     $hit->{locusId} = $locusId;
     my $hash; # pathway => step => 1
-    if ($hit->{type} eq "hmm") { # curatedId is an hmm id
-      die "Unknown hmm query $curatedId found in hits file $hitsFile\n"
-        unless exists $hmmToStep{$curatedId};
-      $hash = $hmmToStep{$curatedId};
+    if ($hit->{type} eq "hmm") { # queryId is an hmm id
+      # If looking at one pathway, not all queries are loaded,
+      # so do not check for unexpected queries
+      die "Unknown hmm query $queryId found in hits file $hitsFile\n"
+        unless defined $pathSpec || exists $hmmToStep{$queryId};
+      $hash = $hmmToStep{$queryId};
     } else {
       die "Unknown hit type $hit->{type} in hits file $hitsFile\n"
-        unless $hit->{type} eq "blast";
-      die "Unknown blast query $curatedId found in hits file $hitsFile\n"
-        unless exists $queryToStep{$curatedId};
-      $hash = $queryToStep{$curatedId};
+        unless defined $pathSpec || $hit->{type} eq "blast";
+      die "Unknown blast query $queryId found in hits file $hitsFile\n"
+        unless defined $pathSpec || exists $blastToStep{$queryId};
+      $hash = $blastToStep{$queryId};
     }
     while (my ($pathwayId, $stephash) = each %$hash) {
-      foreach my $step (keys %$stephash) {
-        push @{ $hits{$orgId}{$pathwayId}{$step}{$locusId} }, $hit;
+      foreach my $stepId (keys %$stephash) {
+        push @{ $hits{$orgId}{$pathwayId}{$stepId}{$locusId} }, $hit;
       }
     }
   }
@@ -235,33 +252,50 @@ sub MergeHits($$$$$$);
     push @{ $revhits{$orgId}{$locusId} }, $revhit;
   }
 
-  # add locusLength to each hit (it already has cLength)
+  # add locusLength to each hit (it already has qLength)
   # also add coverage (of the curated item)
   foreach my $hit (@hits) {
     my $orgId = $hit->{orgId};
     my $locusId = $hit->{locusId};
+    my $queryId = $hit->{queryId} || die;
     die "Unknown locus $orgId $locusId in $hitsFile but not in $aaIn\n"
       unless exists $locusInfo{$orgId}{$locusId};
     my $len = $locusInfo{$orgId}{$locusId}[0];
     $hit->{locusLength} = $len;
-    $hit->{coverage} = ($hit->{cEnd} - $hit->{cBegin} + 1) / $hit->{cLength};
+    $hit->{coverage} = ($hit->{qEnd} - $hit->{qBegin} + 1) / $hit->{qLength};
+    unless (exists $hmmToStep{$queryId}) {
+      # this is a blast query, should already know its length
+      die "Unexpected query $queryId of unknown length"
+        unless defined $pathSpec || exists $queryLength{$queryId};
+      die "Mismatched lengths for $queryId"
+        unless defined $pathSpec || $hit->{qLength} == $queryLength{$queryId};
+    }
   }
 
   # add otherLength and otherCoverage to each revhit
+  # (Note -- most of this work is unnecessary -- otherCoverage
+  #  is only important for HMM hits. This can be fixed later.)
   foreach my $revhit (@revhits) {
     my $otherId = $revhit->{otherId};
-    die "Unknown curated id $otherId in rev hits $revhitsFile\n"
-      unless exists $curatedInfo{$otherId};
-    my $len = $curatedInfo{$otherId}{length};
-    $revhit->{otherLength} = $len;
-    $revhit->{otherCoverage} = ($revhit->{otherEnd} - $revhit->{otherBegin} + 1) / $len;
+    if (!exists $queryLength{$otherId}) {
+      my ($length) = $dbhC->selectrow_array("SELECT seqLength FROM CuratedInfo WHERE curatedIds = ?",
+                                            {}, $otherId);
+      die "Unknown curated id $otherId in rev hits $revhitsFile\n"
+        unless defined $length;
+      $queryLength{$otherId} = $length;
+    }
+    $revhit->{otherLength} = $queryLength{$otherId};
+    die "Illegal reverse hit length for $otherId: $revhit->{otherEnd} vs $queryLength{$otherId}"
+      if $revhit->{otherEnd} > $queryLength{$otherId};
+    $revhit->{otherCoverage} = ($revhit->{otherEnd} - $revhit->{otherBegin} + 1) / $queryLength{$otherId};
   }
 
   # Score each candidate based on its various hits, the reverse hits,
   # and the ignore information
-  my %cand = (); # orgId => pathwayId => step => sorted list of candidates
+  my %cand = (); # orgId => pathwayId => stepId => sorted list of candidates
   while (my ($orgId, $pathhash) = each %hits) {
     while (my ($pathwayId, $stephash) = each %$pathhash) {
+      next if defined $pathSpec && $pathwayId ne $pathSpec;
       my %locusRev = ();
       while (my ($step, $locushash) = each %$stephash) {
         # score the candidates for this step
@@ -282,7 +316,7 @@ sub MergeHits($$$$$$);
           $cand->{maxBits} = max($cand->{blastBits} || 0, $cand->{hmmBits} || 0);
         }
         @cand = sort { $b->{score} <=> $a->{score}
-                         || $a->{fromCurated} <=> $b->{fromCurated}
+                         || $a->{fromCurated2} <=> $b->{fromCurated2}
                          || $b->{maxBits} <=> $a->{maxBits}
                          || $b->{locusId} cmp $a->{locusId} } @cand;
         @cand = splice(@cand, 0, $maxCand) if @cand > $maxCand;
@@ -292,10 +326,10 @@ sub MergeHits($$$$$$);
           my %locusCand = map { $_->{locusId} => $_ } @cand;
           my $merge = FindSplit($locushash, \%locusRev, \%locusCand);
           if (defined $merge) {
-            # Put the HMM and fromCurated info from 1st (higher scoring) locus into $merge
+            # Put the HMM and fromCurated2 info from 1st (higher scoring) locus into $merge
             my $cand1 = $locusCand{ $merge->{locusId} };
             die unless defined $cand1;
-            foreach my $key (qw{hmmBits hmmId hmmCoverage hmmScore fromCurated}) {
+            foreach my $key (qw{hmmBits hmmId hmmCoverage hmmScore fromCurated2}) {
               $merge->{$key} = $cand1->{$key};
             }
             $merge->{maxBits} = max($merge->{blastBits}, $merge->{hmmBits} || 0);
@@ -305,7 +339,7 @@ sub MergeHits($$$$$$);
             push @cand, $merge;
             # Re-sort and re-truncate the list
             @cand = sort { ($b->{score} || 0) <=> ($a->{score} || 0)
-                             || ($a->{fromCurated} || 0) <=> ($b->{fromCurated}||0)
+                             || ($a->{fromCurated2} || 0) <=> ($b->{fromCurated2}||0)
                              || $b->{maxBits} <=> $a->{maxBits}
                              || $b->{locusId} cmp $a->{locusId} } @cand;
             @cand = splice(@cand, 0, $maxCand) if @cand > $maxCand;
@@ -322,41 +356,74 @@ sub MergeHits($$$$$$);
     }
   }
 
+  # Load the rule instances and instance components
+  my $instances = $dbhS->selectall_arrayref("SELECT * from RuleInstance ORDER BY instanceId",
+                                            { Slice => {} });
+  my $components = $dbhS->selectall_arrayref("SELECT * from InstanceComponent ORDER BY instanceId,componentId",
+                                            { Slice => {} });
+  my %ruleOrder = (); # pathwayId to rules, in order
+  my %ruleSeen = (); # pathwayId => ruleId => 1
+
+  my %instanceComponents = (); # instance to list of component objects
+  foreach my $component (@$components) {
+    my $pathwayId = $component->{pathwayId};
+    my $ruleId = $component->{ruleId};
+    my $instanceId = $component->{instanceId};
+    push @{ $instanceComponents{$instanceId} }, $component;
+    unless (exists $ruleSeen{$pathwayId}{$ruleId}) {
+      $ruleSeen{$pathwayId}{$ruleId} = 1;
+      push @{ $ruleOrder{$pathwayId} }, $ruleId;
+    }
+  }
+  my %rulePaths = (); # pathway to rule to list of paths, each of which is a
+  # list of component objects
+  foreach my $instance (@$instances) {
+    my $pathwayId = $instance->{pathwayId};
+    my $ruleId = $instance->{ruleId};
+    my $instanceId = $instance->{instanceId};
+    my $components = $instanceComponents{$instanceId}
+      || die "No components of instance $instance for $pathwayId $ruleId";
+    push @{ $rulePaths{$pathwayId}{$ruleId} }, $components;
+  }
+
   # And score the rules
-  my %ruleScores = (); # orgId => pathway => rulename => hash of n, n012, score, path, path2, stepsUsed, expandedPath
+  my %ruleScores = (); # orgId => pathway => rulename => hash of n, n012, score, path, path2, stepsUsed, pathExpanded
   # where n is #steps, n012 is a vector with #of steps at each score,
   # score is the total weighted score,
-  # path and path2 are lists of steps (path2 is used only if there is a tie),
-  # and stepsUsed is a hash that includes all steps used, including steps for dependencies
-  # expandedPath is the list of all steps including those in dependencies (with duplicates removed)
+  # path and path2 are lists of paths (lists of component objects)
+  #	path2 is used only if there is a tie
+  # stepsUsed is a hash that includes all steps used, including steps for dependencies
+  # pathExpanded is the list of all stepIds including those in dependencies (with duplicates removed)
   # Note that n and score need to be recomputed each time because of potential overlap
   foreach my $orgId (sort keys %orgs) {
-    foreach my $pathId (@pathways) {
-      my $st = $pathways{$pathId};
-      my $steps = $st->{steps};
-      my $rules = $st->{rules};
-      foreach my $rule (@{ $st->{ruleOrder} }) {
-        my @scoredPaths = ();
-        foreach my $path (@{ $rules->{$rule} }) {
-          my %stepsUsed = (); # organism dependent due to scoring of dependencies
-          foreach my $piece (@$path) {
-            if (exists $steps->{$piece}) {
-              $stepsUsed{$piece} = 1;
-            } elsif (exists $ruleScores{$orgId}{$pathId}{$piece}) {
-              foreach my $step (keys %{ $ruleScores{$orgId}{$pathId}{$piece}{stepsUsed} }) {
-                $stepsUsed{$step} = 1;
+    foreach my $pathwayId (sort keys %pathwayDesc) {
+      next if defined $pathSpec && $pathSpec ne $pathwayId;
+      foreach my $ruleId (@{ $ruleOrder{$pathwayId} }) {
+        my @scoredPaths = (); # list of hashes with n, score, n012, stepsUsed, and path
+        die "No instances for rule $ruleId in pathway $pathwayId"
+          unless exists $rulePaths{$pathwayId}{$ruleId};
+        foreach my $path (@{ $rulePaths{$pathwayId}{$ruleId} }) {
+          my %stepsUsed = (); # steps used in this best approach for this path
+          # (organism dependent due to scoring of dependencies)
+          foreach my $component (@$path) {
+            my $subRuleId = $component->{subRuleId};
+            if ($component->{stepId} ne "") {
+              $stepsUsed{ $component->{stepId} } = 1;
+            } elsif (exists $ruleScores{$orgId}{$pathwayId}{$subRuleId}) {
+              foreach my $stepId (keys %{ $ruleScores{$orgId}{$pathwayId}{$subRuleId}{stepsUsed} }) {
+                $stepsUsed{$stepId} = 1;
               }
             } else {
-              die "No score yet for dependency $piece while scoring $rule for pathway $pathId\n";
+              die "No score yet for dependency $subRuleId while scoring $ruleId for pathway $pathwayId\n";
             }
           }
           # score this path
           my $n = 0;
           my @n012 = (0,0,0); # number of steps with score of 0, 1, or 2
           my $scoreTot = 0;
-          foreach my $step (keys %stepsUsed) {
-            my $cand = $cand{$orgId}{$pathId}{$step}[0]
-              if exists $cand{$orgId}{$pathId}{$step} && @{ $cand{$orgId}{$pathId}{$step} } > 0;
+          foreach my $stepId (keys %stepsUsed) {
+            my $cand = $cand{$orgId}{$pathwayId}{$stepId}[0]
+              if exists $cand{$orgId}{$pathwayId}{$stepId} && @{ $cand{$orgId}{$pathwayId}{$stepId} } > 0;
             my $scoreThis = defined $cand ? $cand->{score} : 0;
             $n++;
             die unless $scoreThis >= 0 && $scoreThis <= 2;
@@ -374,22 +441,22 @@ sub MergeHits($$$$$$);
                                'stepsUsed' => \%stepsUsed,
                                'path' => $path };
         }
-        # select the best 1 or 2 scored paths, based on highest minScore, 
+        # select the best 1 or 2 scored paths, based on highest minScore,
         # or highest weighted (total) score, or highest #steps
         @scoredPaths = sort { $b->{minScore} <=> $a->{minScore}
                               || $b->{score} <=> $a->{score}
                               || $b->{n} <=> $a->{n} } @scoredPaths;
         die unless @scoredPaths > 0;
-        $ruleScores{$orgId}{$pathId}{$rule} = $scoredPaths[0];
-        $ruleScores{$orgId}{$pathId}{$rule}{path2} = $scoredPaths[1]{path} if @scoredPaths >= 2;
+        $ruleScores{$orgId}{$pathwayId}{$ruleId} = $scoredPaths[0];
+        $ruleScores{$orgId}{$pathwayId}{$ruleId}{path2} = $scoredPaths[1]{path} if @scoredPaths >= 2;
         # and compute pathExpanded for the main path
-        my $path = $ruleScores{$orgId}{$pathId}{$rule}{path};
+        my $path = $ruleScores{$orgId}{$pathwayId}{$ruleId}{path};
         my @pathExpanded = ();
-        foreach my $piece (@$path) {
-          if (exists $steps->{$piece}) {
-            push @pathExpanded, $piece;
+        foreach my $component (@$path) {
+          if ($component->{stepId} ne "") {
+            push @pathExpanded, $component->{stepId};
           } else {
-            my $pathPart = $ruleScores{$orgId}{$pathId}{$piece}{pathExpanded};
+            my $pathPart = $ruleScores{$orgId}{$pathwayId}{ $component->{subRuleId} }{pathExpanded};
             die unless defined $pathPart;
             push @pathExpanded, @$pathPart;
           }
@@ -398,7 +465,7 @@ sub MergeHits($$$$$$);
         @pathExpanded = grep { my $keep = !exists $pathSoFar{$_};
                                $pathSoFar{$_} = 1;
                                $keep; } @pathExpanded;
-        $ruleScores{$orgId}{$pathId}{$rule}{pathExpanded} = \@pathExpanded;
+        $ruleScores{$orgId}{$pathwayId}{$ruleId}{pathExpanded} = \@pathExpanded;
       }
     }
   }
@@ -406,11 +473,13 @@ sub MergeHits($$$$$$);
   # Record which steps are on the best path for the 'all' rule
   my %onBestPath = (); # orgId => pathId => step => 1
   foreach my $orgId (sort keys %orgs) {
-    foreach my $pathId (@pathways) {
-      my $path = $ruleScores{$orgId}{$pathId}{'all'}{pathExpanded};
-      die "No path for all for $orgId $pathId" unless @$path > 0;
-      foreach my $step (@$path) {
-        $onBestPath{$orgId}{$pathId}{$step} = 1;
+    foreach my $pathwayId (sort keys %pathwayDesc) {
+      next if $pathwayId eq "all";
+      next if defined $pathSpec && $pathwayId ne $pathSpec;
+      my $path = $ruleScores{$orgId}{$pathwayId}{'all'}{pathExpanded};
+      die "No path for all for $orgId $pathwayId" unless defined $path && @$path > 0;
+      foreach my $stepId (@$path) {
+        $onBestPath{$orgId}{$pathwayId}{$stepId} = 1;
       }
     }
   }
@@ -428,10 +497,11 @@ sub MergeHits($$$$$$);
   my @stepfields = qw{orgId gdb gid pathway step onBestPath score locusId sysName score2 locusId2 sysName2};
   print $fhStep join("\t", @stepfields)."\n";
   foreach my $orgId (sort keys %cand) {
-    foreach my $pathId (@pathways) {
-      my $steps = $pathways{$pathId}{steps};
-      my $stephash = $cand{$orgId}{$pathId} || {};
-      foreach my $step (sort keys %$steps) {
+    foreach my $pathwayId (sort keys %pathwayDesc) {
+      next if defined $pathSpec && $pathwayId ne $pathSpec;
+      my $steps = $pathwaySteps{$pathwayId};
+      my $stephash = $cand{$orgId}{$pathwayId} || {};
+      foreach my $step (@$steps) {
         my $cands = $stephash->{$step} || [];
         # per-candidate output
         foreach my $cand (@$cands) {
@@ -444,8 +514,17 @@ sub MergeHits($$$$$$);
             $cand->{desc2} = $desc2;
           }
           $cand->{curatedDesc} = $queryDesc{ $cand->{curatedIds} } if $cand->{curatedIds};
-          $cand->{hmmDesc} = $queryDesc{ $cand->{hmmId} } if $cand->{hmmId};
-          $cand->{otherDesc} = $curatedInfo{ $cand->{otherIds } }{descs} if $cand->{otherIds};
+          $cand->{hmmDesc} = $hmmDesc{ $cand->{hmmId} } if $cand->{hmmId};
+          if ($cand->{otherIds}) {
+            my $otherId = $cand->{otherIds};
+            if (!exists $queryDesc{$otherId}) {
+              my ($otherDesc) = $dbhC->selectrow_array("SELECT descs FROM CuratedInfo WHERE curatedIds = ?",
+                                                       {}, $otherId);
+              die "Unknown otherId $otherId" unless defined $otherDesc;
+              $queryDesc{$otherId} = $otherDesc;
+            }
+            $cand->{otherDesc} = $queryDesc{$otherId};
+          }
           $cand->{gdb} = $orgs{$orgId}{gdb};
           $cand->{gid} = $orgs{$orgId}{gid};
           my @out = map { defined $cand->{$_} ? $cand->{$_} : "" } @candfields;
@@ -453,7 +532,7 @@ sub MergeHits($$$$$$);
         }
         # per-step line
         my @stepout = ($orgId, $orgs{$orgId}{gdb}, $orgs{$orgId}{gid},
-                       $pathId, $step, exists $onBestPath{$orgId}{$pathId}{$step} ? 1 : 0);
+                       $pathwayId, $step, exists $onBestPath{$orgId}{$pathwayId}{$step} ? 1 : 0);
         foreach my $i (0,1) {
           my $c = $cands->[$i] if $i < @$cands;
           if (!defined $c) {
@@ -476,21 +555,26 @@ sub MergeHits($$$$$$);
   close($fhStep) || die "Error writing to $outpre.steps\n";
   print STDERR "Wrote $outpre.cand and $outpre.steps\n";
 
-  # And write out the best paths
+  # Write out the best paths
   open (my $fhR, ">", "$outpre.rules") || die "Cannot write to $outpre.rules\n";
   print $fhR join("\t", qw{orgId gdb gid pathway rule nHi nMed nLo score expandedPath path path2})."\n";
   foreach my $orgId (sort keys %orgs) {
-    foreach my $pathId (@pathways) {
-      my $st = $pathways{$pathId};
-      foreach my $rule (@{ $st->{ruleOrder} }) {
-        my $sc = $ruleScores{$orgId}{$pathId}{$rule};
+    foreach my $pathwayId (sort keys %pathwayDesc) {
+      next if $pathwayId eq "all";
+      next if defined $pathSpec && $pathwayId ne $pathSpec;
+      foreach my $ruleId (@{ $ruleOrder{$pathwayId} }) {
+        my $sc = $ruleScores{$orgId}{$pathwayId}{$ruleId};
         die unless exists $sc->{n};
+        die unless exists $sc->{path};
+        my @pathShow = map { $_->{subRuleId} || $_->{stepId} } @{ $sc->{path} };
+        my @path2Show = map { $_->{subRuleId} || $_->{stepId} } @{ $sc->{path2} }
+          if defined $sc->{path2};
         print $fhR join("\t", $orgId, $orgs{$orgId}{gdb}, $orgs{$orgId}{gid},
-                        $pathId, $rule,
+                        $pathwayId, $ruleId,
                         $sc->{n012}[2], $sc->{n012}[1], $sc->{n012}[0], $sc->{score},
-                        join(" ", @{$sc->{pathExpanded}}),
-                        join(" ", @{$sc->{path}}),
-                        exists $sc->{path2} ? join(" ", @{$sc->{path2}}) : "") . "\n";
+                        join(" ", @{ $sc->{pathExpanded} }),
+                        join(" ", @pathShow),
+                        join(" ", @path2Show))."\n";
       }
     }
   }
@@ -504,7 +588,7 @@ sub ScoreCandidate($$) {
   my $orgId = $hits->[0]{orgId};
   my $locusId = $hits->[0]{locusId};
 
-  my @blastHits = sort { $b->{bits} <=> $a->{bits} || $a->{curatedId} cmp $b->{curatedId} }
+  my @blastHits = sort { $b->{bits} <=> $a->{bits} || $a->{queryId} cmp $b->{queryId} }
     grep { $_->{type} eq "blast" } @$hits;
   my $bestBlastHit;
   foreach my $hit (@blastHits) {
@@ -519,11 +603,11 @@ sub ScoreCandidate($$) {
     } elsif ($hit->{identity} >= 40 && $hit->{coverage} >= 0.7) {
       $score = 1;
     }
-    $score = 1 if $score == 2 && $hit->{curatedId} =~ m/^curated2:/;
+    $score = 1 if $score == 2 && $hit->{fromCurated2};
     unless (defined $bestBlastHit && $score <= $bestBlastHit->{blastScore}) {
       $bestBlastHit = { 'blastBits' => $hit->{bits},
-                        'curatedIds' => $hit->{curatedId},
-                        'fromCurated' => $hit->{fromCurated},
+                        'curatedIds' => $hit->{queryId},
+                        'fromCurated2' => $hit->{fromCurated2},
                         'identity' => $hit->{identity},
                         'blastCoverage' => $hit->{coverage},
                         'blastScore' => $score,
@@ -545,7 +629,7 @@ sub ScoreCandidate($$) {
     $score = 2 if $hit->{coverage} >= 0.8 && !($otherIdentity >= 40 && $otherCoverage >= 0.75);
     unless (defined $bestHMMHit && $score <= $bestHMMHit->{hmmScore}) {
       $bestHMMHit = { 'hmmBits' => $hit->{bits},
-                      'hmmId' => $hit->{curatedId},
+                      'hmmId' => $hit->{queryId},
                       'hmmCoverage' => $hit->{coverage},
                       'hmmScore' => $score,
                       'otherIds' => $rh ? $rh->{otherId} : "",
@@ -575,7 +659,7 @@ sub ScoreCandidate($$) {
   }
   $out->{score} = max($bestBlastHit ? $bestBlastHit->{blastScore} : 0,
                       $bestHMMHit ? $bestHMMHit->{hmmScore} : 0);
-  $out->{fromCurated} = 0 unless defined $out->{fromCurated};
+  $out->{fromCurated2} = 0 unless defined $out->{fromCurated2};
   return $out;
 }
 
@@ -600,15 +684,15 @@ sub FindSplit($$$) {
   my ($hithash, $revhash, $candhash) = @_;
 
   my %locusBest = (); # locusId => best hits
-  my %locusTarget = (); # locusId => curatedId => best hit object
+  my %locusTarget = (); # locusId => queryId => best hit object
   while (my ($locusId, $hits) = each %$hithash) {
     my @hits = grep { $_->{type} eq "blast" && $_->{identity} >= 30 } @$hits;
-    @hits = sort { $a->{fromCurated} <=> $b->{fromCurated}
+    @hits = sort { $a->{fromCurated2} <=> $b->{fromCurated2}
                      || $b->{bits} <=> $a->{bits} } @hits;
     @hits = splice(@hits, 0, $maxCand) if @hits > $maxCand;
     $locusBest{$locusId} = \@hits if @hits > 0;
     foreach my $hit (@hits) {
-      $locusTarget{$locusId}{ $hit->{curatedId} } = $hit
+      $locusTarget{$locusId}{ $hit->{queryId} } = $hit
         unless exists $locusTarget{$locusId}{ $hit->{locusId} };
     }
   }
@@ -625,13 +709,13 @@ sub FindSplit($$$) {
       my $rh2 = RelevantRevhit($hit2->{locusBegin}, $hit2->{locusEnd}, $revhash->{$locus2});
       next if defined $rh2 && $hit2->{bits} <= $rh2->{bits} + 10;
 
-      my $curatedId = $hit2->{curatedId} || die;
+      my $queryId = $hit2->{queryId} || die;
       for (my $i = 0; $i < $j; $i++) {
         my $locus1 = $loci[$i]; # the higher-scoring one
         die if $locus1 eq $locus2;
-        next unless exists $locusTarget{$locus1}{$curatedId};
-        my $hit1 = $locusTarget{$locus1}{$curatedId};
-        die unless $hit1 && $hit2 && $hit1->{curatedId} eq $hit2->{curatedId};
+        next unless exists $locusTarget{$locus1}{$queryId};
+        my $hit1 = $locusTarget{$locus1}{$queryId};
+        die unless $hit1 && $hit2 && $hit1->{queryId} eq $hit2->{queryId};
         my $score1 = exists $candhash->{$locus1}{score} ? $candhash->{$locus1}{score} : -1;
         my $score2 = exists $candhash->{$locus2}{score} ? $candhash->{$locus2}{score} : -1;
         my $combHit = MergeHits($hit1, $score1, $revhash->{$locus1},
@@ -643,39 +727,39 @@ sub FindSplit($$$) {
   @comb = sort { $b->{score} <=> $a->{score}
                    || $b->{blastBits} <=> $a->{blastBits} } @comb;
   # Return just one hit as finding these is uncommon and we don't know if hits are
-  # redundant (i.e., same pair of loci but different curatedId)
+  # redundant (i.e., same pair of loci but different queryId)
   return $comb[0]; # may be undef
 }
 
 sub MergeHits($$$$$$){
   my ($hit1, $bestscore1, $revhits1,
       $hit2, $bestscore2, $revhit2) = @_;
-  die unless $hit1->{curatedId} eq $hit2->{curatedId};
-  my $curatedId = $hit1->{curatedId};
+  die unless $hit1->{queryId} eq $hit2->{queryId};
+  my $queryId = $hit1->{queryId};
 
   my $locus1 = $hit1->{locusId};
   my $locus2 = $hit2->{locusId};
   die unless defined $locus1 && defined $locus2 && $locus1 ne $locus2;
 
-  my $alnLen1 = $hit1->{cEnd} - $hit1->{cBegin}+1;
-  my $alnLen2 = $hit2->{cEnd} - $hit2->{cBegin}+1;
+  my $alnLen1 = $hit1->{qEnd} - $hit1->{qBegin}+1;
+  my $alnLen2 = $hit2->{qEnd} - $hit2->{qBegin}+1;
 
   # Overlap on the curated sequence should be at most 20% of either alignment
   # Combined alignment should cover at least 70% of the curated protein
   my ($overlap, $combLen);
-  if ($hit1->{cEnd} < $hit2->{cBegin} || $hit1->{cBegin} > $hit2->{cEnd}) {
+  if ($hit1->{qEnd} < $hit2->{qBegin} || $hit1->{qBegin} > $hit2->{qEnd}) {
     # No overlap
     $overlap = 0;
     $combLen = $alnLen1 + $alnLen2;
   } else {
-    my $combBegin = min($hit1->{cBegin}, $hit2->{cBegin});
-    my $combEnd = max($hit1->{cEnd}, $hit2->{cEnd});
+    my $combBegin = min($hit1->{qBegin}, $hit2->{qBegin});
+    my $combEnd = max($hit1->{qEnd}, $hit2->{qEnd});
     $combLen = $combEnd - $combBegin + 1;
     $overlap = $alnLen1 + $alnLen2 - $combLen;
   }
   return undef unless $overlap < 0.2 * $alnLen1
     && $overlap < 0.2 * $alnLen2
-    && $combLen >= 0.7 * $hit1->{cLength};
+    && $combLen >= 0.7 * $hit1->{qLength};
 
 
   # Check that there is no better other-hit for locus1 and locus2
@@ -686,9 +770,9 @@ sub MergeHits($$$$$$){
 
   # Score the hit and check that it is better than either component
   my $combIdentity = ($alnLen1 * $hit1->{identity} + $alnLen2 * $hit2->{identity}) / ($alnLen1 + $alnLen2);
-  my $combCoverage = $combLen / $hit1->{cLength};
+  my $combCoverage = $combLen / $hit1->{qLength};
   my $combScore = $combIdentity >= 40 && $combCoverage >= 0.8 ? 2 : 1;
-  $combScore = 1 if $combScore == 2 && $curatedId =~ m/^curated2:/;
+  $combScore = 1 if $combScore == 2 && $hit1->{fromCurated2};
 
   return undef unless $combScore > $bestscore1 && $combScore > $bestscore2;
 
@@ -699,7 +783,7 @@ sub MergeHits($$$$$$){
   # Return a merged hit
   return { 'locusId' => $locus1,
            'locusId2' => $locus2,
-           'curatedIds' => $curatedId,
+           'curatedIds' => $queryId,
            'blastBits' => $hit1->{bits} + $hit2->{bits},
            'identity' => $combIdentity,
            'blastCoverage' => $combCoverage,
