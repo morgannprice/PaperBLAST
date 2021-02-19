@@ -2,14 +2,13 @@
 use strict;
 use Getopt::Long;
 use FindBin qw{$Bin};
+use DBI;
 use lib "$Bin/../lib";
 use Steps qw{ReadSteps ReadOrgTable ReadReqs CheckReqs};
 use pbutils qw{ReadTable NewerThan};
 
-my $stepBase = "$Bin/../gaps";
 my $resultsDir = "$Bin/../tmp";
 my $set = "aa";
-my ($stepDir, $queryDir);
 
 my $usage = <<END
 checkGapRequirements.pl -org orgsNif > warnings.tab
@@ -19,39 +18,32 @@ check against the dependency requirements and output a table of warnings.
 
 Optional arguments:
 -set -- default $set
--stepDir -- defaults to $stepBase/set
 -results -- defaults to $resultsDir
+-stepsDb -- defaults to $resultsDir/path.set/steps.db
 END
 ;
 
-my $orgDir;
+my ($orgDir,$stepsDb);
 die $usage
   unless GetOptions('set=s' => \$set,
                     'org=s' => \$orgDir,
-                    'stepDir=s' => \$stepDir,
+                    'stepsDb' => \$stepsDb,
                     'results=s' => \$resultsDir)
   && @ARGV == 0;
 die "No organism directory specified\n" unless defined $orgDir;
-$stepDir = "$stepBase/$set" if !defined $stepDir;
-$queryDir = "$Bin/../tmp/path.$set" if !defined $queryDir;
-foreach my $dir ($stepDir, $queryDir, $resultsDir, "$resultsDir/$orgDir") {
+$stepsDb = "$resultsDir/path.$set/steps.db";
+foreach my $dir ($resultsDir, "$resultsDir/$orgDir") {
   die "No such directory: $dir\n"
     unless -d $dir;
 }
 
-my @pathInfo = ReadTable("$stepDir/$set.table", ["pathwayId","desc"]);
-my @pathwayIds = map { $_->{pathwayId} } grep { $_->{pathwayId} ne "all" } @pathInfo;
-my %stepObj = (); # pathwayId => object containing steps and rules
-foreach my $pathwayId (@pathwayIds) {
-  $stepObj{$pathwayId} = ReadSteps("$stepDir/$pathwayId.steps");
-}
-
-my $reqs = ReadReqs("$stepDir/requires.tsv", \%stepObj);
-
+my $dbhS = DBI->connect("dbi:SQLite:dbname=${stepsDb}","","",{ RaiseError => 1 }) || die $DBI::errstr;
 my $doneFile = "$resultsDir/$orgDir/$set.sum.done";
-my $dateFile = "$queryDir/date";
-die "Organisms in $orgDir are not up to date:\n$doneFile\nshould be newer than\n$dateFile\n"
-  unless NewerThan($doneFile, $dateFile);
+die "Organisms in $orgDir are not up to date:\n$doneFile\nshould be newer than\n$stepsDb\n"
+  unless NewerThan($doneFile, $stepsDb);
+
+my $reqs = $dbhS->selectall_arrayref("SELECT * FROM Requirement",
+                                     { Slice => {} });
 
 my @orgs = ReadOrgTable("$resultsDir/$orgDir/orgs.org");
 my @sumSteps = ReadTable("$resultsDir/$orgDir/$set.sum.steps",
@@ -73,8 +65,9 @@ foreach my $org (@orgs) {
   my $orgId = $org->{orgId};
   my $warns = CheckReqs($sumRules{$orgId}, $sumSteps{$orgId}, $reqs);
   foreach my $warn (@$warns) {
-    print join("\t", $orgId, $warn->{pathway}, $warn->{rule},
-               $warn->{requiredPath}, $warn->{requiredRule} || "", $warn->{requiredStep} || "",
-               $warn->{not}, $warn->{genomeName} || "", $warn->{comment})."\n";
+    print join("\t", $orgId, $warn->{pathwayId}, $warn->{ruleId},
+               $warn->{requiredPathwayId}, $warn->{requiredRuleId} || "", $warn->{requiredStepId} || "",
+               $warn->{isNot}, "", $warn->{comment})."\n";
+    #XXX genomeName sould ultimately be remove
   }
 }
