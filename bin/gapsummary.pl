@@ -272,16 +272,22 @@ sub MergeHits($$$$$$);
     }
   }
 
+  # Fetch all sequence lengths, for computing other coverage
+  my %curatedLength = (); # curatedIds => sequence length
+  my $curatedLengths = $dbhC->selectall_arrayref("SELECT curatedIds, seqLength FROM CuratedInfo");
+  foreach my $row (@$curatedLengths) {
+    $curatedLength{ $row->[0] } = $row->[1];
+  }
+
   # add otherLength and otherCoverage to each revhit
   # (Note -- most of this work is unnecessary -- otherCoverage
   #  is only important for HMM hits. This can be fixed later.)
   foreach my $revhit (@revhits) {
     my $otherId = $revhit->{otherId};
     if (!exists $queryLength{$otherId}) {
-      my ($length) = $dbhC->selectrow_array("SELECT seqLength FROM CuratedInfo WHERE curatedIds = ?",
-                                            {}, $otherId);
+      my $length = $curatedLength{$otherId};
       die "Unknown curated id $otherId in rev hits $revhitsFile\n"
-        unless defined $length;
+        unless $length;
       $queryLength{$otherId} = $length;
     }
     $revhit->{otherLength} = $queryLength{$otherId};
@@ -492,7 +498,7 @@ sub MergeHits($$$$$$);
                       locusId2 sysName2 desc2
                       blastBits curatedIds identity blastCoverage blastScore curatedDesc
                       hmmBits hmmId hmmCoverage hmmScore hmmDesc
-                      otherIds otherBits otherIdentity otherCoverage otherDesc};
+                      otherIds otherBits otherIdentity otherCoverage};
   print $fhCand join("\t", @candfields)."\n";
   my @stepfields = qw{orgId gdb gid pathway step onBestPath score locusId sysName score2 locusId2 sysName2};
   print $fhStep join("\t", @stepfields)."\n";
@@ -515,16 +521,6 @@ sub MergeHits($$$$$$);
           }
           $cand->{curatedDesc} = $queryDesc{ $cand->{curatedIds} } if $cand->{curatedIds};
           $cand->{hmmDesc} = $hmmDesc{ $cand->{hmmId} } if $cand->{hmmId};
-          if ($cand->{otherIds}) {
-            my $otherId = $cand->{otherIds};
-            if (!exists $queryDesc{$otherId}) {
-              my ($otherDesc) = $dbhC->selectrow_array("SELECT descs FROM CuratedInfo WHERE curatedIds = ?",
-                                                       {}, $otherId);
-              die "Unknown otherId $otherId" unless defined $otherDesc;
-              $queryDesc{$otherId} = $otherDesc;
-            }
-            $cand->{otherDesc} = $queryDesc{$otherId};
-          }
           $cand->{gdb} = $orgs{$orgId}{gdb};
           $cand->{gid} = $orgs{$orgId}{gid};
           my @out = map { defined $cand->{$_} ? $cand->{$_} : "" } @candfields;
