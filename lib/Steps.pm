@@ -456,7 +456,7 @@ sub ReadReqs($$) {
 }
 
 # Given the list of sum.rules and sum.steps rows for an organism,
-# and the requirements from ReadReqs, returns a list of warnings
+# and the requirements from the Requirement table, returns a list of warnings
 # that are relevant.
 sub CheckReqs($$$) {
   my ($sumRules, $sumSteps, $reqs) = @_;
@@ -491,26 +491,27 @@ sub CheckReqs($$$) {
   }
   my @warn = ();
   foreach my $req (@$reqs) {
-    my $pathway = $req->{pathway} || die;
-    my $rule = $req->{rule} || die;
+    my $pathwayId = $req->{pathwayId} || die;
+    my $ruleId = $req->{ruleId} || die;
     # Ignore warnings that are not about the best path
-    next unless exists $onBestPath{$pathway}{$rule};
+    next unless exists $onBestPath{$pathwayId}{$ruleId};
 
     # Do not warn if already low confidence
-    my $ruleS = $ruleScores{$pathway}{$rule} || die;
+    my $ruleS = $ruleScores{$pathwayId}{$ruleId} || die;
     next if $ruleS->{nLo} > 0;
-    my $reqPath = $req->{requiredPath};
-    if (exists $req->{requiredStep}) {
-      die if $req->{not}; # not supported
+    my $reqPathwayId = $req->{requiredPathwayId};
+    if ($req->{requiredStepId} ne "") {
+      die "Step requirements with isNot are not supported"
+        if $req->{isNot};
       # Do not warn if the required step is high confidence
-      my $stepS = $stepScores{$reqPath}{ $req->{requiredStep} } || die;
+      my $stepS = $stepScores{$reqPathwayId}{ $req->{requiredStepId} } || die;
       next if $stepS->{score} eq "2";
-    } elsif (exists $req->{requiredRule}) {
-      my $reqRule = $req->{requiredRule};
-      my $reqS = $ruleScores{$reqPath}{$reqRule} || die;
-      if ($req->{not}) {
+    } elsif ($req->{requiredRuleId} ne "") {
+      my $reqRuleId = $req->{requiredRuleId};
+      my $reqS = $ruleScores{$reqPathwayId}{$reqRuleId} || die;
+      if ($req->{isNot}) {
         # ! means warn if requiredRule has no low-confidence steps and is on the best path for $reqPath
-        next unless $reqS->{nLo} == 0 && exists $onBestPath{$reqPath}{$reqRule};
+        next unless $reqS->{nLo} == 0 && exists $onBestPath{$reqPathwayId}{$reqRuleId};
       } else {
         # Warn if requiredRule has any low- or medium-confidence steps
         next if $reqS->{nLo} == 0 && $reqS->{nMed} == 0;
