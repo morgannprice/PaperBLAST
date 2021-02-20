@@ -16,7 +16,7 @@ my $usage = <<END
 Usage: gapsummary.pl -set set -orgs orgprefix
   -hits hitsfile -revhits revhitsfile -out summary
 
-The hits and revhites files are from gapsearch.pl and gaprevsearch.pl
+The hits and revhits files are from gapsearch.pl and gaprevsearch.pl
 Writes 1 line per organism x step to summary.steps
 Writes 1 line per step x gene candidate to summary.cand
 Writes 1 line per rule to summary.rules
@@ -55,6 +55,7 @@ Optional arguments:
   each type of step.
 -overlap $fOverlap -- ignore hits to other sequences that do not
    overlap at least this fraction of the original hit's alignment.
+-noSplit -- do not search for split loci
 END
 ;
 
@@ -92,7 +93,7 @@ sub MergeHits($$$$$$);
 {
 
   my ($hitsFile, $revhitsFile, $orgprefix, $outpre);
-  my ($queryDir, $set, $pathSpec, $dbDir);
+  my ($queryDir, $set, $pathSpec, $dbDir, $noSplit);
   my @weights;
   die $usage
     unless GetOptions('set=s' => \$set,
@@ -104,7 +105,8 @@ sub MergeHits($$$$$$);
                       'dbDir=s' => \$dbDir,
                       'maxCand=i' => \$maxCand,
                       'weights=f{3,3}' => \@weights,
-                      'overlap=f' => \$fOverlap)
+                      'overlap=f' => \$fOverlap,
+                      'noSplit' => \$noSplit)
       && defined $set && defined $orgprefix
       && defined $hitsFile && defined $revhitsFile && defined $outpre;
   @weights = @weightsDef unless @weights;
@@ -328,7 +330,7 @@ sub MergeHits($$$$$$);
         @cand = splice(@cand, 0, $maxCand) if @cand > $maxCand;
 
         # look for split ORFs unless there are two high-confidence candidates
-        unless (@cand >= 2 && $cand[1]{score} == 2) {
+        unless (defined $noSplit || (@cand >= 2 && $cand[1]{score} == 2)) {
           my %locusCand = map { $_->{locusId} => $_ } @cand;
           my $merge = FindSplit($locushash, \%locusRev, \%locusCand);
           if (defined $merge) {
