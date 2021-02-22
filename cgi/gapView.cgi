@@ -1102,10 +1102,10 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
       p(a({-title => "Fitness BLAST compares a sequence to bacterial proteins that have mutant phenotypes"},
           "Fitness BLAST:"),
         span({-id => "fitblast_short"}, small("loading..."))),
-      qq{<SCRIPT src="http://fit.genomics.lbl.gov/d3js/d3.min.js"></SCRIPT>
-         <SCRIPT src="http://fit.genomics.lbl.gov/images/fitblast.js"></SCRIPT>
+      qq{<SCRIPT src="https://fit.genomics.lbl.gov/d3js/d3.min.js"></SCRIPT>
+         <SCRIPT src="https://fit.genomics.lbl.gov/images/fitblast.js"></SCRIPT>
          <SCRIPT>
-         var server_root = "http://fit.genomics.lbl.gov/";
+         var server_root = "https://fit.genomics.lbl.gov/";
          var seq = "$seq";
          fitblast_load_short("fitblast_short", server_root, seq);
          </SCRIPT>},
