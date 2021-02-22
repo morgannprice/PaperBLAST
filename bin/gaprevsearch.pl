@@ -12,6 +12,7 @@ use Steps qw{ReadOrgTable ReadOrgProtein};
 
 {
   my $nCPU = $ENV{MC_CORES} || 4;
+  my $maxKeep = 5;
   my @infields = qw{locusId type queryId bits locusBegin locusEnd qBegin qEnd qLength identity};
   my @outfields = qw{locusId otherId bits locusBegin locusEnd otherBegin otherEnd otherIdentity};
 
@@ -29,6 +30,7 @@ The curated file (in fasta or udb format) should be from
   running curatedFaa.pl with -curatedids
 
 Optional arguments:
+-maxKeep $maxKeep -- maximum number of curated hits to retain
  -nCPU $nCPU -- number of CPUs to use (defaults to the MC_CORES
                 environment variable, or 4)
 END
@@ -88,11 +90,14 @@ END
   open(my $fhRH, "<", $rhitsFile) || die "Cannot read from $rhitsFile\n";
   open(my $fhOut, ">", $outFile) || die "Cannot write to $outFile\n";
   print $fhOut join("\t", @outfields)."\n";
+  my %nHits = (); # locusId => number of hits so far
   while (my $line = <$fhRH>) {
     chomp $line;
     my ($locusId, $otherId, $identity, $alen, $mm, $gap, $locusBegin, $locusEnd, $otherBegin, $otherEnd, $eval, $bits)
       = split /\t/, $line;
-    print $fhOut join("\t", $locusId, $otherId, $bits, $locusBegin, $locusEnd, $otherBegin, $otherEnd, $identity)."\n";
+    $nHits{$locusId}++;
+    print $fhOut join("\t", $locusId, $otherId, $bits, $locusBegin, $locusEnd, $otherBegin, $otherEnd, $identity)."\n"
+      if $nHits{$locusId} <= $maxKeep;
   }
   close ($fhRH) || die "Error reading from $rhitsFile\n";
   close ($fhOut) || die "Error writing to $outFile\n";
