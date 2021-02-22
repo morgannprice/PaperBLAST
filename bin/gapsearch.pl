@@ -15,6 +15,8 @@ use Steps qw{ReadOrgTable ReadOrgProtein ParseOrgLocus};
   my $nCPU = $ENV{MC_CORES} || 4;
   my @fields = qw{locusId type queryId bits locusBegin locusEnd qBegin qEnd qLength identity};
   my $fields = join(" ", @fields);
+  my $maxCand = 4;
+  my $maxWeak = 2;
 
   my $usage = <<END
 Usage: gapsearch.pl -orgs prefix -set set -out hitsfile
@@ -31,6 +33,10 @@ Optional arguments:
  -nCPU $nCPU -- number of CPUs to use (defaults to the MC_CORES
                 environment variable, or 4)
  -verbose -- set for more verbose output to standard error
+ -maxCand $maxCand -- how many candidates to keep for each step
+    (by bit score)
+ -maxWeak $maxWeak -- maximum number of blast-only hits of under 40%
+    identity to keep for each step
 END
 ;
 
@@ -42,13 +48,17 @@ END
                       'pathway=s' => \$pathSpec,
                       'dir=s' => \$inDir,
                       'nCPU=i' => \$nCPU,
-                      'verbose' => \$verbose)
+                      'verbose' => \$verbose,
+                      'maxCand=i' => \$maxCand,
+                      'maxWeak=i' => \$maxWeak)
       && defined $orgprefix
       && defined $set
       && defined $outFile;
   die "Must request at least one CPU\n" unless $nCPU >= 1;
   $inDir = "$RealBin/../tmp/path.$set" unless defined $inDir;
   die "No such directory: $inDir\n" unless -d $inDir;
+  die "maxCand must be positive\n" unless $maxCand > 0;
+  die "maxWeak must be positive\n" unless $maxWeak > 0;
 
   my $binDir = $RealBin;
   my $hmmsearch = "$binDir/hmmsearch";
@@ -75,27 +85,42 @@ END
   }
   my $pathClause = "";
   $pathClause = qq{ AND pathwayId = "$pathSpec" } if defined $pathSpec;
-  my $querySeq = $dbhS->selectall_arrayref(qq{ SELECT DISTINCT queryType, curatedIds, uniprotId, protId, seq FROM StepQuery
-                                               WHERE queryType IN ("curated", "curated2", "uniprot")
-                                               $pathClause
-                                               ORDER BY queryType, curatedIds, uniprotId, protId },
-                                           { Slice => {} });
-  my $queryHmm = $dbhS->selectall_arrayref(qq{ SELECT DISTINCT hmmId, hmmFileName FROM StepQuery
-                                               WHERE queryType IN ("hmm")
-                                               $pathClause
-                                               ORDER BY hmmId },
+  # Will add the queryId field to each row
+  my $queries = $dbhS->selectall_arrayref(qq{ SELECT * FROM StepQuery
+                                              WHERE queryType <> "ignore"
+                                              $pathClause },
                                           { Slice => {} });
+  my %stepQuery = (); # stepId to list of rows
+  # The reported queryId is curated2:protId, uniprot:uniprotId, curatedIds or hmmId
+  my %querySeq = (); # queryId to row for sequences
+  my %queryHmm = (); # queryId to row for hmms
+  foreach my $row (@$queries) {
+    push @{ $stepQuery{ $row->{stepId} } }, $row;
+    my $queryType = $row->{queryType};
+    if ($queryType eq "hmm") {
+      my $hmmId = $row->{hmmId};
+      $queryHmm{$hmmId} = $row;
+      $row->{queryId} = $hmmId;
+    } elsif ($queryType eq "curated" || $queryType eq "curated2" || $queryType eq "uniprot") {
+      my $id;
+      $id = $row->{curatedIds} if $queryType eq "curated";
+      $id = "uniprot:" . $row->{uniprotId} if $queryType eq "uniprot";
+      $id = "curated2:" . $row->{protId} if $queryType eq "curated2";
+      $querySeq{$id} = $row;
+      $row->{queryId} = $id;
+    } else {
+      die "Unknown query type " . $row->{queryType};
+    }
+  }
 
   print STDERR join(" ", "Comparing", scalar(@orgs), "proteomes to",
-                    scalar(@$queryHmm), "HMMs",
-                    "and", scalar(@$querySeq), "sequences")."\n";
+                    scalar(keys %queryHmm), "HMMs",
+                    "and", scalar(keys %querySeq), "sequences")."\n";
 
-  open (my $fhOut, ">", $outFile) || die "Cannot write to $outFile\n";
-  print $fhOut join("\t", @fields)."\n";
 
   my %hmmTmp = (); # hmm to tmp hits file
   my $nRunning = 0;
-  foreach my $row (@$queryHmm) {
+  foreach my $hmmId (sort keys %queryHmm) {
     $nRunning++;
     if ($nRunning > $nCPU) {
       print STDERR "Waiting\n" if defined $verbose;
@@ -103,7 +128,7 @@ END
       $nRunning--;
       print STDERR "Done waiting\n" if defined $verbose;
     }
-    my $hmmId = $row->{hmmId};
+    my $row = $queryHmm{$hmmId};
     my $hmmFileName = $inDir . "/" . $row->{hmmFileName};
     my $tmpfile = "/tmp/gapsearch.$$.$hmmId.domtbl";
     $hmmTmp{$hmmId} = $tmpfile;
@@ -122,8 +147,9 @@ END
   }
   print STDERR "All " . scalar(keys %hmmTmp) . " HMM analyses complete\n";
 
-  foreach my $row (@$queryHmm) {
-    my $hmmId = $row->{hmmId};
+  my %hits = (); # orgId => queryId => list of hits
+  # (same fields as output)
+  foreach my $hmmId (sort keys %queryHmm) {
     open(my $fhIn, "<", $hmmTmp{$hmmId})
       || die "hmmsearch failed to create $hmmTmp{$hmmId}\n";
     while (my $line = <$fhIn>) {
@@ -131,25 +157,18 @@ END
       next if $line =~ m/^#/;
       my @F = split /\s+/, $line;
       my ($hitId, undef, $hitlen, $hmmName, undef, $hmmLen, $seqeval, $seqscore, undef, undef, undef, undef, $domeval, $domscore, undef, $qbeg, $qend, $hitbeg, $hitend) = @F;
-      print $fhOut join("\t", $hitId, "hmm", $hmmId, $domscore, $hitbeg, $hitend, $qbeg, $qend, $hmmLen, "")."\n";
+      my $orgId = $hitId; $orgId =~ s/:.*//;
+      die "Unknown orgId $orgId in hmm hits from $aaIn" unless exists $orgs{$orgId};
+      push @{ $hits{$orgId}{$hmmId} }, [ $hitId, "hmm", $hmmId, $domscore, $hitbeg, $hitend, $qbeg, $qend, $hmmLen, "" ];
     }
     unlink($hmmTmp{$hmmId});
   }
 
   my $cfile = "/tmp/gapsearch.$$.curated";
-  my %queryLen = ();
   open(my $fhC, ">", $cfile) || die "Cannot write to $cfile\n";
-  foreach my $row (@$querySeq) {
-    my $id;
-    if ($row->{queryType} eq "curated") {
-      $id = $row->{curatedIds};
-    } elsif ($row->{queryType} eq "curated2") {
-      $id = "curated2:" . $row->{protId}
-    } elsif ($row->{queryType} eq "uniprot") {
-      $id = "uniprot:" . $row->{uniprotId};
-    } else {
-      die "Cannot handle query type $row->{queryType}";
-    }
+  my %queryLen = ();
+  foreach my $id (sort keys %querySeq) {
+    my $row = $querySeq{$id};
     $queryLen{$id} = length( $row->{seq} );
     print $fhC join("", ">", $id, "\n", $row->{seq}, "\n");
   }
@@ -166,15 +185,86 @@ END
   open(my $fhH, "<", "$cfile.hits") || die "usearch did not create $cfile.hits\n";
   while(my $line = <$fhH>) {
     chomp $line;
-    my ($id, $hitId, $identity, $alen, $mm, $gap, $qbeg, $qend, $sbeg, $send, $eval, $bits)
+    my ($queryId, $hitId, $identity, $alen, $mm, $gap, $qbeg, $qend, $sbeg, $send, $eval, $bits)
       = split /\t/, $line;
-    die "ublast found hit for unknown item $id\n" unless exists $queryLen{$id};
+    die "ublast found hit for unknown item $queryId\n" unless exists $queryLen{$queryId};
     $hitId =~ s/ .*//; # the first part of the header line is the locusId
-    print $fhOut join("\t", $hitId, "blast", $id, $bits, $sbeg, $send, $qbeg, $qend,
-                      $queryLen{$id}, $identity)."\n";
+    my $orgId = $hitId; $orgId =~ s/:.*//;
+    die "Unknown org $orgId in hits from $aaIn" unless exists $orgs{$orgId};
+    push @{ $hits{$orgId}{$queryId} }, [ $hitId, "blast", $queryId, $bits, $sbeg, $send, $qbeg, $qend,
+                            $queryLen{$queryId}, $identity ];
   }
   close($fhH) || die "Error reading $cfile.hits\n";
   unlink("$cfile");
   unlink("$cfile.hits");
+
+  open (my $fhOut, ">", $outFile) || die "Cannot write to $outFile\n";
+  print $fhOut join("\t", @fields)."\n";
+  foreach my $orgId (sort keys %hits) {
+    my $queryHits = $hits{$orgId};
+    my %shortHits = (); # queryId to list of hits to keep
+
+    # Keep just the top/good hits for each query (in this organism)
+    foreach my $queryId (keys %$queryHits) {
+      my @sorted = sort { $b->[3] <=> $a->[3] } @{ $queryHits->{$queryId} };
+      my $old = scalar(@sorted);
+      if (@sorted > $maxCand) {
+        $#sorted = $maxCand-1;
+        print STDERR "$queryId -- from $old to " . scalar(@sorted) . " entries\n"
+          if defined $verbose;
+      }
+      my @keep = ();
+      my $nWeak = 0;
+      foreach my $row (@sorted) {
+        my $identity = $row->[9];
+        if ($identity eq "" || $identity >= 40) {
+          push @keep, $row; # HMM hit or good hit
+        } else {
+          $nWeak++;
+          push @keep, $row if $nWeak <= $maxWeak;
+        }
+      }
+      print STDERR "$queryId -- from $old to " . scalar(@sorted) . " entries\n"
+        if defined $verbose;
+      $shortHits{$queryId} = \@keep;
+    }
+
+    # Identify the top candidates for each pathway:step
+    my %hitsByStep = ();
+    foreach my $query (@$queries) {
+      my $queryId = $query->{queryId};
+      next unless exists $shortHits{$queryId};
+      my $stepId = $query->{stepId};
+      my $pathwayId = $query->{pathwayId};
+      push @{ $hitsByStep{$stepId . ":::" . $pathwayId} }, @{ $shortHits{$queryId} };
+    }
+
+    my %locusKeep = ();
+    foreach my $hits (values %hitsByStep) {
+      my @hits = sort { $b->[3] <=> $a->[3] } @$hits; # by bit score
+      my $nThisStep = 0;
+      my %locusThisStep;
+      foreach my $hit (@hits) {
+        my $locusId = $hit->[0];
+        if (!exists $locusThisStep{$locusId}) {
+          $locusKeep{$locusId} = 1;
+          $locusThisStep{$locusId} = 1;
+          $nThisStep++;
+          last if  $nThisStep >= $maxCand;
+        }
+      }
+    }
+    print STDERR "Kept for $orgId -- " . scalar(keys %locusKeep) . " loci\n"
+      if defined $verbose;
+
+    foreach my $query (sort keys %shortHits) {
+      foreach my $row (@{ $shortHits{$query} }) {
+        my $locusId = $row->[0];
+        print $fhOut join("\t", @$row)."\n"
+          if exists $locusKeep{$locusId};
+      }
+    }
+  } # end loop over orgId
+
   close($fhOut) || die "Error writing to $outFile\n";
 }
