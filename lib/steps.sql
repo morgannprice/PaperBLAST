@@ -77,7 +77,7 @@ CREATE TABLE StepQuery(
   uniprotId TEXT NOT NULL,
   protId TEXT NOT NULL, /* for curated2 */
   hmmId TEXT NOT NULL, /* i.e., PF02965 */
-  hmmFileName TEXT NOT NULL, /* i.e., PF02965.17 */
+  hmmFileName TEXT NOT NULL, /* i.e., PF02965.17.hmm */
   /* The description is redundant with information in the curated database for
      queryType = curated, curated2, or ignore */
   desc TEXT NOT NULL,
