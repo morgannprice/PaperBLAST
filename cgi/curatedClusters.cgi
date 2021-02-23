@@ -684,6 +684,14 @@ sub MatchRows($$$) {
   my ($dbhC, $query, $word) = @_;
   die "Searching for empty term"
     unless defined $query && $query ne "";
+  if ($word && $query =~ m/^[0-9][.][0-9-]+[.][0-9-]+[.][A-Za-z]?[0-9-]*$/) {
+    # use the EC table
+    return $dbhC->selectall_arrayref(qq{ SELECT * from ECToCurated
+                                         JOIN CuratedInfo USING (curatedIds)
+                                         WHERE ec = ? },
+                                     { Slice => {} }, $query);
+  }
+  #else
   my $chits = $dbhC->selectall_arrayref("SELECT * from CuratedInfo WHERE descs LIKE ?",
                                        { Slice => {} }, "%" . $query . "%");
   if ($word) {
