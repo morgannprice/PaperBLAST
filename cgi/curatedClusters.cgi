@@ -686,14 +686,18 @@ sub MatchRows($$$) {
     unless defined $query && $query ne "";
   my $chits = $dbhC->selectall_arrayref("SELECT * from CuratedInfo WHERE descs LIKE ?",
                                        { Slice => {} }, "%" . $query . "%");
-  my @out = ();
-  foreach my $chit (@$chits) {
-    my @descs = split /;; /, $chit->{descs};
-    my @list = map { { 'desc' => $_ } } @descs;
-    my $matches = CuratedWordMatch(\@list, $query, 'desc');
-    push @out, $chit if @$matches > 0;
+  if ($word) {
+    my @out = ();
+    foreach my $chit (@$chits) {
+      my @descs = split /;; /, $chit->{descs};
+      my @list = map { { 'desc' => $_ } } @descs;
+      my $matches = CuratedWordMatch(\@list, $query, 'desc');
+      push @out, $chit if @$matches > 0;
+    }
+    return \@out;
   }
-  return \@out;
+  #else
+  return $chits;
 }
 
 sub CuratedToHtml($$) {
