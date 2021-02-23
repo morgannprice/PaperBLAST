@@ -86,13 +86,17 @@ die "Invalid set $set: no $stepPath directory" unless -d $stepPath;
 my $queryPath = "../tmp/path.$set"; # intermediate files
 die "Invalid set $set: no $queryPath directory" unless -d $queryPath;
 
-my ($steps, $banner, $bannerURL);
-my @pathInfo;
-my %pathInfo;
+my ($banner, $bannerURL);
+my $pathInfo = (); # rows from Pathway table, in order
+my %pathInfo; # pathwayId => row from Pathway table
+my $dbhS; # database handle for steps.db; used only if pathSpec is set
 if ($pathSpec ne "") {
-  $steps = ReadSteps("../gaps/$set/$pathSpec.steps") if $pathSpec && $pathSpec ne "all";
-  @pathInfo = ReadTable("$stepPath/$set.table", ["pathwayId","desc"]);
-  %pathInfo = map { $_->{pathwayId} => $_ } @pathInfo;
+  my $stepsDb = "$queryPath/steps.db";
+  $dbhS = DBI->connect("dbi:SQLite:dbname=$stepsDb","","",{ RaiseError => 1 }) || die $DBI::errstr;
+
+  $pathInfo = $dbhS->selectall_arrayref("SELECT * FROM Pathway",
+                                       { Slice => {} });
+  %pathInfo = map { $_->{pathwayId} => $_ } @$pathInfo;
   $banner = "GapMind for " . ($pathInfo{all}{desc} || "pathways");
   $bannerURL = "gapView.cgi";
 }
@@ -135,7 +139,6 @@ if ($format eq "") {
 
 autoflush STDOUT 1; # show preliminary results
 
-
 if ($query eq "" && $pathSpec eq "") {
   print
     start_form(-method => 'get', -action => 'curatedClusters.cgi'),
@@ -162,18 +165,18 @@ if ($query eq "" && $pathSpec eq "") {
 
 my $dbhC = DBI->connect("dbi:SQLite:dbname=$curatedDb","","",{ RaiseError => 1 }) || die $DBI::errstr;
 
-# The the list of matching sequences.
-# Most of these ids are from curatedIds
-my @hits = (); # Hits from matching curated descriptions
-
-# uniprotId => sequence, for the hitIds that are from UniProt, not from curated
-my %uniprotSeq = ();
+# The list of matching sequences, mostly from CuratedInfo
+# In step mode, some entries are from uniprot, with
+#   curatedIds = UniProt::protId and the seq field set.
+#	(curated2 is ignored)
+my @hits = (); # Hits from matching curated description
 
 # Remember which hits were from HMMs
-my %hitHmm = (); # hits from HMMs (as curatedIds)
-my %hitHmmGood = (); # hits from HMMs with high coverage
+my %hitHmm = (); # curatedIds => 1 if found by an HMM
+my %hitHmmGood = (); # the same, but only for HMM hits with high coverage
 # hits from other rules (except uniprots not in the curated database which are in %uniprotSeq)
-my %hitRule = ();
+my %uniprotSeq = ();
+my %hitPart = (); # curatedIds => 1 if matches a (non-HMM) part
 my %ignore = (); # ids to ignore similarity to (used in $closeMode)
 
 if ($query =~ m/^transporter:(.+)$/) {
@@ -214,7 +217,7 @@ if ($query =~ m/^transporter:(.+)$/) {
   die if $step ne "";
   print p("Pathways for", $pathInfo{all}{desc}),
     start_ul();
-  foreach my $pathObj (@pathInfo) {
+  foreach my $pathObj (@$pathInfo) {
     if ($pathObj->{pathwayId} ne "all") {
       print li(a({ -href => "curatedClusters.cgi?set=$set&path=".$pathObj->{pathwayId} },
                  $pathObj->{desc}));
@@ -223,12 +226,13 @@ if ($query =~ m/^transporter:(.+)$/) {
   print end_ul(),
     p("Or",a({-href => "curatedClusters.cgi?set=$set"}, "search by keyword"));
 } elsif ($pathSpec ne "" && $step ne "") { # find proteins for this step
-  my $stepDesc = $steps->{steps}{$step}{desc} || die "Unknown step $step in gaps/$set/$pathSpec.steps";
-
-  my @querycol = qw{step type query desc file sequence};
-  my @queries = ReadTable("$queryPath/$pathSpec.query", \@querycol);
-  @queries = grep { $_->{step} eq $step } @queries;
-  die "Unknown step $step, not in the $pathSpec.query file" unless @queries > 0;
+  my ($stepDesc) = $dbhS->selectrow_array("SELECT desc FROM Step WHERE pathwayId = ? AND stepId = ?",
+                                          {}, $pathSpec, $step);
+  die "Unknown step $step in pathway $pathSpec" unless defined $stepDesc;
+  my $stepParts = $dbhS->selectall_arrayref("SELECT * from StepPart WHERE pathwayId = ? AND stepId = ?",
+                                            { Slice => {} }, $pathSpec, $step);
+  my $queries = $dbhS->selectall_arrayref("SELECT * from StepQuery WHERE pathwayId = ? AND stepId = ?",
+                                          { Slice => {} }, $pathSpec, $step);
   print p($closeMode ? "Finding" : "Clustering",
           "the characterized proteins for", i($step), "($stepDesc) in $pathInfo{$pathSpec}{desc}")
     unless $format;
@@ -247,26 +251,26 @@ if ($query =~ m/^transporter:(.+)$/) {
     unless $format;
 
   # Show step description
-  die "Unknown step $step" unless defined $steps->{steps}{$step};
-  print p(b("Definition of", i($step)));
-  print start_ul();
-  foreach my $search (@{ $steps->{steps}{$step}{search} }) {
-    my ($type,$value) = @$search;
-    print li($type,$value)."\n";
+  if ($format eq "") {
+    print p(b("Definition of", i($step))) if $format eq "";
+    print start_ul();
+    foreach my $part (@$stepParts) {
+      print li($part->{partType},$part->{value})."\n";
+    }
+    print end_ul(), "\n";
   }
-  print end_ul(), "\n";
 
-  foreach my $query (@queries) {
-    if ($query->{type} eq "curated") {
-      my $curatedIds = $query->{query};
+  foreach my $query (@$queries) {
+    if ($query->{queryType} eq "curated") {
+      my $curatedIds = $query->{curatedIds};
       my $row = $dbhC->selectrow_hashref("SELECT * from CuratedInfo WHERE curatedIds = ?",
-                                        {}, $curatedIds);
-      die "Unknown identifier $curatedIds in query for $step" unless defined $row;
+                                         {}, $curatedIds);
+      die "Unknown curatedIds $curatedIds" unless defined $row;
       push @hits, $row;
-      $hitRule{$curatedIds} = 1;
-    } elsif ($query->{type} eq "hmm") {
-      my $hmm = $query->{query};
-      my $hmmFile = $queryPath. "/" . $query->{file};
+      $hitPart{$curatedIds} = 1;
+    } elsif ($query->{queryType} eq "hmm") {
+      my $hmm = $query->{hmmId};
+      my $hmmFile = $queryPath. "/" . $query->{hmmFileName};
       die "No such hmm file: $hmmFile" unless -e $hmmFile;
       my $hitsFile = "$hmmFile.curatedhits";
       unless (NewerThan($hitsFile, $hmmFile) && NewerThan($hitsFile, $curatedFaa)) {
@@ -281,7 +285,7 @@ if ($query =~ m/^transporter:(.+)$/) {
         chomp $line;
         next if $line =~ m/^#/;
         my @F = split /\s+/, $line;
-      my ($curatedIds, undef, $hitlen, $hmmName, undef, $hmmLen, $seqeval, $seqscore, undef, undef, undef, undef, $domeval, $domscore, undef, $qbeg, $qend, $hitbeg, $hitend) = @F;
+        my ($curatedIds, undef, $hitlen, $hmmName, undef, $hmmLen, $seqeval, $seqscore, undef, undef, undef, undef, $domeval, $domscore, undef, $qbeg, $qend, $hitbeg, $hitend) = @F;
         die "Cannot parse hmmsearch line $line"
           unless defined $hitend && $hitend > 0 && $hmmLen > 0 && $curatedIds ne "";
         my $row = $dbhC->selectrow_hashref("SELECT * from CuratedInfo WHERE curatedIds = ?",
@@ -296,38 +300,38 @@ if ($query =~ m/^transporter:(.+)$/) {
         }
       }
       close($fhHits) || die "Error reading $hitsFile";
-    } elsif ($query->{type} eq "uniprot") {
-      my $id = "UniProt::" . $query->{query}; # XXX no way to tell that this SwissProt is known, does this matter?
+    } elsif ($query->{queryType} eq "uniprot") {
+      my $id = "UniProt::" . $query->{uniprotId};
       my $desc = $query->{desc};
       $desc =~ s/^(rec|sub)name: full=//i;
       $desc =~ s/ *[{][A-Z0-9:|.-]+[}] *//g;
       $desc =~ s/altname: full=//i;
       $desc =~ s/;? *$//;
-      my $row = { 'curatedIds' => $id, 'descs' => $desc,
-                  'seqLength' => length($query->{sequence}) };
-      push @hits, $row;
-      $uniprotSeq{$id} = $query->{sequence};
-    } elsif ($query->{type} eq "curated2") {
+      push @hits, { 'curatedIds' => $id, 'descs' => $desc,
+                    'seqLength' => length($query->{seq}) };
+      $uniprotSeq{$id} = $query->{seq};
+    } elsif ($query->{queryType} eq "curated2") {
       ; # curated2 means not actually characterized, so skip that
-    } elsif ($query->{type} eq "ignore") {
-      $ignore{ $query->{query} } = 1;
+    } elsif ($query->{queryType} eq "ignore") {
+      $ignore{ $query->{curatedIds} } = 1;
     } else {
-      die "Unknown query type $query->{type} for step $step in $queryPath/$pathSpec.query";
+      die "Unknown query type $query->{queryType} for step $step in $queryPath/$pathSpec.query";
     }
   }
-  print p("Sorry, no curated sequences were found matching any of", scalar(@queries),
-          "rules for step $step") if @hits == 0;
+  print p("Sorry, no curated sequences were found matching any of", scalar(@$queries),
+          "queries for step $step") if @hits == 0;
 
   # Remove hits that match ignore (this should only happen for HMM hits)
   @hits = grep { !exists $ignore{ $_->{curatedIds} } } @hits;
 } elsif ($pathSpec ne "") {
   die "Unknown pathway $pathSpec" unless exists $pathInfo{$pathSpec};
-  my @steps = sort { $a->{i} <=> $b->{i} } values %{ $steps->{steps} };
+  my $steps = $dbhS->selectall_arrayref("SELECT * from Step WHERE pathwayId = ?",
+                                        { Slice => {} }, $pathSpec);
   print h3("Steps in $pathInfo{$pathSpec}{desc}"),
     p("Cluster the charaterized proteins for a step:"), start_ul();
-  foreach my $stepObj (@steps) {
-    print li(a({ -href => "curatedClusters.cgi?set=$set&path=$pathSpec&step=$stepObj->{name}" },
-            $stepObj->{name}) . ":", $stepObj->{desc});
+  foreach my $stepObj (@$steps) {
+    print li(a({ -href => "curatedClusters.cgi?set=$set&path=$pathSpec&step=$stepObj->{stepId}" },
+            $stepObj->{stepId}) . ":", $stepObj->{desc});
   }
   print end_ul(),
     p("Or see all", a({-href => "curatedClusters.cgi?set=$set&path=all"}, "pathways"));
@@ -404,10 +408,10 @@ if ($closeMode && $pathSpec && $step) {
   print p("Removing ignored items reduces this to", scalar(@close), "close sequences.")
     if scalar(@close) < $nPreIgnore;
   # And also record hmm-only good hits
-  my $hasSeqRule = keys(%uniprotSeq) > 0 || keys(%hitRule) > 0;
+  my $hasSeqRule = keys(%uniprotSeq) > 0 || keys(%hitPart) > 0;
   my @hitHmmGoodOnly = ();
   if ($hasSeqRule) {
-    @hitHmmGoodOnly = grep !exists $ignore{$_} && !exists $hitRule{$_}, keys %hitHmmGood;
+    @hitHmmGoodOnly = grep !exists $ignore{$_} && !exists $hitPart{$_}, keys %hitHmmGood;
     print p("There are also", scalar(@hitHmmGoodOnly), "HMM-only high-coverage hits.")
       if @hitHmmGoodOnly > 0;
   }
@@ -500,11 +504,11 @@ foreach my $id (keys %seqs) {
 # Report the clusters
 
 # Mark HMM only hits
-my $hasSeqRule = keys(%uniprotSeq) > 0 || keys(%hitRule) > 0;
+my $hasSeqRule = keys(%uniprotSeq) > 0 || keys(%hitPart) > 0;
 my $hmmColor = $hasSeqRule ? "red" : "black";
 # mark hits from Hmm only
 foreach my $ids (keys %hitHmm) {
-  if (!exists $hitRule{$ids}) {
+  if (!exists $hitPart{$ids}) {
     $hitInfo{$ids}{descs} .= exists $hitHmmGood{$ids} ?
       span({-style => "color: $hmmColor;"}, " (from HMM only)")
         : " (low-coverage HMM hit)";
