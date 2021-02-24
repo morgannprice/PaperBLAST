@@ -371,7 +371,7 @@ sub UniqIdToSeq($$$) {
   return $v[0];
 }
 
-# PaperBLAST database handle and uniqId => reference to a list of (db,protId,desc) pairs
+# PaperBLAST database handle and uniqId => reference to a list of (db,protId,desc) triples
 sub FetchCuratedInfo($$) {
   my ($pb, $uniqId) = @_;
   my $dups = $pb->selectcol_arrayref(qq{ SELECT duplicate_id FROM SeqToDuplicate
