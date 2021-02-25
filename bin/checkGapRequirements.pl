@@ -11,7 +11,7 @@ my $resultsDir = "$Bin/../tmp";
 my $set = "aa";
 
 my $usage = <<END
-checkGapRequirements.pl -org orgsNif > warnings.tab
+checkGapRequirements.pl -org orgsNif -out warnings.tab
 
 Given a pathway set and an org directory with computed results,
 check against the dependency requirements and output a table of warnings.
@@ -23,13 +23,15 @@ Optional arguments:
 END
 ;
 
-my ($orgDir,$stepsDb);
+my ($orgDir,$stepsDb,$outFile);
 die $usage
   unless GetOptions('set=s' => \$set,
                     'org=s' => \$orgDir,
                     'stepsDb' => \$stepsDb,
-                    'results=s' => \$resultsDir)
-  && @ARGV == 0;
+                    'results=s' => \$resultsDir,
+                    'out=s' => \$outFile)
+  && @ARGV == 0
+  && defined $outFile;
 die "No organism directory specified\n" unless defined $orgDir;
 $stepsDb = "$resultsDir/path.$set/steps.db";
 foreach my $dir ($resultsDir, "$resultsDir/$orgDir") {
@@ -38,9 +40,6 @@ foreach my $dir ($resultsDir, "$resultsDir/$orgDir") {
 }
 
 my $dbhS = DBI->connect("dbi:SQLite:dbname=${stepsDb}","","",{ RaiseError => 1 }) || die $DBI::errstr;
-my $doneFile = "$resultsDir/$orgDir/$set.sum.done";
-die "Organisms in $orgDir are not up to date:\n$doneFile\nshould be newer than\n$stepsDb\n"
-  unless NewerThan($doneFile, $stepsDb);
 
 my $reqs = $dbhS->selectall_arrayref("SELECT * FROM Requirement",
                                      { Slice => {} });
@@ -60,13 +59,15 @@ foreach my $row (@sumRules) {
   push @{ $sumRules{$row->{orgId}} }, $row;
 }
 
-print join("\t", qw{orgId pathwayId ruleId requiredPathwayId requiredRuleId requiredStepId isNot comment})."\n";
+open(my $fh, ">", $outFile) || die "Cannot write to $outFile\n";
+print $fh join("\t", qw{orgId pathwayId ruleId requiredPathwayId requiredRuleId requiredStepId isNot comment})."\n";
 foreach my $org (@orgs) {
   my $orgId = $org->{orgId};
   my $warns = CheckReqs($sumRules{$orgId}, $sumSteps{$orgId}, $reqs);
   foreach my $warn (@$warns) {
-    print join("\t", $orgId, $warn->{pathwayId}, $warn->{ruleId},
-               $warn->{requiredPathwayId}, $warn->{requiredRuleId} || "", $warn->{requiredStepId} || "",
-               $warn->{isNot}, $warn->{comment})."\n";
+    print $fh join("\t", $orgId, $warn->{pathwayId}, $warn->{ruleId},
+                   $warn->{requiredPathwayId}, $warn->{requiredRuleId} || "", $warn->{requiredStepId} || "",
+                   $warn->{isNot}, $warn->{comment})."\n";
   }
 }
+close($fh) || die "Error writing to $outFile";
