@@ -12,7 +12,7 @@ use Steps qw{ReadOrgTable ReadOrgProtein};
 
 {
   my $nCPU = $ENV{MC_CORES} || 4;
-  my $maxKeep = 5;
+  my $maxKeep = 8;
   my @infields = qw{locusId type queryId bits locusBegin locusEnd qBegin qEnd qLength identity};
   my @outfields = qw{locusId otherId bits locusBegin locusEnd otherBegin otherEnd otherIdentity};
 
