@@ -10,17 +10,21 @@ use Steps;
 use pbutils qw{ReadTable ReadFastaEntry SqliteImport};
 
 my $usage = <<END
-Usage: buildStepsDb.pl -set set [ -dir tmp/set.aa ]
+Usage: buildStepsDb.pl -set set [ -dir tmp/path.set ]
 
 Assumes that the directory already contains curated.db and *.query for
 each step as well as any related HMM models. Does not check for
 consistency between *.query and curated.db.
+
+Optional arguments:
+  -out tmp/path.set/steps.db -- the output database
 END
 ;
 
-my ($set, $workDir);
+my ($set, $workDir, $outDb);
 die $usage unless GetOptions('set=s' => \$set,
-                             'dir=s' => \$workDir)
+                             'dir=s' => \$workDir,
+                            'out=s' => \$outDb)
   && defined $set
   && @ARGV ==0;
 $workDir = "$RealBin/../tmp/path.${set}" unless defined $workDir;
@@ -28,6 +32,7 @@ my $stepDir = "$RealBin/../gaps/$set";
 foreach my $dir ($workDir, $stepDir) {
   die "No such directory: $dir\n" unless -d $dir;
 }
+$outDb = "$workDir/steps.db" if !defined $outDb;
 
 my $curatedDb = "$workDir/curated.db";
 my $dbhC = DBI->connect("dbi:SQLite:dbname=$curatedDb","","",{ RaiseError => 1 }) || die $DBI::errstr;
@@ -80,8 +85,6 @@ if (-e $markerSeqFile) {
     $markerSeq{$gdb}{$gid}{$marker} = $seq;
   }
 }
-
-my $stepsDb = "$workDir/steps.db";
 
 my $tmpDir = $ENV{TMP} || "/tmp";
 my $tmpDbFile = "$tmpDir/buildStepsDb.$$.db";
@@ -199,11 +202,11 @@ SqliteImport($tmpDbFile, "Requirement", \@requirements);
 my %curatedGaps = map { join("::", $_->{gdb}, $_->{gid}, $_->{pathway}, $_->{step}) => $_ } @curatedGaps;
 
 my @knownGaps = ();
-my %hasKnownGap = (); # gdb => gid => 1
+my %hasKnownGap = (); # gdb => gid => pathway => step => 1
 foreach my $kg (@knownGapsIn) {
   print STDERR "No marker sequences for $kg->{gdb} $kg->{gid}, which has known gaps\n"
     unless exists $markerSeq{ $kg->{gdb} }{ $kg->{gid} };
-  $hasKnownGap{ $kg->{gdb} }{ $kg->{gid} } = 1;
+  $hasKnownGap{ $kg->{gdb} }{ $kg->{gid} }{ $kg->{pathway} }{ $kg->{step} } = 1;
   my $key = join("::", $kg->{gdb}, $kg->{gid}, $kg->{pathway}, $kg->{step});
   my ($gapClass, $comment);
   if (exists $curatedGaps{$key}) {
@@ -214,6 +217,20 @@ foreach my $kg (@knownGapsIn) {
                      $kg->{pathway}, $kg->{step},
                      $gapClass, $comment ];
 }
+# And also report what is curated, but is in curatedGaps only
+foreach my $cg (@curatedGaps) {
+  next if exists $hasKnownGap{ $cg->{gdb} }{ $cg->{gid} }{ $cg->{pathway} }{ $cg->{step} };
+  push @knownGaps, [ $cg->{gdb}, $cg->{gid}, $cg->{genomeName},
+                     $cg->{pathway}, $cg->{step}, $cg->{class}, $cg->{comment} ];
+}
+foreach my $kg (@knownGaps) {
+  my ($gdb, $gid, $genomeName, $pathway, $step, $gapClass, $ocmment) = @$kg;
+  die "gdb, gid, genomeName, pathway must be non-empty: @$kg"
+    unless $gdb && $gid ne "" && $genomeName && $pathway;
+  die "step can only be empty for curated gaps with a class: @$kg"
+    if $step eq "" && $gapClass eq "";
+}
+
 SqliteImport($tmpDbFile, "KnownGap", \@knownGaps);
 
 # Build KnownGapMarker table
@@ -250,6 +267,6 @@ foreach my $hmmId (sort keys %hmmFileName) {
 }
 $dbhS->disconnect();
 
-system("cp $tmpDbFile $stepsDb") == 0 || die "Copying $tmpDbFile to $stepsDb failed: $!";
+system("cp", $tmpDbFile, $outDb) == 0 || die "Copying $tmpDbFile to $outDb failed: $!";
 unlink($tmpDbFile);
-print STDERR "Built steps database $stepsDb\n";
+print STDERR "Built steps database $outDb\n";
