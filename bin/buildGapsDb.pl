@@ -12,6 +12,7 @@ my $usage = <<END
 buildGapsDb.pl -gaps aa.sum -requirements warningsFile -markersim aa.known.sim -out gaps.db
   Given the output files from gapsummary.pl, checkGapRequirements.pl,
   and orgsVsMarkers.pl, build a sqlite3 gaps database.
+  The markersim argument is optional.
 END
 ;
 
@@ -23,13 +24,14 @@ END
                       'markersim=s' => \$markerSimFile,
                       'out=s' => \$outDb)
       && @ARGV == 0
-      && defined $gapsPre && defined $warningsFile && defined $markerSimFile && defined $outDb;
+      && defined $gapsPre && defined $warningsFile && defined $outDb;
 
   my $schemaFile = "$RealBin/../lib/gaps.sql";
   foreach my $file ("$gapsPre.cand", "$gapsPre.steps", "$gapsPre.rules",
-                    $warningsFile, $markerSimFile, $schemaFile) {
+                    $warningsFile, $schemaFile) {
     die "No such file: $file\n" unless -e $file;
   }
+  die "No such file: $markerSimFile\n" if defined $markerSimFile && ! -e $markerSimFile;
 
   my @candFields = qw{orgId pathway step score locusId sysName desc locusId2 sysName2 desc2 blastBits curatedIds identity blastCoverage blastScore curatedDesc hmmBits hmmId hmmCoverage hmmScore hmmDesc otherIds otherBits otherIdentity otherCoverage};
   my @cands = ReadTable("$gapsPre.cand", \@candFields);
@@ -58,9 +60,9 @@ END
     push @ruleOut, \@rowOut;
   }
 
-  my @warningFields = qw{orgId pathway rule requiredPath requiredRule requiredStep not comment};
+  my @warningFields = qw{orgId pathwayId ruleId requiredPathwayId requiredRuleId requiredStepId isNot comment};
   my @warnings = ReadTable($warningsFile, \@warningFields);
-  my @warningOutFields = qw{orgId pathway rule requiredPath requiredRule requiredStep not comment};
+  my @warningOutFields = qw{orgId pathwayId ruleId requiredPathwayId requiredRuleId requiredStepId isNot comment};
   my @warningOut = ();
   foreach my $row (@warnings) {
     my @rowOut = map $row->{$_}, @warningOutFields;
@@ -68,7 +70,9 @@ END
   }
 
   my @markerSimFields = qw{orgId orgId2 identity nMarkers};
-  my @markerSim = ReadTable($markerSimFile, \@markerSimFields);
+  my @markerSim = ();
+  @markerSim = ReadTable($markerSimFile, \@markerSimFields)
+    if defined $markerSimFile;
   my @markerSimOutFields = qw{orgId orgId2 identity nMarkers};
   my @markerSimOut = ();
   foreach my $row (@markerSim) {
