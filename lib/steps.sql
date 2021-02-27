@@ -104,13 +104,13 @@ CREATE TABLE Requirement(
 );
 
 /* Describe known gaps, that is, cases where a step is missing but the organism
-   performs the pathway. These optionally have curated classifications and descriptions */
+   performs the pathway. These optionally have curated classifications and comments */
 CREATE TABLE KnownGap(
   gdb TEXT NOT NULL, /* which genome database */
   gid TEXT NOT NULL, /* genome identifier */
   genomeName TEXT NOT NULL, /* for description */
   pathwayId TEXT NOT NULL,
-  stepId TEXT NOT NULL,
+  stepId TEXT NOT NULL,   /* can be missing, for curated gaps */
   /* If not-empty, should be spurious (i.e., gene model is missing), diverged, or novel. */
   gapClass TEXT NOT NULL,
   comment TEXT NOT NULL,

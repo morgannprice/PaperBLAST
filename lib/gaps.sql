@@ -42,7 +42,7 @@ CREATE TABLE StepScore(
   stepId TEXT NOT NULL,
   onBestPath INT NOT NULL, /* 0 or 1 */
   /* the best scoring candidate (if any) */
-  score INT NOT NULL, /* 0, 1, or 2 */
+  score INT NOT NULL, /* 0, 1, or 2, or empty if there are no candidates at all */
   locusId TEXT NOT NULL, /* comma delimited if this is a split hit */
   sysName TEXT NOT NULL, /* ditto */
   /* the 2nd-best scoring candidate (if any) */
