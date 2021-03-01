@@ -31,7 +31,7 @@ The compressed genbank format files, into dir/refseq/complete.*.gbff.gz (86 GB)
 	These are listed in dir/refseq/files
 
 From GeneRIF:
-ftp://ftp.ncbi.nih.gov/gene/GeneRIF/generifs_basic.gz
+https://ftp.ncbi.nih.gov/gene/GeneRIF/generifs_basic.gz
 
 From PubMed: metadata about articles (used primarily for finding snippets in abstracts)
 	These are placed within dir/pubmed/updatefiles/*.xml.gz
@@ -180,20 +180,20 @@ if (exists $dosteps{"refseq"}) {
     print STDERR "Step refseq\n";
     &mkdir_if_needed("$dir/refseq");
     unlink($listfile);
-    &wget("ftp://ftp.ncbi.nlm.nih.gov/refseq/release/complete/", $listfile);
+    &wget("https://ftp.ncbi.nlm.nih.gov/refseq/release/complete/", $listfile);
     my @files = &ftp_html_to_files($listfile);
     @files = grep m/^complete.*gbff[.]gz$/, @files;
     die "No complete*.gbff.gz files in refseq, see $listfile" if @files == 0;
     print STDERR "Found " . scalar(@files) . " refseq gbff.gz files to fetch\n";
     &write_list(\@files, "$dir/refseq/files");
     foreach my $file (@files) {
-        &maybe_wget("ftp://ftp.ncbi.nlm.nih.gov/refseq/release/complete/$file", "$dir/refseq/$file");
+        &maybe_wget("https://ftp.ncbi.nlm.nih.gov/refseq/release/complete/$file", "$dir/refseq/$file");
     }
 }
 
 if (exists $dosteps{"generif"}) {
   print STDERR "Step generif\n";
-  &maybe_wget("ftp://ftp.ncbi.nih.gov/gene/GeneRIF/generifs_basic.gz", "$dir/generifs_basic.gz");
+  &maybe_wget("https://ftp.ncbi.nih.gov/gene/GeneRIF/generifs_basic.gz", "$dir/generifs_basic.gz");
   &maybe_run("gunzip $dir/generifs_basic.gz");
 }
 
