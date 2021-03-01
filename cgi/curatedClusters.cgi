@@ -98,7 +98,7 @@ if ($pathSpec ne "") {
                                        { Slice => {} });
   %pathInfo = map { $_->{pathwayId} => $_ } @$pathInfo;
   $banner = "GapMind for " . ($pathInfo{all}{desc} || "pathways");
-  $bannerURL = "gapView.cgi";
+  $bannerURL = "gapView.cgi?set=${set}";
 }
 
 my $curatedFaa = "$queryPath/curated.faa";
