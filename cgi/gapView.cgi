@@ -1345,8 +1345,12 @@ my %stepDesc = (); # pathwayId => stepId => desc
     li(a({-href => "$sumPre.rules"}, "Rules"), "(tab-delimited)"),
     li(a({-href => "$orgPre.faa"}, "Protein sequences"), "(fasta format)"),
     li(a({-href => "$orgPre.org"}, "Organisms"), "(tab-delimited)"),
-    li(a({-href => "$stepsDir/curated.db" }, "Curated database")),
-    li(a({-href => "$stepsDir/steps.db" }, "Step database")),
+    li("SQLite3 databases"),
+    start_ul(),
+    li(a({-href => "$stepsDir/curated.db" }, "Curated proteins")),
+    li(a({-href => "$stepsDir/steps.db" }, "Rules, steps, and queries")),
+    li(a({-href => "$sumPre.db" }, "Analysis results")),
+    end_ul,
     end_ul;
   Finish();
 }
