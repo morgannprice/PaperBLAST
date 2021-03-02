@@ -52,10 +52,11 @@ in {set}.curated.gaps.tsv
 GapMind: characterized proteins and queries
 
 GapMind relies on various files in tmp/path.{set}/ to describe the
-queries for a set of pathways. For instance see tmp/path.aa/ and the tarball
-http://papers.genomics.lbl.gov/tmp/path.aa/aa.resources.tar.gz
+queries for a set of pathways. These are compiled into sqlite3
+databases curated.db and steps.db (see lib/curated.sql and steps.sql
+for the schemas). Some scripts also use curated.faa.udb (see below).
 
-This directory includes:
+The files in tmp/path.{set} include:
 
 {path}.query has the compiled queries for each step of each pathway.
 This is tab-delimited with fields step, type of step (see
@@ -74,15 +75,19 @@ db::protId. For instance, Q7XJ02 is described in both BRENDA and
 SwissProt so there is a header line
 ">BRENDA::Q7XJ02,SwissProt::Q7XJ02".
 
-To speed up fetching of sequences, gapView.cgi creates curated.faa.db,
-which uses DB_File (BerkeleyDB) to maps ids to sequences. This file is
-automatically recreated by gapView.cgi if it is out of date.
+This database is also storted as a usearch (ublast) database,
+curated.faa.udb.
 
 curated.faa.info is tab-delimited with ids, length, descs, and
 optionally id2s and orgs. ids is the comma-delimited list of
 identifiers used in the curated.faa file. length is the length of the
 sequence (in amino acids). descs, id2s, and orgs are delimited by ";; "
 and correspond to the desc, id2, and organism fields of CuratedGene.
+
+pfam.hits.tab is a tab-delimited file with all of the PFam hits for
+the sequences in curated.faa. It has no header line and has the fields
+curatedIds, pfam name, pfam accession, evalue, bits, seqFrom, seqTo,
+seqLen, hmmFrom, hmmTo, hmmLen.
 
 hetero.tab records which of these proteins is part of a heteromeric
 complex. It is tab-delimited with fields db, protId, and comment. Even
@@ -99,10 +104,6 @@ FetchAssembly), and also orgSet.
 date should be update whenever any of the other files are changed, so
 that analyses can be rerun if necessary.
 
-{set}.resources.tar.gz is a downloadable tarball that includes the
-characterized proteins, the query files, and the HMM models.
-
-
 GapMind: assemblies and results
 
 GapMind uses FetchAssembly.pm to download assemblies, see
@@ -116,17 +117,16 @@ results. For individual assemblies, these directories are named
 9e004e282fd791a3bc03b92a56fbb6c8. By convention, the directories for
 groups of assemblies have names beginning with tmp/orgs.
 
-The analysis results are in {set}.sum.*. with suffixes rules (one line
-per pathway/rule), steps (one line per pathway/step), cand (one line
-per for pathway/step/candidate), and warn (one line per violated
+The analysis results are in another sqlite3 database, {set}.sum.db
+(see lib/gaps.sql for the schema). This is built from
+{set}.sum.*. with suffixes rules (one line per pathway/rule), steps
+(one line per pathway/step), cand (one line per for
+pathway/step/candidate), and warn (one line per violated
 requirement). These are all tab-delimited. These are computed by
 gapsummary.pl or (for the warn file) checkGapRequirements.pl.
 
-The file {set}.sum.done indicates that the analysis completed.
-
 The files {set}.hits and {set}.revhits are intermediate files from
 gapsearch.pl and gaprevsearch.pl
-
 
 FetchAssembly.pm
 
