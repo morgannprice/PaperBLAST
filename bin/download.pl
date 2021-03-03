@@ -37,8 +37,6 @@ From PubMed: metadata about articles (used primarily for finding snippets in abs
 	These are placed within dir/pubmed/updatefiles/*.xml.gz
         or dir/pubmed/baseline/*.xml.gz
 	and are listed in dir/pubmed/updatefiles/files and dir/pubmed/baseline/files
-	dir/ftp.ncbi.nlm.nih.gov/pubmed/updatefiles/*.xml.gz
-	dir/ftp.ncbi.nlm.nih.gov/pubmed/updatefiles/*.xml.gz
 
 From UniProt:
 SwissProt (curated) annotations: dir/uniprot_sprot.dat.gz (0.5 GB)
@@ -203,14 +201,14 @@ if (exists $dosteps{"pubmed"}) {
     foreach my $part (qw{baseline updatefiles}) {
         &mkdir_if_needed("$dir/pubmed/$part");
         unlink($listfile);
-        &wget("ftp://ftp.ncbi.nlm.nih.gov/pubmed/$part/", $listfile);
+        &wget("https://ftp.ncbi.nlm.nih.gov/pubmed/$part/", $listfile);
         my @files = &ftp_html_to_files($listfile);
         @files = grep m/[.]xml[.]gz$/, @files;
         die "No *.xml.gz files in pubmed $part, see $listfile" if @files == 0;
         print STDERR "Found " . scalar(@files) . " pubmed $part xml.gz files to fetch\n";
         &write_list(\@files, "$dir/pubmed/$part/files");
         foreach my $file (@files) {
-            &maybe_wget("ftp://ftp.ncbi.nlm.nih.gov/pubmed/$part/$file", "$dir/pubmed/$part/$file");
+            &maybe_wget("https://ftp.ncbi.nlm.nih.gov/pubmed/$part/$file", "$dir/pubmed/$part/$file");
         }
     }
 }
