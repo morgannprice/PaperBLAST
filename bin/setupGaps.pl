@@ -7,9 +7,10 @@ my $dataDir = "$Bin/../data";
 my @indFiles = qw{uniprot_sprot.dat.gz};
 my $curatedParsed;
 my $usage = <<END
-setupGaps.pl  -ind download_directory -out output_directory
+setupGaps.pl  -ind download_directory -set setName
+  Sets up tmp/path.setName
 
-The download directory must include these files:
+  The download directory must include these files:
 @indFiles
 
 Optional arguments:
@@ -23,18 +24,23 @@ Optional arguments:
 END
 ;
 
-my ($indDir, $outDir, $test);
+my ($indDir, $set, $test);
 my $skip = 0;
 die $usage
   unless GetOptions('ind=s' => \$indDir,
-                    'out=s' => \$outDir,
+                    'set=s' => \$set,
                     'data=s' => \$dataDir,
                     'sprot=s' => \$curatedParsed,
                     'skip=i' => \$skip,
                     'test' => \$test)
   && @ARGV == 0;
-die $usage unless defined $indDir && defined $outDir;
-foreach my $dir ($indDir, $outDir, $dataDir) {
+die $usage unless defined $indDir && defined $set;
+my $outDir = "tmp/path.$set";
+if (! -d $outDir) {
+  print STDERR "Making directory $outDir\n";
+  mkdir($outDir) || die "Cannot create $outDir\n";
+}
+foreach my $dir ($indDir, $dataDir) {
   die "Not a directory: $dir\n" unless -d $dir;
 }
 foreach my $file (@indFiles) {
@@ -67,8 +73,10 @@ my @cmds = ( ["$Bin/curatedFaa.pl",
               "-uc", "$tmpPre.uc"],
              ["$Bin/clusterEc.pl $tmpPre.faa $tmpPre.uc > $outDir/curated2.faa"],
              ["zcat $indDir/uniprot_sprot.dat.gz | $Bin/sprotSubunit.pl -curated $curatedParsed > $tmpPre.sprot.subunits"],
-             ["$Bin/findHeteromers.pl -sprot $tmpPre.sprot.subunits > $outDir/hetero.tab"]
-           );
+             ["$Bin/findHeteromers.pl -sprot $tmpPre.sprot.subunits > $outDir/hetero.tab"],
+             ["$Bin/runPfamHits.pl", $set],
+             ["$Bin/buildCuratedDb.pl", "-dir", $outDir] );
+
 die "Invalid skip: $skip\n" if $skip < 0;
 while($skip > 0) {
   $skip--;
