@@ -101,8 +101,9 @@ in one of the standard sets such as orgsFit. It is tab-delimited with
 fields orgId, gdb, gid, genomeName, nProteins (as in a .org file, see
 FetchAssembly), and also orgSet.
 
-date should be update whenever any of the other files are changed, so
-that analyses can be rerun if necessary.
+uniprot.tsv is a cache of sequences and descriptions for uniprot
+entries that appear in step definitions. It is used to speed up
+gapquery.pl; removing it should be harmless.
 
 GapMind: assemblies and results
 

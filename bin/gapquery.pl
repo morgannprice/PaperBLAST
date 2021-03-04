@@ -72,8 +72,8 @@ Optional arguments:
   default, it looks for this in dir/curated.faa
 -curatedDb curated.db -- the file of characterized
   sequences. By default, it looks for this in dir/curated.db
--uniprot uniprot.tsv -- tab-delimited file with cache of uniprot
-  sequences. By default, it looks for this in dir/curated.db
+-uniprot dir/uniprot.tsv -- tab-delimited file with cache of uniprot
+  sequences.
 -debug
 END
 ;
