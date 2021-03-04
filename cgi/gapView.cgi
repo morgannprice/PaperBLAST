@@ -196,7 +196,7 @@ my %stepDesc = (); # pathwayId => stepId => desc
       if !exists $gdb_labels{$gdb};
     start_page('title' => "GapMind for $setDesc",
                'banner' => $banner,
-               'bannerURL' => "gapView.cgi");
+               'bannerURL' => "gapView.cgi?set=$set");
     print p("Searching", $gdb_labels{$gdb}, "for", "'" . HTML::Entities::encode($gquery) . "'"), "\n";
     my @rows = GetMatchingAssemblies($gdb, $gquery);
     my $limit = GetMaxNAssemblies();
@@ -323,7 +323,7 @@ my %stepDesc = (); # pathwayId => stepId => desc
     die "No such file: $orgPre.faa" unless -e "$orgPre.faa";
     system("touch", "$sumPre.begin");
     my $timeStart = time();
-    my $nSec = scalar(@orgs) * ($set eq "aa" ? 15 : 45);
+    my $nSec = scalar(@orgs) * ($set eq "aa" ? 12 : 30);
     print p("Analyzing $setDesc in", scalar(@orgs), "genomes.",
             "This should take around", $nSec, "seconds.")."\n";
     my @cmds = ();
