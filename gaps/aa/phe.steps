@@ -7,7 +7,8 @@ cmutase	chorismate mutase	EC:5.4.99.5	hmm:PF01817
 
 # prephenate dehydratase and arogenate dehydratase can be difficult to distinguish
 # BT3936 is diverged but has auxotrophic phenotypes (as do homologs Echvi_0123, CA265_RS11630)
-pdehyd	prephenate dehydratase	EC:4.2.1.51	uniprot:Q8A0T5_BACTN	ignore_other:EC 4.2.1.91
+# HVO_0449 (D4GRZ0) is a phenylalanine auxotroph and is probably prephenate dehydratase (PMC4300041)
+pdehyd	prephenate dehydratase	EC:4.2.1.51	uniprot:Q8A0T5_BACTN	ignore_other:EC 4.2.1.91	uniprot:D4GRZ0
 
 ilvE	phenylalanine transaminase	EC:2.6.1.1	EC:2.6.1.27	EC:2.6.1.57
 

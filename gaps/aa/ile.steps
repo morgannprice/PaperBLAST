@@ -2,10 +2,9 @@
 # (Ignore some CharProtDB annotations with threonine deaminase but no EC)
 ilvA	threonine deaminase	EC:4.3.1.19	ignore_other:threonine deaminase
 # ilvIH (or ilvGM) is a two-subunit enzyme that forms acetolactate or acetohydroxybutanoate
-# BRENDA often annotates both subunits the same, so it is unclear which is which
-# CH_124129 and CH_123884 are probably correct but have limited data and vaguer annotations
+# CH_124129 is probably correct but has limited data and vaguer annotations
 #
-ilvH	acetohydroxybutanoate synthase catalytic subunit	hmm:TIGR00118	term:acetohydroxy-acid synthase%large	term:acetohydroxy acid synthase%large	term:acetohydroxybutanoate synthase, catalytic subunit	term:acetohydroxybutanoate synthase, catalytic subunit	term:acetohydroxyacid synthase subunit B	ignore_other:EC 2.2.1.6	ignore:CharProtDB::CH_124219	ignore:CharProtDB::CH_123884
+ilvH	acetohydroxybutanoate synthase catalytic subunit	hmm:TIGR00118	term:acetohydroxy-acid synthase%large	term:acetohydroxy acid synthase%large	term:acetohydroxybutanoate synthase, catalytic subunit	term:acetohydroxybutanoate synthase, catalytic subunit	term:acetohydroxyacid synthase subunit B	ignore_other:EC 2.2.1.6	ignore:CharProtDB::CH_124219
 
 # The isolated catalytic subunit has some activity so it's not clear if the regulatory
 # subunit should be required.
@@ -26,7 +25,9 @@ oxobutanoate: ilvA
 # EC number for ilvC because of different cofactor preference)
 # The citramalate synthase from Leptopsira interrogans (LA_2350, NP_712531, or Q8F3Q1_LEPIN) has
 # been characterized biochemically but is not in the curated databases, see PMID:18498255
-cimA	(R)-citramalate synthase	EC:2.3.1.182	uniprot:Q8F3Q1_LEPIN
+# The putative citramalate synthase HVO_0644 (D4GSQ2) from Haloferax volcanii is required
+# for isoleucine biosynthesis, see PMC4300041
+cimA	(R)-citramalate synthase	EC:2.3.1.182	uniprot:Q8F3Q1_LEPIN	uniprot:D4GSQ2
 
 # In leucine synthesis, LeuCD allows the dehydration of 2-isopropylmalate and hydration to 3-isopropylmalate
 # Similarly, many of these enzymes allow the isomerization of citramalate to 3-methylmalate via citraconate

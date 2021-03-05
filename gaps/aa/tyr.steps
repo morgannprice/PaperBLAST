@@ -9,7 +9,8 @@ cmutase	chorismate mutase	EC:5.4.99.5	hmm:PF01817
 # 1.3.1.12 and 1.3.1.13 vary by NAD(P)H cofactor
 # BT3933 (Q8A0T8_BACTN), DVU0464 (Q72EV4_DESVH), HSERO_RS18425 (D8IR44_HERSS), and Ga0059261_2298 (A0A1L6J750) are auxotrophic
 # and have prephenate dehydrogenase domains (PF02153), but their specificity is unclear
-predehyd	prephenate dehydrogenase	EC:1.3.1.12	EC:1.3.1.13	uniprot:Q8A0T8_BACTN	uniprot:Q72EV4_DESVH	uniprot:D8IR44_HERSS	uniprot:A0A1L6J750	ignore_other:EC 1.3.1.78	ignore_other:EC 1.3.1.43	ignore_other:EC 1.3.1.78
+# HVO_1312 (D4GXG3) is auxotrophic for tyrosine and is probably a prephenate dehydrogenase (PMC4300041)
+predehyd	prephenate dehydrogenase	EC:1.3.1.12	EC:1.3.1.13	uniprot:Q8A0T8_BACTN	uniprot:Q72EV4_DESVH	uniprot:D8IR44_HERSS	uniprot:A0A1L6J750	ignore_other:EC 1.3.1.78	ignore_other:EC 1.3.1.43	ignore_other:EC 1.3.1.78	uniprot:D4GXG3
 
 # specificity of the aminotransferase is difficult to predict
 # Include 2.6.1.1 (aspartate amnotransferase) because reported to act on aromatic amino acids including tyrosine
