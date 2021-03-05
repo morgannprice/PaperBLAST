@@ -1,4 +1,7 @@
 genomeName	nProteins	gdb	gid	pathway	step	class	comment
+Haloferax volcanii DS2	3880	NCBI	GCF_000025685.1	chorismate	aroE	spurious	This gene is annotated as a frameshift, but another assembly for this strain (GCF_000337315.1) has an intact ORF.
+Haloferax volcanii DS2	3880	NCBI	GCF_000025685.1	met		novel	H. volcanii lacks the characterized forms of methionine synthase. Instead, it has a putative split MetE protein, HVO_RS17955 and HVO_RS17950 (see PMC7857596).
+Haloferax volcanii DS2	3880	NCBI	GCF_000025685.1	his	hisN	novel	H. volcanii does not have clear candidate for the histidinol-phosphate phosphatase hisN.
 Azospirillum brasilense Sp245	5488	FitnessBrowser	azobra	ser	serC	spurious	An open reading frame with 58% identity to SERC_METBF is present but no protein was predicted
 Azospirillum brasilense Sp245	5488	FitnessBrowser	azobra	chorismate	aroL	spurious	An open reading frame with 41% identity to AROK_ECOLI is present but no protein was predicted
 Azospirillum brasilense Sp245	5488	FitnessBrowser	azobra	his	hisD	spurious	An frameshift error in the genome sequence prevented this protein from being predicted (PMID:29324779)
