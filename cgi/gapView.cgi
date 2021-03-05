@@ -946,7 +946,8 @@ my %stepDesc = (); # pathwayId => stepId => desc
 
       foreach my $cand (@sorted) {
         # potentially make two rows, one for BLAST and one for HMM
-        my $id = a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&locusId=".$cand->{locusId} },
+        my $id = a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&locusId=".$cand->{locusId},
+                   -title => $cand->{locusId} },
                    $cand->{sysName} || $cand->{locusId} );
         my $desc = HTML::Entities::encode( $cand->{desc} );
         # HMM hits are based on the 1st ORF only so ignore the split when showing the HMM part
