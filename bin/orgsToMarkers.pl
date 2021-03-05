@@ -1,11 +1,11 @@
 #!/usr/bin/perl -w
 use strict;
 use Getopt::Long;
-use FindBin qw{$Bin};
-use lib "$Bin/../lib";
+use FindBin qw{$RealBin};
+use lib "$RealBin/../lib";
 use pbutils qw{ReadTable ReadFastaEntry};
 
-my $markersFile = "$Bin/../gaps/markers.tab";
+my $markersFile = "$RealBin/../gaps/markers.tab";
 my $usage = <<END
 orgsToMarkers.pl -table in -faa orgsDef.faa -out ref.fasta
 
@@ -42,7 +42,7 @@ foreach my $m (@markers) {
   die "Invalid name $m->{Name}" if $m->{Name} eq "" || $m->{Name} =~ m/\s/;
 }
 
-my $hmmsearch = "hmmer/hmmsearch";
+my $hmmsearch = "$RealBin/hmmsearch";
 die "No such executable: $hmmsearch" unless -x $hmmsearch;
 
 my %seq = (); # organism to locusId to sequence
@@ -83,7 +83,7 @@ while (my ($orgId, $seqs) = each %seq) {
 
   foreach my $m (@markers) {
     next unless $m->{Domain} eq $domain;
-    my $hmmFile = "path.aa/$m->{acc}.hmm";
+    my $hmmFile = "$RealBin/../tmp/path.aa/$m->{acc}.hmm";
     die "No hmm for $m->{acc} -- $hmmFile does not exist" unless -e $hmmFile;
     my @cmd = ($hmmsearch,
                "--cpu", $ENV{MC_CORES} || 1,
