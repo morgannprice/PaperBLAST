@@ -73,18 +73,23 @@ hicdh	homo-isocitrate dehydrogenase	EC:1.1.1.87	EC:1.1.1.286
 lysN	2-aminoadipate:2-oxoglutarate aminotransferase	EC:2.6.1.39
 
 # the carrier protein
-lysW	2-aminoadipate carrier protein	term:alpha-aminoadipate%carrier
+# TK0279 (Q5JFV9) from Thermococcus kodakarensis was characterized, see PMC5076833
+lysW	2-aminoadipate carrier protein	term:alpha-aminoadipate%carrier	uniprot:Q5JFV9
 
-lysX	2-aminoadipate-LysW ligase	EC:6.3.2.43
+# TK0278 (Q5JFW0) is described in PMC5076833
+lysX	2-aminoadipate-LysW ligase	EC:6.3.2.43	uniprot:Q5JFW0
 
-lysZ	[LysW]-2-aminoadipate 6-kinase	term:[LysW]-aminoadipate kinase	term:[LysW]-aminoadipate/[LysW]-glutamate kinase
+# TK0276 (Q5JFW2) has also been characterized (PMC5076833)
+lysZ	[LysW]-2-aminoadipate 6-kinase / [LysW]-glutamate kinase	term:[LysW]-aminoadipate kinase	term:[LysW]-aminoadipate/[LysW]-glutamate kinase	uniprot:Q5JFW2
 
-lysY	[LysW]-2-aminoadipate 6-phosphate reductase	term:[LysW]-L-2-aminoadipate 6-phosphate reductase	term:[LysW]-L-2-aminoadipate/[LysW]-L-glutamate phosphate reductase
+# TK0277 (Q5JFW1) has also been characterized (PMC5076833)
+lysY	[LysW]-2-aminoadipate 6-phosphate reductase / [LysW]-glutamylphosphate reductase	term:[LysW]-L-2-aminoadipate 6-phosphate reductase	term:[LysW]-L-2-aminoadipate/[LysW]-L-glutamate phosphate reductase	uniprot:Q5JFW1
 
-lysJ	[LysW]-2-aminoadipate semialdehyde transaminase	term:[LysW]-aminoadipate semialdehyde transaminase	term:[LysW]-aminoadipate semialdehyde/glutamate semialdehyde transaminase
+# TK0275 (Q5JFW3) has also been characterized (PMC5076833)
+lysJ	[LysW]-2-aminoadipate semialdehyde transaminase / [LysW]-glutamate semialdehyde transaminase	term:[LysW]-aminoadipate semialdehyde transaminase	term:[LysW]-aminoadipate semialdehyde/glutamate semialdehyde transaminase	uniprot:Q5JFW3
 
-lysK	[LysW]-lysine hydrolase	term:LysW%lysine%hydrolase	term:aminoadipate carrier protein%lysine%hydrolase
-
+# TK0274 (Q5JFW4) has also been characterized (PMC5076833)
+lysK	[LysW]-lysine hydrolase / [LysW]-ornithine hydrolase	term:LysW%lysine%hydrolase	term:aminoadipate carrier protein%lysine%hydrolase	uniprot:Q5JFW4
 
 meso-DAP: asp_kinase asd dapA dapB dapD dapC dapE dapF
 meso-DAP: asp_kinase asd dapA dapB dapH dapX dapL dapF

@@ -8,12 +8,15 @@
 # N515DRAFT_3768 (A0A1I2DIM7), which is similar to ArgAB fusion proteins and is rescued by arginine.
 argA	N-acetylglutamate synthase	EC:2.3.1.1	uniprot:H1XRZ0_9BACT	curated:BRENDA::A0A0H2X8L7	uniprot:A0A1I2DIM7
 
-# argBCDE or argBCDJ convert N-acetylglutamate to ornithine
+# argABCDE or argJBCD or argX-lysWZYJK convert glutamate to ornithine
 # argJ also forms N-acetylglutamate
-import arg.steps:argB argC argD argE argJ
+# argX is part of the LysW pathway, along with lysWZYJK
+import arg.steps:argB argC argD argE argJ argX
+import lys.steps:lysW lysZ lysY lysJ lysK
 
 ornithine: argA argB argC argD argE
-ornithine: argB argC argD argJ
+ornithine: argJ argB argC argD
+ornithine: lysW argX lysZ lysY lysJ lysK 
 
 ### L-proline biosynthesis I (from glutamate)
 
