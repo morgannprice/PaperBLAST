@@ -511,7 +511,7 @@ my %stepDesc = (); # pathwayId => stepId => desc
       foreach  my $gap (@sorted) {
         my $knownGap = StepScoreToKnownGap($gap);
         if (defined $knownGap) {
-          my $knownOrgId = $knownGap->{gdb}."__".$knownGap->{gid};
+          my $knownOrgId = $knownGap->{orgId};
           if ($knownOrgId eq $gap->{orgId} && $knownGap->{gapClass} ne "") {
             $nCurated++;
           } elsif ($knownOrgId eq $gap->{orgId}) {
@@ -525,7 +525,7 @@ my %stepDesc = (); # pathwayId => stepId => desc
       $totals .= " $nCurated of $nTot gaps have been manually classified."
         if $nCurated > 0;
       my $stringThis = $nThis > 0 ? "this or" : "";
-      $totals .= " $nKnown of $nLo low-confidence gaps are known gaps in $stringThis related organisms."
+      $totals .= " " . ($nThis + $nKnown) . " of $nLo low-confidence steps are known gaps in $stringThis related organisms."
         if $nKnown > 0;
       print p($totals);
 
@@ -562,18 +562,20 @@ my %stepDesc = (); # pathwayId => stepId => desc
         }
         if ($nKnown) {
           my $knownDesc = "&nbsp;";
-          if (defined $known && $known->{$orgId} eq $o) {
-            $knownDesc = a({-title => "Despite the apparent lack of $s,"
-                            . " $known->{genomeName} performs $pathDesc{$p}" }, "known gap");
-          } elsif (defined $known) {
-            my $idShow = int(0.5 + $known->{identity}) . "%";
-            $knownDesc = a({-title => "Despite the apparent lack of $s, $known->{genomeName}"
-                            . " performs $pathDesc{$p}."
-                            . " Across $known->{nMarkers} ribosomal proteins, it is"
-                            . " $idShow identical to $orgs{$o}{genomeName}.",
-            -href => "gapView.cgi?gid=$known->{gid}&gdb=$known->{gdb}&set=$set",
-            -style => "color: black;" },
-           "known gap ($idShow id.)");
+          if (defined $known) {
+            my $title = "Despite the apparent lack of $s,"
+              . " $known->{genomeName} performs $pathDesc{$p}.";
+            my $text = "known gap";
+            if ($known->{orgId} ne $o) {
+              my $idShow = int(0.5 + $known->{identity}) . "%";
+              $title .= " Across $known->{nMarkers} ribosomal proteins, it is"
+                            . " $idShow identical to $orgs{$o}{genomeName}.";
+              $text .= " ($idShow id.)";
+            }
+            $knownDesc = a({ -title => $title,
+                             -href => "gapView.cgi?gid=$known->{gid}&gdb=$known->{gdb}&set=$set",
+                             -style => "color: black;" },
+                           $text);
           }
           push @td, $knownDesc;
         }
