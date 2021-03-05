@@ -1,0 +1,20 @@
+Changes to amino acid biosynthesis since the original 2019
+publication:
+
+arg: Better describe the lysW-based pathway and argX.
+
+ile: Improved description of cimA.
+
+lys: Improved the lysW-based pathway to include genes from
+Thermococcus kodakarensis.
+
+met: Added the core methionine synthase mesB, the mesD-mesX system,
+and renamed metE' to mesA.
+
+phe: Improved description of prephenate dehydratase.
+
+pro: Added synthesis via ornithine gamma-aminotransferase (EC
+2.6.1.13), and better describe ornithine biosynthesis by importing
+steps from arginine (including the lysW pathway).
+
+tyr: Improved description of prephenate dehydrogenase.
