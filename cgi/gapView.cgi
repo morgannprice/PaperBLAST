@@ -1611,8 +1611,8 @@ END
   print p("If you notice any errors or omissions in the step descriptions, or any questionable results, please",
           a( { -href => "mailto:$email" }, "let us know"));
   print p({ -align => 'center' }, "by",
-          a( { -href => "http://morgannprice.org/" }, "Morgan Price"),
-          a( { -href => "http://genomics.lbl.gov/" }, "Arkin group"),
+          a( { -href => "http://morgannprice.org/" }, "Morgan Price").",",
+          a( { -href => "http://genomics.lbl.gov/" }, "Arkin group").",",
           "Lawrence Berkeley National Laboratory");
   print end_html;
   exit(0);
