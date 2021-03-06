@@ -3,7 +3,7 @@ publication:
 
 arg: Better describe the lysW-based pathway and argX.
 
-ile: Improved description of cimA.
+ile: Improved definition of cimA.
 
 lys: Improved the lysW-based pathway to include genes from
 Thermococcus kodakarensis.
@@ -11,10 +11,10 @@ Thermococcus kodakarensis.
 met: Added the core methionine synthase mesB, the mesD-mesX system,
 and renamed metE' to mesA.
 
-phe: Improved description of prephenate dehydratase.
+phe: Improved definition of prephenate dehydratase.
 
 pro: Added synthesis via ornithine gamma-aminotransferase (EC
-2.6.1.13), and better describe ornithine biosynthesis by importing
-steps from arginine (including the lysW pathway).
+2.6.1.13), and allow more options for ornithine biosynthesis (such as
+the lysW pathway).
 
-tyr: Improved description of prephenate dehydrogenase.
+tyr: Improved definition of prephenate dehydrogenase.

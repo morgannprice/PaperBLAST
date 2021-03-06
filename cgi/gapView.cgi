@@ -123,8 +123,8 @@ my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein 
 # ";" could creates issues with links because it affects CGI parameter parsing
 # and the ids are currently not quoted)
 
-# These are global because they are used by many subroutines to build URLs
-my ($set, $orgsSpec);
+# These are global because they are used by many subroutines to build URLs and HTML
+my ($set, $orgsSpec, $setDesc);
 # database handles for the curated database, the steps database, and the gaps database
 my ($dbhC, $dbhS, $dbhG);
 
@@ -146,7 +146,7 @@ my %stepDesc = (); # pathwayId => stepId => desc
   $dbhC = DBI->connect("dbi:SQLite:dbname=${stepsDir}/curated.db","","",{ RaiseError => 1 }) || die $DBI::errstr;
   $dbhS = DBI->connect("dbi:SQLite:dbname=${stepsDir}/steps.db","","",{ RaiseError => 1 }) || die $DBI::errstr;
 
-  my ($setDesc) = $dbhS->selectrow_array("SELECT desc FROM Pathway WHERE pathwayId = 'all'");
+  ($setDesc) = $dbhS->selectrow_array("SELECT desc FROM Pathway WHERE pathwayId = 'all'");
   die "No pathway named all" unless defined $setDesc;
   my $pathInfo = $dbhS->selectall_arrayref("SELECT * from Pathway WHERE pathwayId <> 'all'", { Slice => {} });
   my %pathDesc = map { $_->{pathwayId} => $_->{desc} } @$pathInfo;
@@ -1591,17 +1591,29 @@ Gaps may be due to:
 </UL>
 
 <P>GapMind relies on the predicted proteins in the genome and does not search the six-frame translation. In most cases, you can search the six-frame translation by clicking on links to Curated BLAST for each step definition (in the per-step page).
-
-<P>For more information, see the <A HREF="https://msystems.asm.org/content/5/3/e00291-20" title="GapMind: Automated annotation of amino acid biosynthesis">paper from 2019</A> on GapMind for amino acid biosynthesis, or view the <A HREF="https://github.com/morgannprice/PaperBLAST">source code</A>.
-
-<P>If you notice any errors or omissions in the step descriptions, or any questionable results, please
-<A HREF="mailto:$email">let us know</A>.
-
-<center>by <A HREF="http://morgannprice.org/">Morgan Price</A>,
-<A HREF="http://genomics.lbl.gov/">Arkin group</A>,
-Lawrence Berkeley National Laboratory</center>
 END
     ;
+
+  my @info = ("For more information, see the",
+              a({ -href => "https://msystems.asm.org/content/5/3/e00291-20",
+                  -title => "GapMind: Automated annotation of amino acid biosynthesis" },
+                "paper from 2019"),
+              "on GapMind for amino acid biosynthesis, or view the",
+              a({ -href => "https://github.com/morgannprice/PaperBLAST" }, "source code"));
+  my $changesFile = "../gaps/$set/changes";
+  if (defined $setDesc && -e $changesFile) {
+    $info[-1] .= ",";
+    push @info, ("or see", a({ -href => $changesFile }, "changes"), "to", i($setDesc), "since the publication.");
+  } else {
+    $info[-1] .= ".";
+  }
+  print p(@info);
+  print p("If you notice any errors or omissions in the step descriptions, or any questionable results, please",
+          a( { -href => "mailto:$email" }, "let us know"));
+  print p({ -align => 'center' }, "by",
+          a( { -href => "http://morgannprice.org/" }, "Morgan Price"),
+          a( { -href => "http://genomics.lbl.gov/" }, "Arkin group"),
+          "Lawrence Berkeley National Laboratory");
   print end_html;
   exit(0);
 
