@@ -1,13 +1,14 @@
 #!/usr/bin/perl -w
 use strict;
 use Getopt::Long;
-use FindBin qw{$Bin};
-use lib "$Bin/../lib";
-use Steps qw{ReadSteps ReadOrgTable};
+use FindBin qw{$RealBin};
+use lib "$RealBin/../lib";
+use Steps qw{ReadOrgTable};
 use pbutils qw{ReadTable NewerThan};
+use DBI;
 
-my $stepBase = "$Bin/../gaps";
-my $resultsDir = "$Bin/../tmp";
+my $stepBase = "$RealBin/../gaps";
+my $resultsDir = "$RealBin/../tmp";
 my $set = "aa";
 my ($stepDir, $queryDir);
 
@@ -20,9 +21,9 @@ results.
 
 Optional arguments:
 -set $set -- which pathway set
--stepDir $stepBase/$set -- the directory with the *.step files
+-stepDir $stepBase/$set -- the directory with steps.db
   and the $set.curated.gaps.tsv table
--queryDir $Bin/../tmp/path.$set -- the directory with the
+-queryDir $RealBin/../tmp/path.$set -- the directory with the
   *.query files
 -results $resultsDir -- the directory that contains the
   org directories.
@@ -40,17 +41,22 @@ die $usage
   && @ARGV == 0;
 die "No organism directories specified\n" unless @orgDir > 0;
 $stepDir = "$stepBase/$set" if !defined $stepDir;
-$queryDir = "$Bin/../tmp/path.$set" if !defined $queryDir;
+$queryDir = "$RealBin/../tmp/path.$set" if !defined $queryDir;
 foreach my $dir ($stepDir, $queryDir, $resultsDir, map { "$resultsDir/$_" } @orgDir) {
   die "No such directory: $dir\n"
     unless -d $dir;
 }
 
-my @pathInfo = ReadTable("$stepDir/$set.table", ["pathwayId","desc"]);
-my @pathwayIds = map { $_->{pathwayId} } grep { $_->{pathwayId} ne "all" } @pathInfo;
-my %stepObj = (); # pathwayId => object containing steps and rules
-foreach my $pathwayId (@pathwayIds) {
-  $stepObj{$pathwayId} = ReadSteps("$stepDir/$pathwayId.steps");
+my $dbhS = DBI->connect("dbi:SQLite:dbname=${queryDir}/steps.db","","",{ RaiseError => 1 }) || die $DBI::errstr;
+
+my $pathways = $dbhS->selectall_arrayref("SELECT * from Pathway",
+                                         { Slice => {} });
+my %pathways = map { $_->{pathwayId} => $_ } @$pathways;
+my $steps = $dbhS->selectall_arrayref("SELECT * from Step",
+                                         { Slice => {} });
+my %steps;
+foreach my $step (@$steps) {
+  $steps{ $step->{pathwayId} }{ $step->{stepId} } = $step;
 }
 
 my @cgapHeader = qw{genomeName gdb gid pathway step class comment};
@@ -75,7 +81,7 @@ my %orgSeen = (); # gdb => gid => genome name
 my $dateFile = "$queryDir/date";
 die "No such file: $dateFile -- queries not built\n" unless -e $dateFile;
 foreach my $org (@orgDir) {
-  my $doneFile = "$resultsDir/$org/$set.sum.done";
+  my $doneFile = "$resultsDir/$org/$set.sum.db";
   unless (NewerThan($doneFile, $dateFile)) {
     print STDERR "Skipping the organisms in $org -- not up to date\n";
     next;
@@ -137,9 +143,9 @@ foreach my $cgap (@cgaps) {
     unless $cgap->{comment} =~ m/[a-zA-Z]/;
   my $pathwayId = $cgap->{pathway};
   my $step = $cgap->{step};
-  if (!exists $stepObj{$pathwayId}) {
+  if (!exists $pathways{$pathwayId}) {
     print STDERR "Unknown pathway $pathwayId in curated table\n";
-  } elsif ($step ne "" && !exists $stepObj{$pathwayId}{steps}{$step}) {
+  } elsif ($step ne "" && !exists $steps{$pathwayId}{$step}) {
     print STDERR "Unknown step $step for pathway $pathwayId in curated table\n";
   }
 }
