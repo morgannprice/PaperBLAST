@@ -13,7 +13,7 @@ use LWP::UserAgent;
 sub ReadSteps($); # stepfile => hash of steps, rules, ruleOrder
 sub ReadSteps2($$); # stepfile, doimportflag => same result as ReadSteps
 
-# steps is a hash of step name to a hash of i, name, desc, and search, which is a list of type/value pairs
+# steps is a hash of step name to a hash of i, name, desc, comment, and search, which is a list of type/value pairs
 #	(use i to sort them by the same order as in the stepfile)
 # rules is a hash of rule name to a list of lists, each element being a step name or another rule name
 #	The requirement is met if any of the sublists are met (OR at the top level)
@@ -36,12 +36,15 @@ sub ReadSteps2($$) {
   my @ruleOrder = (); # list of rules in input order
   open(my $fhSteps, "<", $stepsFile) || die "Cannot read $stepsFile";
   my $nSteps = 0;
+  my @commentLines = (); # preceding comment lines. Emptied on lines that are not comments.
   while (my $line = <$fhSteps>) {
     $line =~ s/[\r\n]+$//;
-    $line =~ s/#.*//;
     $line =~ s/\s+$//;
-    next if $line eq ""; # empty or comment line
-    if ($line =~ m/^(\S+):\s+(\S.*)$/) {
+    if ($line =~ m/^#\s*(.*)$/) {
+      push @commentLines, $1;
+    } elsif ($line eq "") {
+      @commentLines = ();
+    } elsif ($line =~ m/^(\S+):\s+(\S.*)$/) {
       my ($rulename, $pieces) = ($1, $2);
       die "Cannot use step name $rulename as rule name in $stepsFile\n"
         if exists $steps->{$rulename};
@@ -114,10 +117,13 @@ sub ReadSteps2($$) {
       }
       die "Invalid step has no search items: $line\n"
         unless @search > 0;
-      $steps->{$stepname} = { 'name' => $stepname, 'desc' => $desc, 'search' => \@search, 'i' => $nSteps++ };
+      $steps->{$stepname} = { 'name' => $stepname, 'desc' => $desc, 'search' => \@search,
+                              'comment' => join(" ", @commentLines),
+                              'i' => $nSteps++ };
     } else {
       die "Do not recognize line $line in $stepsFile as either rule or step\n";
     }
+    @commentLines = () unless $line =~ m/^#/;
   }
   close($fhSteps) || die "Error reading $stepsFile";
 
