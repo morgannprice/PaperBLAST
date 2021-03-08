@@ -7,7 +7,7 @@ use FindBin qw{$RealBin};
 use DBI;
 use lib "$RealBin/../lib";
 use pbutils qw{ReadTable};
-use Steps qw{ReadSteps ReadOrgTable ReadOrgProtein ParseOrgLocus};
+use Steps qw{ReadOrgTable ReadOrgProtein ParseOrgLocus};
 
 my $maxCand = 5;
 my @weightsDef = (-2,-0.1,1); # default weights for rules with low/medium/high candidates
