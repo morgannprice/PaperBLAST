@@ -107,6 +107,11 @@ sub CuratedToSeq($); # fetch sequence
 # for the other hit (if any). Returns a list of 3 HTML elements.
 sub CandToOtherHTML($);
 
+# Given a comment on a step or pathway or pathway instance, format HTML links.
+sub LinkifyComment($);
+sub DataForStepParts($$); # pathwayId & stepId to hashed information
+sub FormatStepPart($$$); # the data, the step part row (in the database), and the orgId
+
 # Global variables
 my $dataDir = "../tmp"; # where all the assemblies and GapMind results live
 my %orgs = (); # orgId => hash including gdb, gid, genomeName
@@ -468,14 +473,86 @@ my %stepDesc = (); # pathwayId => stepId => desc
   my @ruleScoreLabels = ("has a gap", "may have a gap", "all steps were found");
 
   my @links = ();     # a list of items to put inside li at the bottom
-  if ($pathSpec ne "" && param("showdef")) {
-    # mode: Show the definition of this pathway
+  if ($pathSpec ne "" && param("showdef") eq "literal") {
+    # mode: Show the definition of this pathway, as literal raw contents
+    print p("As text, or see",
+            a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=$pathSpec&showdef=1" },
+              "steps and rules"));
     my $stepPath = "../gaps/$set";
     my $stfile = "$stepPath/$pathSpec.steps";
     open (my $fh, "<", $stfile) || die "No such file: $stfile\n";
     my @lines = <$fh>;
     close($fh) || die "Error reading $fh";
     print pre(join("",@lines)), "\n";
+    push @links, a({-href => "$stepsDir/$pathSpec.query"}, "Table of queries for $pathSpec")
+      . " (tab-delimited)";
+  } elsif ($pathSpec ne "" && param("showdef")) {
+    # mode: Show the definition of this pathway, formatted
+    # Some information is in the steps file only, not in the database, including
+    # comments on steps and the preferred ordering of steps is only in the steps file.
+    my $stepsObj = Steps::ReadSteps("../gaps/$set/$pathSpec.steps");
+    print p("As steps and rules, or see",
+            a({ -href => "gapView.cgi?set=$set&orgs=$orgsSpec&path=$pathSpec&showdef=literal" },
+            "text"));
+    print h3("Rules");
+    my $ruleOrdering = $dbhS->selectall_arrayref(qq{ SELECT ruleId, min(instanceId) AS minInstanceId FROM RuleInstance
+                                                     WHERE pathwayId = ?
+                                                     GROUP BY ruleId
+                                                     ORDER BY minInstanceId },
+                                                 { Slice => {} }, $pathSpec);
+    my @rulesInOrder = map $_->{ruleId}, @$ruleOrdering;
+    print start_ul;
+    foreach my $ruleId (reverse @rulesInOrder) {
+      my @instanceHTML = ();
+      my $instances = $dbhS->selectcol_arrayref("SELECT instanceId from RuleInstance WHERE pathwayId = ? AND ruleId = ?",
+                                               {}, $pathSpec, $ruleId);
+      foreach my $instanceId (@$instances) {
+        my $components = $dbhS->selectall_arrayref("SELECT * from InstanceComponent WHERE pathwayId = ? AND ruleId = ? AND instanceId = ?",
+                                                   { Slice => {} },
+                                                   $pathSpec, $ruleId, $instanceId);
+        die $instanceId unless @$components > 0;
+        my @parts;
+        foreach my $component (@$components) {
+          if ($component->{stepId} ne "") {
+            push @parts, span({ -title => $stepDesc{$pathSpec}{ $component->{stepId} } },
+                              i($component->{stepId}));
+          } else {
+            my $subRuleId = $component->{subRuleId};
+            die if $subRuleId eq "";
+            push @parts, span({ -title => "see rule for $subRuleId below" }, $subRuleId);
+          }
+        }
+        push @instanceHTML, join(" and ", @parts);
+      }
+      die $ruleId unless @instanceHTML > 0;
+      my $ruleHTML = "${ruleId}:";
+      if (@instanceHTML > 1) {
+        foreach my $i (1..(scalar(@instanceHTML)-1)) {
+          $instanceHTML[$i] = "or " . $instanceHTML[$i];
+        }
+        print li($ruleHTML), start_ul, map li($_), @instanceHTML;
+        print end_ul;
+      } else {
+        print li($ruleHTML, $instanceHTML[0]);
+      }
+    }
+    print end_ul, "\n";
+
+    print h3("Steps");
+    my @stepsInOrder = sort { $a->{i} <=> $b->{i} } values %{ $stepsObj->{steps} };
+    foreach my $stepObj (@stepsInOrder) {
+      print p(b(i($stepObj->{name}) . ": " . $stepObj->{desc}));
+      print start_ul;
+      my $data = DataForStepParts($pathSpec, $stepObj->{name});
+      my $stepParts = $dbhS->selectall_arrayref("SELECT * from StepPart WHERE pathwayId = ? AND stepId = ?",
+                                                { Slice => {} }, $pathSpec, $stepObj->{name});
+      foreach my $stepPart (@$stepParts) {
+        print li(FormatStepPart($data, $stepPart, ""));
+      }
+      print li("Comments:", LinkifyComment($stepObj->{comment}))
+        if $stepObj->{comment} ne "";
+      print end_ul, "\n";
+    }
     push @links, a({-href => "$stepsDir/$pathSpec.query"}, "Table of queries for $pathSpec")
       . " (tab-delimited)";
   } elsif (param('gaps')) {
@@ -799,7 +876,7 @@ my %stepDesc = (); # pathwayId => stepId => desc
         my @parts = ();
         foreach my $component (@$components) {
           if ($component->{stepId} ne "") {
-            push @parts, StepToShortHTML($component->{stepId}, $stepScores->{ $component->{stepId} });
+            push @parts, i(StepToShortHTML($component->{stepId}, $stepScores->{ $component->{stepId} }));
           } else {
             my $subRuleId = $component->{subRuleId};
             die if $subRuleId eq "";
@@ -807,7 +884,7 @@ my %stepDesc = (); # pathwayId => stepId => desc
             push @parts, span({ -style => ScoreToStyle($score), -title => "see rule for $subRuleId below" }, $subRuleId);
           }
         }
-        push @instanceHTML, join(", ", @parts);
+        push @instanceHTML, join(" and ", @parts);
       }
       die $ruleId unless @instanceHTML > 0;
       my $ruleHTML = span({ -style => ScoreToStyle(RuleToMinScore($ruleScore)) }, "${ruleId}:");
@@ -999,71 +1076,20 @@ my %stepDesc = (); # pathwayId => stepId => desc
       }
     } # end if there are candidates
 
-    # Step definition
-    print h3("Definition of step $stepSpec"), "\n";
+    # Show step definition
+    print h3("Definition of step", i($stepSpec)), "\n";
+    # Comments on the step definitions are in the steps file only, not in the database.
+    my $stepsObj = Steps::ReadSteps("../gaps/$set/$pathSpec.steps");
+    my $stepObj = $stepsObj->{steps}{$stepSpec} || die;
+    my $stepPartData = DataForStepParts($pathSpec, $stepSpec);
     my $stepParts = $dbhS->selectall_arrayref("SELECT * from StepPart WHERE pathwayId = ? AND stepId = ?",
-                                                { Slice => {} }, $pathSpec, $stepSpec);
-    my $stepQueries = $dbhS->selectall_arrayref("SELECT * from StepQuery WHERE pathwayId = ? AND stepId = ?",
-                                                { Slice => {} }, $pathSpec, $stepSpec);
-    my %curatedQuery = (); # curatedId (not ids -- a single compoennt) to stepquery row
-    # (Includes entries of type curated or ignore)
-    my %uniprotQuery = (); # uniprotId to stepquery row
-    foreach my $sq (@$stepQueries) {
-      if ($sq->{queryType} eq "curated" || $sq->{queryType} eq "ignore") {
-        $sq->{desc} =~ s/;;/. /g;
-        foreach my $id (split /,/, $sq->{curatedIds}) {
-          $curatedQuery{$id} = $sq;
-        }
-      } elsif ($sq->{queryType} eq "uniprot") {
-        $uniprotQuery{$sq->{uniprotId}} = $sq;
-      }
-    }
+                                              { Slice => {} }, $pathSpec, $stepSpec);
     print start_ul();
     foreach my $row (@$stepParts) {
-      my $type = $row->{partType};
-      my $value = $row->{value};
-      my $show;
-      if ($type eq "EC") {
-        # Use local URLs for Curated BLAST links, instead of using the official papers.genomics.lbl.gov
-        # site, because the genome may not exist at the public site
-        my $URL = "genomeSearch.cgi?gdb=" . $orgs{$orgId}{gdb}
-          . "&gid=" . $orgs{$orgId}{gid}
-            . "&query=$value&word=1";
-        $show = "Curated proteins or TIGRFams with EC " . a({-href => $URL, -title => "Run Curated BLAST"}, $value);
-      } elsif ($type eq "hmm") {
-        $show = "HMM " . a({-href => HMMToURL($value) }, $value);
-      } elsif ($type eq "term") {
-        my $URL = "genomeSearch.cgi?gdb=" . $orgs{$orgId}{gdb}
-          . "&gid=" . $orgs{$orgId}{gid}
-            . "&word=1"
-              . "&query=" . uri_escape($value); # need uri_escape because it may contain %
-        $show = "Curated proteins matching " . a({-href => $URL, -title => "Run Curated BLAST"}, $value);
-      } elsif ($type eq "curated") {
-        my $URL = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=".$value;
-        my $show_id = $value; $show_id =~ s/^.*://;
-        # Find the relevant step query
-        $show = "Curated sequence " . a({-href => $URL, -title => "View in PaperBLAST"}, $show_id)
-                                                    . ": " . $curatedQuery{$value}{desc};
-      } elsif ($type eq "uniprot") {
-        my $URL = "https://www.uniprot.org/uniprot/".$value;
-        $show = "UniProt sequence " . a({-href => $URL, -title => "View in UniProt"}, $value)
-          . ": " . $uniprotQuery{$value}{desc};
-      } elsif ($type eq "ignore_other") {
-        my $URL = "http://papers.genomics.lbl.gov/cgi-bin/curatedSearch.cgi?word=1"
-          . "&query=" . uri_escape($value); # value could contain %
-        $show = "Ignore hits to items matching "
-          . a({-href => $URL}, $value)
-            . " when looking for 'other' hits";
-      } elsif ($type eq "ignore") {
-        my $URL = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=$value";
-        my $showId = $value; $showId =~ s/^.*://;
-        $show = "Ignore hits to "
-          . a({-href => $URL, -title => "View in PaperBLAST"}, $showId)
-          . " when looking for 'other' hits"
-          . " (" . $curatedQuery{$value}{desc} . ")";
-      }
-      print li($show);
+      print li(FormatStepPart($stepPartData, $row, $orgId));
     }
+    print li("Comments:", LinkifyComment($stepObj->{comment}))
+      if $stepObj->{comment} ne "";
     print end_ul(), "\n";
     print p("Or cluster all characterized", a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec&step=$stepSpec"},
                          "$stepSpec proteins"));
@@ -1303,7 +1329,7 @@ my %stepDesc = (); # pathwayId => stepId => desc
   chomp $dateAnalysis;
   chomp $dateQuery;
   print p("This GapMind analysis is from $dateAnalysis. The underlying query database was built on $dateQuery.")
-    if $findGene eq "";
+    if $findGene eq "" && ! param("showdef");
 
   if ($orgId ne "") {
     push @links, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId" },
@@ -1931,4 +1957,116 @@ sub CandToOtherHTML($) {
   my $otherIdentity = small(int(0.5 + $cand->{otherIdentity})."%");
   my $otherBits = small(sprintf("%.1f",$cand->{otherBits}));
   return ($linkOther, $otherIdentity, $otherBits);
+}
+
+sub LinkifyComment($) {
+  my ($comment) = @_;
+  my @words = split /\s/, $comment;
+  my @out = ();
+  foreach my $word (@words) {
+    # Pull of leading brackets or parentheses
+    my $pre = "";
+    $pre = $1 if $word =~ m/^([\[({]+)/;
+    $word =~ s/^([\[({]+)//;
+    if ($word =~ m/^pfam:(PF\d+)/i) {
+      my $pfam = $1;
+      $word =~ s/^pfam:PF\d+//i;
+      push @out, $pre . a({ -href => "hmmSearch.cgi?hmmId=$pfam" }, $pfam) . $word;
+    } elsif ($word =~ m/^uniprot:([A-Z][A-Z0-9_]+)/i) {
+      my $uniprotId = $1;
+      $word =~ s/^uniprot:[A-Z][A-Z0-9_]+//i;
+      push @out, $pre . a({ -href => "https://www.uniprot.org/uniprot/$uniprotId" }, $uniprotId) . $word;
+    } elsif ($word =~ m/^pmid:(\d+)/i) {
+      my $pmId = $1;
+      $word =~ s/^pmid:\d+//i;
+      push @out, $pre . a({ -href => "https://pubmed.ncbi.nlm.nih.gov/$pmId/" }, "PMID:$pmId") . $word;
+    } elsif ($word =~ m/^(PMC\d+)/) {
+      my $pmcId = $1;
+      $word =~ s/^PMC\d+//;
+      push @out, $pre . a({ -href => "http://www.ncbi.nlm.nih.gov/pmc/articles/" . lc($pmcId) . "/" },
+                   $pmcId) . $word;
+    } else {
+      push @out, $pre . $word;
+    }
+  }
+  return join(" ", @out);
+}
+
+sub DataForStepParts($$) {
+  my ($pathwayId, $stepId) = @_;
+  my $stepParts = $dbhS->selectall_arrayref("SELECT * from StepPart WHERE pathwayId = ? AND stepId = ?",
+                                            { Slice => {} }, $pathwayId, $stepId);
+  my $stepQueries = $dbhS->selectall_arrayref("SELECT * from StepQuery WHERE pathwayId = ? AND stepId = ?",
+                                              { Slice => {} }, $pathwayId, $stepId);
+  my %curatedQuery = (); # curatedId (not ids -- a single compoennt) to stepquery row
+  # (Includes entries of type curated or ignore)
+  my %uniprotQuery = (); # uniprotId to stepquery row
+  foreach my $sq (@$stepQueries) {
+    if ($sq->{queryType} eq "curated" || $sq->{queryType} eq "ignore") {
+      $sq->{desc} =~ s/;;/. /g;
+      foreach my $id (split /,/, $sq->{curatedIds}) {
+        $curatedQuery{$id} = $sq;
+      }
+    } elsif ($sq->{queryType} eq "uniprot") {
+      $uniprotQuery{$sq->{uniprotId}} = $sq;
+    }
+  }
+  return { 'uniprotQuery' => \%uniprotQuery,
+           'curatedQuery' => \%curatedQuery };
+}
+
+sub FormatStepPart($$$) {
+  my ($data, $stepPart, $orgId) = @_;
+  die unless defined $data->{curatedQuery} && defined $data->{uniprotQuery};
+  my $type = $stepPart->{partType};
+  my $value = $stepPart->{value};
+
+  if ($type eq "EC") {
+    # Use local URLs for Curated BLAST links, instead of using the official papers.genomics.lbl.gov
+    # site, because the genome may not exist at the public site
+    my $URL = "https://enzyme.expasy.org/EC/$value";
+    $URL = "genomeSearch.cgi?gdb="
+      . $orgs{$orgId}{gdb}
+      . "&gid=" . $orgs{$orgId}{gid}
+      . "&query=$value&word=1" if $orgId ne "";
+    return "Curated proteins or TIGRFams with EC "
+      . a({-href => $URL, -title => "Run Curated BLAST"}, $value);
+  } elsif ($type eq "hmm") {
+    return "HMM " . a({-href => HMMToURL($value) }, $value);
+  } elsif ($type eq "term") {
+    # nead to uri_escape the query because it may contain %
+    my $URL = "curatedClusters.cgi?set=$set&word=1&query=" . uri_escape($value);
+    $URL = "genomeSearch.cgi?gdb=" . $orgs{$orgId}{gdb}
+          . "&gid=" . $orgs{$orgId}{gid}
+          . "&word=1"
+          . "&query=" . uri_escape($value)
+            if $orgId ne "";
+    return "Curated proteins matching "
+      . a({ -href => $URL,
+            -title => $orgId eq "" ? "" : "Run Curated BLAST" }, $value);
+  } elsif ($type eq "curated") {
+    my $URL = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=".$value;
+    my $show_id = $value; $show_id =~ s/^.*://;
+    # Find the relevant step query
+    return "Curated sequence " . a({-href => $URL, -title => "View in PaperBLAST"}, $show_id)
+      . ": " . $data->{curatedQuery}{$value}{desc};
+  } elsif ($type eq "uniprot") {
+    my $URL = "https://www.uniprot.org/uniprot/".$value;
+    return "UniProt sequence " . a({-href => $URL, -title => "View in UniProt"}, $value)
+      . ": " . $data->{uniprotQuery}{$value}{desc};
+  } elsif ($type eq "ignore_other") {
+    my $URL = "http://papers.genomics.lbl.gov/cgi-bin/curatedSearch.cgi?word=1"
+      . "&query=" . uri_escape($value); # value could contain %
+    return "Ignore hits to items matching "
+      . a({-href => $URL}, $value)
+      . " when looking for 'other' hits";
+  } elsif ($type eq "ignore") {
+    my $URL = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=$value";
+    my $showId = $value; $showId =~ s/^.*://;
+    return  "Ignore hits to "
+      . a({-href => $URL, -title => "View in PaperBLAST"}, $showId)
+      . " when looking for 'other' hits"
+      . " (" . $data->{curatedQuery}{$value}{desc} . ")";
+  }
+  die "Unknown StepPart type $type";
 }
