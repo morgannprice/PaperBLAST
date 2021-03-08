@@ -1003,6 +1003,21 @@ my %stepDesc = (); # pathwayId => stepId => desc
     print h3("Definition of step $stepSpec"), "\n";
     my $stepParts = $dbhS->selectall_arrayref("SELECT * from StepPart WHERE pathwayId = ? AND stepId = ?",
                                                 { Slice => {} }, $pathSpec, $stepSpec);
+    my $stepQueries = $dbhS->selectall_arrayref("SELECT * from StepQuery WHERE pathwayId = ? AND stepId = ?",
+                                                { Slice => {} }, $pathSpec, $stepSpec);
+    my %curatedQuery = (); # curatedId (not ids -- a single compoennt) to stepquery row
+    # (Includes entries of type curated or ignore)
+    my %uniprotQuery = (); # uniprotId to stepquery row
+    foreach my $sq (@$stepQueries) {
+      if ($sq->{queryType} eq "curated" || $sq->{queryType} eq "ignore") {
+        $sq->{desc} =~ s/;;/. /g;
+        foreach my $id (split /,/, $sq->{curatedIds}) {
+          $curatedQuery{$id} = $sq;
+        }
+      } elsif ($sq->{queryType} eq "uniprot") {
+        $uniprotQuery{$sq->{uniprotId}} = $sq;
+      }
+    }
     print start_ul();
     foreach my $row (@$stepParts) {
       my $type = $row->{partType};
@@ -1026,10 +1041,13 @@ my %stepDesc = (); # pathwayId => stepId => desc
       } elsif ($type eq "curated") {
         my $URL = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=".$value;
         my $show_id = $value; $show_id =~ s/^.*://;
-        $show = "Curated sequence " . a({-href => $URL, -title => "View in PaperBLAST"}, $show_id);
+        # Find the relevant step query
+        $show = "Curated sequence " . a({-href => $URL, -title => "View in PaperBLAST"}, $show_id)
+                                                    . ": " . $curatedQuery{$value}{desc};
       } elsif ($type eq "uniprot") {
         my $URL = "https://www.uniprot.org/uniprot/".$value;
-        $show = "UniProt sequence " . a({-href => $URL, -title => "View in UniProt"}, $value);
+        $show = "UniProt sequence " . a({-href => $URL, -title => "View in UniProt"}, $value)
+          . ": " . $uniprotQuery{$value}{desc};
       } elsif ($type eq "ignore_other") {
         my $URL = "http://papers.genomics.lbl.gov/cgi-bin/curatedSearch.cgi?word=1"
           . "&query=" . uri_escape($value); # value could contain %
@@ -1041,7 +1059,8 @@ my %stepDesc = (); # pathwayId => stepId => desc
         my $showId = $value; $showId =~ s/^.*://;
         $show = "Ignore hits to "
           . a({-href => $URL, -title => "View in PaperBLAST"}, $showId)
-            . " when looking for 'other' hits";
+          . " when looking for 'other' hits"
+          . " (" . $curatedQuery{$value}{desc} . ")";
       }
       print li($show);
     }
