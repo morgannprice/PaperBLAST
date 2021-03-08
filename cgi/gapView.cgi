@@ -109,8 +109,11 @@ sub CandToOtherHTML($);
 
 # Given a comment on a step or pathway or pathway instance, format HTML links.
 sub LinkifyComment($);
+
 sub DataForStepParts($$); # pathwayId & stepId to hashed information
 sub FormatStepPart($$$); # the data, the step part row (in the database), and the orgId
+
+sub RulesToHTML($$); # pathwayId and orgId or ""
 
 # Global variables
 my $dataDir = "../tmp"; # where all the assemblies and GapMind results live
@@ -494,50 +497,9 @@ my %stepDesc = (); # pathwayId => stepId => desc
     print p("As steps and rules, or see",
             a({ -href => "gapView.cgi?set=$set&orgs=$orgsSpec&path=$pathSpec&showdef=literal" },
             "text"));
-    print h3("Rules");
-    my $ruleOrdering = $dbhS->selectall_arrayref(qq{ SELECT ruleId, min(instanceId) AS minInstanceId FROM RuleInstance
-                                                     WHERE pathwayId = ?
-                                                     GROUP BY ruleId
-                                                     ORDER BY minInstanceId },
-                                                 { Slice => {} }, $pathSpec);
-    my @rulesInOrder = map $_->{ruleId}, @$ruleOrdering;
-    print start_ul;
-    foreach my $ruleId (reverse @rulesInOrder) {
-      my @instanceHTML = ();
-      my $instances = $dbhS->selectcol_arrayref("SELECT instanceId from RuleInstance WHERE pathwayId = ? AND ruleId = ?",
-                                               {}, $pathSpec, $ruleId);
-      foreach my $instanceId (@$instances) {
-        my $components = $dbhS->selectall_arrayref("SELECT * from InstanceComponent WHERE pathwayId = ? AND ruleId = ? AND instanceId = ?",
-                                                   { Slice => {} },
-                                                   $pathSpec, $ruleId, $instanceId);
-        die $instanceId unless @$components > 0;
-        my @parts;
-        foreach my $component (@$components) {
-          if ($component->{stepId} ne "") {
-            push @parts, span({ -title => $stepDesc{$pathSpec}{ $component->{stepId} } },
-                              i($component->{stepId}));
-          } else {
-            my $subRuleId = $component->{subRuleId};
-            die if $subRuleId eq "";
-            push @parts, span({ -title => "see rule for $subRuleId below" }, $subRuleId);
-          }
-        }
-        push @instanceHTML, join(" and ", @parts);
-      }
-      die $ruleId unless @instanceHTML > 0;
-      my $ruleHTML = "${ruleId}:";
-      if (@instanceHTML > 1) {
-        foreach my $i (1..(scalar(@instanceHTML)-1)) {
-          $instanceHTML[$i] = "or " . $instanceHTML[$i];
-        }
-        print li($ruleHTML), start_ul, map li($_), @instanceHTML;
-        print end_ul;
-      } else {
-        print li($ruleHTML, $instanceHTML[0]);
-      }
-    }
-    print end_ul, "\n";
-
+    print h3("Rules"),
+      RulesToHTML($pathSpec, ""), # no orgId
+      "\n";
     print h3("Steps");
     my @stepsInOrder = sort { $a->{i} <=> $b->{i} } values %{ $stepsObj->{steps} };
     foreach my $stepObj (@stepsInOrder) {
@@ -854,51 +816,9 @@ my %stepDesc = (); # pathwayId => stepId => desc
       print p("Also see", a({ -href => $URL }, "fitness data"), "for the top candidates");
     }
 
-    print h3("Rules"), "\n";
-    print start_ul;
-    my $ruleOrdering = $dbhS->selectall_arrayref(qq{ SELECT ruleId, min(instanceId) AS minInstanceId FROM RuleInstance
-                                                     WHERE pathwayId = ?
-                                                     GROUP BY ruleId
-                                                     ORDER BY minInstanceId },
-                                                 { Slice => {} }, $pathSpec);
-    my @rulesInOrder = map $_->{ruleId}, @$ruleOrdering;
-    foreach my $ruleId (reverse @rulesInOrder) {
-      my $ruleScore = $ruleScores->{$ruleId};
-      my @instanceHTML = ();
-      my $instances = $dbhS->selectcol_arrayref("SELECT instanceId from RuleInstance WHERE pathwayId = ? AND ruleId = ?",
-                                               {}, $pathSpec, $ruleId);
-      foreach my $instanceId (@$instances) {
-        my $components = $dbhS->selectall_arrayref("SELECT * from InstanceComponent WHERE pathwayId = ? AND ruleId = ? AND instanceId = ?",
-                                                   { Slice => {} },
-                                                   $pathSpec, $ruleId, $instanceId);
-      die $instanceId unless @$components > 0;
-
-        my @parts = ();
-        foreach my $component (@$components) {
-          if ($component->{stepId} ne "") {
-            push @parts, i(StepToShortHTML($component->{stepId}, $stepScores->{ $component->{stepId} }));
-          } else {
-            my $subRuleId = $component->{subRuleId};
-            die if $subRuleId eq "";
-            my $score = RuleToMinScore($ruleScores->{$subRuleId});
-            push @parts, span({ -style => ScoreToStyle($score), -title => "see rule for $subRuleId below" }, $subRuleId);
-          }
-        }
-        push @instanceHTML, join(" and ", @parts);
-      }
-      die $ruleId unless @instanceHTML > 0;
-      my $ruleHTML = span({ -style => ScoreToStyle(RuleToMinScore($ruleScore)) }, "${ruleId}:");
-      if (@instanceHTML > 1) {
-        foreach my $i (1..(scalar(@instanceHTML)-1)) {
-          $instanceHTML[$i] = "or " . $instanceHTML[$i];
-        }
-        print li($ruleHTML), start_ul, map li($_), @instanceHTML;
-        print end_ul;
-      } else {
-        print li($ruleHTML, $instanceHTML[0]);
-      }
-    }
-    print end_ul, "\n";
+    print h3("Rules"),
+      RulesToHTML($pathSpec, $orgId),
+      "\n";
 
     # Show the steps on the best path, and then the other steps, sorted by their name (case insensitive)
     # Extra columns (not always shown) for curated gaps (same organism and gapClass set) and known gaps
@@ -938,7 +858,8 @@ my %stepDesc = (); # pathwayId => stepId => desc
       }
       my ($show1, $show2) = ShowCandidatesForStep($stepScore);
       my @td = ( a({ -style => ScoreToStyle($stepScore->{score}),
-                     -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$stepId"}, $stepId),
+                     -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$stepId"},
+                   i($stepId)),
                  $stepDesc{$pathSpec}{$stepId},
                  $show1, $show2 );
       if ($hasCurated) {
@@ -2069,4 +1990,69 @@ sub FormatStepPart($$$) {
       . " (" . $data->{curatedQuery}{$value}{desc} . ")";
   }
   die "Unknown StepPart type $type";
+}
+
+# orgId is optional
+sub RulesToHTML($$) {
+  my ($pathwayId, $orgId) = @_;
+  my $stepScores = $dbhG->selectall_hashref("SELECT * from StepScore WHERE orgId = ? AND pathwayId = ?",
+                                         "stepId",
+                                         { Slice => {} }, $orgId, $pathwayId)
+    if $orgId ne "";
+  my $ruleScores = $dbhG->selectall_hashref("SELECT * from RuleScore WHERE orgId = ? AND pathwayId = ?",
+                                            "ruleId",
+                                            { Slice => {} }, $orgId, $pathwayId)
+    if $orgId ne "";
+  my $ruleOrdering = $dbhS->selectall_arrayref(qq{ SELECT ruleId, min(instanceId) AS minInstanceId FROM RuleInstance
+                                                     WHERE pathwayId = ?
+                                                     GROUP BY ruleId
+                                                     ORDER BY minInstanceId },
+                                               { Slice => {} }, $pathwayId);
+  my @rulesInOrder = map $_->{ruleId}, @$ruleOrdering;
+  my $out = start_ul;
+  foreach my $ruleId (reverse @rulesInOrder) {
+    my @instanceHTML = ();
+    my $instances = $dbhS->selectcol_arrayref("SELECT instanceId from RuleInstance WHERE pathwayId = ? AND ruleId = ?",
+                                              {}, $pathwayId, $ruleId);
+    foreach my $instanceId (@$instances) {
+      my $components = $dbhS->selectall_arrayref("SELECT * from InstanceComponent WHERE pathwayId = ? AND ruleId = ? AND instanceId = ?",
+                                                 { Slice => {} },
+                                                 $pathwayId, $ruleId, $instanceId);
+      die $instanceId unless @$components > 0;
+      my @parts;
+      foreach my $component (@$components) {
+        if ($component->{stepId} ne "") {
+          if ($orgId eq "") {
+            push @parts, span({ -title => $stepDesc{$pathwayId}{ $component->{stepId} } },
+                              i($component->{stepId}));
+          } else {
+            push @parts, i(StepToShortHTML($component->{stepId}, $stepScores->{ $component->{stepId} }));
+          }
+        } else {
+          my $subRuleId = $component->{subRuleId};
+          die if $subRuleId eq "";
+          my $param = { -title => "see rule for $subRuleId below" };
+          $param->{style} = ScoreToStyle(RuleToMinScore($ruleScores->{$subRuleId}))
+            if $orgId ne "";
+          push @parts, span($param, $subRuleId);
+        }
+      }
+      push @instanceHTML, join(", ", @parts);
+    }
+    die $ruleId unless @instanceHTML > 0;
+    my $ruleHTML = "${ruleId}:";
+    if (@instanceHTML > 1) {
+      foreach my $i (1..(scalar(@instanceHTML)-1)) {
+        $instanceHTML[$i] = "or " . $instanceHTML[$i];
+      }
+      $out .= li($ruleHTML);
+      $out .= start_ul;
+      $out .= join("", map li($_), @instanceHTML);
+      $out .= end_ul;
+    } else {
+      $out .= li($ruleHTML, $instanceHTML[0]);
+    }
+  }
+  $out .= end_ul;
+  return $out;
 }
