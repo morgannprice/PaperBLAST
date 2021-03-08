@@ -4,7 +4,7 @@ use Getopt::Long;
 use FindBin qw{$Bin};
 use DBI;
 use lib "$Bin/../lib";
-use Steps qw{ReadSteps ReadOrgTable ReadReqs CheckReqs};
+use Steps qw{ReadOrgTable ReadReqs CheckReqs};
 use pbutils qw{ReadTable NewerThan};
 
 my $resultsDir = "$Bin/../tmp";
