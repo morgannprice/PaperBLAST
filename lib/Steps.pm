@@ -13,12 +13,15 @@ use LWP::UserAgent;
 sub ReadSteps($); # stepfile => hash of steps, rules, ruleOrder
 sub ReadSteps2($$); # stepfile, doimportflag => same result as ReadSteps
 
-# steps is a hash of step name to a hash of i, name, desc, comment, and search, which is a list of type/value pairs
+# The returned object includes:
+# steps, a hash of step name to a hash of i, name, desc, comment, and search, which is a list of type/value pairs
 #	(use i to sort them by the same order as in the stepfile)
-# rules is a hash of rule name to a list of lists, each element being a step name or another rule name
+# rules, a hash of rule name to a list of lists, each element being a step name or another rule name
 #	The requirement is met if any of the sublists are met (OR at the top level)
 #	The sublist is met if all of its components are met (AND at the 2nd level)
-# ruleOrder is a list of rule names in order
+# ruleOrder,s a list of rule names in order
+# ruleComments, a hash of ruleId to comments.
+# topComment, the top-level comment at the beginning of the steps file.
 sub ReadSteps($) {
   my ($stepsFile) = @_;
   return ReadSteps2($stepsFile, 1); # 1 means allow imports
@@ -34,6 +37,8 @@ sub ReadSteps2($$) {
   my $steps = {}; # step name to hash of name, desc, and search, which is a list of pairs
   my $rules = {}; # rule name to list of lists, each element is a step name or another rule name
   my @ruleOrder = (); # list of rules in input order
+  my %ruleComments = ();
+  my $topComment = undef;
   open(my $fhSteps, "<", $stepsFile) || die "Cannot read $stepsFile";
   my $nSteps = 0;
   my @commentLines = (); # preceding comment lines. Emptied on lines that are not comments.
@@ -43,9 +48,16 @@ sub ReadSteps2($$) {
     if ($line =~ m/^#\s*(.*)$/) {
       push @commentLines, $1;
     } elsif ($line eq "") {
+      $topComment = join(" ", @commentLines) if !defined $topComment;
       @commentLines = ();
     } elsif ($line =~ m/^(\S+):\s+(\S.*)$/) {
       my ($rulename, $pieces) = ($1, $2);
+      my $newComment = join(" ", @commentLines);
+      if (exists $ruleComments{$rulename}) {
+        $ruleComments{$rulename} .= " " . $newComment;
+      } else {
+        $ruleComments{$rulename} = $newComment;
+      }
       die "Cannot use step name $rulename as rule name in $stepsFile\n"
         if exists $steps->{$rulename};
       my @pieces = split /\s+/, $pieces;
@@ -142,7 +154,8 @@ sub ReadSteps2($$) {
     }
     $sofar{$rule} = 1;
   }
-  return { 'steps' => $steps, 'rules' => $rules, 'ruleOrder' => \@ruleOrder };
+  return { 'steps' => $steps, 'rules' => $rules, 'ruleOrder' => \@ruleOrder,
+           'topComment' => $topComment, 'ruleComments' => \%ruleComments };
 }
 
 # Returns sequence and description (just joining the DE lines)
