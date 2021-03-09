@@ -2063,7 +2063,8 @@ sub RulesToHTML($$$) {
     my $ruleHTML = b("${ruleId}:");
     my $comment = "";
     $comment = "Comment: " . LinkifyComment($stepsObj->{ruleComments}{$ruleId})
-      if exists $stepsObj->{ruleComments}{$ruleId} && $stepsObj->{ruleComments}{$ruleId} ne "";
+      if exists $stepsObj->{ruleComments}{$ruleId}
+        && $stepsObj->{ruleComments}{$ruleId} =~ m/\S/;
     if (@instanceHTML > 1) {
       foreach my $i (1..(scalar(@instanceHTML)-1)) {
         $instanceHTML[$i] = "or " . $instanceHTML[$i];
