@@ -113,7 +113,7 @@ sub LinkifyComment($);
 sub DataForStepParts($$); # pathwayId & stepId to hashed information
 sub FormatStepPart($$$); # the data, the step part row (in the database), and the orgId
 
-sub RulesToHTML($$); # pathwayId and orgId or ""
+sub RulesToHTML($$$); # the steps object, pathwayId, and orgId or ""
 
 # Global variables
 my $dataDir = "../tmp"; # where all the assemblies and GapMind results live
@@ -480,7 +480,7 @@ my %stepDesc = (); # pathwayId => stepId => desc
     # mode: Show the definition of this pathway, as literal raw contents
     print p("As text, or see",
             a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=$pathSpec&showdef=1" },
-              "steps and rules"));
+              "rules and steps"));
     my $stepPath = "../gaps/$set";
     my $stfile = "$stepPath/$pathSpec.steps";
     open (my $fh, "<", $stfile) || die "No such file: $stfile\n";
@@ -494,11 +494,12 @@ my %stepDesc = (); # pathwayId => stepId => desc
     # Some information is in the steps file only, not in the database, including
     # comments on steps and the preferred ordering of steps is only in the steps file.
     my $stepsObj = Steps::ReadSteps("../gaps/$set/$pathSpec.steps");
-    print p("As steps and rules, or see",
+    print p("As rules and steps, or see",
             a({ -href => "gapView.cgi?set=$set&orgs=$orgsSpec&path=$pathSpec&showdef=literal" },
-            "text"));
-    print h3("Rules"),
-      RulesToHTML($pathSpec, ""), # no orgId
+            "full text"));
+    print h3("Rules");
+    print p("Overview:", LinkifyComment($stepsObj->{topComment})) if exists $stepsObj->{topComment};
+    print RulesToHTML($stepsObj, $pathSpec, ""), # no orgId
       "\n";
     print h3("Steps");
     my @stepsInOrder = sort { $a->{i} <=> $b->{i} } values %{ $stepsObj->{steps} };
@@ -511,7 +512,7 @@ my %stepDesc = (); # pathwayId => stepId => desc
       foreach my $stepPart (@$stepParts) {
         print li(FormatStepPart($data, $stepPart, ""));
       }
-      print li("Comments:", LinkifyComment($stepObj->{comment}))
+      print li("Comment:", LinkifyComment($stepObj->{comment}))
         if $stepObj->{comment} ne "";
       print end_ul, "\n";
     }
@@ -796,10 +797,12 @@ my %stepDesc = (); # pathwayId => stepId => desc
     my $stepScores = $dbhG->selectall_hashref("SELECT * from StepScore WHERE orgId = ? AND pathwayId = ?",
                                               "stepId",
                                               { Slice => {} }, $orgId, $pathSpec);
+    # Comments are in the steps file only, not in the database.
+    my $stepsObj = Steps::ReadSteps("../gaps/$set/$pathSpec.steps");
     my @expandedPath = split / /, $ruleScores->{all}{expandedPath};
     die unless @expandedPath > 0;
     print h3(scalar("Best path")),
-      p(PathToHTML(\@expandedPath, $stepScores)),
+      p(i(PathToHTML(\@expandedPath, $stepScores))),
       "\n";
 
     my @bestcand = (); # the best candidate per step (or the top two, if the same score)
@@ -816,8 +819,9 @@ my %stepDesc = (); # pathwayId => stepId => desc
       print p("Also see", a({ -href => $URL }, "fitness data"), "for the top candidates");
     }
 
-    print h3("Rules"),
-      RulesToHTML($pathSpec, $orgId),
+    print h3("Rules");
+    print p("Overview:", LinkifyComment($stepsObj->{topComment})) if exists $stepsObj->{topComment};
+    print RulesToHTML($stepsObj, $pathSpec, $orgId),
       "\n";
 
     # Show the steps on the best path, and then the other steps, sorted by their name (case insensitive)
@@ -999,8 +1003,8 @@ my %stepDesc = (); # pathwayId => stepId => desc
 
     # Show step definition
     print h3("Definition of step", i($stepSpec)), "\n";
-    # Comments on the step definitions are in the steps file only, not in the database.
-    my $stepsObj = Steps::ReadSteps("../gaps/$set/$pathSpec.steps");
+
+    my $stepsObj = Steps::ReadSteps("../gaps/$set/$pathSpec.steps"); # for the comment
     my $stepObj = $stepsObj->{steps}{$stepSpec} || die;
     my $stepPartData = DataForStepParts($pathSpec, $stepSpec);
     my $stepParts = $dbhS->selectall_arrayref("SELECT * from StepPart WHERE pathwayId = ? AND stepId = ?",
@@ -1009,7 +1013,7 @@ my %stepDesc = (); # pathwayId => stepId => desc
     foreach my $row (@$stepParts) {
       print li(FormatStepPart($stepPartData, $row, $orgId));
     }
-    print li("Comments:", LinkifyComment($stepObj->{comment}))
+    print li("Comment:", LinkifyComment($stepObj->{comment}))
       if $stepObj->{comment} ne "";
     print end_ul(), "\n";
     print p("Or cluster all characterized", a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec&step=$stepSpec"},
@@ -1906,6 +1910,15 @@ sub LinkifyComment($) {
       $word =~ s/^PMC\d+//;
       push @out, $pre . a({ -href => "http://www.ncbi.nlm.nih.gov/pmc/articles/" . lc($pmcId) . "/" },
                    $pmcId) . $word;
+    } elsif ($word =~ m/^metacyc:([A-Z][A-Z0-9-]+)/i) {
+      my $metacycId = $1;
+      $word =~ s/^metacyc:([A-Z][A-Z0-9-]+)//i;
+      push @out, $pre. a({ -href => "https://metacyc.org/META/NEW-IMAGE?object=$metacycId" },
+                         "link") . $word;
+    } elsif ($word =~ m/^EC:([0-9][.][0-9.]+[0-9])/i) {
+      my $ec = $1;
+      $word =~ s/^EC:([0-9][.][0-9.]+[0-9])//i;
+      push @out, $pre . "EC " . a({ -href => "https://enzyme.expasy.org/EC/$ec" }, $ec) . $word;
     } else {
       push @out, $pre . $word;
     }
@@ -1946,12 +1959,14 @@ sub FormatStepPart($$$) {
     # Use local URLs for Curated BLAST links, instead of using the official papers.genomics.lbl.gov
     # site, because the genome may not exist at the public site
     my $URL = "https://enzyme.expasy.org/EC/$value";
+    my $title = "";
     $URL = "genomeSearch.cgi?gdb="
       . $orgs{$orgId}{gdb}
       . "&gid=" . $orgs{$orgId}{gid}
       . "&query=$value&word=1" if $orgId ne "";
+    $title = "Run Curated BLAST" if $orgId ne "";
     return "Curated proteins or TIGRFams with EC "
-      . a({-href => $URL, -title => "Run Curated BLAST"}, $value);
+      . a({-href => $URL, -title => }, $value);
   } elsif ($type eq "hmm") {
     return "HMM " . a({-href => HMMToURL($value) }, $value);
   } elsif ($type eq "term") {
@@ -1993,8 +2008,8 @@ sub FormatStepPart($$$) {
 }
 
 # orgId is optional
-sub RulesToHTML($$) {
-  my ($pathwayId, $orgId) = @_;
+sub RulesToHTML($$$) {
+  my ($stepsObj, $pathwayId, $orgId) = @_;
   my $stepScores = $dbhG->selectall_hashref("SELECT * from StepScore WHERE orgId = ? AND pathwayId = ?",
                                          "stepId",
                                          { Slice => {} }, $orgId, $pathwayId)
@@ -2031,16 +2046,24 @@ sub RulesToHTML($$) {
         } else {
           my $subRuleId = $component->{subRuleId};
           die if $subRuleId eq "";
-          my $param = { -title => "see rule for $subRuleId below" };
+          my $param = { -title => "see rules for $subRuleId below" };
           $param->{style} = ScoreToStyle(RuleToMinScore($ruleScores->{$subRuleId}))
             if $orgId ne "";
           push @parts, span($param, $subRuleId);
         }
       }
-      push @instanceHTML, join(", ", @parts);
+      if (@parts == 1) {
+        push @instanceHTML, $parts[0];
+      } else {
+        my $last = pop @parts;
+        push @instanceHTML, join(", ", @parts) . " and $last";
+      }
     }
     die $ruleId unless @instanceHTML > 0;
-    my $ruleHTML = "${ruleId}:";
+    my $ruleHTML = b("${ruleId}:");
+    my $comment = "";
+    $comment = "Comment: " . LinkifyComment($stepsObj->{ruleComments}{$ruleId})
+      if exists $stepsObj->{ruleComments}{$ruleId} && $stepsObj->{ruleComments}{$ruleId} ne "";
     if (@instanceHTML > 1) {
       foreach my $i (1..(scalar(@instanceHTML)-1)) {
         $instanceHTML[$i] = "or " . $instanceHTML[$i];
@@ -2048,9 +2071,11 @@ sub RulesToHTML($$) {
       $out .= li($ruleHTML);
       $out .= start_ul;
       $out .= join("", map li($_), @instanceHTML);
+      $out .= li($comment) if $comment ne "";
       $out .= end_ul;
     } else {
       $out .= li($ruleHTML, $instanceHTML[0]);
+      $out .= start_ul . li($comment) . end_ul if $comment ne "";
     }
   }
   $out .= end_ul;
