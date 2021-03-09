@@ -844,6 +844,7 @@ my %stepDesc = (); # pathwayId => stepId => desc
     my $hasCurated = keys(%stepToCuratedGap) > 0;
     my $hasKnown = keys(%stepToKnownGap) > 0;
     print h3(scalar(keys %$stepScores), "steps", "(${nWithCand}", "with candidates)"), "\n";
+    print p("Or see", a({ -href => "gapView.cgi?set=$set&orgs=$orgsSpec&path=$pathSpec&showdef=1"}, "definitions of steps"));
     my @header = qw{Step Description Best-candidate 2nd-candidate};
     foreach (@header) { s/-/ /; }
     push @header, "Class of gap" if $hasCurated;
