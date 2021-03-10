@@ -47,8 +47,11 @@ step lines, which are tab-delimited with fields step name, step description,
   in the ignore list are removed. (The ignore list also affects
   scoring of reverse-hits later on.)
 
-rules lines starting with name: followed by a list of step names or
-rule names.
+rules lines starting with name: followed by a (space-delimited) list
+of step names or rule names.
+
+import lines of the form
+import otherpathway.steps:rule-or-step1,rule-or-step2,...rule-or-stepN
 
 blank (whitespace only lines)
 
