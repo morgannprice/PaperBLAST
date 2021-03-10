@@ -1,47 +1,60 @@
-### MetaCyc pathway L-arginine biosynthesis I (via L-ornithine)
+# Arginine biosynthesis in GapMind is based on MetaCyc pathways
+# L-arginine biosynthesis I via L-acetyl-ornithine (metacyc:ARGSYN-PWY),
+# II (acetyl cycle) (metacyc:ARGSYNBSUB-PWY),
+# III via N-acetyl-L-citrulline (metacyc:PWY-5154),
+# or IV via LysW-ornithine (metacyc:PWY-7400).
+# GapMind also includes L-arginine biosynthesis with succinylated intermediates, as in Bacteroidetes (PMC5764234).
+# These pathways all involve the activation of glutamate (by aceylation, succinylation, or attachment of LysW),
+# followed by phosphorylation, reduction and transamination, to activated ornithine.
+# In most pathways, this intermediate is cleaved to ornithine before transcarbamoylation,
+# but in the N-acetylcitrulline or succinylated pathways, transcarbamoylation occurs before hydrolysis.
+# In the final two steps, citrulline is converted to arginine by ArgG and ArgH.
 
-# Bacteroidetes have a divergent N-acylglutamate synthase, see BT3761 (Q8A1A5_BACTN) or Echvi_3845 (L0G3H4_ECHVK)
-# Also see the related protein Cabys_1732 (H1XRZ0_9BACT) which is reported to form
+# Bacteroidetes have a divergent N-acylglutamate synthase, see BT3761 (uniprot:Q8A1A5_BACTN)
+# or Echvi_3845 (uniprot:L0G3H4_ECHVK).
+# Also see the related protein Cabys_1732 (uniprot:H1XRZ0_9BACT) which is reported to form
 # N-acetylglutamate (PMID:28265262).
 # Bacteroides use succinylated intermediates (PMID:16704984), so their proteins are probably
 # N-succinylglutamate synthases.
-# Add BRENDA::A0A0H2X8L7 (described as argB, but also is argA) and also
-# N515DRAFT_3768 (A0A1I2DIM7), which is similar to ArgAB fusion proteins and is rescued by arginine.
-# 
+# uniprot:A0A0H2X8L7 is annotated as argB in BRENDA, but it is also argA (a fusion protein).
+# N515DRAFT_3768 (uniprot:A0A1I2DIM7) is similar to ArgAB fusion proteins and mutants are rescued by arginine.
 argA	N-acylglutamate synthase	EC:2.3.1.1	uniprot:Q8A1A5_BACTN	uniprot:L0G3H4_ECHVK	uniprot:H1XRZ0_9BACT	curated:BRENDA::A0A0H2X8L7	uniprot:A0A1I2DIM7
 
-# This includes Bacteroides proteins that act on N-succinylglutamate instead
+# ArgB includes Bacteroides proteins that act on N-succinylglutamate instead
 # of the usual N-acetylglutamate (i.e. BT3395).
 # See "Discovery of novel pathways of microbial arginine biosynthesis" (2010),
 # PhD thesis of Juan Manuel Cabrera Luque, which shows that argB from B. fragilis is
 # N-succinylglutamate kinase.
 #
 # In the version of BRENDA we are using,
-# lpxC from Aquifex aeolicus is erroneously given as O67848 (which is probably argB), not O67648
-# (This has since been updated in BRENDA.)
+# lpxC from Aquifex aeolicus is erroneously given as uniprot:O67848 (which is probably argB), not uniprot:O67648.
+# (This has since been corrected in BRENDA.)
 argB	N-acylglutamate kinase	EC:2.7.2.8	ignore:BRENDA::O67848
 
-# This includes Bacteroides proteins that might act on N-succinylglutamylphosphate instead (i.e. BT3759)
+# ArgC includes Bacteroides proteins that probably act
+# on N-succinylglutamylphosphate instead of N-acetylglutamylphosphate (i.e. BT3759)
 argC	N-acylglutamylphosphate reductase	EC:1.2.1.38
 
-# aminotransferase converting N-acetylglutamate semialdehyde to acetylornithine
-# often similar to succinylornithine transaminases (2.6.1.81)
+# This aminotransferase for converting N-acetylglutamate semialdehyde to acetylornithine is
+# often similar to succinylornithine transaminases (EC:2.6.1.81)
 argD	N-acetylornithine aminotransferase	EC:2.6.1.11	ignore_other:EC 2.6.1.81
 
-# N515DRAFT_3767 (A0A1I2DJB5_9GAMM) is a putative argE, quite diverged (the closest characterized protein is 25% identity to E. coli argE)
+# This EC number also includes N-acetylcitrulline deacetylase, which is part of pathway III.
+# N515DRAFT_3767 (uniprot:A0A1I2DJB5_9GAMM) is a putative argE and is quite diverged
+# (the closest characterized protein is 25% identity to E. coli argE).
 # Mutants are auxotrophic and rescued by arginine.
-# (This EC number also includes N-acetylcitrulline deacetylase, part of pathway III)
 argE	N-acetylornithine deacetylase	EC:3.5.1.16	uniprot:A0A1I2DJB5_9GAMM
 
-# This could obtain the amino group from glutamine (EC 6.3.5.5) or from ammonia (EC 6.3.4.16)
+# This could obtain the amino group from glutamine (EC:6.3.5.5) or from ammonia (EC:6.3.4.16)
 carA	carbamoyl phosphate synthase subunit alpha	term:carbamoyl-phosphate synthase%small	ignore_other:EC 6.3.5.5	ignore_other:EC 6.3.4.16	hmm:TIGR01368
 carB	carbamoyl phosphate synthase subunit beta	term:carbamoyl-phosphate synthase%large	ignore_other:EC 6.3.5.5	ignore_other:EC 6.3.4.16	hmm:TIGR01369
 
-# ornithine to citrulline (E. coli has two paralogs, argI and argF)
+# ArgI converts ornithine to citrulline. (E. coli has two paralogs, argI and argF)
 argI	ornithine carbamoyltransferase	EC:2.1.3.3
 
-# citrulline + aspartate to arginosuccinate
-# N515DRAFT_3766 (A0A1I2DIG3_9GAMM) and BT3768 (Q8A1A6_BACTN) are diverged and are auxotrophic & rescued by arginine
+# ArgG converts citrulline + aspartate to arginosuccinate.
+# N515DRAFT_3766 (uniprot:A0A1I2DIG3_9GAMM) and BT3768 (uniprot:Q8A1A6_BACTN) are diverged
+# and mutants are auxotrophic & rescued by arginine
 argG	arginosuccinate synthetase	EC:6.3.4.5	uniprot:A0A1I2DIG3_9GAMM	uniprot:Q8A1A6_BACTN
 
 argH	arginosuccinate lyase	EC:4.3.2.1
@@ -57,32 +70,33 @@ argH	arginosuccinate lyase	EC:4.3.2.1
 # adapted to prefer N-succinyl intermediates.  The conversion of
 # N-succinylgutamate semialdehyde to N-succinylornithine is probably
 # carried out by a diverged argD (argD'B below), which would produce
-# the substrate for argF'Bf.  And a diverged desuccinylase (argE'B
+# the substrate for argF'B.  And a diverged desuccinylase (argE'B
 # below) probably acts on N-succinylornithine, because these
 # Bacteroidetes have ordinary argG/argH for the conversion of
 # ornithine to arginine
 
-# N-succinylglutamate semialdehyde => N-succinylornithine
-# Some Bacteroides hvae a diverged argD-like gene, i.e. BT3758 (Q8A1A8) or Echvi_3848 (L0G5F2_ECHVK),
+# N-succinylglutamate semialdehyde => N-succinylornithine.
+# Some Bacteroides hvae a diverged argD-like gene, i.e. BT3758 (uniprot:Q8A1A8) or Echvi_3848 (uniprot:L0G5F2_ECHVK),
 # which are auxotrophic and cofit with other arg genes.
 # Note that this is the same reaction as found in arginine degradation by the arginine succinyltransferase (AST) pathway
 argD'B	N-succinylornithine aminotransferase	EC:2.6.1.81	uniprot:Q8A1A8	uniprot:L0G5F2_ECHVK	ignore_other:EC 2.6.1.11
 
-# In, Bacteroides fragilis, argF'Bf converts N-succinylornithine to N-succinylcitrulline, see the reference above
-# (nearly identical to BT3717). Echvi_3849 (L0G4Z0_ECHVK) also has this activity, as it is rescued by arginine
+# In, Bacteroides fragilis, argF'B converts N-succinylornithine to N-succinylcitrulline
+# (PMID:16704984). Echvi_3849 (uniprot:L0G4Z0_ECHVK) also has this activity, as it is rescued by arginine
 # and Echinicola vietnamensis has similar argD'/argE'
 argF'B	N-succinylornithine carbamoyltransferase	EC:2.1.3.11	uniprot:L0G4Z0_ECHVK
 
-# The desuccinylase is probably BT3549 (Q8A1V9), Echvi_3851 (L0G443_ECHVK), or CA265_RS18500 (A0A1X9Z8E1_9SPHI)
+# The N-succinylcitrulline desuccinylase is probably BT3549 (uniprot:Q8A1V9),
+# Echvi_3851 (uniprot:L0G443_ECHVK), or CA265_RS18500 (uniprot:A0A1X9Z8E1_9SPHI)
 # Mutants in these genes are rescued by added arginine and they are
 # distantly related to succinyl-diaminopimelate desuccinylase.
-# And these bacteria have ordinary argG/argH so citrulline is expected to be an intermediate.
+# And these bacteria have ordinary argG/argH, so citrulline is expected to be an intermediate.
 argE'B	N-succinylcitrulline desuccinylase	uniprot:Q8A1V9	uniprot:L0G443_ECHVK	uniprot:A0A1X9Z8E1_9SPHI
 
-# MetaCyc pathway L-arginine biosynthesis II (acetyl cycle)
-# Instead of acetylornithine deacetylase, uses acetylornithine acetyltransferase argJ
-# And, argJ may also replace argA
-# CH_122594 lacks an EC number (not fully characterized) and is likely to be ArgJ (50% identity to O94346)
+# In pathway II (acetyl cycle), instead of an acetylornithine deacetylase,
+# the acetyltransferase argJ converts N-acetylornithine to ornithine.
+# ArgJ may also form N-acetylglutamate (replacing argA).
+# CH_122594 lacks an EC number (not fully characterized) and is likely to be ArgJ (50% identity to uniprot:O94346)
 argJ	ornithine acetyltransferase	EC:2.3.1.35	ignore:CharProtDB::CH_122594
 
 # MetaCyc pathway L-arginine biosynthesis III via N-acetyl-L-citrulline
@@ -98,28 +112,29 @@ argF'	acetylornithine transcarbamoylase	EC:2.1.3.9
 # has a dedicated enzyme in many archaea, but in Thermococcus kodakarensis, the ligase is
 # also bifunctional (see PMC5076833).
 
-# TK0278 (Q5JFW0) is also a glutamate--LysW ligase, see PMC5076833
-# EC 6.4.2.43 (LysW-2-aminoadipate ligases) are ignored because some are bifunctional.
+# TK0278 (uniprot:Q5JFW0) is also a glutamate--LysW ligase, see PMC5076833.
+# EC:6.4.2.43 (LysW-2-aminoadipate ligases) are ignored because some are bifunctional.
 argX	glutamate--LysW ligase	term:Glutamate--LysW ligase	uniprot:Q5JFW0	ignore_other:6.3.2.43
 
 # lysZ is the kinase, lysY is the reductase, lysJ is the aminotransferase, and lysK is the hydrolase,
 # forming LysW and ornithine
 import lys.steps:lysW lysZ lysY lysJ lysK
 
-# Pathway I
+# Pathway I uses acetylated intermediates, argA, and argE.
 ornithine: argA argB argC argD argE
 
-# Pathway II with argJ
+# Pathway II uses acetylated intermediates and argJ.
 ornithine: argJ argB argC argD
 
-# Pathway IV (LysW)
+# Pathway IV has LysW-modified intermediates.
 ornithine: lysW argX lysZ lysY lysJ lysK 
 
-# Pathway I, II, or IV
+# In pathways I, II, or IV, ornithine is carbamoylated by argI.
 all: ornithine carA carB argI argG argH
 
-# Pathway III (N-acetylcitrulline)
+# In pathway III (N-acetylcitrulline), N-acetylornithine is carbamoylated by argF'
+# and N-acetylcitrulline is hydrolyzed by argE.
 all: argA argB argC argD carA carB argF' argE argG argH
 
-# Succinylated intermediates
+# In the pathway with succinylated intermediates, N-succinylornithine is carbamoylated by argF'B.
 all: argA argB argC argD'B argF'B argE'B argG argH

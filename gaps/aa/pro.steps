@@ -1,59 +1,48 @@
-# Ornithine can be an intermediate in proline biosynthesis.
-# It is synthesized via N-acetylglutamate, as in arginine biosynthesis.
+# Proline biosynthesis in GapMind is based on MetaCyc pathways
+# L-proline biosynthesis I from L-glutamate (metacyc:PROSYN-PWY)
+# and III via L-ornithine aminotransferase (metacyc:PWY-3341).
+# GapMind also describes proline synthesis via ornithine cyclodeaminase (PMID:11489875).
+# Pathway II from arginine (metacyc:PWY-4981) should perhaps be included, but is not;
+# it is reported in nitrogen-fixing cyanobacteria and the bacteria it was reported in also have pathway I.
+# Pathway IV is not included because it is not reported in prokaryotes (metacyc:PWY-4281).
+# Also, pathway III is described in MetaCyc as occuring only in plants, but it also is reported
+# in the archaeon Thermococcus kodakarensis (PMC5846162).
 
 # Do not include N-succinylglutamate synthases from Bacteroidetes, as no N-succinylornithine hydrolase is known.
-# But do include the related protein Cabys_1732 (H1XRZ0_9BACT) which is reported to form
+# But do include the related protein Cabys_1732 (uniprot:H1XRZ0_9BACT) which is reported to form
 # N-acetylglutamate (PMID:28265262).
 # Add BRENDA::A0A0H2X8L7 (described as argB, but also is argA) and also
-# N515DRAFT_3768 (A0A1I2DIM7), which is similar to ArgAB fusion proteins and is rescued by arginine.
+# N515DRAFT_3768 (uniprot:A0A1I2DIM7), which is similar to ArgAB fusion proteins and is rescued by arginine.
 argA	N-acetylglutamate synthase	EC:2.3.1.1	uniprot:H1XRZ0_9BACT	curated:BRENDA::A0A0H2X8L7	uniprot:A0A1I2DIM7
 
-# argABCDE or argJBCD or argX-lysWZYJK convert glutamate to ornithine
-# argJ also forms N-acetylglutamate
-# argX is part of the LysW pathway, along with lysWZYJK
+# argX is part of the LysW pathway, along with lysWZYJK.
 import arg.steps:argB argC argD argE argJ argX
 import lys.steps:lysW lysZ lysY lysJ lysK
 
+# Ornithine is an intermediate in pathway III.
+# It synthesized via N-acetylglutamate (beginning with argA or argJ) or LysW-glutamate, as in arginine biosynthesis.
 ornithine: argA argB argC argD argE
 ornithine: argJ argB argC argD
 ornithine: lysW argX lysZ lysY lysJ lysK 
 
-### L-proline biosynthesis I (from glutamate)
-
 proB	glutamate 5-kinase	EC:2.7.2.11
 
-# to glutamate 5-semialdehyde, which spontaneously dehydrates to 1-pyrroline-5-carboxylate
+# glutamyl-5-phosphate to glutamate 5-semialdehyde, which spontaneously dehydrates to 1-pyrroline-5-carboxylate
 proA	gamma-glutamylphosphate reductase	EC:1.2.1.41
 
-# to proline
+# pyrroline-5-carboxylate to proline
 proC	pyrroline-5-carboxylate reductase	EC:1.5.1.2
 
-all: proB proA proC
-
-### L-proline biosynthesis II (from arginine) is only known in eukaryotes
-# and is not described here
-
-### L-proline biosynthesis III (from L-ornithine via glutamate semialdehyde)
-# is described in MetaCyc as occuring in plants, but it also is reported
-# in the archaeon Thermococcus kodakarensis, see PMC5846162
-
-# Converts ornithine to glutamate semialdehyde
+# Converts ornithine to glutamate semialdehyde.
 # CH_124176 is annotated as ornithine transaminase but without the EC number; it probably
-# has the same activity
+# has the same activity.
 OAT	L-ornithine 5-aminotransferase	EC:2.6.1.13	curated:CharProtDB::CH_124176
-
-# The glutamate semialdehyde spontaneously cyclizes to pyrroline-5-carboxylate,
-# and proC reduces it to proline
-
-all: ornithine OAT proC
-
-### L-proline biosynthesis IV (ornithine to 5-amino-2-oxopentanoate) is only known
-# in eukaryotes and is not described here. (Also it is not linked to genes.)
-
-# Some methanogens synthesize proline via ornithine cyclodeaminase (see PMID:11489875)
-# Unfortunately, the cyclodeaminase has only been linked to sequence in bacteria.
-# Ornithine is formed via the initial steps of common arginine synthesis pathways, argABCDE or argJBCDJ
 
 cyclodeaminase	ornithine cyclodeaminase	EC:4.3.1.12
 
+# Pathway I is proABC. Pathway II involves ornithine aminotransferase (OAT).
+# And some methanogens synthesize proline via ornithine cyclodeaminase (PMID:11489875).
+# Unfortunately, the cyclodeaminase has only been linked to sequence in bacteria.
+all: proB proA proC
+all: ornithine OAT proC
 all: ornithine cyclodeaminase

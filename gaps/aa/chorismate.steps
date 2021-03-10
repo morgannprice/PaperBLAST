@@ -1,31 +1,37 @@
-# MetaCyc Pathway chorismate biosynthesis I,
-# starting with D-erythrose-4-phosphate and phosphoenolpyruvate
+# Chorismate is the starting point for the biosynthesis of the aromatic amino acids
+# phenylalanine, tryptophan, and tyrosine.
+# Chorismate biosynthesis in GapMind is based on 
+# MetaCyc pathways chorismate biosynthesis I (metacyc:ARO-PWY), from
+# D-erythrose-4-phosphate and phosphoenolpyruvate, or
+# II (metacyc:PWY-6165), from D-glyceraldeyde-3-phosphate and L-asparatate.
+# Both pathways are identical after they reach 3-dehydroquinate.
 
-# 4.1.2.15 is an obsolete EC number, but it appears in a few entries
-# Also known as DAHP (3-deoxy-D-arabino-heptulosonate 7-phosphate) synthase 
+# 4.1.2.15 is an obsolete EC number, but it appears in a few entries.
+# This is also known as DAHP (3-deoxy-D-arabino-heptulosonate 7-phosphate) synthase .
 # Add Echvi_0120 because it is diverged, is confirmed by cofitness, and is essential in other Bacteroidetes.
-# (Echvi_0120 is a fusion with chorismate mutase)
+# (Echvi_0120 is a fusion with chorismate mutase.)
 aroG	3-deoxy-7-phosphoheptulonate synthase	EC:2.5.1.54	uniprot:L0FSZ3_ECHVK	ignore_other:EC 4.1.2.15
 
-# (There's also the obsolete EC number 4.6.1.3, no longer used)
+# (There's also the obsolete EC number 4.6.1.3, no longer used.)
 aroB	3-dehydroquinate synthase	EC:4.2.3.4
 
 aroD	3-dehydroquinate dehydratase	EC:4.2.1.10
 
-# 1.1.1.282 is with NAD(P)H instead of NADPH
-# Manually add the B. theta gene (BT4215) because it is diverged, is the only good candidate,
+# EC:1.1.1.282 is with NAD(P)H instead of NADPH.
+# Manually add the B. theta gene (BT4215, uniprot:Q8A006_BACTN) because it is diverged, is the only good candidate,
 # and is essential in various Bacteroidetes
 aroE	shikimate dehydrogenase	EC:1.1.1.25	EC:1.1.1.282	uniprot:Q8A006_BACTN
 
-# In E. coli, AroL and AroK are isozymes
+# In E. coli, AroL and AroK are isozymes.
 # In Bacillus subtilis, this gene was known as AroI, and it was cloned by complementation
-# (see A. Nakane et al, J. Fermentation and Bioengineering 1994, 77:312-314)
-# That sequence is identical to AROK_BACSU
-# Manually add BT3393 from B. thetaiotaomicron because it is diverged, is the only good candidate,
+# (see A. Nakane et al, J. Fermentation and Bioengineering 1994, 77:312-314.)
+# That sequence is identical to uniprot:AROK_BACSU.
+# Manually add BT3393 (uniprot:AROK_BACTN) from B. thetaiotaomicron because it is diverged, is the only good candidate,
 # and is essential in various Bacteroidetes.
-# Similarly Echvi_0140 from Echinicola vietnamensis
-# And DVU0892 from D. vulgaris Hildenborough is confirmed by cofitness
-# CCNA_03103 is confirmed by cofitness and similar proteins such as SMc00695 and PGA1_c14090 are essential
+# Similarly for Echvi_0140 (uniprot:L0FT15_ECHVK) from Echinicola vietnamensis.
+# And DVU0892 (uniprot:AROK_DESVH) from D. vulgaris Hildenborough is confirmed by cofitness
+# CCNA_03103 (uniprot:AROK_CAUVN) is confirmed by cofitness and similar proteins
+# such as SMc00695 (uniprot:AROK_RHIME) and PGA1_c14090 (uniprot:I7EWF3_PHAIB) are essential.
 aroL	shikimate kinase	EC:2.7.1.71	uniprot:AROK_BACSU	uniprot:AROK_BACTN	uniprot:L0FT15_ECHVK	uniprot:AROK_DESVH	uniprot:AROK_CAUVN	uniprot:AROK_RHIME	uniprot:I7EWF3_PHAIB
 
 # Add AroA from Desulfovibrio vulgaris (DVU0463) because it is a bit diverged, is conserved essential,
@@ -35,31 +41,33 @@ aroA	3-phosphoshikimate 1-carboxyvinyltransferase	EC:2.5.1.19	uniprot:Q72EV5_DES
 # (There's also obsolete EC 4.6.1.4, no longer used)
 aroC	chorismate synthase	EC:4.2.3.5
 
-# MetaCyc pathway chorismate biosynthesis II is a different pathway to 3-dehydroquinate,
-# starting with D-glyceraldeyde-3-phosphate and L-asparatate
-# tpiA is also believed to convert D-glyceraldehyde 3-phosphate to enolaldehyde, which
-# spontaneously converts to methylglyoxal
-# (alternatively, methylglyoxal might be formed by methylgyoxal synthase, EC 4.2.3.3?)
+# The triose-phosphate isomerase tpiA is also thought to convert D-glyceraldehyde 3-phosphate to enolaldehyde, which
+# spontaneously converts to methylglyoxal.
+# (Alternatively, methylglyoxal might be formed by methylgyoxal synthase, EC 4.2.3.3?)
 tpiA	D-glyceraldehyde-3-phosphate phospholyase	EC:5.3.1.1
 
 # 6-deoxy-5-ketofructose-1-phosphate synthase is an activity of some fructose-bisphosphate aldolases
 # (which are usually annotated as 4.1.2.13). To find the fbp in Desulfovibrio vulgaris Hildenborough
 # and Miyazaki F, it is necessary to match more broadly.
-# And ignore CharProtDB item with incorrect EC
+# And ignore CharProtDB items with incorrect EC.
 fbp	6-deoxy-5-ketofructose 1-phosphate synthase	EC:2.2.1.11	EC:4.1.2.13	ignore_other:fructose%bisphosphate aldolase
 
-# Conversion of aspartate to L-aspartate-4-semialdehyde is as in biosynthesis of Met or Thr
 # For BRENDA::O63067 -- the paper describes a monofunctional hom but the sequence of O63067 is
 # much longer and has a close homolog of functional aspartate kinase (due to alternative splicing?)
 asp_kinase	aspartate kinase	EC:2.7.2.4	ignore:BRENDA::O63067
+
 asd	asparate semi-aldehyde dehydrogenase	EC:1.2.1.11
 
 # aroA' condenses 6-deoxy-5-ketofructose 1-phosphate with L-aspartate 4-semialdehyde
 aroA'	2-amino-3,7-dideoxy-D-threo-hept-6-ulosonate synthase	EC:2.2.1.10
 
-# aroB' forms dehydroquinate
 aroB'	dehydroquinate synthase II	EC:1.4.1.24
 
+# Pathway I uses aroG and aroB, while pathway II uses non-canonical activities of triose-phosphate
+# isomerase (tpiA) and fructose-bisphosphate aldolase (fbp)
+# to form 6-deoxy-5-ketofructose 1-phosphate. AroA' condenses this with asparate semialdehyde
+# (formed from aspartate by asp_kinase and asd) to 2-amino-3,7-dideoxy-D-threo-hept-6-ulosonate,
+# and AroB' cyclizes it to 3-dehydroquinate.
 3-dehydroquinate: aroG aroB
 3-dehydroquinate: tpiA fbp asp_kinase asd aroA' aroB'
 

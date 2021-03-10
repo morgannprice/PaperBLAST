@@ -1,25 +1,27 @@
-# MetaCyc pathway I
+# Phenylalanine biosynthesis in GapMind is based on MetaCyc pathways
+# L-phenylalanine biosynthesis I (metacyc:PHESYN),
+# II (metacyc:PWY-3462), and III (metacyc:PWY-7432).
+# Pathways I and III proceed via 3-phenyl-2-oxopropanoate, but with different
+# amino acids providing the amino group for the conversion to phenylalanine.
+# In pathway II, L-arogenate is the intermediate (the aminotransferase reaction occurs before the dehydratase reaction).
+
+PPYAT	tyrosine:phenylpyruvate aminotransferase	EC:2.6.1.57
 
 # Chorismate mutase is usually fused to prephenate dehydratase, which
 # makes it difficult to find this activity when it is fused to something else. 
 # As of March 2019, the PFam does not have any characterized members with other functions
 cmutase	chorismate mutase	EC:5.4.99.5	hmm:PF01817
 
-# prephenate dehydratase and arogenate dehydratase can be difficult to distinguish
-# BT3936 is diverged but has auxotrophic phenotypes (as do homologs Echvi_0123, CA265_RS11630)
-# HVO_0449 (D4GRZ0) is a phenylalanine auxotroph and is probably prephenate dehydratase (PMC4300041)
+# prephenate dehydratase and arogenate dehydratase can be difficult to distinguish.
+# BT3936 (uniprot:Q8A0T5_BACTN) is diverged but has auxotrophic phenotypes (as do homologs Echvi_0123, CA265_RS11630).
+# HVO_0449 (uniprot:D4GRZ0) is a phenylalanine auxotroph and is probably prephenate dehydratase (PMC4300041).
 pdehyd	prephenate dehydratase	EC:4.2.1.51	uniprot:Q8A0T5_BACTN	ignore_other:EC 4.2.1.91	uniprot:D4GRZ0
 
 ilvE	phenylalanine transaminase	EC:2.6.1.1	EC:2.6.1.27	EC:2.6.1.57
 
-# MetaCyc pathway II uses chorismate mutase but then continues with
-
 ptransferase	prephenate aminotransferase	EC:2.6.1.79
 
 adehyd	arogenate dehydratase	EC:4.2.1.91	ignore_other:EC 4.2.1.51
-
-# MetaCyc pathway III is like pathway I but uses tyrosine instead of glutamate as the amino donor
-PPYAT	tyrosine:phenylpyruvate aminotransferase	EC:2.6.1.57
 
 all: cmutase pdehyd ilvE
 all: cmutase ptransferase adehyd

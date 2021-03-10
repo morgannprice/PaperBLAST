@@ -1,4 +1,20 @@
-# MetaCyc L-isoleucine biosynthesis I (from threonine)
+# Isoleucine biosynthesis in GapMind is based on MetaCyc pathways
+# L-isoleucine biosynthesis I (from threonine) (metacyc:ILEUSYN-PWY),
+# II via citramalate (metacyc:PWY-5101),
+# or IV from propanoate (metacyc:PWY-5104).
+# These pathways share a common intermediate, 2-oxobutanoate, but vary
+# in how the 2-oxobutanoate is formed.
+# Pathway IV is included because propanoate is a common fermentative
+# end product and need not be a nutrient requirement, but
+# it is not always clear if it could be the main pathway to
+# isoleucine.
+# Pathway III (metacyc:PWY-5103), via glutamate mutase,
+# is not included because the first step (glutamate mutase, EC:5.4.99.1)
+# has not been linked to sequence and because no organism has been
+# demonstrated to rely on this pathway to form oxobutanoate.
+# Pathway V, from 2-methylbutanoate (metacyc:PWY-5108),
+# is not included.
+
 # (Ignore some CharProtDB annotations with threonine deaminase but no EC)
 ilvA	threonine deaminase	EC:4.3.1.19	ignore_other:threonine deaminase
 # ilvIH (or ilvGM) is a two-subunit enzyme that forms acetolactate or acetohydroxybutanoate
@@ -18,6 +34,7 @@ ilvC	2-hydroxy-3-ketol-acid reductoisomerase	EC:1.1.1.86	EC:1.1.1.382	EC:1.1.1.3
 ilvD	(R)-2,3-dihydroxy-3-methylpentanoate dehydratase	EC:4.2.1.9	ignore:metacyc::MONOMER-15882
 ilvE	isoleucine transaminase	EC:2.6.1.42
 
+# 2-oxobutanoate is formed by deaminating threonine (pathway I, ilvA), via citramalate synthase (pathway II, cimA), or via propionyl-CoA (pathway III, prpE)
 oxobutanoate: ilvA
 
 # MetaCyc L-isoleucine biosynthesis II describes the formation of 2-oxobutanoate
@@ -50,19 +67,8 @@ leuB	3-methylmalate dehydrogenase	EC:1.1.1.85	EC:1.1.1.n5
 
 oxobutanoate: cimA leuC leuD leuB
 
-# MetaCyc L-isoleucine biosynthesis III describes the formation of
-# 2-oxobutanoate from glutamate via glutamate mutase.  It is not
-# included because the first step (glutamate mutase, EC 5.4.99.1)
-# has not been linked to sequence and because no organism has been
-# demonstrated to rely on this pathway to form oxobutanoate.
 
-# MetaCyc L-isoleucine biosynthesis IV describes the formation of
-# 2-oxobutanoate from propionate. Some of these organisms are
-# fermentative and may form propionate as an end product; others may
-# only be able to use this pathway if propionate is provided.
-# So it is not always clear if it could be the main pathway to
-# 2-oxobutanoate.
-# 
+
 prpE	propionyl-CoA synthetase	term:propionyl-CoA synthetase	term:propionate--CoA ligase	EC:6.2.1.17
 # The key reaction is alpha-ketobutyrate synthase or
 # 2-oxobutanoate:ferredoxin oxidoreductase (in reverse)

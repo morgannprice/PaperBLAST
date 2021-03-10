@@ -1,3 +1,18 @@
+# Tyrosine biosynthesis in GapMind is based on MetaCyc pathways
+# L-tyrosine biosynthesis I via 3-(4-hydroxyphenyl)pyruvate (metacyc:TYRSYN),
+# pathway II via L-arogenate (metacyc:PWY-3461),
+# pathway III via L-arogenate (metacyc:PWY-6120),
+# or pathway IV via phenylalanine (metacyc:PWY-6134).
+# Pathway II and III are identical except that different cofactors are used by
+# L-arogenate dehydrogenase; these are not distinguished in GapMind.
+# Pathways I and II/III both involve prephenate; in pathway I, prephenate is
+# oxidized to hydroxyphenylpyruvate before being aminated, while in II/III, prephenate
+# is aminated to arogenate before being oxidized to tyrosine.
+# These alternatives are difficult to distinguish by sequence analysis.
+# MetaCyc describes pathway IV as occuring in metazoa, but it
+# also seems to be the main path to tyrosine in some aerobic bacteria
+# (PMC7311316).
+
 # MetaCyc tyrosine biosynthesis I
 
 # Chorismate mutase is often fused, which
@@ -5,31 +20,26 @@
 # As of March 2019, the PFam does not have any characterized members with other functions
 cmutase	chorismate mutase	EC:5.4.99.5	hmm:PF01817
 
-# prephenate dehydrogenase and arogenate dehydrogenase are difficult to distinguish
-# 1.3.1.12 and 1.3.1.13 vary by NAD(P)H cofactor
-# BT3933 (Q8A0T8_BACTN), DVU0464 (Q72EV4_DESVH), HSERO_RS18425 (D8IR44_HERSS), and Ga0059261_2298 (A0A1L6J750) are auxotrophic
-# and have prephenate dehydrogenase domains (PF02153), but their specificity is unclear
-# HVO_1312 (D4GXG3) is auxotrophic for tyrosine and is probably a prephenate dehydrogenase (PMC4300041)
+# prephenate dehydrogenase and arogenate dehydrogenase are difficult to distinguish.
+# 1.3.1.12 and 1.3.1.13 vary by NAD(P)H cofactor.
+# BT3933 (uniprot:Q8A0T8_BACTN), DVU0464 (uniprot:Q72EV4_DESVH), HSERO_RS18425 (uniprot:D8IR44_HERSS),
+# and Ga0059261_2298 (uniprot:A0A1L6J750) are auxotrophic
+# and have prephenate dehydrogenase domains (pfam:PF02153), but their specificity is unclear.
+# HVO_1312 (uniprot:D4GXG3) is auxotrophic for tyrosine and is probably a prephenate dehydrogenase (PMC4300041).
 predehyd	prephenate dehydrogenase	EC:1.3.1.12	EC:1.3.1.13	uniprot:Q8A0T8_BACTN	uniprot:Q72EV4_DESVH	uniprot:D8IR44_HERSS	uniprot:A0A1L6J750	ignore_other:EC 1.3.1.78	ignore_other:EC 1.3.1.43	ignore_other:EC 1.3.1.78	uniprot:D4GXG3
 
-# specificity of the aminotransferase is difficult to predict
-# Include 2.6.1.1 (aspartate amnotransferase) because reported to act on aromatic amino acids including tyrosine
+# The specificity of the aminotransferase is difficult to predict.
+# Include EC:2.6.1.1 (aspartate amnotransferase) because it is reported to act on aromatic amino acids including tyrosine.
 tyrB	tyrosine aminotransferase	EC:2.6.1.5	EC:2.6.1.27	EC:2.6.1.57	EC:2.6.1.1	ignore_other:EC 2.6.1.79	ignore_other:EC 2.6.1.78
 
-# In tyrosine biosynthesis II, aminotransferase (to arogenate) is before the dehydrogenase
-# (arogenate is also known as pretyrosine)
-# 2.6.1.78 is similar but with aspartate as the donor
+# In pathway II, the aminotransferase (to arogenate) is before the dehydrogenase.
+# (Arogenate is also known as pretyrosine.)
 ptransferase	prephenate aminotransferase	EC:2.6.1.79	EC:2.6.1.78	ignore_other:EC 2.6.1.5	ignore_other:EC 2.6.1.27	ignore_other:EC 2.6.1.57	ignore_other:EC 2.6.1.1
 
 # Multiple EC numbers for varying use of NAD(P)H
 # BT3933 and DVU0464 and HSERO_RS18425 are included but their specificity is uncertain
 arodehyd	arogenate dehydrogenase	EC:1.3.1.78	EC:1.3.1.43	EC:1.3.1.78	uniprot:Q8A0T8_BACTN	uniprot:Q72EV4_DESVH	uniprot:D8IR44_HERSS	uniprot:A0A1L6J750	ignore_other:EC 1.3.1.12	ignore_other:EC 1.3.1.13
 
-# tyrosine biosynthesis III is like I but with NADH as the cofactor for the dehydrogenase
-# (EC 1.3.1.43), so is included above
-
-# tyrosine biosynthesis IV starts from phenylalanine; it appears that Dyella japonica uses this
-# gene (N515DRAFT_3052) to make tyrosine, as it has auxotrophic phenotypes.
 # This enzyme requires oxygen
 PAH	phenylalanine hydroxylase	EC:1.14.16.1
 

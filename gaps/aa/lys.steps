@@ -1,7 +1,17 @@
-### lysine biosynthesis I (via DAP and succinylated intermediates)
-# from aspartate and pyruvate (and glutamate as amino group donor)
+# Lysine biosynthesis in GapMind is based on MetaCyc
+# pathways L-lysine biosynthesis I via diaminopimelate (DAP) and
+# succinylated intermediates (metacyc:DAPLYSINESYN-PWY),
+# II with DAP and acetylated intermediates (metacyc:PWY-2941),
+# III with DAP and no blocking group (metacyc:PWY-2942),
+# V via 2-aminoadipate and LysW carrier protein (metacyc:PWY-3081),
+# and VI with DAP aminotransferase (metacyc:PWY-5097).
+# Most of these pathways involve tetrahydrodipicolinate
+# and meso-diaminopimelate, with variations in how the amino group is introduced.
+# Pathway V instead involves L-2-aminoadipate and LysW-attached intermediates.
+# Lysine biosynthesis IV (metacyc:LYSINE-AMINOAD-PWY), via 2-aminoadipate and saccharopine,
+# is only reported to occur in eukaryotes and is not described here.
 
-# For BRENDA::O63067 -- the paper describes a monofunctional hom but the sequence of O63067 is
+# For BRENDA::O63067 -- the paper describes a monofunctional hom but the sequence of uniprot:O63067 is
 # much longer and has a close homolog of functional aspartate kinase (due to alternative splicing?)
 asp_kinase	aspartate kinase	EC:2.7.2.4	ignore:BRENDA::O63067
 
@@ -9,9 +19,9 @@ asd	asparate semi-aldehyde dehydrogenase	EC:1.2.1.11
 
 dapA	4-hydroxy-tetrahydrodipicolinate synthase	EC:4.3.3.7
 
-# Formerly known as dihydrodipicolinate reductase
-# Echvi_2395 (L0G028_ECHVK) and CA265_RS15670 (A0A1X9Z7Q6_9SPHI) are somewhat diverged,
-# but conserved essentiality confirms they are dapB
+# Formerly known as dihydrodipicolinate reductase.
+# Echvi_2395 (uniprot:L0G028_ECHVK) and CA265_RS15670 (uniprot:A0A1X9Z7Q6_9SPHI) are somewhat diverged,
+# but conserved essentiality confirms they are dapB.
 dapB	4-hydroxy-tetrahydrodipicolinate reductase	EC:1.17.1.8	uniprot:L0G028_ECHVK	uniprot:A0A1X9Z7Q6_9SPHI
 
 # Formerly known as 2,3,4,5-tetrahydropyridine-2-carboxylate N-succinyltransferase
@@ -28,10 +38,6 @@ dapF	diaminopimelate epimerase	EC:5.1.1.7
 
 lysA	diaminopimelate decarboxylase	EC:4.1.1.20
 
-### lysine biosynthesis II (via DAP and aceylated intermediates)
-# The same as pathway I except for tetrahydrodipicolinate => L,L-diaminopimelate
-# which involves dapHXL instead of dapDCE
-
 # Also known as ykuQ
 dapH	tetrahydrodipicolinate acetyltransferase	EC:2.3.1.89
 
@@ -41,22 +47,12 @@ dapX	acetyl-diaminopimelate aminotransferase	term:N-acetyl-LL-diaminopimelate am
 # Also known as ykuR
 dapL	N-acetyl-diaminopimelate deacetylase	EC:3.5.1.47
 
-### lysine biosynthesis III (via DAP, no blocking group)
-# The same as pathways I/II except for tetrahydrodipicolinate => meso-diaminopimelate
-# which proceeds in one step
-
+# In reverse, this converts tetrahydrodipicolinate to meso-DAP.
 ddh	meso-diaminopimelate D-dehydrogenase	EC:1.4.1.16
 
-###  lysine biosynthesis VI (via DAP, direct aminotransferase)
-# The same as pathways I-II except for tetrahydrodipicolinate => L,L-diaminopimelate
-# which proceeds in one step
 
+# This enzyme is sometimes known as dapL. In reverse, it converts tetrahydrodipicolinate to L,L-DAP.
 DAPtransferase	L,L-diaminopimelate aminotransferase	EC:2.6.1.83
-
-#### Lysine biosynthesis IV, via 2-aminoadipate and saccharopine,
-# is only reported to occur in eukaryotes and is not described here
-
-### Lysine biosynthesis V, via 2-aminoadipate and LysW carrier protein
 
 # forming (2R)-homocitrate
 hcs	homocitrate synthase	EC:2.3.3.14
@@ -65,37 +61,46 @@ hcs	homocitrate synthase	EC:2.3.3.14
 lysT	homoaconitase large subunit	term:homoaconitase large subunit	ignore_other:EC 4.2.1.114	ignore_other:EC 4.2.1.36
 lysU	homoaconitase small subunit	term:homoaconitase small subunit	ignore_other:EC 4.2.1.114	ignore_other:EC 4.2.1.36
 
-# to 2-oxoadipate. This rule also matches some isocitrate/homoisocitrate dehydrogenases (1.1.1.286)
+# homoisocitrate to 2-oxoadipate. This rule also matches some isocitrate/homoisocitrate dehydrogenases (1.1.1.286)
 # which often have multiple subunits in eukaryotes; this is not represented here.
 hicdh	homo-isocitrate dehydrogenase	EC:1.1.1.87	EC:1.1.1.286
 
-# to 2-aminoadipate
+# 2-oxoadipate to 2-aminoadipate
 lysN	2-aminoadipate:2-oxoglutarate aminotransferase	EC:2.6.1.39
 
-# the carrier protein
-# TK0279 (Q5JFV9) from Thermococcus kodakarensis was characterized, see PMC5076833
-lysW	2-aminoadipate carrier protein	term:alpha-aminoadipate%carrier	uniprot:Q5JFV9
+# LysW is a carrier protein for intermediates in lysine or ornithine biosynthesis.
+# TK0279 (uniprot:Q5JFV9) from Thermococcus kodakarensis was characterized, see PMC5076833.
+lysW	2-aminoadipate/glutamate carrier protein	term:alpha-aminoadipate%carrier	uniprot:Q5JFV9
 
-# TK0278 (Q5JFW0) is described in PMC5076833
+# TK0278 (uniprot:Q5JFW0) is described in PMC5076833.
 lysX	2-aminoadipate-LysW ligase	EC:6.3.2.43	uniprot:Q5JFW0
 
-# TK0276 (Q5JFW2) has also been characterized (PMC5076833)
+# TK0276 (uniprot:Q5JFW2) has also been characterized (PMC5076833).
 lysZ	[LysW]-2-aminoadipate 6-kinase / [LysW]-glutamate kinase	term:[LysW]-aminoadipate kinase	term:[LysW]-aminoadipate/[LysW]-glutamate kinase	uniprot:Q5JFW2
 
-# TK0277 (Q5JFW1) has also been characterized (PMC5076833)
+# TK0277 (uniprot:Q5JFW1) has also been characterized (PMC5076833).
 lysY	[LysW]-2-aminoadipate 6-phosphate reductase / [LysW]-glutamylphosphate reductase	term:[LysW]-L-2-aminoadipate 6-phosphate reductase	term:[LysW]-L-2-aminoadipate/[LysW]-L-glutamate phosphate reductase	uniprot:Q5JFW1
 
-# TK0275 (Q5JFW3) has also been characterized (PMC5076833)
+# TK0275 (uniprot:Q5JFW3) has also been characterized (PMC5076833).
 lysJ	[LysW]-2-aminoadipate semialdehyde transaminase / [LysW]-glutamate semialdehyde transaminase	term:[LysW]-aminoadipate semialdehyde transaminase	term:[LysW]-aminoadipate semialdehyde/glutamate semialdehyde transaminase	uniprot:Q5JFW3
 
-# TK0274 (Q5JFW4) has also been characterized (PMC5076833)
+# TK0274 (uniprot:Q5JFW4) has also been characterized (PMC5076833).
 lysK	[LysW]-lysine hydrolase / [LysW]-ornithine hydrolase	term:LysW%lysine%hydrolase	term:aminoadipate carrier protein%lysine%hydrolase	uniprot:Q5JFW4
 
+# (S)-2,3,4,5-tetrahydrodipicolinate is formed from aspartate semialdehyde by dapAB.
+# In pathway I (dapDCE), it is succinylated, transaminated, and desuccinyulated, to L,L-DAP,
+# and then the epimerase dapF forms meso-DAP.
+# Pathway II (dapHXL) is similar but with acetylated intermediates.
+# In pathway III, tetrahydrodipicolinate is reductively aminated to meso-DAP in one step, by ddh.
+# In pathway VI, an aminotransferase (DAPtransferase) forms L,L-DAP.
 meso-DAP: asp_kinase asd dapA dapB dapD dapC dapE dapF
 meso-DAP: asp_kinase asd dapA dapB dapH dapX dapL dapF
 meso-DAP: asp_kinase asd dapA dapB ddh
 meso-DAP: asp_kinase asd dapA dapB DAPtransferase dapF
 
+# 2-oxoglutarate and acetyl-CoA are converted to homocysteine, homoaconitate and then 2-oxoadipate (hcs-lysTU-hicdh),
+# an aminotransferase (lysN) forms L-2-aminoadipate, lysX ligates 2-aminoadipate to lysW,
+# lysZYJ convert LysW-aminoadipate to LysW-lysine, and lysK releases lysine.
 lysW_pathway: hcs lysT lysU hicdh lysN lysW lysX lysZ lysY lysJ lysK
 
 all: meso-DAP lysA
