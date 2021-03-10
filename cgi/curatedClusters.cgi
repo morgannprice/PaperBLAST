@@ -32,7 +32,6 @@ use DBI;
 use lib "../lib";
 use pbutils qw{ReadTable NewerThan CuratedWordMatch ReadFastaEntry};
 use pbweb qw{start_page AddCuratedInfo GeneToHtmlLine};
-use Steps qw{ReadSteps};
 use DB_File;
 use URI::Escape;
 use HTML::Entities;
