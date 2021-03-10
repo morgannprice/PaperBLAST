@@ -14,12 +14,15 @@ sub ReadSteps($); # stepfile => hash of steps, rules, ruleOrder
 sub ReadSteps2($$); # stepfile, doimportflag => same result as ReadSteps
 
 # The returned object includes:
-# steps, a hash of step name to a hash of i, name, desc, comment, and search, which is a list of type/value pairs
-#	(use i to sort them by the same order as in the stepfile)
+# steps, a hash of step name to a hash that includes
+#	i, name, desc, comment, and search, and optionally import
+#	search is a list of queryType/value pairs (documented in bin/gapquery.pl)
+#	use i to sort them by the same order as in the stepfile
+#	import is set if this step was imported
 # rules, a hash of rule name to a list of lists, each element being a step name or another rule name
 #	The requirement is met if any of the sublists are met (OR at the top level)
 #	The sublist is met if all of its components are met (AND at the 2nd level)
-# ruleOrder,s a list of rule names in order
+# ruleOrder, a list of rule names in order
 # ruleComments, a hash of ruleId to comments.
 # topComment, the top-level comment at the beginning of the steps file.
 sub ReadSteps($) {
@@ -76,9 +79,9 @@ sub ReadSteps2($$) {
       $toget =~ s/#.*//;
       $toget =~ s/\s+$//;
       my @pieces = split /:/, $toget;
-      die "Invalid import line in $stepsFile\n$line\n(should be of the form\nimport stepsfile:step step step)\n"
+      die "Invalid import line in $stepsFile\n$line\n(should be of the form\nimport stepsfile:step_or_rules\n"
         unless @pieces == 2;
-      my ($importFileName, $stepNames) = @pieces;
+      my ($importFileName, $importNames) = @pieces;
       die "Invalid import file $importFileName in $stepsFile\n"
         unless $importFileName =~ m/^[a-zA-Z0-9._-]+$/;
       my $importFilePathName = $importFileName;
@@ -89,24 +92,57 @@ sub ReadSteps2($$) {
       }
       die "Unknown import file $importFilePathName\nfrom line $line\nin steps file $stepsFile\n"
         unless -e $importFilePathName;
-      my @stepNames = split / /, $stepNames;
+      my @importNames = split / /, $importNames;
       if ($doimport) {
         $imports{$importFilePathName} = ReadSteps2($importFilePathName, 0)
           if !exists $imports{$importFilePathName};
         my $stepsImport = $imports{$importFilePathName};
-        foreach my $stepName (@stepNames) {
-          die "Steps file $stepsFile imports unknown step $stepName from $importFilePathName\n"
-            unless exists $stepsImport->{steps}{$stepName};
-          die "Steps file $stepsFile imports step $stepName that already exists\n"
-            if exists $steps->{$stepName} || exists $rules->{$stepName};
-          # Load the step.
-          my $stepObj = $stepsImport->{steps}{$stepName};
-          $stepObj->{i} = $nSteps++; # renumber
-          $steps->{$stepName} = $stepObj;
+
+        # Add all the dependencies to the import list
+        my %importNames = map { $_ => 1 } @importNames;
+        my $nMaxRounds = 1000;
+        my $nRound;
+        for ($nRound = 0; $nRound < $nMaxRounds; $nRound++) {
+          my $nImportOld = scalar(@importNames);
+          foreach my $importName (@importNames) {
+            if (exists $stepsImport->{rules}{$importName}) {
+              foreach my $ruleInstance (@{ $stepsImport->{rules}{$importName}; }) {
+                foreach my $rulePart (@$ruleInstance) {
+                  if (!exists $importNames{$rulePart}) {
+                    push @importNames, $rulePart;
+                    $importNames{$rulePart} = 1;
+                  }
+                }
+              }
+            }
+          }
+          last if scalar(@importNames) == $nImportOld;
         }
-      } else {
-        foreach my $stepName (@stepNames) {
-          $steps->{$stepName} = {}; # empty object
+        die "Too many dependencies" unless $nRound < $nMaxRounds;
+
+        foreach my $importName (@importNames) {
+          die "Steps file $stepsFile imports $importName from $importFileName, but $importName already exists\n"
+            if exists $steps->{$importName} || exists $rules->{$importName};
+          if (exists $stepsImport->{steps}{$importName}) {
+            # Load the step.
+            my $stepObj = $stepsImport->{steps}{$importName};
+            $stepObj->{imported} = 1;
+            $stepObj->{i} = $nSteps++; # renumber
+            $steps->{$importName} = $stepObj;
+          } elsif (exists $stepsImport->{rules}{$importName}) {
+            # Load the rule, and, all dependencies
+            my $ruleObj = $stepsImport->{steps}{$importName};
+            $rules->{$importName} = $ruleObj;
+            push @ruleOrder, $importName;
+            $ruleComments{$importName} = $stepsImport->{ruleComments}{$importName}
+              if exists $stepsImport->{ruleComments}{$importName};
+          } else {
+            die "Steps file $stepsFile imports unknown $importName from $importFilePathName\n";
+          }
+        }
+      } else { # do not actually import
+        foreach my $importName (@importNames) {
+          $steps->{$importName} = {}; # empty object
         }
       }
     } elsif ($line =~ m/\t/) {
@@ -139,21 +175,32 @@ sub ReadSteps2($$) {
   }
   close($fhSteps) || die "Error reading $stepsFile";
 
-  # Check for cyclic dependencies within the rules
-  # Specifically, when going through rules in order, should
-  # only depend on rules that have already been defined.
-  my %sofar = ();
-  foreach my $rule (@ruleOrder) {
-    foreach my $reqs (@{ $rules->{$rule} }) {
-      foreach my $piece (@$reqs) {
-        if (!exists $steps->{$piece} && !exists $sofar{$piece}) {
-          die "Out-of-order dependency error in ${stepsFile}\n"
-            . "A rule for $rule depends on $piece, but $piece is defined later\n";
+  # Check for cyclic dependencies within the rules. Do a
+  # a depth-first traversal starting at the rule all and
+  # verify that it terminates.
+  # (An older version of this check depended on the rule order instead.)
+  die "No rule named all" unless exists $rules->{all};
+  my @work = ("all");
+  my $nMaxRounds = 10000;
+  my $nRound = 0;
+  while (@work > 0) {
+    $nRound++;
+    die "Depth-first traversal did not terminate -- cyclic depednencies!"
+      if $nRound > $nMaxRounds;
+    my $rule = shift @work;
+    die unless exists $rules->{$rule};
+    foreach my $instance (@{ $rules->{$rule} }) {
+      foreach my $piece (@$instance) {
+        next if exists $steps->{$piece};
+        if (!exists $rules->{$piece}) {
+          die "Unknown piece $piece in rule $rule" if $doimport;
+        } else { # known rule
+          push @work, $piece;
         }
       }
     }
-    $sofar{$rule} = 1;
   }
+
   return { 'steps' => $steps, 'rules' => $rules, 'ruleOrder' => \@ruleOrder,
            'topComment' => $topComment, 'ruleComments' => \%ruleComments };
 }
