@@ -1,8 +1,11 @@
 #!/usr/bin/perl -w
 use strict;
+use Getopt::Long;
 
 my $usage = <<END
-Run as a filter.
+Usage: convertRefSeqQueries.pl -files filelist
+ where filelist has 1 input file per line, or
+       convertRefSeqQueries.pl < input
 
 Input should be tab-delimited with a variable number of fields. The
 first field has the query term (usually the locus_tag, the
@@ -15,31 +18,56 @@ organism, the query term, the locus_tag or protein_id, sequence, and description
 END
     ;
 
+my $listFile;
+GetOptions('files=s' => \$listFile) || die $usage;
 die $usage if @ARGV > 0;
 
 my %queries = (); # query => list of hash of field values
-
 my $nRead = 0;
-while(my $line = <STDIN>) {
+
+sub ProcessLine($) {
+  my ($line) = @_;
+  chomp $line;
+  my @F = split /\t/, $line;
+  my $query = shift @F;
+  my %attr = ();
+  foreach my $f (@F) {
+    $f =~ m/^([^=]+)=(.*)$/ || die "Cannot parse key=value from $f";
+    $attr{$1} = $2;
+  }
+  $nRead++;
+  my @missing = ();
+  foreach my $field (qw{organism protein_id translation}) {
+    push @missing, $field if !exists $attr{$field};
+  }
+  if (scalar(@missing) > 0) {
+    print STDERR "Skipping -- missing " . join(",",@missing) . " :\t" . $line . "\n"
+      unless exists $attr{exception};
+    return;
+  }
+  push @{ $queries{$query} }, \%attr;
+}
+
+if (defined $listFile) {
+  open(my $fhList, "<", $listFile) || die "Cannot read $listFile\n";
+  my @files = ();
+  while (my $line = <$fhList>) {
     chomp $line;
-    my @F = split /\t/, $line;
-    my $query = shift @F;
-    my %attr = ();
-    foreach my $f (@F) {
-        $f =~ m/^([^=]+)=(.*)$/ || die "Cannot parse key=value from $f";
-        $attr{$1} = $2;
+    push @files, $line;
+  }
+  close($fhList) || die "Error reading $listFile";
+  foreach my $file (@files) {
+    open (my $fhIn, "<", $file) || die "Cannot read $file\n";
+    while (my $line = <$fhIn>) {
+      ProcessLine($line);
     }
-    $nRead++;
-    my @missing = ();
-    foreach my $field (qw{organism protein_id translation}) {
-        push @missing, $field if !exists $attr{$field};
-    }
-    if (scalar(@missing) > 0) {
-        print STDERR "Skipping -- missing " . join(",",@missing) . " :\t" . $line . "\n"
-            unless exists $attr{exception};
-        next;
-    }
-    push @{ $queries{$query} }, \%attr;
+    close($fhIn) || die "Error reading $file";
+    print STDERR "Read $file\n";
+  }
+} else {
+  while(my $line = <STDIN>) {
+    ProcessLine($line);
+  }
 }
 print STDERR "Read $nRead queries\n";
 
