@@ -395,6 +395,50 @@ sub MergeHits($$$$$$);
   }
 
   # And score the rules
+  # To do this, need to put the rules in dependency order.
+  # I.e., first the terminals (no instance has any dependencies),
+  # then the ones with a "height" of 1 (no instance has any non-terminal children), etc.
+  my %dependencyOrder = (); # pathwayId to rules, in order to score (most-specific first, all last)
+  foreach my $pathwayId (sort keys %pathwayDesc) {
+    next if $pathwayId eq "all";
+    next if defined $pathSpec && $pathSpec ne $pathwayId;
+    my $rulePaths = $rulePaths{$pathwayId};
+
+    # In each round, compute heights 1 level farther up
+    my %ruleToHeight = ();
+    my $maxRounds = 10000;
+    my $nRound;
+    for($nRound = 0; $nRound < $maxRounds; $nRound++) {
+      my $nHeightsOld = scalar(keys %ruleToHeight);
+      foreach my $ruleId (sort keys $rulePaths) {
+        my $maxHeight = 0;
+        my $paths = $rulePaths->{$ruleId} || die "Unknown $pathwayId $ruleId";
+        foreach my $path (@$paths) {
+          foreach my $component (@$path) {
+            if ($component->{subRuleId} ne "") {
+              if (exists $ruleToHeight{ $component->{subRuleId} }) {
+                $maxHeight = max($maxHeight, 1 + $ruleToHeight{ $component->{subRuleId} });
+              } else {
+                $maxHeight = undef;
+                last;
+              }
+            }
+          }
+          last if !defined $maxHeight;
+        }
+        $ruleToHeight{$ruleId} = $maxHeight if defined $maxHeight;
+      }
+      my $nHeights = scalar(keys %ruleToHeight);
+      die $nRound if $nHeights == $nHeightsOld;
+      last if exists $ruleToHeight{"all"};
+    }
+    die "Too many rounds, cyclic dependencies?" if $nRound == $maxRounds;
+    die "Wrong #heights" unless scalar(keys %ruleToHeight) == scalar(keys %$rulePaths);
+    my @rulesInOrder = sort { $ruleToHeight{$a} <=> $ruleToHeight{$b}
+                                || $a cmp $b } keys %ruleToHeight;
+    $dependencyOrder{$pathwayId} = \@rulesInOrder;
+  }
+
   my %ruleScores = (); # orgId => pathway => rulename => hash of n, n012, score, path, path2, stepsUsed, pathExpanded
   # where n is #steps, n012 is a vector with #of steps at each score,
   # score is the total weighted score,
@@ -406,7 +450,7 @@ sub MergeHits($$$$$$);
   foreach my $orgId (sort keys %orgs) {
     foreach my $pathwayId (sort keys %pathwayDesc) {
       next if defined $pathSpec && $pathSpec ne $pathwayId;
-      foreach my $ruleId (@{ $ruleOrder{$pathwayId} }) {
+      foreach my $ruleId (@{ $dependencyOrder{$pathwayId} }) {
         my @scoredPaths = (); # list of hashes with n, score, n012, stepsUsed, and path
         die "No instances for rule $ruleId in pathway $pathwayId"
           unless exists $rulePaths{$pathwayId}{$ruleId};
