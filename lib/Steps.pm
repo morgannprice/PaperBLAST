@@ -19,10 +19,11 @@ sub ReadSteps2($$); # stepfile, doimportflag => same result as ReadSteps
 #	search is a list of queryType/value pairs (documented in bin/gapquery.pl)
 #	use i to sort them by the same order as in the stepfile
 #	import is set if this step was imported
-# rules, a hash of rule name to a list of lists, each element being a step name or another rule name
+# rules, a hash of rule name to a list of instances
+#	Each isntance is a list of step names or rule names
 #	The requirement is met if any of the sublists are met (OR at the top level)
 #	The sublist is met if all of its components are met (AND at the 2nd level)
-# ruleOrder, a list of rule names in order
+# ruleOrder, a list of rule names in the order they appear
 # ruleComments, a hash of ruleId to comments.
 # topComment, the top-level comment at the beginning of the steps file.
 sub ReadSteps($) {
@@ -34,6 +35,7 @@ sub ReadSteps2($$) {
   # The purpose of the doimport flag is to prevent cycles A imports from B imports from A
   # When called with doimport=0, ignores import statements, and allows rules to be incomplete
   my ($stepsFile, $doimport) = @_;
+  my $debug = $ENV{DEBUG};
   my %imports = (); # filepathname to step object
   my @stepTypes = qw{term hmm EC uniprot ignore ignore_hmm ignore_other curated};
   my %stepTypes = map { $_ => 1 } @stepTypes;
@@ -73,6 +75,7 @@ sub ReadSteps2($$) {
       }
       push @ruleOrder, $rulename unless exists $rules->{$rulename};
       push @{ $rules->{$rulename} }, \@pieces;
+      print STDERR "Adding instance for $rulename from $stepsFile\n" if $debug;
     } elsif ($line =~ m/^import\s/) {
       my $toget = $line;
       $toget =~ s/^import\s+//;
@@ -103,44 +106,59 @@ sub ReadSteps2($$) {
         my $nMaxRounds = 1000;
         my $nRound;
         for ($nRound = 0; $nRound < $nMaxRounds; $nRound++) {
-          my $nImportOld = scalar(@importNames);
+          my @dependencies = ();
           foreach my $importName (@importNames) {
             if (exists $stepsImport->{rules}{$importName}) {
               foreach my $ruleInstance (@{ $stepsImport->{rules}{$importName}; }) {
                 foreach my $rulePart (@$ruleInstance) {
                   if (!exists $importNames{$rulePart}) {
-                    push @importNames, $rulePart;
+                    push @dependencies, $rulePart;
                     $importNames{$rulePart} = 1;
                   }
                 }
               }
             }
           }
-          last if scalar(@importNames) == $nImportOld;
+          last if @dependencies == 0;
+          unshift @importNames, @dependencies;
         }
         die "Too many dependencies" unless $nRound < $nMaxRounds;
 
         foreach my $importName (@importNames) {
-          die "Steps file $stepsFile imports $importName from $importFileName, but $importName already exists\n"
-            if exists $steps->{$importName} || exists $rules->{$importName};
-          if (exists $stepsImport->{steps}{$importName}) {
+          die "Steps file $stepsFile imports $importName from $importFileName, but rule $importName already exists\n"
+            if exists $rules->{$importName};
+          if (exists $steps->{$importName}) {
+            if (exists $steps->{$importName}{imported}) {
+              # Ignore potential clashes for steps that were already imported
+              print STDERR "Skipping import of $importName from $importFileName, already imported into $stepsFile\n"
+                if $debug;
+            } else {
+              die "Steps file $stepsFile imports $importName, but it is already defined as a step\n";
+            }
+          } elsif (exists $stepsImport->{steps}{$importName}
+                   && exists $stepsImport->{steps}{$importName}{name}) {
             # Load the step.
             my $stepObj = $stepsImport->{steps}{$importName};
             $stepObj->{imported} = 1;
             $stepObj->{i} = $nSteps++; # renumber
             $steps->{$importName} = $stepObj;
+            print STDERR "Import step $importName from $importFileName into $stepsFile\n" if $debug;
           } elsif (exists $stepsImport->{rules}{$importName}) {
-            # Load the rule, and, all dependencies
-            my $ruleObj = $stepsImport->{steps}{$importName};
+            # Load the rule
+            my $ruleObj = $stepsImport->{rules}{$importName};
             $rules->{$importName} = $ruleObj;
             push @ruleOrder, $importName;
+            print STDERR "Import rule $importName from $importFileName into $stepsFile\n" if $debug;
+            foreach my $instance (@$ruleObj) {
+              print join("\t", "instance:", @$instance)."\n" if $debug;
+            }
             $ruleComments{$importName} = $stepsImport->{ruleComments}{$importName}
               if exists $stepsImport->{ruleComments}{$importName};
           } else {
-            die "Steps file $stepsFile imports unknown $importName from $importFilePathName\n";
+            die "$stepsFile is trying to import $importName from $importFileName (possibly indirectly), but $importName is imported\n";
           }
         }
-      } else { # do not actually import
+      } else { # do not actually import, just make an empty step object
         foreach my $importName (@importNames) {
           $steps->{$importName} = {}; # empty object
         }
@@ -168,12 +186,16 @@ sub ReadSteps2($$) {
       $steps->{$stepname} = { 'name' => $stepname, 'desc' => $desc, 'search' => \@search,
                               'comment' => join(" ", @commentLines),
                               'i' => $nSteps++ };
+      print STDERR "Adding step $stepname to $stepsFile\n" if $debug;
     } else {
       die "Do not recognize line $line in $stepsFile as either rule or step\n";
     }
     @commentLines = () unless $line =~ m/^#/;
   }
   close($fhSteps) || die "Error reading $stepsFile";
+
+  print join("\t", "step names:", sort keys %$steps)."\n" if $debug;
+  print join("\t", "rules names:", sort keys %$rules)."\n" if $debug;
 
   # Check for cyclic dependencies within the rules. Do a
   # a depth-first traversal starting at the rule all and
@@ -200,7 +222,6 @@ sub ReadSteps2($$) {
       }
     }
   }
-
   return { 'steps' => $steps, 'rules' => $rules, 'ruleOrder' => \@ruleOrder,
            'topComment' => $topComment, 'ruleComments' => \%ruleComments };
 }
