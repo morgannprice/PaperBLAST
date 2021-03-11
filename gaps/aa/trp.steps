@@ -53,7 +53,7 @@ trpB	tryptophan synthase	hmm:TIGR00263	ignore_other:EC 4.2.1.20	ignore_other:EC 
 
 # Anthranilate synthase usually has two components, as in E. coli, but single-protein systems are also known.
 # (In E. coli, trpD is the second component fused to anthranilate phosphoribosyltransferase.) 
-trp_synthase: trpE trpD_1
-trp_synthase: trpED
+anthranilate-synthase: trpE trpD_1
+anthranilate-synthase: trpED
 
-all: trp_synthase trpD_2 PRAI IGPS trpA trpB
+all: anthranilate-synthase trpD_2 PRAI IGPS trpA trpB

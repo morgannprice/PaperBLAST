@@ -8,6 +8,9 @@
 # Also, pathway III is described in MetaCyc as occuring only in plants, but it also is reported
 # in the archaeon Thermococcus kodakarensis (PMC5846162).
 
+import lys.steps:lysW lysZ lysY lysJ lysK # shared with ornithine biosynthesis
+import arg.steps:ornithine
+
 proB	glutamate 5-kinase	EC:2.7.2.11
 
 # glutamyl-5-phosphate to glutamate 5-semialdehyde, which spontaneously dehydrates to 1-pyrroline-5-carboxylate
@@ -18,11 +21,6 @@ proC	pyrroline-5-carboxylate reductase	EC:1.5.1.2
 
 # Pathway I is proBAC.
 all: proB proA proC
-
-# Needed for ornithine
-import lys.steps:lysW lysZ lysY lysJ lysK
-
-import arg.steps:ornithine
 
 # Converts ornithine to glutamate semialdehyde.
 # CH_124176 is annotated as ornithine transaminase but without the EC number; it probably

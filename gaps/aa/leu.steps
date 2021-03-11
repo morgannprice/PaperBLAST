@@ -2,22 +2,7 @@
 # This begins with begins with the initial steps of
 # valine biosynthesis (see metacyc:VALSYN-PWY), up to 3-methyloxobutanoate.
 
-# ilvIH (or ilvGM) is a two-subunit enzyme that forms acetolactate or acetohydroxybutanoate.
-# BRENDA often annotates both subunits the same, so it is unclear which is which.
-# CH_124129 and CH_123884 are probably correct but have limited data and vaguer annotations.
-#
-ilvH	acetohydroxybutanoate synthase catalytic subunit	hmm:TIGR00118	term:acetohydroxy-acid synthase%large	term:acetohydroxy acid synthase%large	term:acetohydroxybutanoate synthase, catalytic subunit	term:acetohydroxybutanoate synthase, catalytic subunit	term:acetohydroxyacid synthase subunit B	ignore_other:EC 2.2.1.6	ignore:CharProtDB::CH_124219	ignore:CharProtDB::CH_123884
-
-# The isolated catalytic subunit has some activity so it's not clear if the regulatory
-# subunit should be required.
-ilvI	acetohydroxybutanoate synthase regulatory subunit 	hmm:TIGR00119	term:acetohydroxy-acid synthase%small	term:acetohydroxybutanoate synthase, regulatory subunit	term:small subunit of acetolactate synthase	ignore_other:EC 2.2.1.6
-
-# The various EC numbers vary in their preference for NAD(P)H
-ilvC	ketol-acid reductoisomerase	EC:1.1.1.86	EC:1.1.1.382	EC:1.1.1.383
-
-# The ignored enzyme is involved in salinosporamide A biosynthesis but does a very similar reaction
-# and is >50% identical to N515DRAFT_0569, which is confirmed by fitness data to be biosynthetic
-ilvD	(R)-2,3-dihydroxy-3-methylbutanoate dehydratase	EC:4.2.1.9	ignore:metacyc::MONOMER-15882
+import val.steps:ilvH ilvI ilvC ilvD
 
 # Ignore CharProtDB entries with no EC number.
 # Add Echvi_3833 (uniprot:L0G5E1_ECHVK) and CA265_RS15855 (uniprot:A0A1X9Z750_9SPHI), which are supported by fitness data

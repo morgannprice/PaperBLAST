@@ -46,18 +46,18 @@ oxobutanoate: ilvA
 # for isoleucine biosynthesis, see PMC4300041
 cimA	(R)-citramalate synthase	EC:2.3.1.182	uniprot:Q8F3Q1_LEPIN	uniprot:D4GSQ2
 
-# In leucine synthesis, LeuCD allows the dehydration of 2-isopropylmalate and hydration to 3-isopropylmalate
-# Similarly, many of these enzymes allow the isomerization of citramalate to 3-methylmalate via citraconate
+# In leucine synthesis, LeuCD allows the dehydration of 2-isopropylmalate and hydration to 3-isopropylmalate.
+# Similarly, many of these enzymes allow the isomerization of citramalate to 3-methylmalate via citraconate.
 # Citramalate isomerase is usually given as  EC 4.2.1.35, as opposed to 4.2.1.33 for traditional leuCD.
 # However, in initial testing, all of the bacteria with the citramalate pathway appeared to have "typical" leuBCD
 # (Desulfovibrio vulgaris Hildenborough, Desulfovibrio vulgaris Miyazaki F,
-# Bacteroides thetaiotaomicron, Magnetospirillum magneticum AMB-1,
+# Bacteroides thetaiotaomicron, Magnetospirillum magneticum AMB-1, and
 # Synechococcus elongatus PCC 7942).
-# Also, ignore a 2,3-methylmalate dehydratase (Q0QLE2,Q0QLE1) which is >50% identical to
+# Ignore a 2,3-methylmalate dehydratase (Q0QLE2,Q0QLE1) which is >50% identical to
 # leuCD from DvH (DVU2982,DVU2983)
-# And ignore some BRENDA annotations without subunit information,
+# Ignore some BRENDA annotations without subunit information,
 # and ignore CharProtDB::CH_122621 (leuCD fusion) which is not actually characterized
-# And, DvH leuC (DVU2982) has similarity to both LeuC and to homoaconitase, and fitness data confirms
+# DvH leuC (DVU2982) has similarity to both LeuC and to homoaconitase, and fitness data confirms
 # its role in amino acid biosynthesis, so explicitly include it
 leuC	citramalate isomerase large subunit	term:citramalate isomerase large subunit	term:3-isopropylmalate dehydratase large subunit	term:3-isopropylmalate dehydratase%LeuC	hmm:TIGR00170	hmm:TIGR02083	hmm:TIGR02086	ignore:SwissProt::Q0QLE2	ignore_other:EC 4.2.1.33	ignore_other:EC 4.2.1.35	uniprot:LEUC_DESVH	ignore:CharProtDB::CH_122621
 leuD	citramalate isomerase small subunit	term:citramalate isomerase small subunit	term:3-isopropylmalate dehydratase small subunit	term:3-isopropylmalate dehydratase%LeuD	hmm:TIGR00171	hmm:TIGR02084	hmm:TIGR02087	ignore:SwissProt::Q0QLE1	ignore_other:EC 4.2.1.33	ignore_other:EC 4.2.1.35	ignore:CharProtDB::CH_122621

@@ -2,7 +2,7 @@
 # glycine biosynthesis I from serine (metacyc:GLYSYN-PWY),
 # III from glyoxylate (metacyc:GLYSYN-ALA-PWY),
 # or IV from threonine (metacyc:GLYSYN-THR-PWY).
-# Pathway II from methylene-THF, CO2, and ammonia
+# Pathway II from methylene-tetrahydrofolate, CO2, and ammonia
 # (metacyc:GLYSYN-PWY) is not included because it is not clear that bacteria really
 # run this in reverse (although apparently budding yeast can).
 

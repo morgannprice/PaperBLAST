@@ -25,15 +25,11 @@ cysK	O-acetylserine sulfhydrylase	EC:2.5.1.47
 # via O-succinylserine (SST), or via serine kinase (serK) as in pathway IX.
 # For the O-succinylserine pathway, the identity of the O-succinylserine sulfhydrylase is not proven,
 # but it is expected to be similar to cysK.
-from_serine: cysE cysK
+from-serine: cysE cysK
 
 # The EC number for these corresponds to homoserine O-succinyltransferase so do not use that.
 SST	serine O-succinyltransferase	term:serine O-succinyltransferase
-from_serine: SST cysK
-
-sepS	O-phosphoseryl-tRNA ligase	EC:6.1.1.27
-pscS	Sep-tRNA:Cys-tRNA synthase	EC:2.5.1.73
-from_phosphoserine: sepS pscS
+from-serine: SST cysK
 
 CBS	cystathionine beta-synthase	EC:4.2.1.22
 # EC:4.4.1.1 includes some other reactions, so it is not used to define CGL.
@@ -42,35 +38,31 @@ CGL	cystathionine gamma-lyase	term:cystathionine gamma-lyase
 # this pathway can also run in reverse.
 # GapMind uses a pathway requirement to warn if an organism is modeled as
 # synthesizing methionine and cysteine from each other.
-from_serine_homocysteine: CBS CGL
+from-serine-homocysteine: CBS CGL
+
+sepS	O-phosphoseryl-tRNA ligase	EC:6.1.1.27
+pscS	Sep-tRNA:Cys-tRNA synthase	EC:2.5.1.73
+# Phosphoserine can be converted to cysteine by
+# the tRNA-dependent pathway II (sepS and pscS),
+# the protein-bound thiocarboxylate pathway V with the carrier protein cysO,
+# or by direct sulfhydrylation (PSSH) as in pathway IX.
+from-phosphoserine: sepS pscS
 
 Mt_cysM	CysO-thiocarboxylate-dependent cysteine synthase	EC:2.5.1.113
 mec	[CysO sulfur-carrier protein]-S-L-cysteine hydrolase	EC:3.13.1.6
 moeZ	[sulfur carrier protein CysO]--sulfur ligase	curated:metacyc::G185E-7476-MONOMER
 cysO	sulfur carrier protein CysO	curated:SwissProt::P9WP33
-from_phosphoserine: cysO moeZ Mt_cysM mec 
+from-phosphoserine: cysO moeZ Mt_cysM mec 
 
-#metK	methionine adenosyltransferase	EC:2.5.1.6
-# SAM => S-adenosyl-homocysteine is catalyzed by many methyltransferases, do not represent
-#mqnB	adenosylhomocysteine nucleosidase	EC:3.2.2.9
-#luxS	S-ribosylhomocysteine lyase	EC:4.4.1.21
-# and CBS and CGL are defined above
-#from_methionine: metK mqnB luxS CBS CGL
-
-
-serK	serine kinase (ADP-dependent)	uniprot:Q5JD03
 # PSSH is similar to cysK or Mt_cysM, so might need ignore clauses?
 PSSH	O-phosphoserine sulfhydrylase	EC:2.5.1.65
-from_serine: serK PSSH
 
-# Phosphoserine can be converted to cysteine by
-# the tRNA-dependent pathway II (sepS and pscS),
-# the protein-bound thiocarboxylate pathway V with the carrier protein cysO,
-# or by direct sulfhydrylation (PSSH) as in pathway IX.
-# In all cases, the biosynthesis of O-phospho-L-serine is not represented here.
-# Instead, the requirement for phosphoserine is handled as a pathway requirement.
-from_phosphoserine: PSSH
+from-phosphoserine: PSSH
 
-all: from_serine
-all: from_phosphoserine
-all: from_serine_homocysteine
+serK	serine kinase (ADP-dependent)	uniprot:Q5JD03
+from-serine: serK PSSH
+
+all: from-serine
+import ser.steps:serA serC # serA and serC form phosphoserine
+all: serA serC from-phosphoserine
+all: from-serine-homocysteine
