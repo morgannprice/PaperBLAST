@@ -52,11 +52,7 @@ tpiA	D-glyceraldehyde-3-phosphate phospholyase	EC:5.3.1.1
 # And ignore CharProtDB items with incorrect EC.
 fbp	6-deoxy-5-ketofructose 1-phosphate synthase	EC:2.2.1.11	EC:4.1.2.13	ignore_other:fructose%bisphosphate aldolase
 
-# For BRENDA::O63067 -- the paper describes a monofunctional hom but the sequence of O63067 is
-# much longer and has a close homolog of functional aspartate kinase (due to alternative splicing?)
-asp_kinase	aspartate kinase	EC:2.7.2.4	ignore:BRENDA::O63067
-
-asd	asparate semi-aldehyde dehydrogenase	EC:1.2.1.11
+import met.steps:aspartate-semialdehyde
 
 # aroA' condenses 6-deoxy-5-ketofructose 1-phosphate with L-aspartate 4-semialdehyde
 aroA'	2-amino-3,7-dideoxy-D-threo-hept-6-ulosonate synthase	EC:2.2.1.10
@@ -66,9 +62,9 @@ aroB'	dehydroquinate synthase II	EC:1.4.1.24
 # Pathway I uses aroG and aroB, while pathway II uses non-canonical activities of triose-phosphate
 # isomerase (tpiA) and fructose-bisphosphate aldolase (fbp)
 # to form 6-deoxy-5-ketofructose 1-phosphate. AroA' condenses this with asparate semialdehyde
-# (formed from aspartate by asp_kinase and asd) to 2-amino-3,7-dideoxy-D-threo-hept-6-ulosonate,
+# to 2-amino-3,7-dideoxy-D-threo-hept-6-ulosonate,
 # and AroB' cyclizes it to 3-dehydroquinate.
 3-dehydroquinate: aroG aroB
-3-dehydroquinate: tpiA fbp asp_kinase asd aroA' aroB'
+3-dehydroquinate: tpiA fbp aspartate-semialdehyde asd aroA' aroB'
 
 all: 3-dehydroquinate aroD aroE aroL aroA aroC

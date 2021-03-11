@@ -120,13 +120,13 @@ argX	glutamate--LysW ligase	term:Glutamate--LysW ligase	uniprot:Q5JFW0	ignore_ot
 # forming LysW and ornithine
 import lys.steps:lysW lysZ lysY lysJ lysK
 
-# Pathway I uses acetylated intermediates, argA, and argE.
+# In L-arginine biosynthesis I, ornithine forms via acetylated intermediates, argA, and argE (metacyc:ARGSYN-PWY).
 ornithine: argA argB argC argD argE
 
-# Pathway II uses acetylated intermediates and argJ.
+# In L-arginine biosynthesis II, ornithine forms via acetylated intermediates and argJ (metacyc:ARGSYNBSUB-PWY).
 ornithine: argJ argB argC argD
 
-# Pathway IV has LysW-modified intermediates.
+# In L-arginine biosynthesis IV, ornithine forms via LysW-modified intermediates (metacyc:PWY-7400).
 ornithine: lysW argX lysZ lysY lysJ lysK 
 
 # In pathways I, II, or IV, ornithine is carbamoylated by argI.

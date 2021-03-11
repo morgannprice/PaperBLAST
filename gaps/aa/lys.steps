@@ -11,11 +11,7 @@
 # Lysine biosynthesis IV (metacyc:LYSINE-AMINOAD-PWY), via 2-aminoadipate and saccharopine,
 # is only reported to occur in eukaryotes and is not described here.
 
-# For BRENDA::O63067 -- the paper describes a monofunctional hom but the sequence of uniprot:O63067 is
-# much longer and has a close homolog of functional aspartate kinase (due to alternative splicing?)
-asp_kinase	aspartate kinase	EC:2.7.2.4	ignore:BRENDA::O63067
-
-asd	asparate semi-aldehyde dehydrogenase	EC:1.2.1.11
+import met.steps:aspartate-semialdehyde
 
 dapA	4-hydroxy-tetrahydrodipicolinate synthase	EC:4.3.3.7
 
@@ -93,15 +89,15 @@ lysK	[LysW]-lysine hydrolase / [LysW]-ornithine hydrolase	term:LysW%lysine%hydro
 # Pathway II (dapHXL) is similar but with acetylated intermediates.
 # In pathway III, tetrahydrodipicolinate is reductively aminated to meso-DAP in one step, by ddh.
 # In pathway VI, an aminotransferase (DAPtransferase) forms L,L-DAP.
-meso-DAP: asp_kinase asd dapA dapB dapD dapC dapE dapF
-meso-DAP: asp_kinase asd dapA dapB dapH dapX dapL dapF
-meso-DAP: asp_kinase asd dapA dapB ddh
-meso-DAP: asp_kinase asd dapA dapB DAPtransferase dapF
+meso-DAP: aspartate-semialdehyde dapA dapB dapD dapC dapE dapF
+meso-DAP: aspartate-semialdehyde dapA dapB dapH dapX dapL dapF
+meso-DAP: aspartate-semialdehyde dapA dapB ddh
+meso-DAP: aspartate-semialdehyde dapA dapB DAPtransferase dapF
 
-# 2-oxoglutarate and acetyl-CoA are converted to homocysteine, homoaconitate and then 2-oxoadipate (hcs-lysTU-hicdh),
+# 2-oxoglutarate and acetyl-CoA are converted to homocysteine, homoaconitate and then 2-oxoadipate (by hcs-lysTU-hicdh),
 # an aminotransferase (lysN) forms L-2-aminoadipate, lysX ligates 2-aminoadipate to lysW,
 # lysZYJ convert LysW-aminoadipate to LysW-lysine, and lysK releases lysine.
-lysW_pathway: hcs lysT lysU hicdh lysN lysW lysX lysZ lysY lysJ lysK
+lysW-pathway: hcs lysT lysU hicdh lysN lysW lysX lysZ lysY lysJ lysK
 
 all: meso-DAP lysA
-all: lysW_pathway
+all: lysW-pathway

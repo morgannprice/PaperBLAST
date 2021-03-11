@@ -4,15 +4,14 @@
 # Both of these pathways require glutamate. The biosynthesis of glutamate
 # is not represented in GapMind, as glutamate can be formed by transamination of alpha-ketoglutarate,
 # an interemdiate in the TCA cycle.
-# Also, MetaCyc describes the transamidation pathway as requiring glutamine (and hence glutamine synthetase),
-# because the amidotransferase has a glutaminase subunit. But this is not represented in GapMind.
 
 # A protein from Cupriavidus necator is reported to be a 3-hydroxylaminophenol mutase (see Swiss-Prot 3HAPM_CUPNJ),
 # involved in 3-nitrophenol degradation. That is the only glutamine synthetase-like protein
 # in the proteome of Cupriavidus necator (strain JMP 134 / LMG 1197) [see proteome UP000002697]
 # and is 96% identical to the essential protein RR42_RS12995 from Cupriavidus basilensis 4G11.
 # It is probably a glutamine synthetase.
-glnA	glutamine synthetase	EC:6.3.1.2	ignore_other:EC 5.4.4.3
+# SYNPCC7942_2156-MONOMER is annotated with the same reaction, but was not originally given this EC number.
+glnA	glutamine synthetase	EC:6.3.1.2	ignore_other:EC 5.4.4.3	curated:metacyc::SYNPCC7942_2156-MONOMER
 
 # Glutamyl-tRNA(Glu/Gln) is usually formed by a nondescriminating glutamyl-tRNA synthetase.
 # CCNA_01982 (uniprot:A0A0H3C8P5_CAUVN) from Caulobacter crescentus is the sole glutamyl-tRNA
@@ -26,9 +25,9 @@ gltX	glutamyl-tRNA(Glx) synthetase	EC:6.1.1.24	uniprot:A0A0H3C8P5_CAUVN
 # Note there are no hits for some of these terms -- for some reason only gatB is annotated as a
 # aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit
 # Need to flag the metacyc entries separately because they have HTML tags in their descriptions
-gatA	glutamyl-tRNA(Gln) amidotransferase subunit A	hmm:TIGR00132	term:aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit A	term:glutamyl-tRNA(Gln) amidotransferase subunit A	curated:metacyc::MONOMER-13955	ignore_other:EC 6.3.5.7
-gatB	glutamyl-tRNA(Gln) amidotransferase subunit B	hmm:TIGR00133	term:aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit B	term:glutamyl-tRNA(Gln) amidotransferase subunit B	curated:metacyc::MONOMER-13956	ignore_other:EC 6.3.5.7
-gatC	glutamyl-tRNA(Gln) amidotransferase subunit C	hmm:TIGR00135	term:aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit C	term:glutamyl-tRNA(Gln) amidotransferase subunit C	curated:metacyc::MONOMER-13957	ignore_other:EC 6.3.5.7
+gatA	aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit A	hmm:TIGR00132	term:aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit A	term:glutamyl-tRNA(Gln) amidotransferase subunit A	curated:metacyc::MONOMER-13955	ignore_other:EC 6.3.5.7
+gatB	aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit B	hmm:TIGR00133	term:aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit B	term:glutamyl-tRNA(Gln) amidotransferase subunit B	curated:metacyc::MONOMER-13956	ignore_other:EC 6.3.5.7
+gatC	aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit C	hmm:TIGR00135	term:aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit C	term:glutamyl-tRNA(Gln) amidotransferase subunit C	curated:metacyc::MONOMER-13957	ignore_other:EC 6.3.5.7
 
 gatD	glutamyl-tRNA(Gln) amidotransferase, subunit D	hmm:TIGR02153	ignore_other:EC 6.3.5.7
 gatE	glutamyl-tRNA(Gln) amidotransferase, subunit E	hmm:TIGR00134	ignore_other:EC 6.3.5.7
@@ -40,6 +39,8 @@ transamidation: gatA gatB gatC
 transamidation: gatD gatE
 
 to_glutamine: glnA
-to_gln_tRNA: gltX transamidation
+# In the transamidation pathway, glutamate is ligated to tRNA, but free glutamine is still
+# required, because amidotransferase uses a glutaminase subunit to obtain ammonia.
+to_gln_tRNA: gltX glnA transamidation
 all: to_glutamine
 all: to_gln_tRNA

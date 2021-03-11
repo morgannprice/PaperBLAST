@@ -31,9 +31,7 @@ to_asparagine: asnA
 # DVU3367 (uniprot:SYDND_DESVH), and Synpcc7942_1313 (uniprot:SYDND_SYNE7).
 aspS2	aspartyl-tRNA(Asp/Asn) synthetase	EC:6.1.1.23	uniprot:A0A0H3C7V8_CAUVN	uniprot:SYDND_DINSH	uniprot:I7EPB8	uniprot:B8DMM5_DESVM	uniprot:SYDND_DESVH	uniprot:SYDND_SYNE7
 
-gatA	glutamyl-tRNA(Gln) amidotransferase subunit A	hmm:TIGR00132	term:aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit A	term:glutamyl-tRNA(Gln) amidotransferase subunit A	curated:metacyc::MONOMER-13955	ignore_other:EC 6.3.5.7
-gatB	glutamyl-tRNA(Gln) amidotransferase subunit B	hmm:TIGR00133	term:aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit B	term:glutamyl-tRNA(Gln) amidotransferase subunit B	curated:metacyc::MONOMER-13956	ignore_other:EC 6.3.5.7
-gatC	glutamyl-tRNA(Gln) amidotransferase subunit C	hmm:TIGR00135	term:aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit C	term:glutamyl-tRNA(Gln) amidotransferase subunit C	curated:metacyc::MONOMER-13957	ignore_other:EC 6.3.5.7
+import gln.steps:gatA gatB gatC # aspartyl-tRNA(Asn) amidotransferase complex
 
 # Some organisms have gatDE instead of gatABC.
 # GatDE are thought to form glutaminyl-tRNA only, so they are not described here

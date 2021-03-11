@@ -8,23 +8,6 @@
 # Also, pathway III is described in MetaCyc as occuring only in plants, but it also is reported
 # in the archaeon Thermococcus kodakarensis (PMC5846162).
 
-# Do not include N-succinylglutamate synthases from Bacteroidetes, as no N-succinylornithine hydrolase is known.
-# But do include the related protein Cabys_1732 (uniprot:H1XRZ0_9BACT) which is reported to form
-# N-acetylglutamate (PMID:28265262).
-# Add BRENDA::A0A0H2X8L7 (described as argB, but also is argA) and also
-# N515DRAFT_3768 (uniprot:A0A1I2DIM7), which is similar to ArgAB fusion proteins and is rescued by arginine.
-argA	N-acetylglutamate synthase	EC:2.3.1.1	uniprot:H1XRZ0_9BACT	curated:BRENDA::A0A0H2X8L7	uniprot:A0A1I2DIM7
-
-# argX is part of the LysW pathway, along with lysWZYJK.
-import arg.steps:argB argC argD argE argJ argX
-import lys.steps:lysW lysZ lysY lysJ lysK
-
-# Ornithine is an intermediate in pathway III.
-# It synthesized via N-acetylglutamate (beginning with argA or argJ) or LysW-glutamate, as in arginine biosynthesis.
-ornithine: argA argB argC argD argE
-ornithine: argJ argB argC argD
-ornithine: lysW argX lysZ lysY lysJ lysK 
-
 proB	glutamate 5-kinase	EC:2.7.2.11
 
 # glutamyl-5-phosphate to glutamate 5-semialdehyde, which spontaneously dehydrates to 1-pyrroline-5-carboxylate
@@ -33,16 +16,24 @@ proA	gamma-glutamylphosphate reductase	EC:1.2.1.41
 # pyrroline-5-carboxylate to proline
 proC	pyrroline-5-carboxylate reductase	EC:1.5.1.2
 
+# Pathway I is proBAC.
+all: proB proA proC
+
+# Needed for ornithine
+import lys.steps:lysW lysZ lysY lysJ lysK
+
+import arg.steps:ornithine
+
 # Converts ornithine to glutamate semialdehyde.
 # CH_124176 is annotated as ornithine transaminase but without the EC number; it probably
 # has the same activity.
 OAT	L-ornithine 5-aminotransferase	EC:2.6.1.13	curated:CharProtDB::CH_124176
 
+# Pathway II involves ornithine aminotransferase (OAT).
+all: ornithine OAT proC
+
 cyclodeaminase	ornithine cyclodeaminase	EC:4.3.1.12
 
-# Pathway I is proABC. Pathway II involves ornithine aminotransferase (OAT).
-# And some methanogens synthesize proline via ornithine cyclodeaminase (PMID:11489875).
+# Some methanogens synthesize proline via ornithine cyclodeaminase (PMID:11489875).
 # Unfortunately, the cyclodeaminase has only been linked to sequence in bacteria.
-all: proB proA proC
-all: ornithine OAT proC
 all: ornithine cyclodeaminase

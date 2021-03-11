@@ -1,21 +1,7 @@
 # Threonine biosynthesis in GapMind is based on MetaCyc pathway
 # L-threonine biosynthesis (metacyc:HOMOSER-THRESYN-PWY).
 
-# For BRENDA::O63067 -- the paper describes a monofunctional hom but the sequence of uniprot:O63067 is
-# much longer and has a close homolog of functional aspartate kinase (due to alternative splicing?)
-asp_kinase	aspartate kinase	EC:2.7.2.4	ignore:BRENDA::O63067
-
-asd	asparate semi-aldehyde dehydrogenase	EC:1.2.1.11
-
-# Ga0059261_2711 (uniprot:A0A1L6J6Q3) from Sphingomonas koreensis DSMZ 15582 is distant
-# from characterized homoserine dehydrogenases and is confirmed by the fitness data.
-# It has been updated in the reannotations so need not be mentioned here.
-# BT2403 from Bacteroides thetaiotaomicron (Q8A541_BACTN) is a fusion of asparate kinase and homoserine dehydrogenase.
-# The homoserine dehydrogenase portion is somewhat diverged. Its role is confirmed by strong cofitness with
-# threonine synthase (the defined media for B. thetaiotaomicron included methionine)
-# DvMF_1412 from Desulfovibrio vulgaris Miyazaki F (B8DRS3_DESVM) is a somewhat diverged homoserine dehydrogenase
-# It has auxotrophic phenotypes.
-hom	homoserine dehydrogenase	EC:1.1.1.3	uniprot:A0A1L6J6Q3	uniprot:Q8A541_BACTN	uniprot:B8DRS3_DESVM
+import met.steps:homoserine
 
 thrB	homoserine kinase	EC:2.7.1.39
 
@@ -23,4 +9,4 @@ thrB	homoserine kinase	EC:2.7.1.39
 # diverged; mutants in this gene are auxotrophic.
 thrC	threonine synthase	EC:4.2.3.1	uniprot:A0A1I2JHD2_9GAMM
 
-all: asp_kinase asd hom thrB thrC
+all: homoserine thrB thrC

@@ -4,19 +4,19 @@
 # III via O-acetylhomoserine (metacyc:HSERMETANA-PWY),
 # or IV with reductive sulfhydrylation of aspartate semialdehyde (metacyc:PWY-7977).
 # These pathways vary in how aspartate semialdehyde is reduced and sulfhydrylated to homocysteine.
-# The formation of 5-methyltetrahydrofolate or methyl-corrinoid proteins
-# as the methyl donors for methionine synthase is not represented.
+# GapMind does not represent the formation of the methyl donors for methionine synthase,
+# such as 5-methyltetrahydrofolate or methyl corrinoid proteins.
 
 # For BRENDA::O63067 -- the paper describes a monofunctional hom but the sequence of uniprot:O63067 is
 # much longer and has a close homolog of functional aspartate kinase (due to alternative splicing?)
-asp_kinase	aspartate kinase	EC:2.7.2.4	ignore:BRENDA::O63067
-asd	asparate semi-aldehyde dehydrogenase	EC:1.2.1.11
+asp-kinase	aspartate kinase	EC:2.7.2.4	ignore:BRENDA::O63067
+asd	aspartate semi-aldehyde dehydrogenase	EC:1.2.1.11
 
 # Ga0059261_2711 from Sphingomonas koreensis DSMZ 15582 is distant from characterized homoserine dehydrogenases
 # and is confirmed by  fitness data. It is identical to uniprot:A0A1L6J6Q3.
 # It has been updated in the reannotations so need not be mentioned here.
 # BT2403 from Bacteroides thetaiotaomicron (uniprot:Q8A541_BACTN)
-# is a fusion of asparate kinase and homoserine dehydrogenase.
+# is a fusion of aspartate kinase and homoserine dehydrogenase.
 # The homoserine dehydrogenase portion is somewhat diverged. Its role is confirmed by strong cofitness with
 # threonine synthase (the defined media for B. thetaiotaomicron included methionine).
 # DvMF_1412 from Desulfovibrio vulgaris Miyazaki F (uniprot:B8DRS3_DESVM) is a somewhat
@@ -84,23 +84,23 @@ split_metH_3	Methionine synthase component, pterin-binding domain	curated:reanno
 # but other ATP-dependent (ramA-like) activation proteins are also thought to exist.
 # Ignore MetH proteins, as they often contain the reactivation domain and this
 # creates confusion when checking for reverse hits.
-B12_reactivation_domain	MetH reactivation domain	hmm:PF02965	ignore_other:EC 2.1.1.13
+B12-reactivation-domain	MetH reactivation domain	hmm:PF02965	ignore_other:EC 2.1.1.13
 
 # As of April 2019, all characterized members of the RamA family or PF14574 are involved in the reactivation
 # of co(II)balamin. This includes RamA (uniprot:B8Y445), DvMF_1398, PGA1_c15200, and ELI_0370 (part of a O-demethylase).
 # Many bacteria contain MetH and probably rely on a distant homolog of RamA for reactivation of B-12.
 # pfam:PF14574 describes only the C-terminal putative ATPase domain of RamA, but no other functions are known.
-B12_reactivation_RamA	ATP-dependent reduction of co(II)balamin	hmm:PF14574	term:ATP-dependent reduction of co(II)balamin
+ramA	ATP-dependent reduction of co(II)balamin	hmm:PF14574	term:ATP-dependent reduction of co(II)balamin
 
 # reductive sulfuration of aspartate semi-aldehyde
 
 # MA1821 or DvMF_1464 (see PMID:25315403 and PMC5764234)
-asd_S_transferase	sulfuration of L-asparate semialdehyde, persulfide component	uniprot:Q8TPT4_METAC	curated:reanno::Miya:8500721
+asd-S-transferase	sulfuration of L-aspartate semialdehyde, persulfide component	uniprot:Q8TPT4_METAC	curated:reanno::Miya:8500721
 # MA1822 or DvMF_0262 (see PMID:25315403 and PMC5764234)
-asd_S_ferredoxin	reductive sulfuration of L-asparate semialdehyde, ferredoxin component	uniprot:Q8TPT3_METAC	curated:reanno::Miya:8499492
+asd-S-ferredoxin	reductive sulfuration of L-aspartate semialdehyde, ferredoxin component	uniprot:Q8TPT3_METAC	curated:reanno::Miya:8499492
 # MA1715 or DvMF_0044 (see PMID:25315403 and PMC5764234)
 # This putative persulfide forming component is not 100% required in Methanosarcina acetivorans (possible redundancy).
-asd_S_perS	putative persulfide forming protein	uniprot:Y1715_METAC	curated:reanno::Miya:8499265
+asd-S-perS	putative persulfide forming protein	uniprot:Y1715_METAC	curated:reanno::Miya:8499265
 
 # Methanogens have a short homolog of MetE that transfers methyl groups from methylcobalamin
 # (not 5-methyltetrahydrofolates) to homocysteine to form methionine (PMID:10469143).
@@ -124,13 +124,13 @@ mesD	oxygen-dependent methionine synthase, methyltransferase component MesD	unip
 # MesX is required for the activity of MesD, see PMC2290942.
 mesX	oxygen-dependent methionine synthase, putative oxygenase component MesX	uniprot:Q6F6Z7	uniprot:A0A2M8WFB3
 
-asparate_semialdehyde: asp_kinase asd
+aspartate-semialdehyde: asp-kinase asd
 
 # Reductive sulfhydrylation of aspartate semialdehyde to homocysteine is carried out by
 # a multi-component system (see PMID:25315403 and PMC5764234)
-asd_S: asd_S_transferase asd_S_ferredoxin asd_S_perS
+asd-sulfhydrylation: asd-S-transferase asd-S-ferredoxin asd-S-perS
 
-homoserine: asparate_semialdehyde hom
+homoserine: aspartate-semialdehyde hom
 
 # Transsulfuration is the conversion of homoserine to homocysteine, with the sulfur being obtained from cysteine.
 # It is thought to occur with any
@@ -143,15 +143,15 @@ transsulfuration: hom_kinase metB metC
 # or transsulfuration of (activated) homoserine.
 # Activated forms of homoserine include O-acetylhomoserine, O-succinylhomoserine, or O-phospho-homoserine.
 
-homocysteine: asparate_semialdehyde asd_S
+homocysteine: aspartate-semialdehyde asd-sulfhydrylation
 homocysteine: homoserine metX metY
 homocysteine: homoserine metA metZ
 homocysteine: homoserine transsulfuration
 
 # MetH occasionally oxidizes the vitamin B12 cofactor from Co(I) to Co(II), so
 # a reductase is needed to maintain its activity.
-B12_reactivation: B12_reactivation_domain
-B12_reactivation: B12_reactivation_RamA
+B12-reactivation: B12-reactivation-domain
+B12-reactivation: ramA
 
 # Besides MetH (with B-12 reactivation) or 3-part MetH as in Phaeobacter (PMC5764234), or MetE,
 # GapMind also includes the folate-independent systems MesA, MesB, and MesD/MesX (PMC7857596).
@@ -161,8 +161,8 @@ B12_reactivation: B12_reactivation_RamA
 # Also, we proposed that many archaea use split MetE-like methionine synthases or another
 # corrinoid-dependent methionine synthase (MesC), but there is no experimental evidence, so
 # these are not included in GapMind.
-methionine_synthase: metH B12_reactivation
-methionine_synthase: split_metH_1 split_metH_2 split_metH_3 B12_reactivation
+methionine_synthase: metH B12-reactivation
+methionine_synthase: split_metH_1 split_metH_2 split_metH_3 B12-reactivation
 methionine_synthase: metE
 methionine_synthase: mesA
 methionine_synthase: mesB
