@@ -1,5 +1,3 @@
 rule	requires	comment
-cys:from_phosphoserine	ser:serA	#
-cys:from_phosphoserine	ser:serC	#
-cys:from_serine_homocysteine	!met:transsulfuration	Cannot make cysteine from homocysteine and also make homocysteine from cysteine.
-cys:from_serine_homocysteine	met:homocysteine	Cysteine biosynthesis via the reverse transsulfuration pathway requires homocysteine, which is an intermediate in methionine biosynthesis. Homocysteine is also an intermediate in the S-adenosylmethionine cycle, so many organisms that cannot synthesize methionine can convert it to homocysteine.
+cys:from-serine-homocysteine	!met:transsulfuration	Cannot make cysteine from homocysteine and also make homocysteine from cysteine.
+cys:from-serine-homocysteine	met:homocysteine	Cysteine biosynthesis via the reverse transsulfuration pathway requires homocysteine, which is an intermediate in methionine biosynthesis. Homocysteine is also an intermediate in the S-adenosylmethionine cycle, so many organisms that cannot synthesize methionine can convert it to homocysteine.
