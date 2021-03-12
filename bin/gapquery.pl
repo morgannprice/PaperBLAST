@@ -52,6 +52,8 @@ of step names or rule names.
 
 import lines of the form
 import otherpathway.steps:rule-or-step1,rule-or-step2,...rule-or-stepN
+  (Recursive imports are not supported -- if an imported rule requires steps
+   from yet another steps file, import those steps first.)
 
 blank (whitespace only lines)
 

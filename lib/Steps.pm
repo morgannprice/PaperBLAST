@@ -13,7 +13,7 @@ use LWP::UserAgent;
 sub ReadSteps($); # stepfile => hash of steps, rules, ruleOrder
 sub ReadSteps2($$); # stepfile, doimportflag => same result as ReadSteps
 
-# The returned object includes:
+# Parse a steps file. The returned object includes:
 # steps, a hash of step name to a hash that includes
 #	i, name, desc, comment, and search, and optionally import
 #	search is a list of queryType/value pairs (documented in bin/gapquery.pl)
@@ -25,7 +25,10 @@ sub ReadSteps2($$); # stepfile, doimportflag => same result as ReadSteps
 #	The sublist is met if all of its components are met (AND at the 2nd level)
 # ruleOrder, a list of rule names in the order they appear
 # ruleComments, a hash of ruleId to comments.
-# topComment, the top-level comment at the beginning of the steps file.
+# topComment, the top-level comment at the beginning of the steps file (or empty).
+#
+# For documentation of the format of a steps file, see bin/gapquery.pl
+
 sub ReadSteps($) {
   my ($stepsFile) = @_;
   return ReadSteps2($stepsFile, 1); # 1 means allow imports
@@ -222,6 +225,7 @@ sub ReadSteps2($$) {
       }
     }
   }
+  $topComment = "" if !defined $topComment;
   return { 'steps' => $steps, 'rules' => $rules, 'ruleOrder' => \@ruleOrder,
            'topComment' => $topComment, 'ruleComments' => \%ruleComments };
 }

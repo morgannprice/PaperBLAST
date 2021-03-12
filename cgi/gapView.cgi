@@ -498,7 +498,7 @@ my %stepDesc = (); # pathwayId => stepId => desc
             a({ -href => "gapView.cgi?set=$set&orgs=$orgsSpec&path=$pathSpec&showdef=literal" },
             "full text"));
     print h3("Rules");
-    print p("Overview:", LinkifyComment($stepsObj->{topComment})) if exists $stepsObj->{topComment};
+    print p("Overview:", LinkifyComment($stepsObj->{topComment})) if $stepsObj->{topComment} ne "";
     print RulesToHTML($stepsObj, $pathSpec, ""), # no orgId
       "\n";
     print h3("Steps");
@@ -820,7 +820,7 @@ my %stepDesc = (); # pathwayId => stepId => desc
     }
 
     print h3("Rules");
-    print p("Overview:", LinkifyComment($stepsObj->{topComment})) if exists $stepsObj->{topComment};
+    print p("Overview:", LinkifyComment($stepsObj->{topComment})) if $stepsObj->{topComment} ne "";
     print RulesToHTML($stepsObj, $pathSpec, $orgId),
       "\n";
 
