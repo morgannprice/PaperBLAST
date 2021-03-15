@@ -16,7 +16,7 @@ my $usage = <<END
 checkCuratedGaps.pl -org orgs35 ... orgsNif
 
 Given a pathway set and one or more org directories with computed
-results, validate that the curated gaps are consistent with those
+results, validate that the curated/known gaps are consistent with those
 results.
 
 Optional arguments:
@@ -27,7 +27,7 @@ Optional arguments:
   *.query files
 -results $resultsDir -- the directory that contains the
   org directories.
-  The analysis results should be
+  The analysis results should be in
   $resultsDir/orgDir/$set.sum.*
 END
 ;
@@ -61,12 +61,27 @@ foreach my $step (@$steps) {
 
 my @cgapHeader = qw{genomeName gdb gid pathway step class comment};
 my $cgapFile = "$stepDir/$set.curated.gaps.tsv";
-my @cgaps = ReadTable($cgapFile,\@cgapHeader);
-my @noclass = grep { $_->{class} eq "" } @cgaps;
-@cgaps = grep { $_->{class} ne "" } @cgaps;
-print STDERR "Read " . scalar(@cgaps) . " non-empty curated gaps from\n$cgapFile\n";
-print STDERR "Skipped " . scalar(@noclass) . " entries with empty class\n"
-  if @noclass > 0;
+my @cgaps;
+if (-e $cgapFile) {
+  @cgaps = ReadTable($cgapFile,\@cgapHeader);
+  my @noclass = grep { $_->{class} eq "" } @cgaps;
+  @cgaps = grep { $_->{class} ne "" } @cgaps;
+  print STDERR "Read " . scalar(@cgaps) . " non-empty curated gaps from\n$cgapFile\n";
+  print STDERR "Skipped " . scalar(@noclass) . " entries with empty class\n"
+    if @noclass > 0;
+} else {
+  print STDERR "No curated gaps for $set\n";
+}
+
+my @kgapHeader = qw{genomeName gdb gid pathway step gtax};
+my $kgapFile = "$stepDir/$set.known.gaps.tsv";
+my @kgaps;
+if (-e $kgapFile) {
+  @kgaps = ReadTable($kgapFile, \@kgapHeader);
+  print STDERR "Read " . scalar(@kgaps) . " known gaps from\n$kgapFile\n";
+} else {
+  print STDERR "No known gaps for $set\n";
+}
 
 # gdb => gid => pathway => step => curated gap object
 my %cgap = ();
@@ -74,6 +89,10 @@ foreach my $cgap (@cgaps) {
   print STDERR "Duplicate curated gaps for $cgap->{gdb} $cgap->{gid} $cgap->{pathway} $cgap->{step}\n"
     if exists $cgap{ $cgap->{gdb} }{ $cgap->{gid} }{ $cgap->{pathway} }{ $cgap->{step} };
   $cgap{ $cgap->{gdb} }{ $cgap->{gid} }{ $cgap->{pathway} }{ $cgap->{step} } = $cgap;
+}
+foreach my $kgap (@kgaps) {
+  $cgap{ $kgap->{gdb} }{ $kgap->{gid} }{ $kgap->{pathway} }{ $kgap->{step} } = $kgap
+    if !exists $cgap{ $kgap->{gdb} }{ $kgap->{gid} }{ $kgap->{pathway} }{ $kgap->{step} };
 }
 
 my %orgSeen = (); # gdb => gid => genome name
