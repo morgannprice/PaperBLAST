@@ -504,7 +504,7 @@ my %stepDesc = (); # pathwayId => stepId => desc
     print h3("Steps");
     my @stepsInOrder = sort { $a->{i} <=> $b->{i} } values %{ $stepsObj->{steps} };
     foreach my $stepObj (@stepsInOrder) {
-      print p(b(i($stepObj->{name}) . ": " . $stepObj->{desc}));
+      print p(a({ -name => $stepObj->{name} }, b(i($stepObj->{name}) . ": " . $stepObj->{desc})));
       print start_ul;
       my $data = DataForStepParts($pathSpec, $stepObj->{name});
       my $stepParts = $dbhS->selectall_arrayref("SELECT * from StepPart WHERE pathwayId = ? AND stepId = ?",
@@ -2009,6 +2009,8 @@ sub FormatStepPart($$$) {
 }
 
 # orgId is optional
+# If present, steps link to the candidates page
+# If not present, steps link to #step (presumed to be present in show definition mode)
 sub RulesToHTML($$$) {
   my ($stepsObj, $pathwayId, $orgId) = @_;
   my $stepScores = $dbhG->selectall_hashref("SELECT * from StepScore WHERE orgId = ? AND pathwayId = ?",
@@ -2039,7 +2041,8 @@ sub RulesToHTML($$$) {
       foreach my $component (@$components) {
         if ($component->{stepId} ne "") {
           if ($orgId eq "") {
-            push @parts, span({ -title => $stepDesc{$pathwayId}{ $component->{stepId} } },
+            push @parts, a({ -title => $stepDesc{$pathwayId}{ $component->{stepId} },
+                             -href => "#" . $component->{stepId} },
                               i($component->{stepId}));
           } else {
             push @parts, i(StepToShortHTML($component->{stepId}, $stepScores->{ $component->{stepId} }));
