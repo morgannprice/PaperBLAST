@@ -230,7 +230,7 @@ if (exists $dosteps{"refseq"}) {
   close(LIST) || die "Error writing to $listfile";
   &maybe_run("$Bin/submitter.pl $cmdsfile");
   my @out = &read_list($listfile);
-  &maybe_run("(cat " . join(" ", @out) . " | $Bin/convertRefSeqQueries.pl > $workdir/refseq.query) >& $workdir/refseq.query.log");
+  &maybe_run("($Bin/convertRefSeqQueries.pl -files $listfile > $workdir/refseq.query) >& $workdir/refseq.query.log");
 }
 
 # Given words from pm/pmc/am, find identifiers matching UniProt
