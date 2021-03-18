@@ -1959,15 +1959,16 @@ sub FormatStepPart($$$) {
   if ($type eq "EC") {
     # Use local URLs for Curated BLAST links, instead of using the official papers.genomics.lbl.gov
     # site, because the genome may not exist at the public site
-    my $URL = "https://enzyme.expasy.org/EC/$value";
-    my $title = "";
-    $URL = "genomeSearch.cgi?gdb="
-      . $orgs{$orgId}{gdb}
-      . "&gid=" . $orgs{$orgId}{gid}
-      . "&query=$value&word=1" if $orgId ne "";
-    $title = "Run Curated BLAST" if $orgId ne "";
-    return "Curated proteins or TIGRFams with EC "
-      . a({-href => $URL, -title => }, $value);
+    my $out = "Curated proteins or TIGRFams with EC "
+      . a({-href => "https://enzyme.expasy.org/EC/$value" }, $value);
+    $out .= " (" . a({ -href => "genomeSearch.cgi?gdb="
+                       . $orgs{$orgId}{gdb}
+                       . "&gid=" . $orgs{$orgId}{gid}
+                       . "&query=$value",
+                       -title => "Run Curated BLAST" },
+                     "search")
+      . ")" if $orgId ne "";
+    return $out;
   } elsif ($type eq "hmm") {
     return "HMM " . a({-href => HMMToURL($value) }, $value);
   } elsif ($type eq "term") {
