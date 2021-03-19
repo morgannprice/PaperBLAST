@@ -1916,6 +1916,10 @@ sub LinkifyComment($) {
       $word =~ s/^metacyc:([A-Z][A-Z0-9-]+)//i;
       push @out, $pre. a({ -href => "https://metacyc.org/META/NEW-IMAGE?object=$metacycId" },
                          "link") . $word;
+    } elsif ($word =~ m!^URL:(http[A-Za-z0-9_,:./?&-]+)!i) {
+      my $URL = $1;
+      $word =~ s!^URL:(http[A-Za-z0-9_,:./?&-]+)!!;
+      push @out, $pre. a({ -href => $URL }, "link") . $word;
     } elsif ($word =~ m/^EC:([0-9][.][0-9.]+[0-9])/i) {
       my $ec = $1;
       $word =~ s/^EC:([0-9][.][0-9.]+[0-9])//i;
