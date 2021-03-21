@@ -76,7 +76,7 @@ CREATE TABLE RequirementNotMet(
   requiredStepId TEXT NOT NULL,
   isNot INT NOT NULL, /* 0 or 1 */
   comment TEXT NOT NULL,
-  PRIMARY KEY (orgId, pathwayId, ruleId)
+  PRIMARY KEY (orgId, pathwayId, ruleId, requiredPathwayId, requiredRuleId, requiredStepId)
 );
 
 CREATE TABLE MarkerSimilarity(
