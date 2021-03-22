@@ -210,7 +210,8 @@ all: transport adiA aguA aguB putrescine-degradation
 # However, the reverse reaction is thermodynamically quite unfavorable; more likely,
 # these proteins have a different function
 arcA	arginine deiminase	EC:3.5.3.6	ignore:reanno::Phaeo:GFF1616	ignore:reanno::WCS417:GFF3434	ignore:reanno::pseudo3_N2E3:AO353_25635
-arcB	ornithine carbamoyltransferase	EC:2.1.3.3 # to carbamoyl-P + ornithine
+# arcB forms carbamoyl-phosphate and ornithine
+arcB	ornithine carbamoyltransferase	EC:2.1.3.3
 # arcC from P. aeruginosa (P13982) was studied both biochemically and genetically
 # and linked to sequence by PMID:2537202
 arcC	carbamate kinase	EC:2.7.2.2	uniprot:P13982

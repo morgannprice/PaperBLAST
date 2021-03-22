@@ -123,14 +123,22 @@ benzoyl-CoA-reductase: bcrA bcrB bcrC bcrD
 # bamBCDEFGHI has been described in Geobacter metallireducens (PMID:30674680).
 # There is also a paper about the enzyme from Desulfocarcina cetonica but
 # I could not find those sequences.
-bamB	class II benzoyl-CoA reductase, BamB subunit	uniprot:Q39TV8 # Gmet_2087
-bamC	class II benzoyl-CoA reductase, BamC subunit	uniprot:Q39TV9 # Gmet_2086
-bamD	class II benzoyl-CoA reductase, BamD subunit	uniprot:Q39TW0 # Gmet_2085
-bamE	class II benzoyl-CoA reductase, BamE subunit	uniprot:Q39TW1 # Gmet_2084
-bamF	class II benzoyl-CoA reductase, BamF subunit	uniprot:Q39TW2 # Gmet_2083
-bamG	class II benzoyl-CoA reductase, BamG subunit	uniprot:Q39TW4 # Gmet_2081
-bamH	class II benzoyl-CoA reductase, BamH subunit	uniprot:Q39TW5 # Gmet_2080
-bamI	class II benzoyl-CoA reductase, BamI subunit	uniprot:Q39TW6 # Gmet_2079
+# bamB = Gmet_2087
+bamB	class II benzoyl-CoA reductase, BamB subunit	uniprot:Q39TV8
+# bamC = Gmet_2086
+bamC	class II benzoyl-CoA reductase, BamC subunit	uniprot:Q39TV9
+# bamD = Gmet_2085
+bamD	class II benzoyl-CoA reductase, BamD subunit	uniprot:Q39TW0
+# bamE = Gmet_2084
+bamE	class II benzoyl-CoA reductase, BamE subunit	uniprot:Q39TW1
+# bamF = Gmet_2083
+bamF	class II benzoyl-CoA reductase, BamF subunit	uniprot:Q39TW2
+# bamG = Gmet_2081
+bamG	class II benzoyl-CoA reductase, BamG subunit	uniprot:Q39TW4
+# bamH = Gmet_2080
+bamH	class II benzoyl-CoA reductase, BamH subunit	uniprot:Q39TW5
+# bamI = Gmet_2079
+bamI	class II benzoyl-CoA reductase, BamI subunit	uniprot:Q39TW6
 benzoyl-CoA-reductase: bamB bamC bamD bamE bamF bamG bamH bamI
 
 dch	cyclohexa-1,5-diene-1-carboxyl-CoA hydratase	EC:4.2.1.100
