@@ -17,14 +17,16 @@ each step as well as any related HMM models. Does not check for
 consistency between *.query and curated.db.
 
 Optional arguments:
+  -doquery -- build all of the query files
   -out tmp/path.set/steps.db -- the output database
 END
 ;
 
-my ($set, $workDir, $outDb);
+my ($set, $workDir, $outDb, $doQuery);
 die $usage unless GetOptions('set=s' => \$set,
                              'dir=s' => \$workDir,
-                            'out=s' => \$outDb)
+                             'out=s' => \$outDb,
+                             'doquery' => \$doQuery)
   && defined $set
   && @ARGV ==0;
 $workDir = "$RealBin/../tmp/path.${set}" unless defined $workDir;
@@ -40,6 +42,19 @@ my $dbhC = DBI->connect("dbi:SQLite:dbname=$curatedDb","","",{ RaiseError => 1 }
 my @pathways = ReadTable("$stepDir/${set}.table", [ "pathwayId", "desc"]);
 my @all = grep { $_->{pathwayId} eq "all" } @pathways;
 die "Must have 1 pathwayId = all in ${set}.table" unless @all == 1;
+
+if (defined $doQuery) {
+  foreach my $pathwayId (map $_->{pathwayId}, @pathways) {
+    next if $pathwayId eq "all";
+    print STDERR "Building query file for $pathwayId\n";
+    my $hmmDir = "$RealBin/../hmm";
+    die "No such directory: $hmmDir\n" unless -d $hmmDir;
+    system("$RealBin/gapquery.pl", "-hmm", $hmmDir,
+           "-steps", "$stepDir/$pathwayId.steps",
+           "-out", $workDir) == 0
+      || die "gapquery.pl failed for $pathwayId: $!";
+  }
+}
 
 print STDERR "Reading steps, query files, and other tables\n";
 my %pathways = (); # pathwayId to step object
