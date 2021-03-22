@@ -1911,9 +1911,9 @@ sub LinkifyComment($) {
       $word =~ s/^PMC\d+//;
       push @out, $pre . a({ -href => "http://www.ncbi.nlm.nih.gov/pmc/articles/" . lc($pmcId) . "/" },
                    $pmcId) . $word;
-    } elsif ($word =~ m/^metacyc:([A-Z][A-Z0-9-]+)/i) {
+    } elsif ($word =~ m/^metacyc:([0-9A-Z][A-Z0-9-]+)/i) {
       my $metacycId = $1;
-      $word =~ s/^metacyc:([A-Z][A-Z0-9-]+)//i;
+      $word =~ s/^metacyc:([0-9A-Z][A-Z0-9-]+)//i;
       push @out, $pre. a({ -href => "https://metacyc.org/META/NEW-IMAGE?object=$metacycId" },
                          "link") . $word;
     } elsif ($word =~ m!^URL:(http[A-Za-z0-9_,:./?&-]+)!i) {
