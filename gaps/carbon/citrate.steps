@@ -1,13 +1,21 @@
-# Transporters were identified using
-# query: transporter:citric:citrate
+# Citrate is utilized via ATP-citrate lyase (metacyc:PWY-6038) or
+# by oxidation to 2-oxoglutarate (part of the the TCA cycle,
+# metacyc:TCA). MetaCyc does not explicitly represent the TCA cycle as
+# a means for catabolizing citrate, but it is expected to function
+# under respiratory conditions. Fitness data confirms that in diverse
+# bacteria, ATP-citrate lyase is not necessary for aerobic utilization
+# of citrate.
 
-# Heteromeric transporters: E.coli FecBCDE, C. glutamicum TctABC
+# Heteromeric transporters: E.coli FecBCDE, C. glutamicum TctABC.
 # TctABC is also studied in S. typhimurium and D. shibae but was missed by the query
 
 fecB	ferric citrate ABC transporter, substrate-binding component FecB	curated:SwissProt::P15028
 fecC	ferric citrate ABC transporter, permease component 1 (FecC)	curated:SwissProt::P15030
 fecD	ferric citrate ABC transporter, permease component 2 (FecD)	curated:CharProtDB::CH_004160
 fecE	ferric citrate ABC transporter, ATPase component FecE	curated:CharProtDB::CH_088321
+
+# Transporters were identified using
+# query: transporter:citric:citrate
 transport: fecB fecC fecD fecE
 
 # Fitness data confirms that HP15_2659:HP15_2661 (E4PJQ9,E4PJR0,E4PJR1) in Marinobacter adhaerens
@@ -49,10 +57,6 @@ transport: citS
 # Ignored outer membrane ferric citrate porins (fecA)
 # Ignored vcINDY, reported to have low affinity for citrate
 
-# MetaCyc Pathway: citrate degradation
-# involves ATP-citrate lyase, to oxaloacetate (a central metabolite) and acetate.
-# Because this is often a fermentative pathway, the acetate may be excreted,
-# so activation to acetyl-CoA is not represented.
 
 # Citrate lyase has 3 subunits citDEF; activity also requires acetylation by
 # citrate lyase synthetase (citC); this is not represented here
@@ -61,14 +65,10 @@ citD	citrate lyase, acyl carrier component CitD	curated:metacyc::MONOMER-17000	c
 citE	citrate lyase, citryl-ACP lyase component CitE	curated:BRENDA::Q037K5	curated:SwissProt::P0A9I1	curated:metacyc::MONOMER-16999
 citF	citrate lyase, citrate-ACP transferase component CitF	curated:SwissProt::P75726
 
+# ATP-citrate lyase (citDEF) produces oxaloacetate (a central metabolite) and acetate.
+# Because this is often a fermentative pathway, the acetate may be excreted,
+# so activation to acetyl-CoA is not represented.
 all: transport citD citE citF
-
-# Although MetaCyc does not explicitly represent the TCA cycle as a
-# means for catabolizing citrate, it is expected to function under
-# respiratory conditions. Fitness data confirms that in diverse
-# bacteria, ATP-citrate lyase is not necessary for aerobic utilization
-# of citrate. citrate is isomerized to isocitrate and oxidized to
-# 2-oxoglutarate.
 
 # Some similar sequences are annotated as aconitase but without the EC number
 acn	aconitase	EC:4.2.1.3	ignore_other:aconitase
@@ -77,4 +77,5 @@ acn	aconitase	EC:4.2.1.3	ignore_other:aconitase
 # enzymatic subunits, so this is not represented here
 icd	isocitrate dehydrogenase	EC:1.1.1.41	EC:1.1.1.42	EC:1.1.1.286
 
+# Or, citrate is isomerized to isocitrate and oxidized to 2-oxoglutarate by acn and icd.
 all: transport acn icd

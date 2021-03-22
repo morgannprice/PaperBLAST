@@ -1,26 +1,32 @@
-# Transporters identified using:
-# query: transporter:maltose:ALPHA-MALTOSE:CPD-15717
+# Maltose utilization in GapMind is based on the MetaCyc pathway
+# via maltose phosphorylase (metacyc:MALTOSECAT-PWY),
+# or a phosphotransferase system followed by 6-phospho-alphaglucosidase,
+# or a phosphotransferase system followed by a phosphatase back to maltose,
+# or hydrolysis by alpha-glucosidase after uptake,
+# or periplasmic hydrolysis by alpha-glucosidase followed by glucose utilization.
 
 # ABC transporters:
 
-# E. coli has malEFGK [clusters 4, 10, singleton1, cluster1]
-# In Salmonella typhimurium, malK only is listed
-# Related systems are found in Klebsiella michiganensis and Pseudomonas stutzeri RCH2
+# E. coli has malEFGK. In Salmonella typhimurium, malK only is listed.
+# Related systems are found in Klebsiella michiganensis and Pseudomonas stutzeri RCH2.
 malE	maltose ABC transporter, substrate-binding component MalE	curated:BRENDA::P0AEX9	curated:reanno::Koxy:BWI76_RS01830	curated:reanno::psRCH2:GFF849
 malF	maltose ABC transporter, permease component 1 (MalF)	curated:BRENDA::P02916	curated:reanno::Koxy:BWI76_RS01825	curated:reanno::psRCH2:GFF850
 malG	maltose ABC transporter, permease component 2 (MalG)	curated:BRENDA::P68183	curated:reanno::Koxy:BWI76_RS01820	curated:reanno::psRCH2:GFF851
 malK	maltose ABC transporter, ATPase component MalK	curated:BRENDA::P68187	curated:SwissProt::P19566	curated:reanno::psRCH2:GFF857
+
+# Transporters identified using:
+# query: transporter:maltose:ALPHA-MALTOSE:CPD-15717
 transport: malE malF malG malK
 
 # Sinorhizobium meliloti has thuEFGK; similar systems are found in
-# Thermus thermophilus, Thermococcus literalis, and Streptomyces coelicolor
+# Thermus thermophilus, Thermococcus literalis, and Streptomyces coelicolor.
 thuE	maltose ABC transporter, substrate-binding component ThuE	curated:TCDB::Q9R9Q7	curated:TCDB::O51923	curated:TCDB::Q72H68	curated:TCDB::Q7AKP1	curated:SwissProt::Q7LYW7
 thuF	maltose ABC transporter, permease component 1 (ThuF)	curated:TCDB::Q72H67	curated:SwissProt::O51924	curated:TCDB::O51924	curated:TCDB::Q9KZ07	curated:reanno::Smeli:SM_b20326
 thuG	maltose ABC transporter, permease component 2 (ThuG)	curated:SwissProt::Q7LYX6	curated:TCDB::Q72H66	curated:TCDB::Q9KZ08	curated:reanno::Smeli:SM_b20327
 thuK	maltose ABC transporter, ATPase component ThuK	curated:SwissProt::Q9YGA6	curated:TCDB::Q9R9Q4	curated:reanno::Smeli:SMc03065	curated:TCDB::Q72L52
 transport: thuE thuF thuG thuK
 
-# Thermotoga maritima has malE1E2F1F2G1G2K; both SBPs bind maltose, so it should be either for each
+# Thermotoga maritima has malE1E2F1F2G1G2K; both SBPs bind maltose, so require only one to be present.
 malE1	maltose ABC transporter, substrate-binding component (MalE1/MalE2)	curated:TCDB::Q9S5Y1	curated:TCDB::Q9X0T1
 malF1	maltose ABC transporter, permease component 1 (MalF1)	curated:TCDB::Q9X0T0
 malG1	maltose ABC transporter, permease component 2 (MalG1/MalG2)	curated:BRENDA::Q9X0S9	curated:BRENDA::Q9X2F5
@@ -42,17 +48,17 @@ musK	maltose ABC transporter, ATPase component MusK	curated:BRENDA::Q8NMV1
 musI	maltose ABC transporter, uncharacterized membrane component MusI	curated:TCDB::Q6M306
 transport: musE musF musG musK musI
 
-# Alicyclobacillus acidocaldarius: malK only is listed, but PMID:15136159 lists malEFG as well
-# malE = Aaci_2873 = Q9RHZ6, see PDB 1urg
-# malFG are presumably the adjacent proteins Aaci_2872=C8WUR0 and Aaci_2871=C8WUQ9
+# Alicyclobacillus acidocaldarius: malK only is listed, but PMID:15136159 lists malEFG as well.
+# malE = Aaci_2873 = Q9RHZ6, see PDB 1urg.
+# malFG are presumably the adjacent proteins Aaci_2872 (uniprot:C8WUR0) and Aaci_2871 (uniprot:C8WUQ9).
 malE_Aa	maltose ABC transporter, substrate-binding component	uniprot:Q9RHZ6
 malF_Aa	maltose ABC transporter, permease component 1	uniprot:C8WUR0
 malG_Aa	maltose ABC transporter, permease component 2	uniprot:C8WUQ9
 malK_Aa	maltose ABC transporter, ATPase component	curated:BRENDA::Q70HW1
 transport: malE_Aa malF_Aa malG_Aa malK_Aa
 
-# Sinorhizobium meliloti has a second system, algEFGK
-# Use .Sm names to avoid confusion with the glucose transporter algEFGK
+# Sinorhizobium meliloti has a second system, algEFGK.
+# Use .Sm names to avoid confusion with the glucose transporter algEFGK.
 aglE.Sm	maltose ABC transporter, substrate-binding component AglK	curated:TCDB::Q9Z3R5
 aglF.Sm	maltose ABC transporter, permease component 1 (AglF)	curated:reanno::Smeli:SMc03062
 aglG.Sm	maltose ABC transporter, permease component 2 (AglG)	curated:reanno::Smeli:SMc03063
@@ -61,13 +67,13 @@ transport: aglE.Sm aglF.Sm aglG.Sm aglK.Sm
 
 # Bdellovibrio bacteriovorus has fused malEF (Bd1227, Q6MNM0)
 # and also malG, malK.
-# oh, malG must be Bd1226 (Q6MNM1) and malK must be Bd1225 (Q6MNM2)
+# malG must be Bd1226 (Q6MNM1) and malK must be Bd1225 (Q6MNM2).
 malEF_Bb	maltose ABC transporter, fused substrate-binding and permease component 1	curated:TCDB::Q6MNM0
 malG_Bb	maltose ABC transporter, permease component 2	uniprot:Q6MNM1
 malK_Bb	maltose ABC transporter, ATPase component	uniprot:Q6MNM2
 transport: malEF_Bb malG_Bb malK_Bb
 
-# Sulfolobus solfataricus has malEFGK
+# Sulfolobus solfataricus has malEFGK.
 malE_Ss	maltose ABC transporter, substrate-binding component	curated:TCDB::Q97UG7
 malF_Ss	maltose ABC transporter, permease component 1	curated:TCDB::Q97UG4
 malG_Ss	maltose ABC transporter, permease component 2	curated:TCDB::Q97UG3
@@ -79,28 +85,26 @@ transport: malE_Ss malF_Ss malG_Ss malK_Ss
 # Ignore E. coli malX, which can apparently facilitate diffusion of maltose,
 # because its physiological role is unclear
 
-# Streptococcus mutans and Streptococcus pyogenes have a EII-CBA system malT
+# Streptococcus mutans and Streptococcus pyogenes have a EII-CBA system malT.
 # A related system in Enterococcus faecalis (EF0958 = Q836Y6) was also shown to
-# be a PTS sytem for maltose (PMID:15752325)
+# be a PTS sytem for maltose (PMID:15752325).
 # The EII-CB portion of these proteins is similar to the EII-CB portion of B. subtilis, so that
-# is marked ignore
+# is marked ignore.
 malEIICBA	maltose phosphotransferase system, EII-CBA components	curated:TCDB::Q48WG5	curated:TCDB::Q8DS05	uniprot:Q836Y6	ignore:TCDB::Q63GK8
 PTS: malEIICBA
 
-# Bacillus subtilis has a EII-CB system malP
-# PMID:30038046 showed that ptsG (P20166), YpqE (P50829) or GamP (P39816) provide the EII-A component
+# Bacillus subtilis has a EII-CB system malP.
+# PMID:30038046 showed that ptsG (P20166), YpqE (P50829) or GamP (P39816) provide the EII-A component.
 # Bacillus cereus has a EII-CB system, also named malT. The EII-A component is not known but
 #   crosstalk as in B. subtilis seems likely, even though the EII-CB proteins are distantly related
-#   (27% identity)
+#   (27% identity).
 malEIICB	maltose phosphotransferase system, EII-CB components     curated:SwissProt::P54715	curated:TCDB::Q63GK8	ignore:TCDB::Q8DS05	ignore:TCDB::Q48WG5
 malEIIA	maltose phosphotransferase system, EII-A component (PtsG/YpqE/GamP)	curated:TCDB::P20166	uniprot:P50829	curated:SwissProt::P39816
 PTS: malEIICB malEIIA
 
-# Cluster 7 602-616 amino acids (not heteromeric)
 MAL11	maltose permease	curated:CharProtDB::CH_091394	curated:SwissProt::P0CD99	curated:SwissProt::P0CE00	curated:SwissProt::P38156	curated:TCDB::P15685
 transport: MAL11
 
-# Cluster 8 512-523 amino acids (not heteromeric)
 SUC2	maltose:H+ symporter	curated:CharProtDB::CH_091608	curated:SwissProt::Q39231	curated:metacyc::MONOMER-18237
 transport: SUC2
 
@@ -116,42 +120,19 @@ malAP	maltose permease	curated:TCDB::Q45632
 transport: malAP
 
 # Caulobacter malI; also CA265_RS24665 (A0A1X9ZCC9) is specifically important for maltose utilization
-# and is related
+# and is related.
 malI	maltose transporter	curated:TCDB::Q9A612	uniprot:A0A1X9ZCC9
 transport: malI
 
 # To represent hydrolysis in the periplasm and utilization of glucose,
 # import the various transporters and PTS systems.
-import glucose.steps:ptsG-crr
-import glucose.steps:ptsG
-import glucose.steps:crr
-import glucose.steps:bglF
-import glucose.steps:manX
-import glucose.steps:manY
-import glucose.steps:manZ
+import glucose.steps:ptsG-crr ptsG crr bglF manX manY manZ
 glucosePTS: ptsG-crr
 glucosePTS: bglF
 glucosePTS: ptsG crr
 glucosePTS: manX manY manZ
 
-import glucose.steps:mglA
-import glucose.steps:mglB
-import glucose.steps:mglC
-import glucose.steps:gtsA
-import glucose.steps:gtsB
-import glucose.steps:gtsC
-import glucose.steps:gtsD
-import glucose.steps:glcS
-import glucose.steps:glcT
-import glucose.steps:glcU
-import glucose.steps:glcV
-import glucose.steps:aglE
-import glucose.steps:aglF
-import glucose.steps:aglG
-import glucose.steps:aglK
-import glucose.steps:MFS_glucose
-import glucose.steps:SSS_glucose
-import glucose.steps:glcU_Firmicutes
+import glucose.steps:mglA mglB mglC gtsA gtsB gtsC gtsD glcS glcT glcU glcV aglE aglF aglG aglK MFS_glucose SSS_glucose glcU_Firmicutes
 
 glucosetransport: mglA mglB mglC
 glucosetransport: gtsA gtsB gtsC gtsD
@@ -161,37 +142,38 @@ glucosetransport: MFS_glucose
 glucosetransport: SSS_glucose
 glucosetransport: glcU_Firmicutes
 
-# MetaCyc Pathway: maltose degradation involves
-# maltose phosphorylase (releasing beta-glucose-1-phosphate and glucose)
-# and beta-phosphoglucomutase (forming glucose-6-phosphate, a central metabolite)
-# glucokinase (glk) is also needed to feed the released glucose into
-# central metabolism
 
 malP	maltose phosphorylase	EC:2.4.1.8
 pgmB	beta-phosphoglucomutase	EC:5.4.2.6
 import glucose.steps:glk
+# In the phosphorylase pathway, malP forms beta-glucose-1-phosphate and glucose,
+# and beta-phosphoglucomutase forms glucose-6-phosphate, a central metabolite;
+# glucokinase (glk) is also needed to feed the released glucose into
+# central metabolism.
 all: transport malP pgmB glk
 
-# PTS systems produce maltose 6'-phosphate which can be cleaved by
-# 6-phospho-alpha-glucosidase to glucose + glucose-6-phosphate
 malA	6-phospho-alphaglucosidase	EC:3.2.1.122
+# Alternatively, PTS systems produce maltose 6'-phosphate, which can be cleaved by
+# 6-phospho-alpha-glucosidase to glucose + glucose-6-phosphate.
 all: PTS malA glk
 
-# Or maltose 6'-phosphate can be converted back to maltose
-# by a phosphatase, followed by the usual pathway
+# Alternatively, maltose 6'-phosphate can be converted back to maltose
+# by a phosphatase, followed by the phosphorylase pathway.
 mapP	maltose 6'-phosphate phosphatase	EC:3.1.3.90
 all: PTS mapP malP pgmB glk
 
-# Or, direct hydrolysis of maltose by alpha-glucosidase (EC 3.2.1.20)
-# (I imagine this could be extracellular, with glucose rather than maltose
-#  being transported; but that is not represented here)
 # Close homologs are sometimes annotated as maltases (which should be included)
-# or isomaltase (which should not; that refers to hydrolyzing the alpha-1-6 linkage).
-# BRENDA::Q2PCE2 seems surprising but is supported by the underlying paper
+# or isomaltase (which should not; that refers to hydrolyzing an alpha-1,6 linkage,
+# whereas maltose has an alpha-1,4 linkage).
+# BRENDA::Q2PCE2 seems surprising but is supported by the underlying paper.
 # susB from Bacteroides thetaiotaomicron (G8JZS4) is a periplasmic maltase
-#   (it also active on longer substrates) and is important for maltose utilization
+#   (it also active on longer substrates) and is important for maltose utilization.
 susB	alpha-glucosidase (maltase)	EC:3.2.1.20	uniprot:G8JZS4	ignore_other:maltase
+
+# Alternatively, maltose can be hydrolyzed by alpha-glucosidase (EC:3.2.1.20) in the cytoplasm.
 all: transport susB glk
 
+# Alternatively, maltose can be hydrolyzed by alpha-glucosidase (EC:3.2.1.20) in the periplasm,
+# as in Bacteroides thetaiotaomicron, followed by glucose utilization.
 all: susB glucosetransport glk
 all: susB glucosePTS

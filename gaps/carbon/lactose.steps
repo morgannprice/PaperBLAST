@@ -1,20 +1,23 @@
-# Transporters were identified using
-# query: transporter:lactose:alpha-lactose:CPD-15971
+# Lactose utilization in GapMind is based on
+# MetaCyc pathway lactose degradation II via 3'-ketolactose (metacyc:LACTOSEUTIL-PWY),
+# or pathway III via beta-galactosidase (metacyc:BGALACT-PWY),
+# or uptake by a PTS system followed by hydrolysis of lactose 6'-phosphate.
+# (There is no pathway I.)
 
 # ABC transporters:
+
 # Agrobacterium radiobacter and Sinorhizobium meliloti have related systems,
 # named lacEFGK in Agrobacterium
-
 lacE	lactose ABC transporter, substrate-binding component	curated:TCDB::P29822	curated:reanno::Smeli:SM_b21652
 lacF	lactose ABC transporter, permease component 1	curated:TCDB::P29823	curated:reanno::Smeli:SM_b21653
 lacG	lactose ABC transporter, permease component 2	curated:TCDB::P29824	curated:reanno::Smeli:SM_b21654
 lacK	lactose ABC transporter, ATPase component	curated:TCDB::Q01937	curated:reanno::Smeli:SM_b20002
+# Transporters were identified using
+# query: transporter:lactose:alpha-lactose:CPD-15971
 transport: lacE lacF lacG lacK
 
 # PTS systems (forming lactose 6'-phosphate)
 
-# Klebsiella pneumoniae has a EIIA,B,C in 3 separate proteins
-# The other characterized PTS systems have EII and EIICB
 lacIIA	lactose PTS system, EIIA component	curated:SwissProt::P0A0D6	curated:SwissProt::P11502	curated:SwissProt::P23532	curated:TCDB::Q045H4	curated:TCDB::Q045X4	curated:TCDB::U5MLJ3
 
 lacIIB	lactose PTS system, EIIB component	curated:TCDB::U5MIE1
@@ -23,6 +26,8 @@ lacIIC	lactose PTS system, EIIC component	curated:TCDB::U5MFA1
 
 lacIICB	lactose PTS system, fused EIIC and EIIB components	curated:SwissProt::P11162	curated:SwissProt::P23531	curated:SwissProt::P24400	curated:TCDB::Q045H3	curated:TCDB::Q045X3
 
+# Klebsiella pneumoniae has a EIIA,B,C in 3 separate proteins.
+# The other characterized PTS systems have EII and EIICB
 PTS: lacIIA lacIIB lacIIC
 PTS: lacIIA lacIICB
 
@@ -37,41 +42,25 @@ transport: lacY
 
 # Ignored sugar exporters such as setA or sotA
 
-# MetaCyc Pathway: lactose and galactose degradation I
-# PTS to lactose 6'-phosphate, phosphogalactosidase to galactose 6-phosphate,
-# which is catabolized via tagatose-1,6-bisphosphate
 pbgal	phospho-beta-galactosidase	EC:3.2.1.85
-import galactose.steps:lacA
-import galactose.steps:lacB
-import galactose.steps:lacC
-import galactose.steps:lacD
-import galactose.steps:gatY
-import galactose.steps:gatZ
-import galactose.steps:tpi
-tag16P_aldolase: lacD
-tag16P_aldolase: gatY gatZ
+import galactose.steps:lacA lacB lacC tpi tag16P_aldolase
 
-# MetaCyc Pathway: lactose degradation II involves oxidation of
-# lactose to 3'-ketolactose by a periplasmic 3-component
-# dehydrogenase, hydrolysis by a periplasmic enzyme (LacACB) to
-# 3-keto-beta-D-galactose and D-glucopyranose, and hypothetical
-# reduction of the 3-ketogalactose. Liberation of glucose is probably
-# sufficient for growth, and DUF1080 (PF06439) was recently identified
-# as a family of 3-ketoglycoside hydrolases. Fitness data identified
-# CCNA_01705 as the 3'-ketolactose hydrolase.
-
-
-# LacACB from Caulobacter is the best studied, but a related system
-# from Pedobacter is also required for lactose utilization.  EC
-# 1.1.99.13 includes 3-ketoglycoside dehydrogenases more broadly.
+# LacACB from Caulobacter is the best studied lactose 3-dehydrogenase,
+# but a related system from Pedobacter is also required for lactose utilization.
+# EC:1.1.99.13 includes 3-ketoglycoside dehydrogenases more broadly.
 # Other types of periplasmic 3-ketoglycoside dehydrogenases have been
 # reported (ThuAB from Agrobacterium and Sinorhizobium and BT2158 from
 # Bacteroides thetaiotaomicron) but these do not seem to be involved
 # in lactose utilization.
-
+# To avoid confusion with galactose catabolism genes, these are named
+# lacA' etc. in GapMind.
 lacA'	periplasmic lactose 3-dehydrogenase, LacA subunit	curated:reanno::Caulo:CCNA_01706	curated:reanno::Pedo557:CA265_RS15345	ignore_other: 1.1.99.13
 lacC'	periplasmic lactose 3-dehydrogenase, LacC subunit	curated:reanno::Caulo:CCNA_01707	curated:reanno::Pedo557:CA265_RS15340	ignore_other: 1.1.99.13
 lacB'	periplasmic lactose 3-dehydrogenase, cytochrome c component (LacB)	curated:reanno::Caulo:CCNA_01704	curated:reanno::Pedo557:CA265_RS15360	ignore_other: 1.1.99.13
+
+# DUF1080 (PF06439) was recently identified
+# as a family of 3-ketoglycoside hydrolases, and fitness data identified
+# CCNA_01705 as the 3'-ketolactose hydrolase (PMID:33657378).
 klh	periplasmic 3'-ketolactose hydrolase	curated:reanno::Caulo:CCNA_01705
 
 import glucose.steps:MFS_glucose SSS_glucose glcU_Firmicutes PAST-A SemiSWEET SWEET1 mglA mglB mglC gtsA gtsB gtsC gtsD glcS glcT glcU glcV aglE aglF aglG aglK ptsG-crr bglF ptsG crr manX manY manZ gdh gnl gadh1 gadh2 gadh3 kguT kguK kguD edd eda glk
@@ -118,23 +107,25 @@ lacZ	lactase (homomeric)	EC:3.2.1.108	EC:3.2.1.23	ignore:BRENDA::A0SWS3	ignore:C
 bgal: lacZ
 bgal: lacL lacM
 
-import galactose.steps:galK
-import galactose.steps:galT
-import galactose.steps:galE
-import galactose.steps:pgmA
-import galactose.steps:galdh
-import galactose.steps:lactonase
-import galactose.steps:dgoD
-import galactose.steps:dgoK
-import galactose.steps:dgoA
+import galactose.steps:galK galT galE pgmA galdh lactonase dgoD dgoK dgoA
 galM	galactose 1-epimerase	EC:5.1.3.3
+
+# Galactose is utilized via galactose 1-epimerase galM and kinase galK (Leloir pathway, metacyc:PWY-6317)
 galactose_util: galM galK galT galE pgmA
+# or via oxidation to D-galactonate (metacyc:GALDEG-PWY)
 galactose_util: galdh lactonase dgoD dgoK dgoA
 
+# Uptake of lactose, cleavage to galactose and glucose (bgal), and usage of each.
 all: transport bgal galactose_util glk
 
-# The actual rule for PTS based utilization
+# Alternatively, PTS to lactose 6'-phosphate, phosphogalactosidase (pbgal) to galactose 6-phosphate and glucose;
+# galactose 6-phosphate is catabolized via tagatose-1,6-bisphosphate, and glucose
+# is phosphorylated by glk.
 all: PTS pbgal lacA lacB lacC tag16P_aldolase tpi
 
-# The actual rule for the 3'-ketolactose pathway
+# Or, oxidation of lactose to 3'-ketolactose by a periplasmic 3-component
+# dehydrogenase, hydrolysis by a periplasmic enzyme (LacACB) to
+# 3-keto-beta-D-galactose and D-glucopyranose, and hypothetical
+# reduction of the 3-ketogalactose. Liberation of glucose is probably
+# sufficient for growth.
 all: lacA' lacC' lacB' klh glucose-utilization

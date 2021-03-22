@@ -1,5 +1,6 @@
-# FEBA: 2-Deoxy-D-Ribose
-# MetaCyc: 2-DEOXYRIBOSE
+# Deoxyribose utilization in GapMind is based on MetaCyc pathways
+# 2-deoxy-D-ribose degradation I via deoxyribose 5-phosphate aldolase (metacyc:PWY-8060) 
+# and pathway II via oxidation to 2-deoxy-3-dehydro-D-ribonate (metacyc:PWY-8058).
 
 # Salmonella deoP is near deoK and can enhance growth of E. coli on deoxyribose, even
 # though it is not essential for deoxyribose utilization in Salmonella, see PMC94358
@@ -58,7 +59,7 @@ deoxyribonate-dehyd	2-deoxy-D-ribonate 3-dehydrogenase	term:2-deoxy-D-ribonate 3
 
 ketodeoxyribonate-cleavage	2-deoxy-3-keto-D-ribonate cleavage enzyme	term:2-deoxy-3-keto-D-ribonate cleavage enzyme	term:2-deoxy-3-keto-D-ribonoate cleavage enzyme
 
-# Produces 2-phospho-D-glycerate, an intermediate in glycolysis
+# Produces 2-phospho-D-glycerate, an intermediate in glycolysis.
 # psRCH2:GFF1145 is believed to do this reaction but was not annotated with this this EC number
 garK	glycerate 2-kinase	EC:2.7.1.165	curated:reanno::psRCH2:GFF1145
 
@@ -68,13 +69,15 @@ aa-activation: atoA atoD
 aa-activation: aacS
 
 # Produces 2 acetyl-CoA from acetoacetyl-CoA and CoA.
-# 2.3.1.16 describes a broader range of beta-ketothiolases.
-# This enzyme is usually homomeric, but I3R3D0 and I3RA71 are non-catalytic subunits
-# of an enzyme from Haloferax mediterranei that also contains a "normal" catalytic subunit (see I3R3D1, I3RA72)
-# P07256 was an error in BRENDA.
+# EC:2.3.1.16 describes a broader range of beta-ketothiolases.
+# This enzyme is usually homomeric, but uniprot:I3R3D0 and uniprot:I3RA71 are non-catalytic subunits
+# of an enzyme from Haloferax mediterranei that also contains a
+# "normal" catalytic subunit (uniprot:I3R3D1, uniprot:I3RA72).
+# Inclusion of uniprot:P07256 was an error in BRENDA.
 # And CharProtDB includes an odd annotation of the form "similar to acetyl-CoA acetyltransferase"
 atoB	acetyl-CoA C-acetyltransferase	EC:2.3.1.9	ignore_other:2.3.1.16	ignore:BRENDA::P07256	ignore:BRENDA::I3R3D0	ignore:BRENDA::I3RA71	ignore_other:similar to acetyl-CoA acetyltransferase
 
+# The deoxyribose 5-phosphate pathway begins with the kinase deoK.
 all: transport deoK deoC acetald-dehyd
-
+# The oxidative pathway begins with oxidation in the periplasm.
 all: deoxyribose-dehyd deoxyribonate-transport deoxyribonate-dehyd ketodeoxyribonate-cleavage garK aa-activation atoB

@@ -1,20 +1,19 @@
-# Transporters were identified using:
-# query: transporter:arginine:L-arginine:arg
-
-# Many ABC transporters are known for arginine, including
-# E. coli artJQMP (which is specific for arginine) and E. coli hisQPM-argT (also transports lysine, ornithine)
-# These systems are generally homologous, but the two permease components also similar to each other.
-# To simplify the analysis, these were clustered at 40% identity.
-#
-# A 5-component transporter is also known, BraCDEFG from Rhizobium leguminosarum
-
-# In a related system in Synechocystis, there is just one permease component fused to the
-# substrate-binding component. The fusion protein is known as BgtB or BgtAB;
-# BgtA is the ATPase component.
-#
-# Distantly related proteins from Chlamydia (ARTJ_CHLTR, ARTJ_CHLPN) are annotated as artJ but
-# are not actually characterized, and the other components of this
-# system seem to be absent. These were not included.
+# Arginine utilization in GapMind is based on MetaCyc pathways
+# L-arginine degradation I (arginase pathway, metacyc:ARGASEDEG-PWY);
+# II (arginine succinyltransferase pathway, metacyc:AST-PWY),
+# III (arginine decarboxylase/agmatinase, metacyc:PWY0-823),
+# IV (arginine decarboxylase/agmatine deiminase pathway, metacyc:ARGDEG-III-PWY),
+# V (arginine deiminase, metacyc:ARGDEGRAD-PWY),
+# VI (arginase 2, metacyc:ARG-PRO-PWY),
+# VII (arginase 3, metacyc:ARG-GLU-PWY),
+# VIII (arginase oxidase, metacyc:ARGDEG-IV-PWY),
+# IX (arginine:pyruvate transaminase, metacyc:PWY-5742),
+# X (arginine monooxygenase, metacyc:ARGDEG-V-PWY),
+# XIII (reduction to proline, metacyc:PWY-8187),
+# and XIV (oxidation via D-ornithine, metacyc:PWY-6344).
+# Common intermediates are L-ornithine or L-proline.
+# GapMind does not include pathways XI (metacyc:PWY-5024), which is poorly understood,
+# or XII (metacyc:PWY-7523), which is not reported in prokaryotes.
 
 # Ignore hisJ (CH_018185) from Salmonella and the P. fluorescens lysine transporter (AO356_09900), which
 # has a subtle defect on arginine and may well transport it, and close homologs in other Pseudomonas
@@ -37,14 +36,27 @@ artP	L-arginine ABC transporter, ATPase component ArtP/HisP/AotP/BgtA	curated:Ch
 # AO356_09905 has a subtle defect)
 artQ	L-arginine ABC transporter, permease component 2 (ArtQ/HisQ/AotQ)	curated:TCDB::Q9HU30	curated:CharProtDB::CH_107317	curated:SwissProt::P0A2I9	curated:SwissProt::P0AE34	curated:SwissProt::P52094	curated:reanno::BFirm:BPHYT_RS07675	curated:reanno::WCS417:GFF4244	curated:reanno::pseudo1_N1B4:Pf1N1B4_3432	curated:reanno::pseudo3_N2E3:AO353_03050	curated:reanno::pseudo5_N2C3_1:AO356_18705	curated:reanno::pseudo6_N2E2:Pf6N2E2_5661	ignore:reanno::pseudo5_N2C3_1:AO356_09905	ignore:reanno::pseudo6_N2E2:Pf6N2E2_2959	ignore:reanno::pseudo5_N2C3_1:AO356_05500
 
+# Transporters were identified using:
+# query: transporter:arginine:L-arginine:arg.
+# Many ABC transporters are known for arginine, including
+# E. coli artJQMP (which is specific for arginine) and E. coli hisQPM-argT (also transports lysine, ornithine)
+# These systems are generally homologous, but the two permease components also similar to each other.
+# To simplify the analysis, these were clustered at 40% identity instead of the usual 30% identity.
+# Distantly related proteins from Chlamydia (uniprot:ARTJ_CHLTR, uniprot:ARTJ_CHLPN) are annotated as artJ but
+# are not actually characterized, and the other components of this
+# system seem to be absent. So Chlamydial "artJ" were not included.
 transport: artJ artM artP artQ 
 
 bgtB	L-arginine ABC transporter, fused substrate-binding and permease components (BgtB/BgtAB)	curated:TCDB::P73544	curated:TCDB::Q8YSA2
 
+# In a related system in Synechocystis, there is just one permease component fused to the
+# substrate-binding component. The fusion protein is known as BgtB or BgtAB.
+# (BgtA is the ATPase component and is included in the definition of ArtP.)
 transport: bgtB artP
 
 # braCDEFG from Rhizobium leguminosarum is described in glutamate.steps
 import glutamate.steps:braC braD braE braF braG
+# A five-component ABC transporter is also known, BraCDEFG from Rhizobium leguminosarum.
 transport: braC braD braE braF braG
 
 # Homomeric transporters
@@ -71,42 +83,38 @@ transport: Can1
 # Outer membrane porins (oprD2 and "artM", TC 1.B.6.2.7) were ignored
 # A family of metazoan amino acid transporters (TC 2.A.3.8) was ignored
 
+# gamma-aminobutyrate transaminase and succinate semialdehyde dehydrogenase
+import putrescine.steps:gabT gabD puuA puuB puuC puuD
+
+
 # GABA (gamma-aminobutyrate) is a common intermediate
-import putrescine.steps:gabT # gamma-aminobutyrate transaminase
-import putrescine.steps:gabD # succinate semialdehyde dehydrogenase
 GABA-degradation: gabT gabD
 
 # putrescine is a common intermediate
 import putrescine.steps:patA # putrescine aminotransferase
 import putrescine.steps:puo # putrescine oxidase
 import putrescine.steps:patD # gamma-aminobutyraldehyde dehydrogenase
-# MetaCyc does not list putrescine catabolism with glutamylated intermediates
-# (puuABCD) as a pathway for arginine utilization, but it is logical that
-# arginine could be converted to putrescine and catabolized this way.
-# Fitness data suggests that puuA is involved in arginine utilization
-# in Pseudomonas fluorescens FW300-N2E3 and in Pseudomonas simiae WCS417
 import putrescine.steps:puuA
 import putrescine.steps:puuB
 import putrescine.steps:puuC
 import putrescine.steps:puuD
 
+# MetaCyc does not list putrescine catabolism with glutamylated intermediates
+# (puuABCD) as a pathway for arginine (or citrulline) utilization, but it is logical that
+# arginine and citrulline can be converted to putrescine and catabolized this way.
+# Fitness data suggests that puuA is involved in arginine utilization
+# in Pseudomonas fluorescens FW300-N2E3 and in Pseudomonas simiae WCS417.
 putrescine-degradation: patA patD GABA-degradation
 putrescine-degradation: puo patD GABA-degradation
 putrescine-degradation: puuA puuB puuC puuD GABA-degradation
 
+import proline.steps:put1 putA # proline dehydrogenase and L-glutamate 5-semialdeyde dehydrogenase
 # Proline is an intermediate, and is consumed by conversion to glutamate
 # dehydrogenase and L-glutamate 5-semialdeyde dehydrogenase.
 # (Glutamate can be converted to the central metabolite
 # 2-oxoglutarate by various transaminases or by glutamate
 # dehydrogenase, so its catabolism is not described.)
-import proline.steps:put1 # proline dehydrogenase
-import proline.steps:putA # L-glutamate 5-semialdeyde dehydrogenase
 proline-degradation: put1 putA
-
-# Ornithine is a common intermediate. It can be succinylated and then
-# catabolized by the later steps of the AST pathway, via
-# aminotransferase, dehydrogenase, and desuccinylase reactions (see
-# PMC179677 and PMID:7523119)
 
 # Pseudomonas aeruginsa has a heteromeric succinyltransferase (AruFG) that
 # is active on both arginine or ornithine (see 
@@ -126,19 +134,23 @@ astC	succinylornithine transaminase	EC:2.6.1.81	curated:reanno::Marino:GFF3099
 
 astD	succinylglutamate semialdehyde dehydrogenase	EC:1.2.1.71
 astE	succinylglutamate desuccinylase	EC:3.5.1.96
-ornithine-degradation: aruF aruG astC astD astE
 
-# Alternatively, as part of L-arginine degradation I, an
-# aminotransferase converts ornithine to glutamate 5-semialdehyde,
-# which spontaneously converts to 1-pyrroline-5-carboxylate.  A
-# dehydrogenase converts this to glutamate.
+# Ornithine is a common intermediate. It can be succinylated by aruFG and then
+# catabolized by the later steps of the arginine succinyltransferase pathway, via
+# aminotransferase, dehydrogenase, and desuccinylase reactions (see
+# PMC179677 and PMID:7523119).
+ornithine-degradation: aruF aruG astC astD astE
 
 rocD	ornithine aminotransferase	EC:2.6.1.13
 rocA	1-pyrroline-5-carboxylate dehydrogenase	EC:1.2.1.88
+# Or as part of L-arginine degradation I, the
+# aminotransferase rocD converts ornithine to glutamate 5-semialdehyde,
+# which spontaneously converts to 1-pyrroline-5-carboxylate.  A
+# dehydrogenase converts this to glutamate.
 ornithine-degradation: rocD rocA
 
-# Alternatively, 1-pyrroline-5-carboxylate can be reduced to proline
 PRO3	pyrroline-5-carboxylate reductase	EC:1.5.1.2
+# Or 1-pyrroline-5-carboxylate can be reduced to proline by PRO3, as in L-arginine degradation VI.
 ornithine-degradation: rocD PRO3 proline-degradation
 
 # Alternatively, ornithine can be converted directly to proline
@@ -146,18 +158,9 @@ ornithine-degradation: rocD PRO3 proline-degradation
 ocd	ornithine cyclodeaminase	EC:4.3.1.12
 ornithine-degradation: ocd proline-degradation
 
-# Alternatively, ornithine can be decarboxylated to putrescine
-# (see MetaCyc Pathway: superpathway of ornithine degradation)
 odc	L-ornithine decarboxylase	EC:4.1.1.17
+# Or ornithine can be decarboxylated to putrescine by odc (metacyc:ORNDEG-PWY).
 ornithine-degradation: odc putrescine-degradation
-
-# Alternatively, ornithine can be consumed by D-ornithine, (as part of
-# MetaCyc Pathway: L-arginine degradation XIV (oxidative Stickland
-# reaction)). A racemase converts L-ornithine to D-ornithine; an
-# aminomutase forms (2R,4S) 2,4-diaminopentanoate; a dehydrogenase
-# forms (2R)-2-amino-4-oxopentanoate, and a thiolase cleaves it to
-# D-alanine and acetyl-CoA. D-alanine could be oxidized to pyruvate or
-# perhaps secreted; this is not described here.
 
 orr	ornithine racemase	EC:5.1.1.12
 # D-ornithine aminomutase (5.4.3.5) is heteromeric
@@ -167,96 +170,74 @@ ord	2,4-diaminopentanoate dehydrogenase	EC:1.4.1.12
 # 2-amino-4-oxopentanoate thiolase (2.3.1.263) is heteromeric
 ortA	2-amino-4-oxopentanoate thiolase, alpha subunit	curated:SwissProt::C1FW06	curated:SwissProt::E3PY98	ignore_other:2.3.1.263
 ortB	2-amino-4-oxopentanoate thiolase, beta subunit	curated:SwissProt::C1FW07	curated:SwissProt::E3PY97	ignore_other:2.3.1.263
+# Or ornithine can be catabolized via D-ornithine, as in L-arginine
+# degradation XIV. A racemase converts L-ornithine to D-ornithine; an
+# aminomutase forms (2R,4S) 2,4-diaminopentanoate; a dehydrogenase
+# forms (2R)-2-amino-4-oxopentanoate, and a thiolase cleaves it to
+# D-alanine and acetyl-CoA. D-alanine could be oxidized to pyruvate or
+# perhaps secreted; this is not described here.
 ornithine-degradation: orr oraS oraE ord ortA ortB
 
-# MetaCyc Pathway: L-arginine degradation I (arginase pathway)
-# involves arginase, which cleaves arginine to ornithine and urea.
-# The urea might not be utilized, so urease is not described here.
 rocF	arginase	EC:3.5.3.1
+# Pathways I, VI, or VII begin with rocF (arginase), which forms ornithine and urea. (The urea might not be utilized, so urease is not described here.) They differ in how the ornithine is catabolized.
 all: transport rocF ornithine-degradation
 
-# MetaCyc Pathway: L-arginine degradation II (AST pathway) involves
-# activation by an N-succinyltransferase, hydrolysis to
-# N2-succinylornithine and urea, transamination to to
-# N2-succinylglutamate 5-semialdehyde, and cleavage to succinate and
-# glutamate.  The succinate would then be activated to
-# succinyl-CoA to restart the cycle, or the glutamate
-# might be oxidized to succinyl-CoA; these
-# steps are not included here.
 
 astB	N-succinylarginine dihydrolase	EC:3.5.3.23
 
+# Pathway II begins with arginine succinyltransferase and ends with succinate and glutamate.
+# The succinate would then be activated to
+# succinyl-CoA to restart the cycle, or the glutamate
+# might be oxidized to succinyl-CoA; these
+# steps are not included here.
 all: transport arginine-succinyltransferase astB astC astD astE
 
-# MetaCyc Pathway: L-arginine degradation III (arginine decarboxylase/agmatinase pathway)
-# involves decarboxylation to agmatine, followed by hydrolysis to putrescine and urea.
 # Q5R145 is misannotated in BRENDA.
 adiA	arginine decarboxylase (AdiA/SpeA)	EC:4.1.1.19	ignore:BRENDA::Q5R145
 speB	agmatinase	EC:3.5.3.11
+# Pathway III begins with decarboxylation to agmatine by adiA, followed by hydrolysis to putrescine and urea.
 all: transport adiA speB putrescine-degradation
 
-# MetaCyc Pathway: L-arginine degradation IV (arginine decarboxylase/agmatine deiminase pathway):
-# agmatine forms via decarboxylase (adiA/speA), and a hydrolase forms putrescine.
 # Q89413 is misannotated in BRENDA
 aguA	agmatine deiminase	EC:3.5.3.12	ignore:BRENDA::Q89413
 aguB	N-carbamoylputrescine hydrolase	EC:3.5.1.53	ignore:BRENDA::Q89413
+# Pathway IV begins with adiA and agmatine deiminase (aguA), which yields
+# N-carbamoylputrescine; this is hydrolyzed to putrescine and urea.
 all: transport adiA aguA aguB putrescine-degradation
-
-# MetaCyc Pathway: L-arginine degradation V (arginine deiminase pathway):
-# arginine deiminaes converts arginine to citrulline, and a carbamoyltransferase
-# forms carbamoyl-phosphate and ornithine.
-# The carbamoyl-phosphate is consumed by carbamate kinase (in reverse,
-# forming ammonia and CO2 and ATP).
 
 # Some diverged members of this family had been reannotated as arginine deiminases,
 # putatively involved in citrulline catabolism by the reverse reaction.
 # However, the reverse reaction is thermodynamically quite unfavorable; more likely,
 # these proteins have a different function
 arcA	arginine deiminase	EC:3.5.3.6	ignore:reanno::Phaeo:GFF1616	ignore:reanno::WCS417:GFF3434	ignore:reanno::pseudo3_N2E3:AO353_25635
-
 arcB	ornithine carbamoyltransferase	EC:2.1.3.3 # to carbamoyl-P + ornithine
 # arcC from P. aeruginosa (P13982) was studied both biochemically and genetically
 # and linked to sequence by PMID:2537202
 arcC	carbamate kinase	EC:2.7.2.2	uniprot:P13982
+
+# Pathway V begins with arginine deiminase (arcA), forming citrulline, and 
+# and a carbamoyltransferase
+# forms carbamoyl-phosphate and ornithine.
+# The carbamoyl-phosphate is consumed by carbamate kinase (in reverse,
+# forming ammonia and CO2 and ATP).
 all: transport arcA arcB arcC ornithine-degradation
 
-# MetaCyc Pathway: L-arginine degradation VI (arginase 2 pathway)
-# is the same as the arginase pathway up to 1-pyrroline-5-carboxylate,
-# but the pyrroline-5-carboxylate is reduced to proline.
-# This is incorporated above (ornithine utilization via rocD and PRO3)
-
-# MetaCyc Pathway: L-arginine degradation VII (arginase 3 pathway)
-# involves arginase to ornithine + urea, ornithine cyclodeaminase to
-# proline, and proline utilization.  It is incorporated via
-# the rule for rocF and ornithine utilization above.
-
-# MetaCyc Pathway: L-arginine degradation VIII (arginine oxidase
-# pathway) involves an oxidase, forming 5-guanidino-2-oxopentanoate (2-ketoarginine),
-# 2-ketoarginine decarboxylase forming 4-guanidinobutyraldehyde, a
-# dehydrogenase forming guanidinobutyrate, and hydrolysis to
-# 4-aminobutanoate (gamma-aminobutyrate) and urea.  Utilization of
-# gamma-aminobutyrate is described above.
 aroD	L-arginine oxidase	EC:1.4.3.25
 aruI	2-ketoarginine decarboxylase	EC:4.1.1.75
 kauB	4-guanidinobutyraldehyde dehydrogenase	EC:1.2.1.54
 gbuA	guanidinobutyrase	EC:3.5.3.7
+# Pathway VIII begins with arginine oxidase aroD, which forms 5-guanidino-2-oxopentanoate (2-ketoarginine);
+# this is converted to gamma-aminobutyrate (GABA).
 all: transport aroD aruI kauB gbuA GABA-degradation
 
-# MetaCyc Pathway: L-arginine degradation IX (arginine:pyruvate transaminase pathway)
-# is similar to pathway VIII but with a transaminase forming the 5-guanidino-2-oxopentanoate
 aruH	L-arginine:pyruvate transaminase	EC:2.6.1.84
+# Pathway IX is similar to pathway VIII but the transaminase aruH forms 5-guanidino-2-oxopentanoate.
 all: transport aruH aruI kauB gbuA GABA-degradation
-
-# MetaCyc Pathway: L-arginine degradation X (arginine monooxygenase pathway)
-# involves 2-monooxygenase (decarboxyling), forming 4-guanidinobutyramide,
-# and an amidase, forming 4-guanidinobutyrate, which is consumed as
-# in pathway VIII or IX.
 
 # arginine monooxygenase (EC 1.13.12.1) was linked to sequence by PMID:24218293,
 # but does not appear in any of the curated databases.
 # They showed that STRVN_2699 and STRVN_6565 are arginine monooxygenases;
 # these correspond to SMALA_2699 (A0A291SPZ4) and SMALA_6565 (A0A291T0Y3)
-# 
 monooxygenase	arginine 2-monooxygenase	uniprot:A0A291SPZ4	uniprot:A0A291T0Y3
 
 # This enzyme is not linked to sequence in MetaCyc (which gives it the
@@ -267,13 +248,9 @@ monooxygenase	arginine 2-monooxygenase	uniprot:A0A291SPZ4	uniprot:A0A291T0Y3
 # annotated in BRENDA as an amidase.)
 gbamidase	guanidinobutyramidase	uniprot:A0A291T0X0	uniprot:A0A291T3M3	curated:BRENDA::A0A088BHP3
 
+# Pathway X involves
+# a 2-monooxygenase (decarboxylating), forming 4-guanidinobutyramide,
+# and an amidase, forming 4-guanidinobutyrate, which is consumed as
+# in pathway VIII or IX.
 all: transport monooxygenase gbamidase kauB gbuA GABA-degradation
 
-# MetaCyc Pathway: L-arginine degradation XI -- skip because much of the
-# pathway is not known. The key enzyme is 2-ketoarginine ureohydrolase EC:3.5.3.7,
-# forming 5-amino-2-oxopentanoate, but the remaining steps are unknown.
-
-# MetaCyc Pathway: L-arginine degradation XII
-# skip -- fungal, and a lot of overlap with pathway IX above
-
-# skip L-arginine degradation XIII (reductive Stickland reaction) -- reduction to proline

@@ -1,11 +1,9 @@
-# Transporters were identified using curated clusters and
-# query: transporter:L-alanine:alanine
-
-# No enzymatic steps are listed because L-alanine is a single transamination reaction
+# GapMind describes L-alanine uptake only. No enzymatic steps are represented
+# because L-alanine is a single transamination reaction
 # away from pyruvate, which is a central metabolic intermediate.
-#   (It can also be converted to pyruvate by alanine dehydrogenase.
-#    D-alanine dehydrogenase is important for L-alanine utilization in some bacteria
-#    because of alanine racemase activity.)
+# (L-alanine can also be converted to pyruvate by alanine dehydrogenase
+# or by by alanine racemase and D-alanine dehydrogenase, metacyc:ALADEG-PWY).
+
 
 # Cluster 1 457-556 amino acids (not heteromeric)
 # A sequence nearly identical to E. coli K-12's cycA (CYCA_ECOL6 / A0A0H2VDI7) is annotated as a D-alanine
@@ -66,6 +64,8 @@ metP	sodium-dependent methionine/alanine transporter, large subunit MetP	curated
 
 metS	sodium-dependent methionine/alanine transporter, small subunit MetS	curated:TCDB::Q8NRL9
 
+# Transporters were identified using curated clusters and
+# query: transporter:L-alanine:alanine
 transport: cycA
 transport: braC braD braE braF braG
 transport: alsT

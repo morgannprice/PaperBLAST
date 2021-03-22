@@ -1,17 +1,20 @@
-# Transporters were identified using
-# query: transporter:mannose:D-mannose:D-mannopyranose:CPD-13559:CPD-12601
+# Mannose utilization in GapMind is based on MetaCyc pathways
+# D-mannose degradation I via a PTS system (metacyc:MANNCAT-PWY),
+# pathway II via mannose kinase (metacyc:PWY3O-1743),
+# or conversion to fructose by mannose isomerase.
 
 # PTS systems
+
 # E. coli has manXYZ, where manX has EII-AB, manY has EII-C, and manZ has EII-D
-#   (manZ is listed twice with slightly different sequence lengths)
-# Similar systems are known in Lactococcus lactis, Listeria monocytogenes, and Streptococcus thermophilus
-# However, the S. thermophilus system seems not to be active due to a IIC domain, so
+#   (manZ is listed twice with slightly different sequence lengths).
+# Similar systems are known in Lactococcus lactis, Listeria monocytogenes, and Streptococcus thermophilus.
+# However, the S. thermophilus system seems not to be active due to a defective IIC domain (PMID:12957931), so
 #   these proteins are marked ignore.
 # L. monocytogenes also has a PTS-like regulatory system, mpoABCD, which is not included
 #   (It is reported to act as a glucose transporter, but slowly; not clear if it transports mannose.)
 # There's also a paper about manLMN from Streptococcus salivarius, but I don't think it is actually
 # characterized, so ignore.
-# Closely related to some systems with unclear specificity, ignore those
+# Closely related to some systems with unclear specificity, ignore those.
 manX	mannose PTS system, EII-AB component ManX/ManL	curated:CharProtDB::CH_088329	curated:TCDB::D2BKY7	curated:TCDB::E1UCI0	ignore:TCDB::Q5M5W6	ignore:BRENDA::Q9S4L5	ignore:TCDB::Q04GK1	ignore:TCDB::Q2QKM4
 manY	mannose PTS system, EII-C component ManY/ManM	curated:CharProtDB::CH_088330	curated:TCDB::D2BKY8	curated:TCDB::E1UCI1	ignore:TCDB::Q5M5W7	ignore:TCDB::Q8Y8W0	ignore:TCDB::Q04GK0	ignore:TCDB::Q2QKM3
 manZ	mannot PTS system, EII-D component ManZ/ManN	curated:SwissProt::P69805	curated:TCDB::D2BKY9	curated:TCDB::E1UCI2	curated:TCDB::P69805	ignore:TCDB::Q5M5W8	ignore:TCDB::Q04GJ9	ignore:TCDB::Q2QKM2	ignore:BRENDA::Q5IRC0	ignore:TCDB::Q8Y8W1
@@ -32,6 +35,9 @@ glcS	mannose ABC transporter, substrate-binding component GlcS	curated:SwissProt
 glcT	mannose ABC transporter, permease component 1 (GlcT)	curated:TCDB::Q97UZ0
 glcU	mannose ABC transporter, permease component 2 (GlcU)	curated:TCDB::Q97UY9
 glcV	mannose ABC transporter, ATPase component GlcV	curated:BRENDA::Q97UY8
+
+# Transporters were identified using
+# query: transporter:mannose:D-mannose:D-mannopyranose:CPD-13559:CPD-12601
 transport: glcS glcT glcU glcV
 
 # The Pseudomonas fluorescens or Pseudomonas simiae system (4 components) is very similar
@@ -40,7 +46,7 @@ transport: glcS glcT glcU glcV
 # It is also quite similar (>=75% a.a. identity) to a system for sorbitol utilization in other P. fluorescens,
 # which is also ignored.
 # The next-closest characterized systems are mostly sorbitol transporters and they should also be
-# excluded (probably)
+# ignored (probably).
 mtlG	mannose ABC transporter, permease component 1 (MtlG)	curated:reanno::WCS417:GFF2491	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3040	curated:reanno::pseudo3_N2E3:AO353_25890	ignore:TCDB::O30493	ignore:reanno::pseudo6_N2E2:Pf6N2E2_1961	ignore:reanno::pseudo5_N2C3_1:AO356_00015	
 mtlF	mannose ABC transporter, permease component 2 (MtlF)	curated:reanno::WCS417:GFF2492	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3041	curated:reanno::pseudo3_N2E3:AO353_25885	ignore:TCDB::O30492	ignore:reanno::pseudo5_N2C3_1:AO356_00020	ignore:reanno::pseudo6_N2E2:Pf6N2E2_1962
 mtlE	mannose ABC transporter, substrate-binding component MtlE	curated:reanno::WCS417:GFF2493	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3042	curated:reanno::pseudo3_N2E3:AO353_25880	ignore:TCDB::O30491	ignore:reanno::pseudo5_N2C3_1:AO356_00025	ignore:reanno::pseudo6_N2E2:Pf6N2E2_1963
@@ -74,11 +80,9 @@ HSERO_RS03640	mannose ABC transporter, ATPase component	uniprot:D8IZC7
 HSERO_RS03645	mannose ABC transporter, permease component	uniprot:D8IZC8
 transport: HSERO_RS03635 HSERO_RS03640 HSERO_RS03645
 
-# Cluster 8 507-514 amino acids (not heteromeric)
 STP6	mannose:H+ symporter	curated:CharProtDB::CH_091493	curated:TCDB::Q9LT15
 transport: STP6
 
-# Cluster 9 407-413 amino acids (not heteromeric)
 gluP	mannose:Na+ symporter	curated:TCDB::O25788	curated:reanno::SB2B:6936374
 transport: gluP
 
@@ -94,24 +98,26 @@ transport: MST1
 manMFS	mannose transporter, MFS superfamily	curated:reanno::pseudo5_N2C3_1:AO356_28540
 transport: manMFS
 
-# After uptake by a PTS system, the usual pathway is mannose-6-phosphate isomerase, which
-# produces fructose-6-phosphate (a central metabolic intermediate)
 # SMc03111 (P29954) is specifically important for utilizing mannose and mannitol, and
 # which confirms it is mannose 6-phosphate isomerase
 manA	mannose-6-phosphate isomerase	EC:5.3.1.8	uniprot:P29954
-all: PTS manA
 
-# For direct transport, one pathway involves D-mannose isomerase,
-# yielding fructose, which can be metabolized by fructokinase (scrK)
+# In pathway I, after uptake and phosphorlation by a PTS system, mannose-6-phosphate isomerase (manA)
+# produces fructose-6-phosphate, which is a central metabolic intermediate.
+all: PTS manA
 
 # Ignore some vaguely annotated mannose or mannose-6-P isomerases
 man_isomerase	D-mannose isomerase	EC:5.3.1.7	ignore:reanno::pseudo3_N2E3:AO353_03400	ignore:reanno::pseudo1_N1B4:Pf1N1B4_597	ignore:reanno::pseudo5_N2C3_1:AO356_05200
 import fructose.steps:scrK # fructokinase
+
+# Or, D-mannose isomerase yields
+# fructose, which can be metabolized by fructokinase (scrK).
 all: transport man_isomerase scrK
 
-# Or mannokinase folowed by manA
-# SMc03109 was annotated as mannokinase but not given this EC number
+# SMc03109 was annotated as mannokinase but not given this EC number.
 # rokA (MONOMER-19002) and hexA (Q5GAN8) are hexose kinases, including mannose kinases (PMID:PMC545704)
 mannokinase	D-mannose kinase	EC:2.7.1.7	curated:reanno::Smeli:SMc03109	curated:metacyc::MONOMER-19002	uniprot:Q5GAN8
-all: transport manA mannokinase
+
+# In pathway II, after uptake, mannose kinase is followed by isomerization to fructose 6-phosphate.
+all: transport mannokinase manA
 

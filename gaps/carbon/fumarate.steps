@@ -1,9 +1,10 @@
-# Transporters were identified using
-# query: transporter:fumarate
-# fumarate:succinate antiporters or fumarate:proton antiporters (probably for efflux) were excluded.
-# Subunits of succinate dehdydrogenase/fumarate reductase were excluded.
+# Since fumarate is a TCA cycle intermediate, GapMind represent its uptake only.
 
 dctA	fumarate:H+ symporter DctA	curated:CharProtDB::CH_014038	curated:TCDB::P96603	curated:TCDB::Q01857	curated:TCDB::Q1J1H5	curated:TCDB::Q848I3	curated:reanno::pseudo5_N2C3_1:AO356_18980	curated:SwissProt::Q9I4F5
+# Transporters were identified using
+# query: transporter:fumarate.
+# Fumarate:succinate antiporters or fumarate:proton antiporters (probably for efflux) were not included.
+# Subunits of succinate dehdydrogenase/fumarate reductase were also excluded.
 transport: dctA
 
 sdcL	fumarate:Na+ symporter SdcL	curated:TCDB::A4QAL6	curated:SwissProt::Q21339	curated:TCDB::Q2FFH9	curated:TCDB::Q65NC0	curated:TCDB::Q9KNE0	curated:SwissProt::Q99SX1	curated:SwissProt::Q93655
@@ -36,5 +37,4 @@ transport: SLC26dg
 import succinate.steps:Dshi_1194 Dshi_1195 # TRAP dicarboxylate transporter
 transport: Dshi_1194 Dshi_1195
 
-# Since fumarate is a TCA cycle intermediate, do not represent catabolism.
 all: transport

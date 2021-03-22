@@ -1,32 +1,50 @@
-# Transporters were found using
-# query: transporter:fructose:D-fructose:BETA-D-FRUCTOSE
+# Many bacteria take up fructose by a phosphotransferase (PTS) system
+# that forms fructose 1-phosphate; this can be consumed via 1-phosphofructokinase
+# and glycolysis (metacyc:PWY0-1314).
+# There also also PTS systems that form fructose 6-phosphate, which is
+# a central metabolic intermediate.
+# Fructose can also be taken up directly and then phosphorylated to
+# fructose 6-phosphate, a central metabolic intermediate.
+# Another path is known in Aeromonas hydrophila -- phosphofructomutase
+# converts fructose 1-phosphate (formed by a PTS system) to fructose
+# 6-phosphate (PMID:9579084). This path is not included in GapMind because
+# phosphofructomutase has not been linked to sequence.
+# Also, in eukaryotes, fructose-1,6-bisphosphate aldolase is reported
+# to cleave fructose 1-P to glycerone phosphate and glyceraldehyde
+# (metacyc:PWY66-373). This would make 1-phosphofructokinase
+# unnececessary. It's not clear that this occurs in prokaryotes, so
+# this is not listed.
 
 # Two classes of phosphotransferase systems:
 # PTS 4.A.2.* produce fructose 1-phosphate, while other PTS produce fructose 6-phosphate
 
-# PTS system (fructose 1-phosphate forming) FruA/FruB or FruA/FruI or FruA/FruD
-# FruA has EII-B'BC components; the other components have E-IIA but their domain content varies
+
 # FruA/FruB:
-#   E. coli: FruA is cluster 1, 375-687 amino acids, with EII-B'BC
-#     FruB is a singleton and includes E-IIA and also an HPr domain
+#   E. coli: FruA has EII-B'BC
+#     FruB includes E-IIA and also an HPr domain
 #     Also a paralogous system frvAB, TC 4.A.2.1.25 (P32154,P32155), but it is not actually characterized
 #   Deinococcus radiodurans has FruA-like II-BC; the adjacent II-A is a pseudogene, but it still functions,
 #     apparently by an as-yet unknown cytoplasmic ATP-driven component.
 #     (For now, just annotate it as another fruA)
 # FruA/FruI, where FruI has I-Hpr-IIA components
-#   P. aeruginosa has FruA (cluster 1) and "FruI" (cluster 8)
+#   P. aeruginosa has FruA and "FruI"
 #   Azospirillum brasilense: FruA = uniprot:G8B0J2 (not yet reannotated) and FruI = AZOBR_RS32325
 #  	(curated, but definition line does not mention fructose, so was not originally included)
 #   Xanthomonas campestris: FruA = P23355 and FruI = XCC2370 = P45597
-# Streptococcus mutans has FruA-like "FruC" plus "FruD" with EII-A only (cluster 3)
+
 fruA	fructose-specific PTS system (fructose 1-phosphate forming), EII-B'BC components	curated:BRENDA::Q8DWE7	curated:SwissProt::P20966	curated:SwissProt::P23355	ignore:TCDB::P32154	curated:TCDB::Q9HY57	curated:TCDB::Q9RZP7	uniprot:G8B0J2
 # Homologs of fruB from Salmonella typhimurium and Haemophilus influenzae probably have the
-# same function, but are annotated differently in SwissProt
+# same function, but are annotated differently in SwissProt.
 fruB	fructose-specific PTS system (fructose 1-phosphate forming), Hpr and EII-A components	curated:SwissProt::P69811	ignore:SwissProt::P17127	ignore:SwissProt::P44715
 # Homologs of fruI in other Pseudomonas fluorescens are annotated differently, but
-# are important for fructose utilization, so probably have the same function
+# are important for fructose utilization, so probably have the same function.
 fruI	fructose-specific PTS system (fructose 1-phosphate forming), EI, Hpr, and EII-A components	curated:TCDB::Q9HY55	curated:reanno::azobra:AZOBR_RS32325	curated:reanno::pseudo3_N2E3:AO353_05485	curated:SwissProt::P45597	curated:reanno::pseudo1_N1B4:Pf1N1B4_1146	curated:reanno::pseudo5_N2C3_1:AO356_07335	curated:reanno::WCS417:GFF780	curated:reanno::psRCH2:GFF3291
+# Streptococcus mutans has FruA-like "FruC" plus "FruD" with EII-A only.
 fruD	fructose-specific PTS system (fructose 1-phosphate forming), EII-A component	curated:BRENDA::Q8DWE6
+
+# Fructose 1-phosphate forming PTS systems contain FruA with either FruB, FruI, or FruD.
+# FruA has EII-B'BC components; the other genes all have E-IIA but their domain content varies.
+# FruB has E-IIA and Hpr components; FruI has EI-Hpr-IIA components; and FruD has E-IIA only.
 PTS_1_phosphate: fruA fruB
 PTS_1_phosphate: fruA fruI
 PTS_1_phosphate: fruA fruD
@@ -76,6 +94,8 @@ araV	fructose ABC transporter, ATPase component AraV	curated:TCDB::Q97UF2
 araU	fructose ABC transporter, permease component 1 (AraU)	curated:TCDB::Q97UF3
 araT	fructose ABC transporter, permease component 2 (AraT)	curated:TCDB::Q97UF4
 araS	fructose ABC transporter, substrate-binding component AraS	curated:TCDB::Q97UF5
+# Transporters were found using
+# query: transporter:fructose:D-fructose:BETA-D-FRUCTOSE.
 transport: araV araU araT araS
 
 # FruEFGK from Bifidobacterium longum
@@ -136,20 +156,15 @@ transport: fruP
 BT1758	fructose transporter	uniprot:Q8A6W8
 transport: BT1758
 
-# For PTS forming fructose 6-phosphate, no further steps are needed to reach
-# central metabolism
+# For a PTS forming fructose 6-phosphate, no further steps are needed to reach
+# central metabolism.
 all: PTS_6_phosphate
-
-# For direct transport, the usual pathway is fructokinase, forming fructose 6-phosphate
 
 # ignore fragmentary sequence of Q09123
 scrK	fructokinase	EC:2.7.1.4	ignore:SwissProt::Q09123
+# For direct transport, the usual pathway is fructokinase (scrK), forming fructose 6-phosphate.
 all: transport scrK
 
-# For PTS forming fructose 1-phosphate, the usual path is phosphorylation and
-# cleavage by fructose 1,6-bisphosphate aldolase; triose-phosphate isomerase
-# converts the glycerone phosphate to D-glyceraldehyde 3-phosphate, which is
-# a central metabolic intermediate.
 
 1pfk	1-phosphofructokinase	EC:2.7.1.56
 # Ignore several fragmentary sequences, and CH_091808 seems to be misannotated with another EC number
@@ -158,17 +173,9 @@ fba	fructose 1,6-bisphosphate aldolase	EC:4.1.2.13	ignore:SwissProt::P84722	igno
 # Ignore a fragmentary (allergen) sequence
 tpi	triose-phosphate isomerase	EC:5.3.1.1	ignore:SwissProt::P85814
 
+# For PTS forming fructose 1-phosphate, the usual path is phosphorylation (1pfk) and
+# cleavage by fructose 1,6-bisphosphate aldolase (fba); triose-phosphate isomerase (tpi)
+# converts the glycerone phosphate to D-glyceraldehyde 3-phosphate, which is
+# a central metabolic intermediate.
 all: PTS_1_phosphate 1pfk fba tpi
-
-# Another path is known in Aeromonas hydrophila -- phosphofructomutase
-# converts fructose 1-phosphate (formed by a PTS system) to fructose
-# 6-phosphate (PMID:9579084). This path is not included because
-# phosphofructomutase has not been linked to sequence.
-
-# Also, in eukaryotes, fructose-1,6-bisphosphate aldolase is reported
-# to cleave fructose 1-P to glycerone phosphate and glyceraldehyde
-# (see MetaCyc sucrose degradation V via alpha-glucosidase;
-# PWY66-373). This would make 1-phosphofructokinase
-# unnececessary. It's not clear that this occurs in prokaryotes, so
-# this is not listed.
 

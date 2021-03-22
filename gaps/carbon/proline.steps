@@ -1,15 +1,22 @@
-# query: transporter:proline:L-proline
+# Proline degradation in GapMind is based on
+# MetaCyc pathway I (metacyc:PROUT-PWY).
+# Pathway II (metacyc:PWY-8186) is a fermentative
+# pathway that does not result in carbon incorporation
+# (although degradation pathways for the end product, 5-aminopentanoate,
+# are known).
 
 # ABC transporters:
 
-# E.coli/Salmonella have proVWX (only ProV is curated in S. typhimurium)
+# E.coli/Salmonella have proVWX (only ProV is curated in S. typhimurium).
 # Ignore a similar system in Dickeya dadantii (or Erwinia chrysanthemi) reported to act on glycine betaine only
 proV	proline ABC transporter, ATPase component ProV	curated:CharProtDB::CH_001555	curated:SwissProt::P17328	ignore:SwissProt::E0SCY1
 proW	proline ABC transporter, permease component ProW	curated:SwissProt::P14176	ignore:SwissProt::E0SCY2
 proX	proline ABC transporter, substrate-binding component ProX	curated:CharProtDB::CH_024698	ignore:SwissProt::E0SCY3
+
+# query: transporter:proline:L-proline
 transport: proV proW proX
 
-# In Listeria monocytogenes and in Lactococcus lactis, the permease is fused to the substrate-binding component
+# In Listeria monocytogenes and in Lactococcus lactis, the permease is fused to the substrate-binding component.
 opuBA	proline ABC transporter, ATPase component OpuBA/BusAA	curated:TCDB::Q93A35	curated:TCDB::Q9RQ06
 # Ignore a nearly-identical protein from L. lactis, annotated as a quarternary amine transporter
 opuBB	proline ABC transporter, fused permease and substrate-binding components OpuBB/BusAB	curated:TCDB::Q93A34	curated:TCDB::Q9RQ05	ignore:BRENDA::Q7DAU8
@@ -53,27 +60,21 @@ transport: aapJ aapQ aapM aapP
 
 # Other transporters:
 
-# Cluster 1 456-627 amino acids (not heteromeric)
 proY	proline:H+ symporter	curated:TCDB::Q2VQZ4	curated:CharProtDB::CH_091285	curated:CharProtDB::CH_122066	curated:SwissProt::P46349	curated:SwissProt::Q9URZ3	curated:TCDB::P0AAE2	curated:TCDB::P37460
 transport: proY
 
-# Cluster 2 473-512 amino acids (not heteromeric)
 putP	proline:Na+ symporter	curated:SwissProt::O06493	curated:SwissProt::P07117	curated:SwissProt::P94392	curated:SwissProt::Q2FWY7	curated:TCDB::O24896	curated:TCDB::Q9I5F5
 transport: putP
 
-# Cluster 3 436-473 amino acids (not heteromeric)
 PROT1	proline transporter	curated:CharProtDB::CH_091590	curated:SwissProt::P92962	curated:SwissProt::Q60DN5	curated:SwissProt::Q9SJP9	curated:TCDB::Q9XE48
 transport: PROT1
 
-# Cluster 5 614-637 amino acids (not heteromeric)
 SLC6A7	proline:Na+ symporter	curated:CharProtDB::CH_091144	curated:SwissProt::Q64093	curated:TCDB::P48065	curated:TCDB::Q99884
 transport: SLC6A7
 
-# Cluster 6 500-504 amino acids (not heteromeric)
 proP	proline:H+ symporter ProP	curated:CharProtDB::CH_024324	curated:SwissProt::Q47421	curated:SwissProt::Q79VC4
 transport: proP
 
-# Cluster 7 553-615 amino acids (not heteromeric)
 ectP	proline transporter EctP	curated:SwissProt::Q79VE0	curated:SwissProt::Q87NZ5	curated:SwissProt::Q87PP5
 transport: ectP
 
@@ -97,16 +98,13 @@ transport: N515DRAFT_2924
 # Ignore SLC7A8, not sure if it has much activity as a proline transporter
 # Ignore OdpB, a porin
 
-# MetaCyc Pathway: L-proline degradation includes
-# proline dehydrogenase (put1, 1.5.5.2; formerly 1.5.99.8)
-# to (S)-1-pyrroline-5-carboxylate, which spontaneously hydrates to
+# formerly EC:1.5.99.8
+put1	proline dehydrogenase	EC:1.5.5.2	EC:1.5.99.8
+# formerly known as 1-pyrroline-5-carboxylate dehydrogenase (EC:1.5.1.12)
+putA	L-glutamate 5-semialdeyde dehydrogenase	EC:1.2.1.88	EC:1.5.1.12
+
+# Proline dehydrogenase (put1) to (S)-1-pyrroline-5-carboxylate, which spontaneously hydrates to
 # L-glutamate 5-semialdehyde, and a dehydrogenase (putA) to glutamate.
 # Glutamate can be transaminated to 2-oxoglutarate, which is an intermediate
 # in central metabolism (not represented).
-
-# formerly EC 1.5.99.8
-put1	proline dehydrogenase	EC:1.5.5.2	EC:1.5.99.8
-# formerly known as 1-pyrroline-5-carboxylate dehydrogenase (1.5.1.12)
-putA	L-glutamate 5-semialdeyde dehydrogenase	EC:1.2.1.88	EC:1.5.1.12
-
 all: transport put1 putA

@@ -1,21 +1,30 @@
+# After uptake, acetate can be converted to acetyl-CoA by acs or by
+# ackA and pta, see MetaCyc pathway superpathway of acetate
+# utilization and formation (metacyc:ACETATEUTIL-PWY).
+# acetyl-CoA is a central metabolic intermediate, so further reactions
+# are not represented here. acetyl-CoA may be catabolized by the TCA
+# cycle or, in strict anaerobes, by the Wood-Ljungdahl pathway. If the
+# TCA cycle is used, then intermedates need to be replenished
+# ("anaplaerotic reactions"), such as the glyoxylate cycle or the
+# ethylmalonyl-CoA pathway.
 
-# Transporters were identified using
-# query: transporter:acetate:acetic
 
-# Cluster 1 549-578 amino acids (not heteromeric)
 actP	cation/acetate symporter ActP	curated:SwissProt::P32705	curated:SwissProt::Q8NS49	curated:TCDB::D5APM1	curated:TCDB::D5AU53
+# Transporters were identified using
+# query: transporter:acetate:acetic.
 transport: actP
 
-# Cluster 2 270-298 amino acids (not heteromeric)
-# Ignore the poorly characterized protein GPR1_YARLI / P41943 from Yarrowia lipolytica
+# Ignored efflux systems, acyl-CoA transporter (annotated as actetate non-utilizing),
+# non-specific chloride channel protein, and
+# citrate:acetate antiporter.
+
+# Ignore the poorly characterized protein GPR1_YARLI (uniprot:P41943) from Yarrowia lipolytica
 ady2	acetate permease Ady2	curated:SwissProt::P25613	curated:SwissProt::Q5B2K4	ignore:SwissProt::P41943
 transport: ady2
 
-# Cluster 3 247-249 amino acids (not heteromeric)
 patA	Acetate transporter PatA	curated:SwissProt::A0A075TRL0	curated:SwissProt::A1CFK8
 transport: patA
 
-# Cluster 4 552-552 amino acids (not heteromeric)
 # Added the singleton Deh4p (M1Q159) from Dehalococcoides mccartyi, which has the same domain
 deh	acetate/haloacid transporter	curated:TCDB::F8SVK1	curated:TCDB::Q7X4L6	curated:TCDB::M1Q159
 transport: deh
@@ -33,29 +42,14 @@ transport: ybhL
 
 # A mutant in P. chlororaphis is reported to be defective in acetate utilization, implying uptake.
 # Fitness data for various strains of P. fluorescens did not indicate this, but uptake could be redundant;
-# for the ortholog in P. aeruginosa (Q9I4F5), acetate does not seem to have been considered as a potential substrate
+# for the ortholog in P. aeruginosa (uniprot:Q9I4F5), acetate does not seem to have been considered as a potential substrate
 dctA	organic acid/proton symporter DctA	curated:TCDB::Q848I3	ignore:SwissProt::Q9I4F5	ignore:reanno::pseudo5_N2C3_1:AO356_18980
 transport: dctA
-
-# Ignore efflux systems, acyl-CoA transporter (annotated as actetate non-utilizing),
-# non-specific chloride channel protein
-# citrate:acetate antiporter
-
-# After uptake, acetate can be converted to acetyl-CoA by acs or by
-# ackA and pta, see MetaCyc pathway superpathway of acetate
-# utilization and formation (ACETATEUTIL-PWY)
-
-# acetyl-CoA is a central metabolic intermediate, so further reactions
-# are not represented here. acetyl-CoA may be catabolized by the TCA
-# cycle or, in strict anaerobes, by the Wood-Ljungdahl pathway. If the
-# TCA cycle is used, then intermedates need to be replenished
-# ("anaplaerotic reactions"), such as the glyoxylate cycle or the
-# ethylmalonyl-CoA pathway.
 
 acs	acetyl-CoA synthetase, AMP-forming	EC:6.2.1.1
 all: transport acs
 
 ackA	acetate kinase	EC:2.7.2.1	EC:2.7.2.15
-# BRENDA misannotates yeast's carnitine acetyltransferase with EC 2.3.1.8
+# BRENDA misannotates yeast's carnitine acetyltransferase with EC:2.3.1.8
 pta	phosphate acetyltransferase	EC:2.3.1.8	ignore:BRENDA::P32796
 all: transport ackA pta

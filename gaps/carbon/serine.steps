@@ -1,22 +1,22 @@
-# Transporters were identified using
-#   query: transporter:L-serine:serine
-# and D-serine transporters and serine protease autotransporters were removed.
-# Exporters, porins, and metazoan solute carriers were also ignored.
+# L-serine degradation in GapMind is based on the MetaCyc pathway (metacyc:SERDEG-PWY)
 
-# ABC transporters for L-serine are NatABCDE or BraCDEFG, with two ATPase and two permease components
-# These also transport alanine and were described there.
+# ABC transporters for L-serine are NatABCDE or BraCDEFG, with two ATPase and two permease components.
+# These also transport alanine.
 # I could not find experimental evidence for serine transport by BraCDEFG from Pseudomonas aeruginosa,
-# which is included in the important definitions, but the subtrate-binding
-# component (braC or PA1074) has high affinity for similar compounds (alanine, threonine, homserine; PMC6829864)
-# so it seems likely.
+# which is included in these, but the subtrate-binding
+# component (braC or PA1074) has high affinity for similar compounds
+# (alanine, threonine, homserine; PMC6829864) so it seems likely.
 # (TCDB also annotates LivJFGHM from Streptococcus pneumoniae as a serine
 #  transporter, but PMC2715661 does not mention serine and suggests that the transporter is specific
 #  for branched-chain amino acids.)
-
 import alanine.steps:braC braD braE braF braG
+
+# Transporters were identified using
+#   query: transporter:L-serine:serine
+#   (D-serine transporters and serine protease autotransporters were removed).
 transport: braC braD braE braF braG
 
-# This cluster also includes cycA (P0AAE0 or A0A0H2VDI7), but that may only transport D-serine
+# This cluster also includes cycA (P0AAE0 or A0A0H2VDI7), but that may only transport D-serine.
 # A close homolog of SerP2, A2RI87, is annotated as a D,L-alanine permease
 # and is reported to have weak affinity for L-serine (see SwissProt); it is also marked ignore.
 serP	L-serine permease SerP	curated:SwissProt::A2RI87	curated:TCDB::F2HQ24	curated:TCDB::F2HQ25	ignore:SwissProt::A2RI86	ignore:SwissProt::P0AAE0	ignore:SwissProt::A0A0H2VDI7
@@ -37,9 +37,7 @@ transport: sstT
 snatA	L-serine transporter	curated:TCDB::Q8J305
 transport: snatA
 
-# MetaCyc Pathway: L-serine degradation
-# Serine ammonia-lyase converts serine to pyruvate and ammonia
-# via 2-aminoprop-2-enoate and 2-iminopropanoate.
+# Exporters, porins, and metazoan solute carriers were also ignored.
 
 # Monomeric form (the heteromeric form is not in the database)
 sdaB	L-serine ammonia-lyase	EC:4.3.1.17
@@ -51,4 +49,6 @@ sdhB	FeS-containing L-serine dehydratase, beta subunit	uniprot:P33074	ignore_oth
 serine-ammonia-lyase: sdaB
 serine-ammonia-lyase: sdhA sdhB
 
+# Serine ammonia-lyase converts serine to pyruvate and ammonia
+# via 2-aminoprop-2-enoate and 2-iminopropanoate.
 all: transport serine-ammonia-lyase

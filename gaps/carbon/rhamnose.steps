@@ -1,27 +1,33 @@
-# Transporters were identified usiung:
-# query: transporter:L-rhamnose:rhamnose:L-rhamnofuranose:L-rhamnopyranose:CPD-16564:CPD-16565:CPD0-1112:CPD-15405
+# Rhamnose utilization in GapMind is based on MetaCyc pathway
+# I via L-rhamnulose 1-phosphate aldolase (metacyc:RHAMCAT-PWY),
+# pathway II via 2-keto-3-deoxy-L-rhamnonate aldolase (metacyc:PWY-6713),
+# and pathway III via 2,4-diketo-3-deoxyrhamnonate hydrolase (metacyc:PWY-6714).
 
 # Fitness data shows that the (distant) homolog in Bacteroides thetaiotaomicron (BT3765, Q8A1A1) is also
 # a rhamnose transporter
 rhaT	L-rhamnose:H+ symporter RhaT	curated:SwissProt::P27125	uniprot:Q8A1A1
+
+# Transporters were identified usiung:
+# query: transporter:L-rhamnose:rhamnose:L-rhamnofuranose:L-rhamnopyranose:CPD-16564:CPD-16565:CPD0-1112:CPD-15405
 transport: rhaT
 
+# 4-part ABC transporter rhaPQST. 
 # In TCDB, the rhamnose transporter of Rhizobium leguminosarum is described as rhaSTP
 # but rhaQ (Q7BSH2_RHILT) is also probably part of this system.
 # The comment in TCDB also speculates about group translocation, because the R. leguminosarum
 # system requires the rhamnose/rhamnulose kinase rhaK for activity; but
 # in Sinorhizobium meliloti, which has a similar system,
 # the rhaK protein has rhamnulokinase activity only
-# (Rivers 2015, PhD thesis, https://mspace.lib.umanitoba.ca/handle/1993/30289).
-
+# (Rivers 2015, URL:https://mspace.lib.umanitoba.ca/handle/1993/30289).
 rhaP	L-rhamnose ABC transporter, permease component 1 (RhaP)	curated:TCDB::Q7BSH3
 rhaQ	L-rhamnose ABC transporter, permease component 2 (RhaQ)	uniprot:Q7BSH2
 rhaS	L-rhamnose ABC transporter, substrate-binding component RhaS	curated:TCDB::Q7BSH5
+# Because of the 1-part transporter rhaT, the ATPase component is named rhaT' in GapMind.
 rhaT'	L-rhamnose ABC transporter, ATPase component RhaT	curated:TCDB::Q7BSH4
 transport: rhaP rhaQ rhaS rhaT'
 
-# Fitness data suggests Echvi_1617 is the rhamnose transporter
-# It is probably Na+ dependent, but this is uncertain
+# Fitness data suggests Echvi_1617 is the rhamnose transporter.
+# It is probably Na+ dependent, but this is uncertain.
 Echvi_1617	L-rhamnose transporter	uniprot:L0FX46
 transport: Echvi_1617
 
@@ -33,17 +39,6 @@ BPHYT_RS34240	L-rhamnose ABC transporter, permease component	uniprot:B2T9V8
 transport: BPHYT_RS34250 BPHYT_RS34245 BPHYT_RS34240
 
 
-# MetaCyc Pathway: L-rhamnose degradation I -- mutarotase to
-# beta-rhamnopyranose, isomerase to rhamnulofuranose, kinase to
-# rhamnulose 1-phosphate, and aldolase to (S)-lactaldehyde and
-# glycerone phosphate. tpi converts to glycerone phosphate to
-# glyceraldehyde 3-phosphate. lactaldehyde might be oxidized to
-# lactate and secreted (or oxidized to pyruvate); or, it might be
-# reduced to propane-1,2-diol and secreted. (Although MetaCyc does not
-# show L-lactate as an end product of this pathway, it is the end
-# product of some other rhamnose degradation pathways, so ending there
-# is plausible.)
-
 rhaM	L-rhamnose mutarotase	EC:5.1.3.32
 rhaA	L-rhamnose isomerase	EC:5.3.1.14
 rhaB	L-rhamnulokinase	EC:2.7.1.5
@@ -52,23 +47,25 @@ rhaD	rhamnulose 1-phosphate aldolase	EC:4.1.2.19	uniprot:Q8A1A0
 
 import fructose.steps:tpi # triose-phsophate isomerase
 
-# The EC number is for the NAD dependent reaction
-# There's also a NADP dependent reaction, sometimes given this EC, sometimes not
+# The EC number is for the NAD dependent reaction.
+# There's also a NADP dependent reaction, sometimes given this EC, sometimes not.
 aldA	lactaldehyde dehydrogenase	EC:1.2.1.22	ignore_other:lactaldehyde dehydrogenase
 
 # BT3767 (Q8A199) was confirmed by fitness data
 fucO	L-lactaldehyde reductase	EC:1.1.1.77	uniprot:Q8A199
 
+# Lactaldehyde might be oxidized to
+# lactate and secreted (or oxidized to pyruvate); or, it might be
+# reduced to propane-1,2-diol and secreted.
 lactaldehyde-conversion: aldA
 lactaldehyde-conversion: fucO
 
+# In pathway I, the mutarotase rhaM forms
+# beta-rhamnopyranose, isomerase rhaA forms rhamnulofuranose, kinase rhaB
+# forms rhamnulose 1-phosphate, aldolase rhaD forms (S)-lactaldehyde and
+# glycerone phosphate, and tpi converts glycerone phosphate to
+# glyceraldehyde 3-phosphate. 
 all: transport rhaM rhaA rhaB rhaD tpi lactaldehyde-conversion
-
-# MetaCyc Pathway: L-rhamnose degradation II -- 1-dehydrogenase to
-# L-rhamnono-1,4-lactone, lactonase to L-rhamnonate, dehydratase to
-# 2-dehydro-3-deoxy-L-rhamnonate, aldolase to pyruvate and
-# lactaldehyde. The lactaldehyde could be oxidized to lactate and
-# secreted, or reduced to propanediol.
 
 # The rhamnofuranose dehydrogenase may be either NADH or NADPH dependent, or use either
 LRA1	L-rhamnofuranose dehydrogenase	EC:1.1.1.378	EC:1.1.1.173	EC:1.1.1.377
@@ -77,24 +74,26 @@ LRA2	L-rhamnono-gamma-lactonase	EC:3.1.1.65
 LRA3	L-rhamnonate dehydratase	EC:4.2.1.90	ignore:reanno::BFirm:BPHYT_RS34235
 LRA4	2-keto-3-deoxy-L-rhamnonate aldolase	EC:4.1.2.53
 
+# In pathway II, the 1-dehydrogenase LRA1 forms L-rhamnono-1,4-lactone,
+# the lactonase LRA2 forms L-rhamnonate, the dehydratase LRA3 forms
+# 2-dehydro-3-deoxy-L-rhamnonate, and the aldolase LRA4 forms pyruvate and
+# lactaldehyde.
 all: transport LRA1 LRA2 LRA3 LRA4 lactaldehyde-conversion
 
-# MetaCyc Pathway: L-rhamnose degradation III -- As in pathway II, the
-# rhamnose is oxidized and dehydrated to
-# 2-dehydro-3-deoxy-L-rhamnonate. Then, a dehydrogenase forms
-# 2,4-didehydro-3-deoxy-L-rhamnonate and a hydrolase forms L-lactate
-# and pyruvate. The L-lactate could be oxidized to pyruvate or
-# secreted.
-
-# The enzyme from Sphingomonas strain SKA58 is Q1NEI6 not Q1NEI7; there is an error in MetaCyc
+# The enzyme from Sphingomonas strain SKA58 is Q1NEI6 not Q1NEI7; there is an error in MetaCyc.
 # Q1NEI6 is annotated correctly in other resources
 LRA5	2-keto-3-deoxy-L-rhamnonate 4-dehydrogenase	EC:1.1.1.401	ignore:metacyc::MONOMER-16233
-# EC number 3.7.1.26 has been assigned but not linked to the characterized protein, which is
-# (PMID:19187228) EAT09363.1 or Q1NEI7.
-# A related protein from S. meliloti was assigned from fitness data
-# Ignore the metacyc entry which confuses this with LRA5
+
+# EC:3.7.1.26 has been assigned but not linked to the characterized protein, which is
+# EAT09363.1 or Q1NEI7 (PMID:19187228).
+# A related protein from S. meliloti was assigned from fitness data.
+# Ignore the metacyc entry which confuses this with LRA5.
 # And, ignore Q39BA7, which is very similar to LRA6 from Burkholderia phytofirmans PsJN
-# but is reported to be a ureidoglycolate lyase (PMID:14506266)
+# but is reported to be a ureidoglycolate lyase (PMID:14506266).
 LRA6	2,4-diketo-3-deoxyrhamnonate hydrolase	uniprot:Q1NEI7	term:L-2,4-diketo-3-deoxyrhamnonate hydrolase	term:2,4-diketo-3-deoxy-L-rhamnonate hydrolase	EC:3.7.1.26	ignore:metacyc::MONOMER-16233	ignore:SwissProt::Q39BA7
 
+# In pathway III, rhamnose is also oxidized and dehydrated to
+# 2-dehydro-3-deoxy-L-rhamnonate, but then, dehydrogenase LRA5 forms
+# 2,4-didehydro-3-deoxy-L-rhamnonate and hydrolase LRA6 forms L-lactate
+# and pyruvate.
 all: transport LRA1 LRA2 LRA3 LRA5 LRA6

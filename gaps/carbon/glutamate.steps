@@ -1,16 +1,26 @@
-# Transporters were identified using
-# query: transporter:glutamate:L-glutamate:glu
-# Ignored excitatory glutamate transporters from animals.
-# Ignored Glt(Ph) (O59010), reported to have very low activity with glutamate as
-#   the substrate (see SwissProt page)
-# Ignored eukaryotic vesicular transporters
-# Ignored solute carrier family proteins from animals
-# Ignored mitochondrial glutamate carriers
-# Ignored glutamate:GABA antiporters (GadC)
-# Ignored chloroplast glutamate/malate translocators
-# Ignored the yeast SAM transporter
-# Ignored the animal glutamate exporter polyphemus
-# Ignored vcINDY (Q9KNE0), which is a dicarboxylate transporter and might be a glutamate transporter
+# Glutamate is a single transamination reaction from 2-oxoglutarate
+# (alpha-ketoglutarate), which is an intermediate in the TCA
+# cycle. Amino acid transaminases are often non-specific, so glutamate
+# catabolism could be considered trivial.  However, many amino acid
+# transaminases are 2-oxoglutarate dependent, and these cannot not
+# contribute to glutamate catabolism. And even if the amino group is
+# transfered elsewhere first, the ammonium group still needs to be
+# liberated somehow. GapMind represents glutamate degradation
+# using MetaCyc pathways
+# L-glutamate degradation I (glutamate dehydrogenase, metacyc:GLUTAMATE-DEG1-PWY),
+# pathway II (via aspartate ammonia-lyase, metacyc:GLUTDEG-PWY),
+# and pathway VI (glutamate mutase, metacyc:PWY-5087).
+# Several other MetaCyc pathways are not included in GapMind.
+# Pathway IV (via gamma-aminobutanoate, metacyc:PWY-4321) is not thought to occur in prokaryotes.
+# Pathways V (via hydroxyglutarate, metacyc:P162-PWY) and XI (reductive Stickland reaction, metacyc:PWY-8190)
+# combine glutamate dehydrogenase with reductive pathways;
+# these are omitted because glutamate dehydrogenase alone
+# suffices for catabolism under respiratory conditions.
+# Pathways VII (to butanoate, metacyc:GLUDEG-II-PWY) and VIII (to propanoate, metacyc:PWY-5088)
+# are similar to pathway VI but also describe the fermentation of the pyruvate.
+# Pathway IX (via 4-aminobutanoate, metacyc:PWY0-1305) does not yield net consumption of glutamate:
+# the catabolism of 4-aminobutanoate relies on a transamination reaction that converts 2-oxoglutarate
+# to glutamate.
 
 # Most ABC transporters for glutamate have a substrate-binding component (gltI),
 # 2 transmembrane components (gltJ and gltK), and an ATPase component (gltL)
@@ -24,28 +34,30 @@ gltJ	L-glutamate ABC transporter, permease component 1 (gltJ/aatQ)	curated:Swiss
 
 gltK	L-glutamate ABC transporter, permease component 1 (gltK/aatM)	curated:SwissProt::P0AER5	curated:TCDB::Q88NY4	curated:reanno::pseudo1_N1B4:Pf1N1B4_773	curated:reanno::pseudo3_N2E3:AO353_16280	curated:TCDB::Q9I404	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_4772
 
-# SMc02121 is quite similar and is the ATPase component of a putative amino acid transporter, so is ignored
+# SMc02121 is quite similar and is the ATPase component of a putative amino acid transporter, so it is ignored.
 # Similarly for Q52815
 gltL	L-glutamate ABC transporter, ATPase component (GltL/GluA/BztD/GlnQ/AatP/PEB1C)	curated:TCDB::A3ZI83	curated:TCDB::P0AAG3	curated:TCDB::P48243	curated:TCDB::Q52666	curated:TCDB::Q88NY5	curated:TCDB::Q9CES4	curated:reanno::pseudo1_N1B4:Pf1N1B4_774	curated:reanno::pseudo3_N2E3:AO353_16275	curated:TCDB::Q9I405	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_4773	ignore:reanno::Smeli:SMc02121	ignore:TCDB::Q52815
 
+# Transporters were identified using
+# query: transporter:glutamate:L-glutamate:glu
 transport: gltI gltJ gltK gltL
 
-# In Corynebacterium glutamicum, the ABC transporter is known as gluABCD
-# gluA is the ATPase component and is similar to gltL
-# gluB is the substrate-binding component and gluC/gluD are membrane components
+# In Corynebacterium glutamicum, the ABC transporter is known as gluABCD.
+# gluA is the ATPase component and is similar to gltL.
+# gluB is the substrate-binding component and gluC/gluD are membrane components.
 gluB	L-glutamate ABC transporter, substrate-binding component GluB	curated:TCDB::P48242
 gluC	L-glutamate ABC transporter, permease component 1 (GluC)	curated:TCDB::P48244
 gluD	L-glutamate ABC transporter, permease component 2 (GluD)	curated:TCDB::P48245
 transport: gltL gluB gluC gluD
 
-# In Rhodobacter capsulatus, the ABC transporter is known as bztABCD
+# In Rhodobacter capsulatus, the ABC transporter is known as bztABCD.
 # BztD is the ATPase component and is similar to gltL
 bztA	L-glutamate ABC transporter, substrate-binding component	curated:TCDB::Q52663
 bztB	L-glutamate ABC transporter, permease component 1 (BztB)	curated:CharProtDB::CH_011913
 bztC	L-glutamate ABC transporter, permease component 2 (BztC)	curated:TCDB::Q52665
 transport: bztA bztB bztC gltL
 
-# In Rhizobium leguminosarum, a broad-specificity amino acid ABC transporter is known as braCDEFG
+# In Rhizobium leguminosarum, a broad-specificity amino acid ABC transporter is known as braCDEFG.
 # (A homologous system from Pseudomonas is thought to have a narrower substrate range.)
 braC	ABC transporter for glutamate, histidine, arginine, and other amino acids, substrate-binding component BraC	curated:TCDB::Q9L3M3
 braD	ABC transporter for glutamate, histidine, arginine, and other amino acids, permease component 1 (BraD)	uniprot:Q1MCU0
@@ -106,56 +118,36 @@ transport: gltS_Syn
 dmeA	L-glutamate transporter DmeA	curated:TCDB::Q31PG5
 transport: dmeA
 
-# Glutamate is a single transamination reaction from 2-oxoglutarate
-# (alpha-ketoglutarate), which is an intermediate in the TCA
-# cycle. Amino acid transaminases are often non-specific, so glutamate
-# catabolism could be considered trivial.  However, many amino acid
-# transaminases are 2-oxoglutarate dependent, and these cannot not
-# contribute to glutamate catabolism. And even if the amino group is
-# transfered elsewhere first, the ammonium group still needs to be
-# liberated somehow.
+# Ignored excitatory glutamate transporters from animals.
+# Ignored Glt(Ph) (O59010), reported to have very low activity with glutamate as
+#   the substrate (see SwissProt page)
+# Ignored eukaryotic vesicular transporters
+# Ignored solute carrier family proteins from animals
+# Ignored mitochondrial glutamate carriers
+# Ignored glutamate:GABA antiporters (GadC)
+# Ignored chloroplast glutamate/malate translocators
+# Ignored the yeast SAM transporter
+# Ignored the animal glutamate exporter polyphemus
+# Ignored vcINDY (Q9KNE0), which is a dicarboxylate transporter and might be a glutamate transporter
 
-# MetaCyc Pathway: L-glutamate degradation I -- glutamate
-# dehydrogenase oxidatively deaminates glutamate to 2-oxoglutarate.
 
 # The NADP dependent enzyme acts primarily in the reverse direction,
-# so would not contribute to catabolism
+# so would not contribute to catabolism.
 # EC 1.4.1.3 describes glutamate dehydrogenases that can use either
 # NAD or NADP; these are ignored.
 # AZOBR_RS00190 (G8AE86) is important for proline and glutamine catabolism, and
 # both are catabolized via glutamate; this confirms it is a glutamate dehydrogenase.
 gdhA	glutamate dehydrogenase, NAD-dependent	EC:1.4.1.2	uniprot:G8AE86	ignore_other:1.4.1.3
+# GdhA is glutamate dehydrogenase (forming 2-oxoglutarate and ammonia).
 all: transport gdhA
 
-# MetaCyc Pathway: L-glutamate degradation II
 
-# The glutamate is transaminated to aspartate (using oxaloacetate),
-# and the aspartate is cleaved to fumarate and ammonium.  (Both
-# oxaloacetate and fumarate are TCA cycle intermediates.)
-
-# The transamination reaction is not represented
 aspA	L-aspartate ammonia-lyase	EC:4.3.1.1
+# In pathway II, glutamate and oxaloacetate are transaminated to 2-oxoglutarate and aspartate,
+# and the aspartate is cleaved to fumarate and ammonium by aspA.
+# (The transamination reaction is not represented. Both oxaloacetate and fumarate are TCA cycle intermediates.)
 all: transport aspA
 
-# MetaCyc Pathway: L-glutamate degradation IV (via
-# gamma-aminobutanoate) is not thought to occur in prokaryotes and is
-# not described here. (But see pathway IX below.)
-
-# MetaCyc Pathway: L-glutamate degradation V (via hydroxyglutarate)
-# combines glutamate dehydrogenase with a reductive pathway.  This
-# pathway is not described here because glutamate dehydrogenase alone
-# suffices for glutamate catabolism under respiratory conditions.
-
-# MetaCyc Pathway: L-glutamate degradation VI (to pyruvate) A mutase
-# converts glutamate to (2S,3S)-3-methylaspartate, a lyase forms
-# 2-methylfumarate (mesaconate), a hydratase forms (S)-2-methylmalate
-# (S-citramalate), and this is cleaved to acetate and pyruvate.
-# Although the citramalate lyase is described as a single reaction in
-# MetaCyc, the enzyme database entry (EC 4.1.3.22) suggests that it is
-# a two-step reaction: citramalate CoA-transferase (EC 2.8.3.11) and
-# citramalyl-CoA lyase (EC 4.1.3.25).  No citramalate CoA-transferase
-# proteins have been linked to sequence, but citramalyl-CoA lyases are
-# known, so only this step is included.
 
 glmS	L-glutamate mutase, S component	curated:SwissProt::P80078	curated:SwissProt::Q05488	curated:metacyc::MONOMER-16253
 glmE	L-glutamate mutase, E component	curated:SwissProt::P80077	curated:SwissProt::Q05509	curated:metacyc::MONOMER-16254
@@ -167,25 +159,19 @@ mal	methylaspartate ammonia-lyase	EC:4.3.1.2
 # as well, so they are marked ignore.
 fumD	(S)-2-methylmalate dehydratase (mesaconase)	EC:4.2.1.34	ignore_other:4.2.1.2
 
+# Although the citramalate lyase is described as a single reaction in
+# MetaCyc, the enzyme database entry (EC:4.1.3.22) suggests that it is
+# a two-step reaction: citramalate CoA-transferase (EC:2.8.3.11) and
+# citramalyl-CoA lyase (EC:4.1.3.25).  No citramalate CoA-transferase
+# proteins have been linked to sequence, but citramalyl-CoA lyases are
+# known, so only this step is included.
 # Some (S-citramalyl-CoA lyases are very similar to malyl-CoA lyases, which are marked ignore.
 mcl	(S)-citramalyl-CoA pyruvate-lyase	EC:4.1.3.25	ignore:reanno::Phaeo:GFF3000	ignore:SwissProt::B6E2X2
 
+# In pathway VI, the mutase glmSE converts glutamate to (2S,3S)-3-methylaspartate,
+# the lyase mal forms 2-methylfumarate (mesaconate),
+# the hydratase fumD forms (S)-2-methylmalate.
+# (S-citramalate), and this is cleaved to acetate and pyruvate by mcl.
 all: transport glmS glmE mal fumD mcl
 
-# MetaCyc Pathway: L-glutamate degradation VII (to butanoate) is
-# similar to VI but also describes the fermentation of the pyruvate.
-# It is not described here.
-
-# MetaCyc Pathway: L-glutamate degradation VIII (to propanoate) is
-# similar to VI but also describes the the fermentation of the
-# pyruvate.  It is not described here.
-
-# MetaCyc Pathway: L-glutamate degradation IX (via 4-aminobutanoate) A
-# decarboxylase converts glutamate to 4-aminobutanoate
-# (gamma-aminobutyrate, or GABA), which is transaminated to succinate
-# semialdehyde, and oxidized to succinate, an intermediate in the TCA
-# cycle.  However, the transamination reaction also converts
-# 2-oxoglutarate to glutamate, so, it is not clear how this pathway
-# would yield net consumption of glutamate.  For this reason, it is
-# not described here.
 

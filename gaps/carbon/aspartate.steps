@@ -1,27 +1,26 @@
 # Aspartate can be transaminated to oxaloacetate, which is an
-# intermediate in central metabolism, so just represent uptake.
-
-# To find transporters, used
-# query: transporter:aspartate:L-aspartate
+# intermediate in central metabolism, so GapMind only represents uptake.
 
 # First, the ABC transporters
 
-# BztABCD from Rhodobacter capsulatus (Rhodopseudomonas capsulata),  TC 3.A.1.3.7
+# BztABCD from Rhodobacter capsulatus (Rhodopseudomonas capsulata),  TC 3.A.1.3.7.
 # Ignore similarity of bztA to general amino acid porter AapJ
 bztA	aspartate ABC transporter, substrate-binding component BztA	curated:TCDB::Q52663	ignore:TCDB::Q52812
 bztB	aspartate ABC transporter, permease component 1 (BztB)	curated:CharProtDB::CH_011913
 bztC	aspartate ABC transporter, permease component 2 (BztC)	curated:TCDB::Q52665
 # Ignore similarity of bztD to general amino acid porter AapP, SMc02121, Pf6N2E2_5405
 bztD	aspartate ABC transporter, ATPase component (BztD)	curated:TCDB::Q52666	ignore:TCDB::Q52815	ignore:reanno::Smeli:SMc02121
+
+# To find transporters, used query: transporter:aspartate:L-aspartate
 transport:  bztA bztB bztC bztD
 
+peb1A	aspartate ABC transporter, perisplasmic substrate-binding component Peb1A	curated:CharProtDB::CH_021449
+peb1B	aspartate ABC transporter, permease component 1 (Peb1B)	curated:TCDB::A1VZQ3
+peb1C	aspartate ABC transporter, ATPase component Peb1C	curated:TCDB::A3ZI83
 # Pep1ABC from Campylobacter jejuni, TC 3.A.1.3.16, is listed with three components,
 # but a second permease subunit (CJJ81176_0926 = Cj0919c = A0A0H3PA28) is conserved nearby, and
 # a genetic study (PMC5438104) found a similar phenotype for this putative subunit as for
 # peb1A/peb1B. I will call it peb1D.
-peb1A	aspartate ABC transporter, perisplasmic substrate-binding component Peb1A	curated:CharProtDB::CH_021449
-peb1B	aspartate ABC transporter, permease component 1 (Peb1B)	curated:TCDB::A1VZQ3
-peb1C	aspartate ABC transporter, ATPase component Peb1C	curated:TCDB::A3ZI83
 peb1D	aspartate ABC transporter, permease component 2 (Peb1D)	uniprot:A0A0H3PA28
 transport: peb1A peb1B peb1C peb1D
 
@@ -66,21 +65,21 @@ transport: natF natG natH bgtA
 import glutamate.steps:aapJ aapQ aapM aapP
 transport: aapJ aapQ aapM aapP
 
-# The original cluster was entirely eukaryotic except for gltPh from Pyrococcus horikoshii
-# Added gltT from Bacillus caldotenax (CharProtDB::CH_088342), which is also an aspartate transporter
-# So, name it glt
-# Ignore Q9N280 which has a questionable annotation in BRENDA
-# But the more distantly related protein AO356_01905 (A0A0N9WTL5) also seems to be an aspartate transporter
+# The original cluster was entirely eukaryotic except for gltPh from Pyrococcus horikoshii.
+# Added gltT from Bacillus caldotenax (CharProtDB::CH_088342), which is also an aspartate transporter.
+# So, name it glt.
+# Ignore Q9N280 which has a questionable annotation in BRENDA.
+# But the more distantly related protein AO356_01905 (uniprot:A0A0N9WTL5) also seems to be an aspartate transporter
 # Similarly, the related protein RR42_RS03990 (A0A0C4Y5S4) is specifically important for asparagine utilization.
 # Asparagine is probably cleaved in the periplasm (by RR42_RS12610 or RR42_RS26140)
 # so this is probably an aspartate transporter as well.
-# And the related protein P24944 (CH_088342) or P24943 is an aspartate transporter.
+# And the related protein uniprot:P24944 (CH_088342) or uniprot:P24943 is an aspartate transporter.
 # This cluster also includes the aspartate transporter DctA from E. coli; it is almost
 # 80% identical to Pseudomonas dicarboxylate transporters whose activity on
 # aspartate is uncertain. As these are not important for aspartate utilization (AO356_18980, AO353_02800),
 # do not mark them as ignored.
-# The gltP from B. subtilis (P39817) was added manually.
-# A related aspartate/glutamate transporter was identified in Shewanella amazonensis SB2B (Sama_1319, A1S570)
+# The gltP from B. subtilis (uniprot:P39817) was added manually.
+# A related aspartate/glutamate transporter was identified in Shewanella amazonensis SB2B (Sama_1319, uniprot:A1S570)
 # using fitness data.
 glt	aspartate:proton symporter Glt	curated:SwissProt::P21345	curated:CharProtDB::CH_014038	uniprot:A0A0N9WTL5	uniprot:A0A0C4Y5S4	curated:CharProtDB::CH_088342	curated:SwissProt::P24943	curated:SwissProt::P43003	curated:CharProtDB::CH_091614	curated:SwissProt::O35544	curated:SwissProt::O35921	curated:SwissProt::O57321	curated:SwissProt::O59010	curated:SwissProt::P24943	curated:SwissProt::P31596	curated:SwissProt::P31597	curated:SwissProt::P43004	curated:SwissProt::P43005	curated:SwissProt::P43006	curated:SwissProt::P46411	curated:SwissProt::P48664	curated:SwissProt::P51906	curated:SwissProt::P51907	curated:SwissProt::P56564	curated:SwissProt::Q9N1R2	curated:TCDB::B0W0K4	curated:TCDB::Q10901	curated:TCDB::Q8T0S9	curated:CharProtDB::CH_088342	ignore:BRENDA::Q9N280	curated:SwissProt::P39817	uniprot:A1S570
 transport: glt
@@ -100,12 +99,10 @@ transport: glt
 # CharProtDB::CH_091355,SwissProt::O75746,TCDB::O75746
 # CharProtDB::CH_091540,SwissProt::Q12482,TCDB::Q12482
 
-# Cluster 7 488-489 amino acids (not heteromeric)
 # Ignore E. coli YcaM which does not seem to be characterized
 acaP	aspartate permease AcaP	curated:SwissProt::A2RL65	curated:TCDB::F2HJG8	ignore:TCDB::P75835
 transport: acaP
 
-# Cluster 8 470-478 amino acids (not heteromeric)
 SLC7A13	sodium-independent aspartate transporter	curated:SwissProt::Q8TCU3	curated:SwissProt::Q91WN3
 transport: SLC7A13
 

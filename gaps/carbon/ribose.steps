@@ -1,19 +1,24 @@
-# Transporters were identified using:
-# query: transporter:ribose:D-ribose:D-ribofuranose:CPD-10330:CPD0-1108:D-ribopyranose:CPD-15829:CPD0-1110:CPD-15818
+# Ribose degradation in GapMind is based on the MetaCyc pathway
+# ribose phosphorylation (metacyc:RIBOKIN-PWY),
+# which yields the central metabolic intermediate
+# D-ribofuranose 5-phosphate, or
+# on uptake by a phosphotransferase system.
 
-# ABC transporters are known in E. coli, Thermotoga maritima, and Sinorhizobium meliloti
+# ABC transporters:
 
-# E. coli rbsABC and the related system from T. maritima
-# The fitness data identified a related system in Herbaspirillum
-#   rbsBAC = HSERO_RS11480 (D8IUD0), HSERO_RS11485 (D8IUD1), HSERO_RS11490 (D8IUD2)
-# and in various Pseudomonas
+# E. coli rbsABC and the related system from T. maritima.
+# The fitness data also identified a related system in Herbaspirillum:
+#   rbsBAC = HSERO_RS11480 (D8IUD0), HSERO_RS11485 (D8IUD1), HSERO_RS11490 (D8IUD2);
+# and in various Pseudomonas:
 #   rbsBAC = PS417_18405 (A0A1N7UEH6) PS417_18400 (A0A1N7TZ92) PS417_18395 (A0A1N7UNQ5)
-#     or Pf1N1B4_6035 (A0A161ZH48), Pf1N1B4_6034 (A0A166R419), Pf1N1B4_6033  (A0A166R405)
+#     or Pf1N1B4_6035 (A0A161ZH48), Pf1N1B4_6034 (A0A166R419), Pf1N1B4_6033  (A0A166R405).
 rbsA	D-ribose ABC transporter, ATPase component RbsA	curated:CharProtDB::CH_003578	curated:TCDB::Q9X051	uniprot:D8IUD1	uniprot:A0A1N7TZ92	uniprot:A0A166R419
 rbsB	D-ribose ABC transporter, substrate-binding component RbsB	curated:CharProtDB::CH_003593	curated:TCDB::Q9X053	uniprot:D8IUD0	uniprot:A0A1N7UEH6	uniprot:A0A161ZH48
 rbsC	D-ribose ABC transporter, permease component RbsC	curated:SwissProt::P0AGI1	curated:TCDB::Q9X050	uniprot:D8IUD2	uniprot:A0A1N7UNQ5	uniprot:A0A166R405
-transport: rbsA rbsB rbsC
 
+# Transporters were identified using:
+# query: transporter:ribose:D-ribose:D-ribofuranose:CPD-10330:CPD0-1108:D-ribopyranose:CPD-15829:CPD0-1110:CPD-15818
+transport: rbsA rbsB rbsC
 
 # FrcABC from S. meliloti
 frcA	D-ribose ABC transporter, ATPase component FrcA	curated:SwissProt::Q9F9B0
@@ -23,7 +28,6 @@ transport: frcA frcB frcC
 
 # The fru2 PTS system in Streptococcus agalactiae is thought to transport ribose (TC 4.A.2.1.22); it is not
 # proven that this is coupled to phosphorylation to form ribose 5-phosphate, but it seems likely
-
 fru2-IIA	D-ribose PTS, IIA component	curated:TCDB::Q3JZE3
 fru2-IIB	D-ribose PTS, IIB component	curated:TCDB::Q3JZE2
 fru2-IIC	D-ribose PTS, IIC component	curated:TCDB::Q3JZE4
@@ -43,22 +47,15 @@ transport: LmGT2
 PLT5	D-ribose transporter PLT5	curated:CharProtDB::CH_091483
 transport: PLT5
 
-# MetaCyc Pathway: ribose phosphorylation (RIBOKIN-PWY)
-# includes D-ribose pyranase (rbsD) and ribokinase (rbsK).
-# D-ribofuranose 5-phosphate is a central metabolic intermediate.
-# RbsD appears to be absent or not important for fitness in many bacteria
-# that grow with ribose as the sole carbon source, so rbsD is not included.
-
 # deoxyribose kinases are sometimes annotated with the same EC number; most of these
 # sequences are thought to be ribokinases as well
 rbsK	ribokinase	EC:2.7.1.15
 
+# Besides the kinase rbsK, the MetaCyc pathway includes D-ribose pyranase (rbsD).
+# RbsD appears to be absent or not important for fitness in many bacteria
+# that grow with ribose as the sole carbon source, so rbsD is not included in GapMind.
+# Alternatively, uptake by a phosphotransferase (PTS) system can form
+# D-ribofuranose 5-phosphate.
 all: transport rbsK
 all: PTS
-
-
-
-
-
-
 

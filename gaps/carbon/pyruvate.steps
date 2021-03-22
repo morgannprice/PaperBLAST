@@ -1,64 +1,59 @@
-# Most of these were identifyied using curated clusters and
-# query: transporter:pyruvate
+# Pyruvate is a central metabolite, so GapMind represents transport only.
 
 # actP-yjcH is usually annotated as acetate permease and associated protein, but they are
 # often involved in pyruvate transport instead.
 
-# (This was not included in the curated clusters results.)
-# WCS417:GFF1743 = A0A1N7U9G2
-# azobra:AZOBR_RS02940 = G8AHY6
-# pseudo1_N1B4:Pf1N1B4_3673 = A0A166PH03
-# pseudo6_N2E2:Pf6N2E2_5849 = A0A165ZRB0
 
-# Closely related to E. coli actP = P32705, so ignore that
-# Added Marinobacter HP15_1251 (E4PHQ0) because it has a specific phenotype (if mild) and fills the gap
-# It is closely related to the D-alanine uptake system Psest_0347 (GFF346), so ignore that
+# A group of heterodimeric pyruvate transporters. This is the actP-like subunit.
+# WCS417:GFF1743 = A0A1N7U9G2,
+# azobra:AZOBR_RS02940 = G8AHY6,
+# pseudo1_N1B4:Pf1N1B4_3673 = A0A166PH03,
+# pseudo6_N2E2:Pf6N2E2_5849 = A0A165ZRB0.
+# Closely related to E. coli actP = P32705, so ignore that.
+# Added Marinobacter HP15_1251 (E4PHQ0) because it has a specific phenotype (if mild) and fills the gap.
+# And it is closely related to the D-alanine uptake system Psest_0347 (GFF346), so ignore that.
 actP	large subunit of pyruvate transporter (actP-like)	uniprot:A0A1N7U9G2	uniprot:G8AHY6	uniprot:A0A166PH03	uniprot:A0A165ZRB0	ignore:SwissProt::P32705	uniprot:E4PHQ0	ignore:reanno::psRCH2:GFF346
 
-# Cluster 1 100-103 amino acids -- this is the yjcH-like subunit
-# It is 61% identical to E. coli b4068/yjcH/18096, involved in glycolate & acetate transport, so ignore that
-# Added Marinobacter HP15_1252 (E4PHQ1) because it has a specific phenotype (if mild) and fills the gap
-# It is closely related to the D-alanine uptake system Psset_0346 (GFF345), so ignore that
+# This is the yjcH-like subunit.
+# It is 61% identical to E. coli b4068/yjcH/18096, involved in glycolate & acetate transport, so ignore that.
+# Added Marinobacter HP15_1252 (E4PHQ1) because it has a specific phenotype (if mild) and fills the gap.
+# It is closely related to the D-alanine uptake system Psset_0346 (GFF345), so ignore that.
 yjcH	putative small subunit of pyruvate transporter (yjcH-like)	curated:reanno::WCS417:GFF1742	curated:reanno::azobra:AZOBR_RS02935	curated:reanno::pseudo1_N1B4:Pf1N1B4_3672	curated:reanno::pseudo6_N2E2:Pf6N2E2_5848	ignore:reanno::Keio:18096	uniprot:E4PHQ1	ignore:reanno::psRCH2:GFF345
 
+# Most of these transporters were identified using curated clusters and
+# query: transporter:pyruvate. YjcH-actP and cstA-yjiX were identified from mutant fitness data.
 transport: yjcH actP
 
-# (This was not included in the curated clusters results.)
-# Cup4G11:RR42_RS20515 = A0A0C4Y7X7
-# E. coli cstA (P15078) might be a pyruvate transporter, and bstT (P39396) is, so ignore
+# Cup4G11:RR42_RS20515 = A0A0C4Y7X7.
+# E. coli cstA (uniprot:P15078) might be a pyruvate transporter, and bstT (uniprot:P39396) is, so ignore
 cstA	putative large subunit of pyruvate transporter (cstA-like)	uniprot:A0A0C4Y7X7	ignore:SwissProt::P15078	ignore:SwissProt::P39396
 
 yjiX	putative small subunit of pyruvate transporter (yjiX-like)	curated:reanno::Cup4G11:RR42_RS20510
 
 transport: cstA yjiX
 
-# Cluster 3 610-623 amino acids (not heteromeric)
 SLC5A8	sodium-coupled pyruvate transporter	curated:SwissProt::Q3ZMH1	curated:SwissProt::Q7T384	curated:SwissProt::Q8N695
 
 transport: SLC5A8
 
 
-# DctP from Nostoc, Rhodobacter; associated with dctQ and dctM
-# Similar to TakP (Q3J1R2), which is misannotated and not characterized
-# The related protein Q48AL6 = CPS_0129 was shown to bind calcium-pyruvate (PMC4310620)
+# DctP from Nostoc, Rhodobacter; associated with dctQ and dctM.
+# Similar to TakP (Q3J1R2), which is misannotated and not characterized.
+# The related protein Q48AL6 = CPS_0129 was shown to bind calcium-pyruvate (PMC4310620).
 dctP	pyruvate TRAP transporter, substrate-binding component	curated:SwissProt::Q8YSQ6	curated:TCDB::D5ALT6	ignore:SwissProt::Q3J1R2	uniprot:Q48AL6
 
-# Cluster 8 184-190 amino acids (heteromeric)
 dctQ	pyruvate TRAP transporter, small permease component	curated:TCDB::D5ATK0	curated:TCDB::Q8YSQ8
 
-# Singleton 4 and Singleton 8
 dctM	pyruvate TRAP transporter, large permease component	curated:TCDB::D5ATK1	curated:TCDB::Q8YSQ7
 
 transport: dctM dctP dctQ
 
-
-# Cluster 5 541-616 amino acids (not heteromeric)
 JEN1	pyruvate symporter JEN1	curated:CharProtDB::CH_091331	curated:CharProtDB::CH_123467
 
 transport: JEN1
 
-# formerly yjiY; cstA-like
-# E. coli cstA (P15078) might be a pyruvate transporter, so ignore
+# formerly yjiY; cstA-like.
+# E. coli cstA (uniprot:P15078) might be a pyruvate transporter, so ignore
 btsT	pyruvate symporter BtsT	curated:SwissProt::P39396	ignore:SwissProt::P15078
 
 transport: btsT
@@ -79,13 +74,7 @@ mctP	pyruvate permease MctP	curated:TCDB::Q8VM88	curated:SwissProt::Q1M7A2
 transport: mctP
 
 # Ignore various mitochondrial carriers and chloroplast transporters
-# Cluster 2 107-130 amino acids (heteromeric)
-# Cluster 6 129-146 amino acids (heteromeric)
-# Cluster 7 409-414 amino acids (not heteromeric)
-# Singleton1	Mitochondrial pyruvate carrier 2; Brain protein 44	curated:SwissProt::O95563
-# Singleton9	CG9399, isoform A, component of Mitochondrial pyruvate carrier (MPC1/2)	curated:TCDB::Q9VHB1
-
-# This has weak evidence to be a pyruvate transporter, so ignore
-# Singleton5	Acetate/haloacid transporter, Dehp2, with a possible atypical topology	curated:TCDB::F8SVK1
+# This has weak evidence to be a pyruvate transporter, so ignore:
+# Acetate/haloacid transporter, Dehp2, with a possible atypical topology	curated:TCDB::F8SVK1
 
 all: transport

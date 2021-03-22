@@ -1,22 +1,21 @@
-# Transporters were identified using
-# query: transporter:2-ketoglutarate:alpha-ketoglutarate:ketoglutarate:2-oxoglutarate:oxoglutarate
+# Since 2-oxoglutarate (also known as alpha-ketoglutarate) is a TCA cycle intermediate,
+# GapMind represents uptake only.
 
 # Eukaryotic antiporters and related carrier proteins were ignored
 # SdcL from Bacillus (TC 2.A.47.1.13) might be a low-affinity 2-oxoglutarate transporter; ignored
 
-# HSERO_RS16820 (D8J257) is similar and is important for 2-oxoglutarate utilization
-# Q52000 is a dicarboxylate transporter and could be active on 2-oxoglutarate as well
+# HSERO_RS16820 (D8J257) is similar and is important for 2-oxoglutarate utilization.
+# uniprot:Q52000 is a dicarboxylate transporter and could be active on 2-oxoglutarate as well
 kgtP	2-oxoglutarate:H+ symporter KgtP	curated:SwissProt::P0AEX3	curated:reanno::pseudo3_N2E3:AO353_03810	curated:reanno::pseudo5_N2C3_1:AO356_17790	uniprot:D8J257	ignore:TCDB::Q52000
+# Transporters were identified using
+# query: transporter:2-ketoglutarate:alpha-ketoglutarate:ketoglutarate:2-oxoglutarate:oxoglutarate
 transport: kgtP
 
 csbX	2-oxoglutarate permease csbX	curated:TCDB::O05390
 transport: csbX
 
 # Besides the system in Shewanellas, a similar system in Phaeobacter inhibens is important for
-# 2-oxoglutarate utilization.
-# DctP = PGA1_c20680 = I7END8
-# DctQ = PGA1_c20670 = I7EY26
-# DctM = PGA1_c20660 = I7DRS6
+# 2-oxoglutarate utilization: DctP = PGA1_c20680 = I7END8; DctQ = PGA1_c20670 = I7EY26; DctM = PGA1_c20660 = I7DRS6.
 # And for various related dctP-like components, it's not clear if alpha-ketoglutarate is a substrate or not
 dctP	2-oxoglutarate TRAP transporter, solute receptor component DctP	curated:reanno::SB2B:6938088	curated:SwissProt::A3QCW5	uniprot:I7END8	ignore:SwissProt::Q9KQR9	ignore:SwissProt::Q9HU18	ignore:SwissProt::P37735
 dctQ	2-oxoglutarate TRAP transporter, small permease component DctQ	curated:reanno::SB2B:6938089	curated:reanno::PV4:5208944	uniprot:I7EY26
@@ -34,6 +33,5 @@ transport: Psest_0084 Psest_0085
 import succinate.steps:Dshi_1194 Dshi_1195 # TRAP dicarboxylate transporter
 transport: Dshi_1194 Dshi_1195
 
-# Since this is a TCA cycle intermediate, do not represent catabolic reactions
 all: transport
  

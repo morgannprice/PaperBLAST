@@ -1,5 +1,6 @@
-# Transporters were identified using:
-# query: transporter:myo-inositol:myoinositol:m-inositol:inositol
+# Myo-inositol degradation in GapMind is based on MetaCyc pathways
+# myo-inositol degradation I via inosose dehydratase (metacyc:P562-PWY)
+# and pathway II inosose dehydrogenase (metacyc:PWY-7241).
 
 # ABC transporters have been described in
 # Caulobacter crescentus, Phaeobacter inhibens, Pseudomonas simiae, and Pseudomonas fluorescens
@@ -7,6 +8,9 @@
 PGA1_c07300	myo-inositol ABC transport, substrate-binding component	curated:reanno::Phaeo:GFF715
 PGA1_c07310	myo-inositol ABC transporter, permease component	curated:reanno::Phaeo:GFF716
 PGA1_c07320	myo-inositol ABC transporter, ATPase component	curated:reanno::Phaeo:GFF717
+
+# Transporters were identified using:
+# query: transporter:myo-inositol:myoinositol:m-inositol:inositol
 transport: PGA1_c07300 PGA1_c07310 PGA1_c07320
 
 iatP	myo-inositol ABC transporter, permease component IatP	curated:TCDB::B8H230
@@ -15,7 +19,7 @@ ibpA	myo-inositol ABC transporter, substrate-binding component IbpA	curated:TCDB
 transport:  iatP iatA ibpA
 
 # The ortholog in P. fluorescens FW300-N2E3 (AO353_21380, A0A0N9WNI6)
-# was not reannotated but does hvae the phenotype
+# was not reannotated but does have the phenotype
 PS417_11885	myo-inositol ABC transporter, substrate-binding component	curated:reanno::WCS417:GFF2331	uniprot:A0A0N9WNI6
 PS417_11890	myo-inositol ABC transporter, ATPase component	curated:reanno::WCS417:GFF2332	curated:reanno::pseudo3_N2E3:AO353_21385
 PS417_11895	myo-inositol ABC transporter, permease component	curated:reanno::WCS417:GFF2333	curated:reanno::pseudo3_N2E3:AO353_21390
@@ -23,7 +27,7 @@ transport: PS417_11885 PS417_11890 PS417_11895
 
 # Homomeric transporters
 
-# Some distantly related transporters with the same domain content were grouped together into iolT
+# Distantly related transporters with the same domain content were grouped together into iolT
 iolT	myo-inositol:H+ symporter	curated:SwissProt::Q8VZR6	curated:CharProtDB::CH_091483	curated:CharProtDB::CH_091623	curated:CharProtDB::CH_123508	curated:SwissProt::O34718	curated:SwissProt::P30606	curated:SwissProt::P87110	curated:SwissProt::Q10286	curated:TCDB::A8DCT2	curated:TCDB::AIU34725.1	curated:TCDB::Q01440	curated:TCDB::Q8NTX0	curated:TCDB::E1WAV3	curated:TCDB::E1WAV4	curated:TCDB::Q8NL90	curated:CharProtDB::CH_123411	curated:CharProtDB::CH_124311
 transport: iolT
 
@@ -39,14 +43,6 @@ transport: iolF
 import glucosamine.steps:kdgK # 2-keto-3-deoxygluconate kinase
 import glucose.steps:eda # 2-keto-3-deoxygluconate 6-phosphate aldolase
 import fructose.steps:tpi # triose-phosphate isomerase
-
-# MetaCyc myo-inositol degradation I involves a 2-hydrogenase and a dehydratase, to
-# 3D-(3,5/4)-trihydroxycyclohexane-1,2-dione, followed by a ring-cleaving hydrolase
-# to 5-deoxy-D-glucuronate. This is isomerized to 5-dehydro-2-deoxy-D-gluconate,
-# whcih is phosphorylated and cleaved by an aldolase, giving 3-oxopropionate
-# (malonate semialdehyde) and
-# glycerone phosphate. The 3-oxopropionate is oxidized to acetyl-CoA while the
-# glycerone phosphate is converted by triose-phosphate isomerase to glyceraldehyde 3-phosphate.
 
 # 2-oxidation of myo-inositol is also linked to EC:1.1.5.n1 (quinoprotein inositol dehydrogenase),
 # but that is not linked to sequence
@@ -67,23 +63,23 @@ iolC	5-dehydro-2-deoxy-D-gluconate kinase	EC:2.7.1.92
 # Fitness data confirms that these fusion proteins are required for myo-inositol utilization
 # (but does not prove that the DUF2090 domain is required).
 # These proteins are included in iolJ via their reannotations.
-
 iolJ	5-dehydro-2-deoxyphosphogluconate aldolase	EC:4.1.2.29
 
 # Related to methylmalonate-semialdehyde dehydrogenase (1.2.1.27), and many enzymes
-# may have both activities
+# may have both activities.
 # Q9I702 is annotated as doing this but as "putative" and without the EC number
 mmsA	malonate-semialdehyde dehydrogenase	EC:1.2.1.18	ignore_other:1.2.1.27	ignore:SwissProt::Q9I702
 
-all: transport iolG iolE iolD iolB iolC iolJ mmsA tpi
+# MetaCyc myo-inositol degradation I involves a 2-hydrogenase and a dehydratase, to
 
-# MetaCyc myo-inositol degradation II involves iolG as above followed by
-# another dehydrogenase to 2,4-diketo-inositol. This is cleaved
-# by a hydrolase to 5-dehydro-L-gluconate, an epimerase converts this
-# to D-tagaturonate, another epimerase converts this to D-fructonate.
-# This is reduced to D-mannonate, dehydrated to 2-keto-3-deoxygluconate,
-# phosphorylated, and then cleaved an aldolase, to form
-# glyceraldehyde-3-P + pyruvate
+# Both pathways begin with the 2-dehydrogenase (iolG) forming scyllo-inosose.
+# In pathway I, inosose dehydratase (iolE)  forms 3D-(3,5/4)-trihydroxycyclohexane-1,2-dione,
+# followed by a ring-cleaving hydrolase to 5-deoxy-D-glucuronate,
+# isomerization to 5-dehydro-2-deoxy-D-gluconate, phosphorylation,
+# and cleavage by an aldolase to 3-oxopropionate (malonate semialdehyde) and
+# glycerone phosphate; the 3-oxopropionate is oxidized to acetyl-CoA while the
+# glycerone phosphate is converted by triose-phosphate isomerase to glyceraldehyde 3-phosphate.
+all: transport iolG iolE iolD iolB iolC iolJ mmsA tpi
 
 iolM	2-inosose 4-dehydrogenase	curated:metacyc::MONOMER-17949
 iolN	2,4-diketo-inositol hydratase	curated:SwissProt::Q9WYP4
@@ -94,4 +90,9 @@ uxuB	D-mannonate dehydrogenase	EC:1.1.1.57
 # have little activity on D-mannonoate; it is probably not the physiological substrate
 uxuA	D-mannonate dehydratase	EC:4.2.1.8	ignore:SwissProt::A4WA78	ignore:SwissProt::A5KUH4	ignore:SwissProt::A6AMN2	ignore:SwissProt::A6M2W4	ignore:SwissProt::A6VRA1	ignore:SwissProt::A8RQK7	ignore:SwissProt::B1ELW6	ignore:SwissProt::B3PDB1	ignore:SwissProt::B5GCP6	ignore:SwissProt::B5QBD4	ignore:SwissProt::B5R541	ignore:SwissProt::B5RAG0	ignore:SwissProt::B8HCK2	ignore:SwissProt::C6CBG9	ignore:SwissProt::C6CVY9	ignore:SwissProt::C6D9S0	ignore:SwissProt::C6DI84	ignore:SwissProt::C7PW26	ignore:SwissProt::C8ZZN2	ignore:SwissProt::C9A1P5	ignore:SwissProt::C9CN91	ignore:SwissProt::C9NUM5	ignore:SwissProt::C9Y5D5	ignore:SwissProt::D0KC90	ignore:SwissProt::D0X4R4	ignore:SwissProt::D4GJ14	ignore:SwissProt::D7BPX0	ignore:SwissProt::D8ADB5	ignore:SwissProt::D9UNB2	ignore:SwissProt::E1V4Y0	ignore:SwissProt::Q1QT89	ignore:SwissProt::Q2CIN0	ignore:SwissProt::Q6DAR4	ignore:SwissProt::Q8FHC7
 
+# In pathway II, a dehydrogenase forms 3-dehydro scyllo-inosose (also known as 2,4-diketo-inositol),
+# a hydratase forms 5-dehydro-L-gluconate, an epimerase forms D-tagaturonate,
+# another forms to D-fructonate, a reductase forms D-mannonate, a dehydratase forms
+# 2-keto-3-deoxygluconate, a kinase forms 2-keto-3-deoxy-gluconate 6-phosphate,
+# and an aldolase forms glyceraldehyde-3-phosphate and pyruvate.
 all: transport iolG iolM iolN iolO uxaE uxuB uxuA kdgK eda

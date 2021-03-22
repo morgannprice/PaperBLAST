@@ -1,34 +1,43 @@
-# Transporters were identified using
-# query: transporter:glycerol
-# glycerol-3-phosphate transporters were manually removed from the results
+# Glycerol utilization in GapMind is based on MetaCyc pathways
+# glycerol degradation I via glycerol kinase (metacyc:PWY-4261),
+# II via dihydroxyacetone kinase (metacyc:PWY-6131),
+# or V via dihydroxyacetone:PEP phoshpotransferase (metacyc:GLYCEROLMETAB-PWY).
+# Two fermentative pathways are not included because they do not lead to
+# carbon incorporation (metacyc:PWY-6130, metacyc:PWY-7003).
+
+
+# MetaCyc Pathway: glycerol degradation II involves
+# glycerol dehydrogenase (dhaD, 1.1.1.6) and dihydroxyacetone kinase (and tpi)
+
 
 # ABC transporters:
+
 # GlpSTPQV from Rhizobium leguminosarum
-# and a related system from Acidovorax GW101-3H11
-# GlpS/GlpT were in the same cluster; GlpS is more similar to Ac3H11_791 and GlpT to Ac3H11_792
+# and a related system from Acidovorax GW101-3H11.
+# GlpS/GlpT are similar to each other; GlpS is more similar to Ac3H11_791 and GlpT to Ac3H11_792
 glpS	glycerol ABC transporter, ATPase component 1 (GlpS)	curated:TCDB::G3LHY8	curated:reanno::acidovorax_3H11:Ac3H11_791
 glpT	glycerol ABC transporter, ATPase component 2 (GlpT)	curated:TCDB::G3LHY9	curated:reanno::acidovorax_3H11:Ac3H11_792
 glpP	glycerol ABC transporter, permease component 1 (GlpP)	curated:TCDB::G3LHZ0	curated:reanno::acidovorax_3H11:Ac3H11_793
 glpQ	glycerol ABC transporter, permease component 2 (GlpQ)	curated:TCDB::G3LHZ1	curated:reanno::acidovorax_3H11:Ac3H11_794
 glpV	glycerol ABC transporter, substrate-binding component GlpV	curated:TCDB::G3LHZ3	curated:reanno::acidovorax_3H11:Ac3H11_796
+
+# Transporters were identified using
+# query: transporter:glycerol
+# glycerol-3-phosphate transporters were manually removed from the results
 transport: glpS glpT glpP glpQ glpV
 
 # Other transporters:
 
-# Cluster 1 235-321 amino acids (not heteromeric)
 # Ignore an uncharacterized homolog from Archaeoglobus
 glpF	glycerol facilitator glpF	curated:CharProtDB::CH_024677	curated:CharProtDB::CH_091207	curated:CharProtDB::CH_091783	curated:SwissProt::F9UMX3	curated:SwissProt::F9UST3	curated:SwissProt::F9USY3	curated:SwissProt::F9UTW9	curated:SwissProt::F9UUB3	curated:SwissProt::P47862	curated:TCDB::F6QEC2	curated:TCDB::P08995	curated:TCDB::P18156	curated:TCDB::P52280	curated:TCDB::Q6Q1Q6	curated:TCDB::Q8WPZ6	curated:TCDB::Q9C4Z5	ignore:TCDB::O28846
 transport: glpF
 
-# Cluster 3 271-335 amino acids (not heteromeric)
 aqp-3	glycerol porter aqp-3	curated:TCDB::E3UMZ6	curated:TCDB::729057658	curated:TCDB::E3UMZ5	curated:TCDB::E3UN01
 transport: aqp-3
 
-# Cluster 5 530-569 amino acids (not heteromeric)
 stl1	glycerol:H+ symporter Stl1p	curated:CharProtDB::CH_091379	curated:CharProtDB::CH_122745	curated:TCDB::C4QVV9
 transport: stl1
 
-# Singleton 4 CharProtDB::CH_012828,TCDB::P22094 GB|AAA25206.1;; 1.A.8.2.2 glycerol facilitator-aquaporin;; Mixed function glycerol facilitator/aquaporin, GlpF Lactococcus lactis subsp. cremoris;; Lactococcus lactis (subsp. cremoris) (Streptococcus cremoris)
 glpF'	glycerol facilitator-aquaporin	curated:CharProtDB::CH_012828
 transport: glpF'
 
@@ -46,13 +55,9 @@ transport: TIPa
 
 # Two human HHAT-type proteins are related to glycerol transporters but it is not so clear
 # that they are characterized as transporters; ignored.
-# And a porin from Pseudomonas aeruginosa was ignored
-# Aquaporin NIP2-1 from Arabidopsis was ignored because it was described as having "minimal" glycerol transport
-# Ignored two putative transporters from Listeria innocua, Lin0367/Lin0368, which are not characterized
-
-# MetaCyc Pathway: glycerol degradation I
-# involves has glycerol kinase glpK (2.7.1.30) and glycerol-3-phosphate dehydrogenase (1.1.5.3).
-# The glycerone 3-P can then be converted to glyceraldehyde-3-phosphate by triose-phosphate isomerase
+# And a porin from Pseudomonas aeruginosa was ignored.
+# Aquaporin NIP2-1 from Arabidopsis was ignored because it was described as having "minimal" glycerol transport.
+# Ignored two putative transporters from Listeria innocua, Lin0367/Lin0368, which are not characterized.
 
 glpK	glycerol kinase	EC:2.7.1.30
 
@@ -76,9 +81,6 @@ g3p_dehydrogenase: glpO
 # Ignore a fragmentary (allergen) sequence
 tpi	triose-phosphate isomerase	EC:5.3.1.1	ignore:SwissProt::P85814
 
-# MetaCyc Pathway: glycerol degradation II involves
-# glycerol dehydrogenase (dhaD, 1.1.1.6) and dihydroxyacetone kinase (and tpi)
-# MetaCyc Pathway: glycerol degradation V is similar but with a different form of the kinase
 
 dhaD	glycerol dehydrogenase	EC:1.1.1.6
 
@@ -98,10 +100,19 @@ dhaM	dihydroxyacetone:PEP phosphotransferase, subunit M	curated:SwissProt::Q92ET
 # include a system from Citrobacter (also known as dhaK)
 dhaK'	dihydroxyacetone kinase, ATP dependent (monomeric)	curated:BRENDA::P43550	curated:BRENDA::P54838	curated:BRENDA::Q3LXA3	curated:CharProtDB::CH_008528	curated:CharProtDB::CH_124545	curated:SwissProt::F1RKQ4	curated:SwissProt::Q4KLZ6	curated:metacyc::MONOMER-13163	curated:metacyc::MONOMER-16996	ignore_other:2.7.1.29
 
+# In pathway V, the three-subunit phosphotranfserase dhaKLM phosphorylates dihydroxyacetone,
+# with phosphoenolpyruvate as the donor.
+# In pathway II, a kinase (also known as dhaK, here dhaK') phosphorylates dihydroxyacetone.
 dhkinase: dhaK dhaL dhaM
 dhkinase: dhaK'
 
+# Pathway I
+# involves has glycerol kinase glpK and glycerol-3-phosphate dehydrogenase;
+# the glycerone 3-P can then be converted to glyceraldehyde-3-phosphate by triose-phosphate isomerase.
 all: transport glpK g3p_dehydrogenase tpi
+
+# In pathways II or V, the dehydrogenase dhaD forms dihydroxyacetone, which is phosphorylated and isomerized
+# to glyceraldehyde 3-phosphate.
 all: transport dhaD dhkinase tpi
 
 # MetaCyc also describes glycerol degradation to butanol -- this

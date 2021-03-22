@@ -1,32 +1,36 @@
-# Transporters were identified using
-# query: transporter:trehalose:D-trehalose
-
-# PTS systems:
-# E. coli has EII-BC treB; crr is the EII-A
-# B. subtilis has EII-BC treP; PMC6148471 shows that ptsG is the predominant EII-A but gamP and ptsA also function
-# Listeria monocytogenes has EII-BC; the EII-A is not known
-# Pseudomonas simiae WCS417 and P. fluorescens FW300-N2E3 have similar systems
-# but only EII-A is annotated. In FW300-N2E3, AO353_15980 (A0A0N9WDQ5) is the II-BC protein.
-# In WCS417, PS417_23050 (A0A1N7UR85) is the II-BC protein. These are both similar to E. coli treB.
+# Trehalose degradation is based on MetaCyc pathways
+# I via trehalose-6-phosphate hydrolase (metacyc:TREDEGLOW-PWY),
+# II via cytoplasmic trehalase (metacyc:PWY0-1182),
+# III via trehalose-6-phosphate phosphorylase (metacyc:PWY-2721),
+# V via trehalose phosphorylase (metacyc:PWY-2723),
+# VI via periplasmic trehalase (metacyc:PWY0-1466),
+# as well as trehalose degradation via 3-ketotrehalose (PMID:33657378).
+# Pathway IV via inverting trehalose phosphorylase (metacyc:PWY-2722) is not represented yet.
 
 treB	trehalose PTS system, EII-BC components TreB	curated:BRENDA::P36672	curated:SwissProt::P39794	curated:TCDB::Q720G7	uniprot:A0A0N9WDQ5	uniprot:A0A1N7UR85	curated:BRENDA::A0A0H3F7X9
 
 # Ignore a close homlog in Serratia (TC 4.A.3.2.5 / Q8L3C4) which is reported to be the II-A component,
-# and the homolog in Salmonella
+# and the homolog in Salmonella. Include E. coli crr and B. subtilis ptsG, gamP, or ptsA (PMC6148471).
 treEIIA	N-acetylglucosamine phosphotransferase system, EII-A component (Crr/PtsG/YpqE/GamP)	curated:TCDB::P20166	uniprot:P50829	curated:SwissProt::P39816	curated:CharProtDB::CH_088352	ignore:SwissProt::P0A283	ignore:TCDB::Q8L3C4	curated:reanno::WCS417:GFF4500	curated:reanno::pseudo3_N2E3:AO353_15995
 
+# E. coli has EII-BC treB; crr is the EII-A.
+# B. subtilis has EII-BC treP. PMC6148471 shows that ptsG is the predominant EII-A but gamP and ptsA also function.
+# Listeria monocytogenes has EII-BC; the EII-A is not known.
+# Pseudomonas simiae WCS417 and P. fluorescens FW300-N2E3 have similar systems
+# but only EII-A is annotated. In FW300-N2E3, AO353_15980 (A0A0N9WDQ5) is the II-BC protein.
+# In WCS417, PS417_23050 (A0A1N7UR85) is the II-BC protein. These are both similar to E. coli treB.
 PTS: treEIIA treB
 
 # ABC transporters:
 
 # Sinorhizobium meliloti has two distantly related systems: trehalose-inducible thuEFGK
 #   and sucrose-inducible aglEFGK
-# Systems similar to thuEFGK are also found in Thermotoga maritima, Thermus thermophilus and Thermococcus litoralis.
-# (The ATPase component in T. maritima is not described.)
-# Mycobacterium tuberculosis has a similar system with a diverged SBP
-# A system similar that from T. thermophilus, in Pyrococcus furiosus, also transports trehalose
-# see PMC2685544
 
+# Systems similar to thuEFGK from Sinorhizobium meliloti
+# are also found in Thermotoga maritima, Thermus thermophilus and Thermococcus litoralis.
+# (The ATPase component in T. maritima is not described.)
+# Mycobacterium tuberculosis has a similar system with a diverged SBP.
+# A system similar to that from T. thermophilus, in Pyrococcus furiosus, also transports trehalose (PMC2685544).
 thuE	trehalose ABC transporter, substrate-binding component ThuE	curated:TCDB::G4FGN8	curated:TCDB::O51923	curated:TCDB::Q72H68	curated:TCDB::Q9R9Q7	curated:SwissProt::Q7LYW7
 
 # (Removed Sulfolobus treT, which is related but is described separately)
@@ -36,6 +40,8 @@ thuG	trehalose ABC transporter, permease component 2 (ThuG)	curated:SwissProt::Q
 
 thuK	trehalose ABC transporter, ATPase component ThuK	curated:SwissProt::P9WQI3	curated:SwissProt::Q9YGA6	curated:TCDB::Q72L52	curated:TCDB::Q9R9Q4	curated:TCDB::Q9X103	
 
+# Transporters were identified using
+# query: transporter:trehalose:D-trehalose
 transport: thuE thuF thuG thuK
 
 lpqY	trehalose ABC transporter, substrate-binding lipoprotein component LpqY	curated:SwissProt::P9WGU9
@@ -44,16 +50,14 @@ transport: lpqY thuF thuG thuK
 
 # Thermotoga maritima also has  TC 3.A.1.1.22 system with two different SBPs (malE1E2) and also malF1G1G2K
 # These are duplicated operons and probably either paralog will work with either SBP.
-# Only malE2 binds trehalose using (PMC1064059)
-
+# Only malE2 binds trehalose (PMC1064059).
+# The ATPase component (malK) is quite similar to thuK and was included in that definition
 malE2	trehalose ABC transporter, substrate-binding component MalE2	curated:TCDB::Q9S5Y1
 malF1	trehalose ABC transporter, permease component 1	curated:TCDB::Q9X0T0
 malG1	trehalose ABC transporter, permease component 2 (MalG1/MalG2)	curated:BRENDA::Q9X0S9	curated:BRENDA::Q9X2F5
-# the ATPase component (malK) is quite similar to thuK and was included in that definition
 transport: malE2 malF1 malG1 thuK
 
 # Streptococcus mutans malXFGK
-
 malF	trehalose ABC transporter, permease component 1 (MalF)	curated:TCDB::Q8DT27
 malG	trehalose ABC transporter, permease component 2 (MalG)	curated:TCDB::Q8DT26
 # The related ATPase msmK can substitute for malK (PMC2223742)
@@ -68,7 +72,7 @@ treU	trehalose ABC transporter, permease component 2 (TreU)	curated:TCDB::Q97ZC1
 treV	trehalose ABC transporter, ATPase component TreV	curated:TCDB::Q97ZC0
 transport: treS treT treU treV
 
-# S. meliloti aglEFGK. Use the suffix to avoid confusion with the glucose transporter, which is realted
+# S. meliloti aglEFGK. Use the ' suffix to avoid confusion with the glucose transporter, which is related
 # but includes a different set of sequences.
 # Ignore similarity to Slr0529, which may also transport trehalose
 aglE'	trehalose ABC transporter, substrate-binding component AglE	curated:TCDB::Q9Z3R5	ignore:TCDB::Q55471
@@ -88,9 +92,6 @@ transport: TRET1
 
 # Tret1-1 has a very high Km so is not included
 
-# MetaCyc Pathway: trehalose degradation VI (periplasmic)
-# After cleavage by trehalase in the periplasm, glucose is taken up
-# by a PTS system, or taken up and phosphorylated
 
 # Import the various transporters and PTS systems
 import glucose.steps:MFS_glucose SSS_glucose glcU_Firmicutes PAST-A SemiSWEET SWEET1 mglA mglB mglC gtsA gtsB gtsC gtsD glcS glcT glcU glcV aglE aglF aglG aglK ptsG-crr bglF ptsG crr manX manY manZ gdh gnl gadh1 gadh2 gadh3 kguT kguK kguD edd eda glk
@@ -115,13 +116,6 @@ glucose-utilization: glucose-transport glk
 glucose-utilization: glucose-PTS
 glucose-utilization: gdh gnl gadh1 gadh2 gadh3 kguT kguK kguD edd eda
 
-# Besides the pathways in MetaCyc, trehalose degradation via 3-ketotrehalose has been reported
-# in Bacteriodes thetaiotaomicron and other bacteria. This involves a periplasmic
-# 3-dehydrogenase (BT2158 or the lacACB-like system CA265_RS15345 or Echvi_1847),
-# a periplasmic 3-ketoglycoside hydrolase from the DUF1080 family (i.e. BT2157),
-# which forms glucose and 3-ketoglucose, and uptake of the resulting glucose.
-# The fate of the 3-ketoglucose is not understood, but its utilization might
-# not be necessary.
 
 BT2158	periplasmic trehalose 3-dehydrogenase (BT2158)	curated:reanno::Btheta:351686
 
@@ -139,36 +133,41 @@ trehalose-3-dehydrogenase: lacA lacC lacB
 # hydrolyzes 3-ketotrehalose. CA265_RS22975 and Echvi_2921 are similar proteins that are
 # involved in trehalose utilization.
 klh	3-ketotrehalose hydrolase	curated:reanno::Btheta:351685	curated:reanno::Pedo557:CA265_RS22975	curated:reanno::Cola:Echvi_2921
-all: trehalose-3-dehydrogenase  klh glucose-utilization
 
-# In this pathway, the trehalase should be extracellular
+# In the 3-ketotrehalose pathway, a periplasmic dehydrogenase forms 3-ketotrehalose,
+# a periplasmic 3-ketoglycoside hydrolase (klh) forms glucose and 3-ketoglucose,
+# and the glucose is taken up and utilized;
+# the fate of the 3-ketoglucose is not well understood, but its utilization might not be necessary.
+all: trehalose-3-dehydrogenase klh glucose-utilization
+
 # PGA1_c07890 (I7EUW4) is important for trehalose and cellobiose utilization, probably cytoplasmic
 treF	trehalase	EC:3.2.1.28	uniprot:I7EUW4
+
+# In pathway VI, a periplasmic trehalase forms glucose, which is utilized.
 all: treF glucose-utilization
 
-# MetaCyc Pathway: trehalose degradation I (low osmolarity)
-# After PTS, trehalose 6-phosphate hydrolase forms D-glucose 6-phosphate and D-glucose
-# and glucokinase (glk) phosphorylates the glucose
 treC	trehalose-6-phosphate hydrolase	EC:3.2.1.93
+
+# In pathway I, after uptake and phosphorylation by the PTS,
+# trehalose 6-phosphate hydrolase (treC) forms D-glucose 6-phosphate and D-glucose,
+# and glucokinase (glk) phosphorylates the glucose.
 all: PTS treC glk
 
-# MetaCyc Pathway: trehalose degradation II (cytosolic)
-# trehalase cleaves trehalose to two glucose, followed by phosphorylation by glk
-# In this pathway, the trehalase should be cytoplasmic
+# In pathway II, a cytoplasmic trehalase cleaves trehalose to two glucose,
+# followed by phosphorylation by glk.
 all: transport treF glk
 
-# MetaCyc Pathway: trehalose degradation III
-# After PTS, trehalose-6-P phosphorylase forms beta-glucose-1-phosphate + glucose-6-phosphate
-# beta-phosphoglucomutase converts the -1-phosphate to -6-phosphate
 trePP	trehalose-6-phosphate phosphorylase	EC:2.4.1.216
 pgmB	beta-phosphoglucomutase	EC:5.4.2.6
+
+# In pathway III, after uptake and phosphorylation by the PTS,
+# trehalose-6-phosphate phosphorylase (trePP) forms beta-glucose-1-phosphate and glucose-6-phosphate,
+# and beta-phosphoglucomutase converts glucose-1-phosphate to glucose-6-phosphat.e
 all: PTS trePP pgmB
 
-# (There is no trehalose degradation IV)
 
-# MetaCyc Pathway: trehalose degradation V
-# trehalose phosphorylase forms alpha-glucose-1-phosphate + glucose
-# which are converted to glucose-6-P by alpha-phosphoglucomutase (pgmA) and glk
+# In pathway V, trehalose phosphorylase forms alpha-glucose-1-phosphate and glucose;
+# these are converted to glucose-6-P by alpha-phosphoglucomutase (pgmA) and glk.
 # (This is a fungal pathway and might not occur in prokaryotes.)
 PsTP	trehalose phosphorylase	EC:2.4.1.231
 import galactose.steps:pgmA

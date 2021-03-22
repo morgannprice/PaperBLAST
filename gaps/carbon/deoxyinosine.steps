@@ -1,5 +1,14 @@
-# FEBA: 2'-Deoxyinosine
-# MetaCyc: DEOXYINOSINE
+# The known pathway for deoxyinosine utilization is via a phosphorylase, producing deoxyribose 1-phosphate,
+# phosphopentomutase to deoxyribose 5-phosphate, an aldolase producing
+# 3-phosphoglycerate (an intermediate in glycolysis) and acetaldehyde,
+# and oxidation of acetaldehyde to acetyl-CoA (metacyc:PWY-7179-1).
+# MetaCyc also describes a purine deoxyribonucleosidase (EC 3.2.2.M2),
+# yielding deoxyribose, but this enzyme has not been linked to
+# sequence, so it is not included in GapMind.  This reaction might also
+# occur non-specifically via ribonucleosidases. The fitness data for
+# Paraburkholderia bryophila 376MFSha3.1 does suggest cytoplasmic
+# hydrolysis of purine deoxynucleosides, but did not identify the
+# deoxyribonucleosidase.
 
 # These proteins are reported to transport inosine, and likely transport deoxyinosine as well.
 # The specificity of E. coli nupX (P33021, also known as yeiJ) seems to be unknown.
@@ -14,7 +23,6 @@ transport: nupG
 # In  Paraburkholderia bryophila 376MFSha3.1,
 # H281DRAFT_01115-01112 is a 4-component ABC transporter that is important for
 # deoxyinosine utilization.
-
 H281DRAFT_01115	deoxynucleoside transporter, permease component 1	curated:reanno::Burk376:H281DRAFT_01115
 H281DRAFT_01114	deoxynucleoside transporter, substrate-binding component	curated:reanno::Burk376:H281DRAFT_01114
 H281DRAFT_01113	deoxynucleoside transporter, ATPase component	curated:reanno::Burk376:H281DRAFT_01113
@@ -29,11 +37,6 @@ nupC'	deoxyinosine ABC transporter, permease component 2	curated:TCDB::A2RKA5	cu
 bmpA	deoxyinosine ABC transporter, substrate-binding component	curated:TCDB::D2BKA1	curated:TCDB::Q8DU36
 transport: nupA nupB nupC' bmpA
 
-# The known pathway is via a phosphorylase, producing deoxyribose 1-phosphate,
-# phosphopentomutase to deoxyribose 5-phosphate, an aldolase producing
-# 3-phosphoglycerate (an intermediate in glycolysis) and acetaldehyde,
-# and oxidation of acetaldehyde to acetyl-CoA.
-
 # The phosphorylase produces 2-deoxy-alpha-D-ribose 1-phosphate
 # (2.4.2.1 includes activity on purine nucleosides and deoxynucleosides)
 # Ignore hits to guanosine phosphorylase (EC 2.4.2.15), which is a quite similar reaction
@@ -42,15 +45,8 @@ deoD	deoxyinosine phosphorylase	EC:2.4.2.1	ignore_other:2.4.2.15
 # deoB converts 1-phosphate to 5-phosphate
 deoB	phosphopentomutase	EC:5.4.2.7
 
-import deoxyribose.steps:deoC # deoxribose-phosphate aldolase
-import deoxyribose.steps:acetald-dehyd # acetaldehyde dehydrogenase
+# deoxribose-phosphate aldolase and acetaldehyde dehydrogenase
+import deoxyribose.steps:deoC acetald-dehyd
 
 all: transport deoD deoB deoC acetald-dehyd
 
-# MetaCyc also describes a purine deoxyribonucleosidase (EC 3.2.2.M2),
-# yielding deoxyribose, but this enzyme has not been linked to
-# sequence, so it is not described here.  The reaction might also
-# occur non-specifically via ribonucleosidases. The fitness data for
-# Paraburkholderia bryophila 376MFSha3.1 does suggest cytoplasmic
-# hydrolysis of purine deoxynucleosides, but did not identify a
-# deoxyribonucleosidase.

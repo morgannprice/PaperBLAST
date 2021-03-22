@@ -1,14 +1,21 @@
-# Transporters were identified using
-# query: transporter:succinate
+# GapMind represents succinate uptake only, as succinate is part of
+# central metabolism. Specifically, succinate can be consumed by the
+# TCA cycle enzymes succinate dehydrogenase, fumarase (forming
+# L-malate), and malate dehydrogenase (either decarboxylating, with
+# pyruvate as the product, or not, with oxalacetate with the product;
+# both compounds are central metabolic intermediates). It's also
+# possible that malate could be decarboxylated to lactate, as in
+# malolactic fermentation by lactic acid bacteria.
 
-# Cluster 1 462-566 amino acids (not heteromeric)
 # (Sodium-dependent dicarboxylate transporter SdcS (Q99SX1) was not originally included
 #  because the description did not mention succinate specifically.)
 sdc	succinate:Na+ symporter Sdc	curated:TCDB::A4QAL6	curated:SwissProt::Q21339	curated:TCDB::Q2FFH9	curated:TCDB::Q65NC0	curated:TCDB::Q9KNE0	curated:SwissProt::Q99SX1
+
+# Transporters were identified using
+# query: transporter:succinate
 transport: sdc
 
-# Cluster 3 421-444 amino acids (not heteromeric)
-# not initially included were AO356_18980, Q9I4F5, Q01857
+# not initially included were AO356_18980, Q9I4F5, Q01857.
 dctA	succinate:H+ symporter DctA	curated:CharProtDB::CH_014038	curated:TCDB::P96603	curated:TCDB::Q1J1H5	curated:TCDB::Q848I3	curated:reanno::pseudo5_N2C3_1:AO356_18980	curated:SwissProt::Q9I4F5	curated:TCDB::Q01857
 transport: dctA
 
@@ -19,21 +26,23 @@ transport: dauA
 satP	succinate:H+ symporter SatP	curated:SwissProt::P0AC98
 transport: satP
 
-# TRAP transporter DctQMP
-# The P. aeruginosa system was not initially included (annotated as C4-dicarboxylate system; Q9HU16-8)
-# Similarly for the system from Shewanella loihica PV-4 or P. stutzeri RCH2 (just one component annotated)
-# The V. cholerae system is VC1927-VC1929, see PMID: 22556361, but only the dctP
-# (Q9KQR9) component is curated; Q9KQS0 is dctQ; Q9KQS1 is dctM
+# TRAP transporter DctQMP.
+# The P. aeruginosa system was not initially included (annotated as C4-dicarboxylate system; Q9HU16-8).
+# Similarly for the system from Shewanella loihica PV-4 or P. stutzeri RCH2 (just one component annotated).
+# The V. cholerae system is VC1927-VC1929 (PMID:22556361), but only the dctP
+# (Q9KQR9) component is curated; Q9KQS0 is dctQ; Q9KQS1 is dctM.
 # In Phaeobacter inhibens, the system is important for fumarate utilization:
-# PGA1_c20670 = dctQ = I7EY26
-# PGA1_c20660 = dctM = I7DRS6
-# PGA1_c20680 = dctP = I7END8
+# PGA1_c20670 = dctQ = I7EY26,
+# PGA1_c20660 = dctM = I7DRS6,
+# PGA1_c20680 = dctP = I7END8.
 # Finally, ignore the system from S. amazonensis SB2B (Sama_2209:Sama_2211)
 # as we have no fitness data for succinate from this organism (but it does utilize it)
 dctQ	succinate TRAP transporter, small permease component DctQ	curated:SwissProt::O07837	curated:SwissProt::Q9HU17	curated:reanno::PV4:5208944	curated:reanno::psRCH2:GFF4196	uniprot:Q9KQS0	ignore:reanno::SB2B:6938089	uniprot:I7EY26
+
 dctM	succinate TRAP transporter, large permease protein DctM	curated:SwissProt::O07838	curated:SwissProt::Q9HU16	curated:reanno::PV4:5208943	uniprot:Q9KQS1	ignore:reanno::SB2B:6938090	uniprot:I7DRS6
-# B. subtilis DctB is similar to DctP but is probably involved in sensing, not transport, so is not included
-# Q2IUT5 = RPB_3329, A3QCW5 = Shew_1446 = 5208945, and Q8ECK4 = SO_3134 were shown to bind succinate (PMC4310620)
+
+# B. subtilis DctB is similar to DctP but is probably involved in sensing, not transport, so is not included.
+# Q2IUT5 = RPB_3329, A3QCW5 = Shew_1446 = 5208945, and Q8ECK4 = SO_3134 were shown to bind succinate (PMC4310620).
 dctP	succinate TRAP transporter, component DctP	curated:SwissProt::P37735	curated:SwissProt::Q9HU18	curated:reanno::PV4:5208945	curated:SwissProt::Q9KQR9	ignore:reanno::SB2B:6938088	uniprot:I7END8	uniprot:Q2IUT5	uniprot:Q8ECK4
 transport: dctQ dctM dctP
 
@@ -52,18 +61,5 @@ transport: Dshi_1194 Dshi_1195
 # Ignore succinate exporter SucE1 / TMEM184B
 # Ignore succinate efflux transporter DcuC (although it acts as a succinate:proton symporter,
 # so maybe it could suffice)
-
-# MetaCyc does not describe the catabolism of succinate-- succinate
-# itself is not a central intermediate, but succinyl-CoA is. Succinate
-# is thought to be oxidized by the TCA cycle enzymes succinate
-# dehydrogenase, fumarase (forming L-malate), and malate dehydrogenase
-# (either decarboxylating, with pyruvate as the product, or not, with
-# oxalacetate with the product; both compounds are central metabolic
-# intermediates). Since these TCA cycle reactions are part of central
-# metabolism in most prokaryotes, they are not included here.
-
-# It's also possible that malate could be decarboxylated to lactate,
-# as in malolactic fermentation by lactic acid bacteria; but this
-# might not be relevant to succinate utilization.
 
 all: transport

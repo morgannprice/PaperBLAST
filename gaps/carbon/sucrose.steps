@@ -1,19 +1,28 @@
-# Transporters were analyzed using
-# query: transporter:sucrose
-# (run on June 18, 2020)
+# Sucrose utilization in GapMind is based on MetaCyc pathways
+# sucrose degradation I via sucrose 6-phosphate hydrolase (metacyc:SUCUTIL-PWY),
+# pathway II via sucrose synthase (metacyc:PWY-3801),
+# pathway III via invertase (metacyc:PWY-621),
+# and pathway IV via sucrose phosphorylase (metacyc:PWY-5384).
+# Pathway V is similar to pathway III and is not reported in prokaryotes, so it is not included.
+# There is no pathway VI.
+# Pathway VII (via sucrose 3-dehydrogenase, metacyc:SUCROSEUTIL2-PWY)
+# is too poorly understood to include in GapMind.
 
 # ABC transporters
 
-# ThuEFGK in Sinorhizobium meliloti and TTC1627-9 + MalK1 in Thermus thermophilus
+# ThuEFGK in Sinorhizobium meliloti and TTC1627:TTC1629 + MalK1 in Thermus thermophilus.
 # Also, a thuEFGK homolog in various Pseudomonas is important or detrimental for fitness on sucrose,
 # i.e., Pf1N1B4_5112:5116 or Psyr_0762:Psyr_0759, and is presumably a sucrose transporter.
-# The N1B4 system is A0A166QFS3 A0A166QFV1 A0A161ZE72 A0A166QFW2
+# The N1B4 system is A0A166QFS3 A0A166QFV1 A0A161ZE72 A0A166QFW2.
 # (The detrimental phenotypes might indicate toxicity from too-rapid uptake of ~10 mM sucrose.)
 thuE	sucrose ABC transporter, substrate-binding component ThuE	curated:TCDB::Q72H68	curated:TCDB::Q9R9Q7	uniprot:A0A166QFS3
 thuF	sucrose ABC transporter, permease component 1 (ThuF)	curated:TCDB::Q72H67	curated:reanno::Smeli:SM_b20326	uniprot:A0A166QFV1
 thuG	sucrose ABC transporter, permease component 2 (ThuG)	curated:TCDB::Q72H66	curated:reanno::Smeli:SM_b20327	uniprot:A0A161ZE72
-# aglK (Q9Z3R9, SMc03065) also clustered with thuK but is not that similar (56% identity) so was ignored
+# aglK (Q9Z3R9, SMc03065) also clustered with thuK but is not that similar (56% identity) so is marked ignore
 thuK	sucrose ABC transporter, ATPase component ThuK	curated:TCDB::Q72L52	curated:TCDB::Q9R9Q4	ignore:reanno::Smeli:SMc03065	uniprot:A0A166QFW2
+
+# Transporters were analyzed using
+# query: transporter:sucrose
 transport: thuE thuF thuG thuK
 
 # AglEFGK in Sinorhizobium meliloti
@@ -25,42 +34,38 @@ transport: aglE aglF aglG aglK
 
 # phosphotransferase systems
 
-# Cluster 2 456-480 amino acids (not heteromeric)
 # This is PTS-II-BC system (TIGR01996).
 # TIGRFam describes it as relying on the glucose II-A protein (crr).
 # But in B. subtilis, many different II-A proteins can phosphorylate the II-B domains
 # (PMID:30038046). So, treat it as a single-component system. Since the II-A component
-# is not specific, describe it as a 1-component system
+# is not specific, describe it as a 1-component system.
 sacP	sucrose phosphotransferase enzyme EII-BC	curated:BRENDA::P27219	curated:BRENDA::P51184	curated:SwissProt::P15400	curated:TCDB::P05306	curated:TCDB::P08470
 PTS: sacP
 
-# Cluster 8 661-664 amino acids (not heteromeric)
 ptsS	sucrose phosphotransferase enzyme EII-BCA	curated:BRENDA::P12655	curated:TCDB::Q8NMD6
 PTS: ptsS
 
 # Other heteromeric transporters
+
 TMT1	heteromeric sucrose:H+ symporter, TMT1 component	curated:TCDB::Q96290
 TMT2	heteromeric sucrose:H+ symporter, TMT2 component	curated:TCDB::Q8LPQ8
 transport: TMT1 TMT2
 
 # Monomeric transporters
 
-# Cluster 1 491-595 amino acids (not heteromeric)
 sut	sucrose:proton symporter SUT/SUC	curated:CharProtDB::CH_091525	curated:CharProtDB::CH_091608	curated:SwissProt::A2ZN77	curated:SwissProt::Q0ILJ3	curated:SwissProt::Q10R54	curated:SwissProt::Q39231	curated:SwissProt::Q67YF8	curated:SwissProt::Q69JW3	curated:SwissProt::Q6YK44	curated:SwissProt::Q948L0	curated:SwissProt::Q9C8X2	curated:SwissProt::Q9FE59	curated:SwissProt::Q9FG00	curated:SwissProt::Q9ZVK6	curated:TCDB::D1GC38	curated:TCDB::Q9SXM0	curated:metacyc::MONOMER-18237	curated:metacyc::MONOMER-18241
 transport: sut
 
-# Cluster 3 530-599 amino acids (not heteromeric)
 SLC45A2	sucrose transporter	curated:SwissProt::Q9UMX9	curated:SwissProt::P58355	curated:TCDB::Q9VSV1
 transport: SLC45A2
 
-# Cluster 5 406-406 amino acids (not heteromeric)
 scrT	sucrose permease ScrT	curated:TCDB::Q07W00	curated:reanno::ANA3:7022816
 transport: scrT
 
 sut1	alpha-glucoside permease Sut1	curated:CharProtDB::CH_091204
 transport: sut1
 
-# PMID:29808622 have evidence that PFL_3238 (Q4KBP0) is a sucrose permease; it is related to E. coli cscB
+# PMID:29808622 report that PFL_3238 (Q4KBP0) is a sucrose permease; it is related to E. coli cscB
 cscB	sucrose:H+ symporter CscB	curated:SwissProt::P30000	uniprot:Q4KBP0
 transport: cscB
 
@@ -73,14 +78,9 @@ transport: SLC45A4
 # Ignore SWEET11 which is involved in efflux as well
 # Ignore porin ScrY, involved in movement through the outer membrane
 
-# MetaCyc Pathway: sucrose degradation I (sucrose phosphotransferase)
-# PTS followed by sucrose 6-phosphate hydrolase and fructokinase,
-# yielding fructose 6-phosphate and glucose 6-phosphate, which are
-# central metabolites
-
-# This reaction does not match an EC number
-# Many invertases (EC 3.2.1.26) also have this activity, so allow matches to those as well
-# And the original reannotation of AO356_28590 as sucrose-6-phosphate hydrolase is questionable
+# This reaction does not match an EC number.
+# Many invertases (EC 3.2.1.26) also have this activity, so allow matches to those as well.
+# And the original reannotation of AO356_28590 as sucrose-6-phosphate hydrolase is questionable.
 scrB	sucrose-6-phosphate hydrolase	curated:CAZy::CAG25843.1	curated:CAZy::S68598	curated:SwissProt::P27217	curated:reanno::pseudo5_N2C3_1:AO356_28590	curated:SwissProt::Q09122	ignore_other:3.2.1.26	ignore:reanno::pseudo5_N2C3_1:AO356_28590
 
 # ignore fragmentary sequence of Q09123
@@ -193,13 +193,10 @@ usefructose: fructosePTS1phosphate 1pfk fba tpi
 useglucose: glucosetransport glk
 useglucose: glucosePTS
 
+# In pathway I, a phosphotransferase system forms sucrose 6-phosphate,
+# the hydrolyase scrB forms glucose-6-phosphate and fructose, and
+# fructokinase forms fructose 6-phosphate.
 all: PTS scrB scrK
-
-# MetaCyc Pathway: sucrose degradation II (sucrose synthase)
-# transport followed by sucrase synthase (in reverse), forming fructose and UDP-glucose
-# The fructose is phosphorylated as above.
-# The UDP-glucose is transformed to glucose-6-phosphate by a pyrophosphorylase and
-# phosphoglucomutase (pgmA)
 
 # Ignore sucrose-phosphate synthase BAA08304.1, given the wrong EC in CAZy
 # and similarly the sucrose-phosphate synthase from Thermosipho melanesiensis A6LKE9 (see PMID:25846332)
@@ -211,40 +208,30 @@ galU	glucose 1-phosphate uridylyltransferase	EC:2.7.7.9	EC:2.7.7.64	ignore:BREND
 # PH0923 (MONOMER-13382) is both phosphomannomutase and phosphoglucomutase (PMID:16091590)
 import galactose.steps:pgmA
 
+# In pathway II, transport is followed by sucrose synthase (SUS) in reverse,
+# forming fructose and UDP-glucose;
+# the fructose is phosphorylated by scrK,
+# while the UDP-glucose is transformed to glucose-6-phosphate by a pyrophosphorylase and
+# phosphoglucomutase (pgmA).
 all: transport SUS scrK galU pgmA
 
-# MetaCyc Pathway: sucrose degradation III (sucrose invertase)
-# transport followed by cleavage to glucose + fructose and phosphorylation of each
-
-# The annotation of P93291 (AtMg00260) in BRENDA is questionable
+# The annotation of P93291 (AtMg00260) in BRENDA is questionable.
 # And the original reannotation of AO356_28590 was as sucrose 6-phosphate hydrolase,
 # but it is probably a sucrose hydrolase. Also, PMID:29808622 has evidence that
 # the related protein PFL_3237 (cscA, Q4KBP1) is a sucrose hydrolase.
-# Inulinases (3.2.1.7) often cleave sucrose and so are ignored
+# Inulinases (3.2.1.7) often cleave sucrose and so are ignored.
 ams	sucrose hydrolase (invertase)	EC:3.2.1.26	EC:3.2.1.48	EC:3.2.1.80	term:sucrose hydrolase	ignore:BRENDA::P93291	curated:reanno::pseudo5_N2C3_1:AO356_28590	uniprot:Q4KBP1	ignore_other:3.2.1.7
 
+# In pathway III, transport is followed by cleavage to glucose and fructose
+# and phosphorylation of each.
 all: transport ams scrK glk
-
-# MetaCyc Pathway: sucrose degradation IV (sucrose phosphorylase)
-# transport followed by phosphorylase, producing fructose and glucose 1-phosphate,
-# which are transformed as above
 
 # glucosylglycerate phosphorylase (ycjM or b1309 or AAC74391.2) is misannotated as sucrose phosphorylase in CAZy
 scrP	sucrose phosphorylase	EC:2.4.1.7	ignore:CAZy::AAC74391.2
 
+# In pathway IV, transport is followed by phosphorylase scrP, producing fructose and glucose 1-phosphate,
+# which are transformed by kinase scrK and phosphoglucomutase pgmA.
 all: transport scrP scrK pgmA
 
-# MetaCyc Pathway: sucrose degradation V (sucrose alpha-glucosidase)
-# overlaps with III and is reported only in mammals, ignore
-
-# MetaCyc Pathway: sucrose degradation VII (sucrose 3-dehydrogenase)
-# sucrose 3-dehydrogenase converts periplasmic sucrose to
-# 3-ketosucrose, which is transported, hydrolyzed to 3-ketoglucose and
-# fructose.  The 3-ketoglucose is reduced to glucose by a reductase.
-# This pathway was not sufficiently understood to be included.  Only
-# the first step is well-described.  There is genetic evidence that
-# DUF1080 proteins are the hydrolases for this pathway. Some of them
-# may be periplasmic.  Neither the transporter nor the 3-ketoglucose
-# reductases are understood.
-
+# Alternatively, sucrose can be hydrolyzed in the periplasm, followed by utilization of glucose and fructose.
 all: ams useglucose usefructose

@@ -1,20 +1,20 @@
-# Transporters were identified using:
-# query: transporter:valine:L-valine:val
-# Non-specific large neutral amino acid tranpsorters from mammals were ignored
-# Amino acid efflux pumps were ignored
+# Valine degradation in GapMind is based on
+# MetaCyc pathway L-valine degradation I (metacyc:VALDEG-PWY).
+# The other pathways do not produce any fixed carbon and are not included.
+
 
 # ABC transporters with 5 components: E. coli livFGHMJ and related systems
-# (but the alternate substrate-binding protein livK does not transport valine)
-# livJFGHM from Streptococcus pneumoniae
-# braCDEFG from Pseudomonas aeruginosa (braC is the SBP)
-# braCDEFG or braC3/braDEFG from R. leguminosarum
-#    proximal braC (Q9L3M3) transports leucine (PMC135202), and likely valine as well
-#    braC3 (RL3540; Q1MDE9) is a secondary SBP that transports leucine/isoleucine/valine/alanine (PMID:19597156)
+# (but the alternate substrate-binding protein livK does not transport valine).
+# Related systems include
+# livJFGHM from Streptococcus pneumoniae,
+# braCDEFG from Pseudomonas aeruginosa (braC is the SBP),
+# and braCDEFG or braC3/braDEFG from R. leguminosarum.
+#    In R. leguminosarum, the proximal braC (Q9L3M3) transports leucine (PMC135202), and likely valine as well.
+#    braC3 (RL3540; Q1MDE9) is a secondary SBP that transports leucine/isoleucine/valine/alanine (PMID:19597156).
 #    LivH/BraD = RL3750/Q1MCU0; LivM/BraE = RL3749/Q1MCU1;
-#    LivG/BraF = RL3748/Q1MCU2; LivF/BraG = RL3747/Q1MCU3
+#    LivG/BraF = RL3748/Q1MCU2; LivF/BraG = RL3747/Q1MCU3.
 # (The related liv system from Acidovorax, Ac3H11_1692:1695 and Ac3H11_2396,
 #  has not been shown to transport valine.)
-
 livF	L-valine ABC transporter, ATPase component 1 (LivF/BraG)	curated:CharProtDB::CH_003736	curated:TCDB::P21630	curated:TCDB::Q8DQH7	uniprot:Q1MCU3
 
 livG	L-valine ABC transporter, ATPase component 2 (LivG/BraF)	curated:TCDB::P0A9S7	curated:TCDB::P21629	curated:TCDB::Q8DQH8	uniprot:Q1MCU2
@@ -27,6 +27,8 @@ livH	L-valine ABC transporter, permease component 1 (LivH/BraD)	curated:TCDB::P2
 # function (DUF3382) that is found in E.coli and P. aeruginosa
 livM	L-valine ABC transporter, permease component 2 (LivM/BraE)	curated:SwissProt::P22729	curated:TCDB::P21628	curated:TCDB::Q8DQH9	uniprot:Q1MCU1
 
+# Transporters were identified using
+# query: transporter:valine:L-valine:val
 transport: livF livG livJ livH livM
 
 # natABCDE from Anabaena (also known as N-I; TC 3.A.1.4.6) and a
@@ -54,59 +56,37 @@ transport: brnQ
 phtJ	L-valine uptake permease PhtJ	curated:TCDB::Q5ZUB4
 transport: phtJ
 
-# Singleton 10 TCDB::S6EX81 2.A.3.3.23 Branched chain amino acid (Leucine/isoleucine/valine) uptake transporter of 469 aas and 12 TMSs, BcaP or CitA Lactococcus lactis subsp. lactis A12
 bcaP	L-valine uptake transporter BcaP/CitA	curated:TCDB::S6EX81
 transport: bcaP
 
+# Non-specific large neutral amino acid tranpsorters from mammals were ignored
+# Amino acid efflux pumps were ignored
+
+
 # propionyl-CoA is an intermediate in valine degradation
 
-# It can be catabolized via 2-methylcitrate (prpCD-acn-prpB or
+import propionate.steps:prpC prpD acn prpB acnD prpF epi propionyl-CoA-carboxylase mutase
+
+# Propionyl-CoA can be catabolized via 2-methylcitrate (prpCD-acn-prpB or
 # prpC-acnD-prpF-acn-prpB) to succinate, or via carboxylation to
 # (S)-methylmalonate, followed by epimerase (epi) to
 # (R)-methylmalonate and methylmalonyl-CoA mutase to succinyl-CoA.
-
-import propionate.steps:prpC prpD acn prpB acnD prpF epi pccA pccB pccA1 pccA2 mcmA mcm-large mcm-small
-
-mutase: mcmA
-mutase: mcm-large mcm-small
-
-propionyl-CoA-carboxylase: pccA pccB
-propionyl-CoA-carboxylase: pccA1 pccA2 pccB
-
 propionyl-CoA-degradation: prpC prpD acn prpB
 propionyl-CoA-degradation: prpC acnD prpF acn prpB
 propionyl-CoA-degradation: propionyl-CoA-carboxylase epi mutase
 
-# MetaCyc Pathway: L-valine degradation I
-
-# An aminotransferase forms 3-methyl-2-oxobutanoate, a decarboxylating
-# alpha-ketoacid dehydrogenase forms isobutanoyl-CoA, a dehydrogenase
-# forms methylacrylyl-CoA (2-methylprop-2-enoyl-CoA), the hydratase
-# ech forms (S)-3-hydroxy-isobutaonoyl-CoA, a hydrolase forms
-# (S)-3-hydroxy-isobutanoate, a dehydrogenase forms (S)-methylmalonate
-# semialdehyde (2-methyl-3-oxopropanoate), and a decarboxylating
-# dehydrogenase forms propionyl-CoA.
-
-# The initial aminotransferase reaction is not represented, as
-# amino-acid aminotransferases are often non-specific.
 
 # 3-methyl-2-oxobutanoate dehydrogenase is one of the activities of
 # branched-chain alhpa-ketoacid dehydrogenases, which pass electrons
 # to NAD (EC 1.2.1.25) or ferredoxin (EC 1.2.7.7), as described in
 # leucine.steps.
+import leucine.steps:bkd
 
-import leucine.steps:bkdA bkdB bkdC lpd vorA vorB vorC ofoA ofoB ofo
-
-bkd: bkdA bkdB bkdC lpd
-bkd: vorA vorB vorC
-bkd: ofoA ofoB
-bkd: ofo
-
-# EC 1.3.85 includes isobutyryl-CoA dehydrogenases and sometimes
+# EC:1.3.85 includes isobutyryl-CoA dehydrogenases and sometimes
 # (2S)-2-methylbutanoyl-CoA dehydrogenases (involved in isoleucine
-# degradation, usually given EC 1.3.8.5 as well) or
+# degradation, usually given EC:1.3.8.5 as well) or
 # 3-methylbutanoyl-CoA dehydrogenases (involved in leucine
-# degradation, usually given EC 1.3.8.4). Some enzymes act on all
+# degradation, usually given EC:1.3.8.4). Some enzymes act on all
 # three methylacyl-CoA substrates. Other genes are required
 # only for isoleucine degradation and their activity on
 # isobutyryl-CoA is uncertain, so they are marked ignore.
@@ -133,14 +113,12 @@ mmsB	3-hydroxyisobutyrate dehydrogenase	EC:1.1.1.31	ignore:BRENDA::D5MU22
 
 mmsA	methylmalonate-semialdehyde dehydrogenase	EC:1.2.1.27
 
+# An aminotransferase (not represented) forms 3-methyl-2-oxobutanoate,
+# the decarboxylating alpha-ketoacid dehydrogenase (kbd) forms isobutanoyl-CoA,
+# dehydrogenase acdH forms methylacrylyl-CoA (2-methylprop-2-enoyl-CoA), the hydratase
+# ech forms (S)-3-hydroxy-isobutaonoyl-CoA, a hydrolase forms
+# (S)-3-hydroxy-isobutanoate, a dehydrogenase forms (S)-methylmalonate
+# semialdehyde (2-methyl-3-oxopropanoate), and a decarboxylating
+# dehydrogenase forms propionyl-CoA.
 all: transport bkd acdH ech bch mmsB mmsA propionyl-CoA-degradation
-
-# MetaCyc Pathway: L-valine degradation II is a fermentative pathway
-# ending at isobutanol.  It does not produce any fixed carbon and is
-# not described here.
-
-# MetaCyc Pathway: L-valine degradation III (oxidative Stickland
-# reaction) is a fermentative pathway ending at isobutanoate. It does
-# not produce any fixed carbon and is not described here.
-
 

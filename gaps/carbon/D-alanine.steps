@@ -1,9 +1,9 @@
-# Transporters were identified using:
-# query: transporter:D-alanine:D-ala
-# Spore germination proteins and B. subtilis ygqE, which is not really characterized, were ignored
-
-
-# An ABC transporter from Pseudomonas fluorescens, with 4 components
+# GapMind describes D-alanine catabolism via D-alanine dehydrogenase, which forms pyruvate.
+# This reaction is part of the
+# MetaCyc pathway for L-alanine catabolism via D-alanine (metacyc:ALADEG-PWY). In
+# principle, D-alanine might also be catabolized via racemization to
+# L-alanine and transamination to pyruvate, but this is not described
+# here.
 
 Pf6N2E2_5402	ABC transporter for D-Alanine, substrate-binding component	curated:reanno::pseudo6_N2E2:Pf6N2E2_5402
 
@@ -13,11 +13,16 @@ Pf6N2E2_5404	ABC transporter for D-Alanine, permease component 1	curated:reanno:
 
 Pf6N2E2_5405	ABC transporter for D-Alanine, ATPase component	curated:reanno::pseudo6_N2E2:Pf6N2E2_5405
 
+# Transporters were identified using:
+# query: transporter:D-alanine:D-ala.
 transport: Pf6N2E2_5402 Pf6N2E2_5403 Pf6N2E2_5404 Pf6N2E2_5405
 
+# Spore germination proteins and B. subtilis ygqE, which is not really characterized, were ignored.
 # An ABC transporter from Azospirillum brasilense, with 5
-# components. Just One component is in the reannotations, but all show
-# up in the fitness data for D-alanine.
+# components, was identified in the fitness data. (Just one component was in the reannotations.)
+# MctP was missed by the clustering tool, but is annotated as transporting D-alanine
+# (see PMC135354, Figure 4A, showing that D-alanine inhibits transport).
+# A related protein, BPHYT_RS22245 (uniprot:B2T7V3), is involved in D-alanine utilization.
 
 AZOBR_RS08235	D-alanine ABC transporter, permease component 1	curated:reanno::azobra:AZOBR_RS08235
 AZOBR_RS08240	D-alanine ABC transporter, permease component 2	uniprot:G8ALI9
@@ -30,19 +35,11 @@ cycA	D-alanine:H+ symporter CycA	curated:SwissProt::A0A0H2VDI7	curated:SwissProt
 
 transport: cycA
 
-# mctP was missed by the clustering tool, but is annotated as transporting D-alanine
-# (see PMC135354, Figure 4A, showing that D-alanine inhibits transport).
-# Also a related protein, BPHYT_RS22245 (B2T7V3), is involved in D-alanine utilization.
 mctP	D-alanine transporter MctP	curated:TCDB::Q8VM88	curated:SwissProt::Q1M7A2	uniprot:B2T7V3
 transport: mctP
 
-# D-alanine dehydrogenase, which forms pyruvate, is part of the
-# MetaCyc pathway for L-alanine catabolism via D-alanine. In
-# principle, D-alanine might also be catabolized via racemization to
-# L-alanine and transamination to pyruvate, but this is not described
-# here.
-
 dadA	D-alanine dehydrogenase	term:D-alanine%dehydrogenase
+
 all: transport dadA
 
 

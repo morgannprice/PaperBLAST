@@ -48,8 +48,10 @@ fucK	L-fuculose kinase FucK	EC:2.7.1.51	uniprot:G8JZS7
 fucA	L-fuculose-phosphate aldolase FucA	EC:4.1.2.17	uniprot:G8JZT1
 
 import rhamnose.steps:aldA fucO
-lactaldehyde-conversion: aldA # oxidation to lactate
-lactaldehyde-conversion: fucO # reduction to propanediol
+# Lactaldehyde can be oxidized to lactate (aldA) or reduced to propanediol (fucO).
+# Either of these can be excreted.
+lactaldehyde-conversion: aldA
+lactaldehyde-conversion: fucO
 
 import fructose.steps:tpi # triose-phsophate isomerase
 
