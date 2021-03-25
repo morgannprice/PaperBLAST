@@ -1,0 +1,27 @@
+# 2-deoxy-D-ribonate degradation is based on an oxidative pathway for
+# deoxyribose degradation (metacyc:PWY-8058). 2-deoxyribonate is thought
+# to be the primary natural substrate for this pathway (PMC6365646).
+# Klebsiella michiganensis appears to consume deoxyribonate via
+# deoxyribonyl-CoA dehydrogenase (PMC6365646), but this pathway is
+# less established and is not included in GapMind.
+
+deoxyribonate-transport	2-deoxy-D-ribonate transporter	term:deoxy%ribonate transporter
+
+deoxyribonate-dehyd	2-deoxy-D-ribonate 3-dehydrogenase	term:2-deoxy-D-ribonate 3-dehydrogenase
+
+ketodeoxyribonate-cleavage	2-deoxy-3-keto-D-ribonate cleavage enzyme	term:2-deoxy-3-keto-D-ribonate cleavage enzyme	term:2-deoxy-3-keto-D-ribonoate cleavage enzyme
+
+# GarK produces 2-phospho-D-glycerate, an intermediate in glycolysis.
+# psRCH2:GFF1145 is believed to do this reaction but was not annotated with this EC number.
+garK	glycerate 2-kinase	EC:2.7.1.165	curated:reanno::psRCH2:GFF1145
+
+import leucine.steps:acetoacetate-degradation
+
+# After oxidation of deoxyribonate to 2-deoxy-3-ketoribonate, a
+# cleavage enzyme produces glyceroyl-CoA and acetoacetate; the enzyme
+# for the conversion of glyceroyl-CoA to glycerate is not known; and
+# garK phosphorylates glycerate to 2-phospho-D-glycerate, an
+# intermediate in glycolysis.
+deoxyribonate-degradation: deoxyribonate-dehyd ketodeoxyribonate-cleavage garK acetoacetate-degradation
+
+all: deoxyribonate-transport deoxyribonate-degradation
