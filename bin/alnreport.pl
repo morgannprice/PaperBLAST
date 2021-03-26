@@ -17,7 +17,7 @@ my ($subjectId, $blfile) = @ARGV;
 my $str = Bio::AlignIO->new(-file => $blfile, -format => 'bl2seq');
 my $aln = $str->next_aln();
 exit(0) if !defined $aln; # no hits in input file
-$aln->num_sequences() == 2 || die "Do not have two esquences in $blfile";
+$aln->num_sequences() == 2 || die "Do not have two sequences in $blfile";
 my $numpos = $aln->length();
 my $qseq = $aln->get_seq_by_pos(1); # 1st sequence in alignment (1-based!)
 my $sseq = $aln->get_seq_by_pos(2);
@@ -76,6 +76,9 @@ foreach my $ft (@ft2) {
     } else {
       die "Cannot parse range from FT $ft UniProt entry for $subjectId";
     }
+  } elsif ($ft =~ m/^FT +([A-Z_]+) +(\d+)[.][.](\d+)$/) {
+    # i.e. FT   DISULFID        3..47
+    next;
   } else {
     die "Invalid FT\n$ft\nin UniProt entry for $subjectId";
   }
