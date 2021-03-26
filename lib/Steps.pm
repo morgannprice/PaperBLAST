@@ -20,7 +20,7 @@ sub ReadSteps2($$); # stepfile, doimportflag => same result as ReadSteps
 #	use i to sort them by the same order as in the stepfile
 #	import is set if this step was imported
 # rules, a hash of rule name to a list of instances
-#	Each isntance is a list of step names or rule names
+#	Each instance is a list of step names or rule names
 #	The requirement is met if any of the sublists are met (OR at the top level)
 #	The sublist is met if all of its components are met (AND at the 2nd level)
 # ruleOrder, a list of rule names in the order they appear
@@ -128,9 +128,14 @@ sub ReadSteps2($$) {
         die "Too many dependencies" unless $nRound < $nMaxRounds;
 
         foreach my $importName (@importNames) {
-          die "Steps file $stepsFile imports $importName from $importFileName, but rule $importName already exists\n"
-            if exists $rules->{$importName};
-          if (exists $steps->{$importName}) {
+          if (exists $rules->{$importName}) {
+            # Secondary imports will appear as steps, even if they are rules, but without
+            # name being set.
+            die "$importName is a step in $importFileName and a rule in $stepsFile\n"
+              if exists $stepsImport->{steps}{$importName}
+                && exists $stepsImport->{steps}{$importName}{name};
+            print STDERR "Skipped redundant import of rule $importName from $importFileName\n";
+          } elsif (exists $steps->{$importName}) {
             if (exists $steps->{$importName}{imported}) {
               # Ignore potential clashes for steps that were already imported
               print STDERR "Skipping import of $importName from $importFileName, already imported into $stepsFile\n"
