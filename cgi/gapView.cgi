@@ -2009,6 +2009,9 @@ sub FormatStepPart($$$) {
       . a({-href => $URL, -title => "View in PaperBLAST"}, $showId)
       . " when looking for 'other' hits"
       . " (" . $data->{curatedQuery}{$value}{desc} . ")";
+  } elsif ($type eq "ignore_hmm") {
+    return "Do not include HMM " . a({ -href => HMMToURL($value) }, $value)
+      . " (when considering EC numbers)";
   }
   die "Unknown StepPart type $type";
 }
