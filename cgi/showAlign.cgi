@@ -76,11 +76,11 @@ print
       a({ -href => "$cdd_base$def2$newline$seq2" }, $def2));
 
 open(FAA1, ">", "$prefix.faa1");
-print FAA1 ">$def1\n$seq1\n";
+print FAA1 ">seq1\n$seq1\n";
 close(FAA1) || die "Error writing to $prefix.faa1";
 
 open(FAA2, ">", "$prefix.faa2");
-print FAA2 ">$def2\n$seq2\n";
+print FAA2 ">seq2\n$seq2\n";
 close(FAA2) || die "Error writing to $prefix.faa2";
 
 print p("Running $bl2seq with prefix $prefix") if $debug;
@@ -235,5 +235,5 @@ if (defined $acc2 && $out[0] !~ m/No hits/i) {
     print p(small("No functional sites because the subject $def2 is not linked to a UniProt identifier in PaperBLAST's database"));
   }
 }
-unlink("$prefix.bl2seq");
+unlink("$prefix.bl2seq") unless $debug;
 
