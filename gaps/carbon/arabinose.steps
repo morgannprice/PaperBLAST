@@ -115,7 +115,7 @@ import xylose.steps:glycolaldehyde-dehydrogenase gyaR glcB
 
 # Q97U28 is the same protein but with 14 more N-terminal a.a., and is annotated with 4.1.2.55 only.
 # And a similar enzyme from S. acidcaldarius is thought to perform this reaction as well (PMC2962468)
-KDG_aldolase	2-dehydro-3-deoxy-L-arabinonate aldolase	EC:4.1.2.18	ignore:BRENDA::Q97U28	curated:BRENDA::Q4JC35
+KDG-aldolase	2-dehydro-3-deoxy-L-arabinonate aldolase	EC:4.1.2.18	ignore:BRENDA::Q97U28	curated:BRENDA::Q4JC35
 
 # Pathway IV begins as in pathway III, to
 # 2-dehydro-3-deoxy-L-arabinonate, followed by KDG aldolase to
@@ -124,4 +124,4 @@ KDG_aldolase	2-dehydro-3-deoxy-L-arabinonate aldolase	EC:4.1.2.18	ignore:BRENDA:
 # malate synthase, which is a TCA cycle intermediate.
 # (Other pathways for glyxoylate assimilation are known but are not
 #  represented here.)
-all: arabinose-transport xacB xacC xacD KDG_aldolase glycolaldehyde-dehydrogenase gyaR glcB
+all: arabinose-transport xacB xacC xacD KDG-aldolase glycolaldehyde-dehydrogenase gyaR glcB

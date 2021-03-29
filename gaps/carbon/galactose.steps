@@ -51,7 +51,7 @@ PfGW456L13_1897	ABC transporter for D-Galactose and D-Glucose, ATPase component	
 galactose-transport: PfGW456L13_1894 PfGW456L13_1895 PfGW456L13_1896 PfGW456L13_1897
 
 # Burkholderia phytofirmans and some other Pseudomonas fluorescens (such as FW300-N2E2)
-# have a 3-part galactose transporter. (This P. fluorescens system also transports L-arabinose.)
+# have a 3-part galactose transporter. It is related to araFGH and also transports L-arabinose.
 # BPHYT_RS16935 = B2SYR6; Pf6N2E2_5968 = A0A161H4E4
 BPHYT_RS16935	galactose ABC transporter, substrate-binding component	uniprot:B2SYR6	uniprot:A0A161H4E4
 # BPHYT_RS16930 = B2SYR5; Pf6N2E2_5969 = A0A165ZSX8
