@@ -4,9 +4,9 @@
 # and conversion to gluconate 6-phosphate  (metacyc:DHGLUCONATE-PYR-CAT-PWY).
 # Periplasmic oxidation to gluconate, uptake, and phosphorylation by gnuK is also
 # a potential path to gluconate-6-phosphate, but is not included in GapMind because it is not known to be
-# the major path for glucose utilization in a prokaryote
+# the major path for glucose utilization in a prokaryote.
 
-# Monomeric or homomeric transporters (various)
+# Monomeric or homomeric transporters:
 
 # MFS superfamily glucose transporters include:
 # glcP, O07563 (glcP from B. subtilis), SLCA14/Q8TDB8,
@@ -19,21 +19,22 @@
 # Ignore yet more yeast hexose transporters P40886, P54862, GHT8_SCHPO / Q9P3U7, C5E4Z7,
 # CH_123252, CH_123250, CH_122864, P39924, CH_124796, P54854.
 # Shewana3_2310 = glcP(Mal) = A0KXM0 was shown to be a glucose transporter (PMID:20836887).
-MFS_glucose	glucose transporter, MFS superfamily	curated:SwissProt::A0A0H2VG78	curated:CharProtDB::CH_091029	curated:CharProtDB::CH_091305	curated:CharProtDB::CH_091400	curated:CharProtDB::CH_091463	curated:CharProtDB::CH_091493	curated:CharProtDB::CH_091695	curated:CharProtDB::CH_122958	curated:CharProtDB::CH_124310	curated:SwissProt::A0A1D8PCL1	curated:SwissProt::F1R0H0	curated:SwissProt::O44616	curated:SwissProt::O44827	curated:SwissProt::P0AEP1	curated:SwissProt::P11166	curated:SwissProt::P11167	curated:SwissProt::P11168	curated:SwissProt::P11169	curated:SwissProt::P12336	curated:SwissProt::P14142	curated:SwissProt::P14246	curated:SwissProt::P14672	curated:SwissProt::P17809	curated:SwissProt::P19357	curated:SwissProt::P27674	curated:SwissProt::P32037	curated:SwissProt::P47843	curated:SwissProt::P58353	curated:SwissProt::P58354	curated:SwissProt::Q07647	curated:SwissProt::Q56ZZ7	curated:SwissProt::Q9JIF3	curated:SwissProt::Q9JJZ1	curated:SwissProt::Q9NY64	curated:SwissProt::Q9WV38	curated:SwissProt::Q9XSC2	curated:TCDB::A0QZX3	curated:TCDB::A0ZXK6	curated:TCDB::A1Z264	curated:TCDB::G4N740	curated:TCDB::H9BPB6	curated:TCDB::P15729	curated:TCDB::P23585	curated:TCDB::P49374	curated:TCDB::Q0SE66	curated:TCDB::Q2MDH1	curated:TCDB::Q2MEV7	curated:TCDB::Q63ZP5	curated:TCDB::Q7BEC4	curated:TCDB::Q8G3X1	curated:TCDB::Q8J0U9	curated:TCDB::Q8NTX0	curated:TCDB::Q9LT15	curated:SwissProt::O07563	curated:SwissProt::Q8TDB8	curated:CharProtDB::CH_091552	curated:CharProtDB::CH_121984	curated:SwissProt::P22732	curated:SwissProt::P43427	curated:SwissProt::P46408	curated:SwissProt::Q3T9X0	curated:SwissProt::Q6PXP3	curated:SwissProt::Q9BYW1	curated:SwissProt::Q9NRM0	curated:TCDB::Q26579	curated:TCDB::A3M0N3	curated:CharProtDB::CH_091058	curated:CharProtDB::CH_123257	curated:SwissProt::B8MYS7	curated:SwissProt::P32465	curated:SwissProt::P32466	curated:TCDB::Q9P3U6	curated:SwissProt::O95528	curated:SwissProt::Q5J316	curated:SwissProt::Q6NWF1	curated:SwissProt::Q8BFW9	curated:SwissProt::Q8TD20	curated:TCDB::B1PLM1	curated:TCDB::O61059	curated:TCDB::O61060	curated:TCDB::O76486	curated:TCDB::Q06222	curated:TCDB::A5Y0C3	curated:SwissProt::Q3UDF0	curated:SwissProt::Q9UGQ3	curated:TCDB::O25788	curated:TCDB::P0C105	curated:TCDB::Q04DP6	curated:TCDB::Q04FN1	curated:CharProtDB::CH_091224	curated:CharProtDB::CH_091141	curated:SwissProt::P21906	curated:SwissProt::Q8IRI6	curated:TCDB::C5DX43	curated:TCDB::P39004	curated:CharProtDB::CH_091031	ignore:CharProtDB::CH_091031	curated:TCDB::P43581	ignore:CharProtDB::CH_122303	ignore:SwissProt::P40886	ignore:TCDB::P54862	ignore:SwissProt::Q9P3U7	ignore:TCDB::C5E4Z7	ignore:CharProtDB::CH_123252	ignore:CharProtDB::CH_123250	ignore:CharProtDB::CH_122864	ignore:TCDB::P39924	ignore:CharProtDB::CH_124796	ignore:TCDB::P54854	uniprot:A0KXM0
+MFS-glucose	glucose transporter, MFS superfamily	curated:SwissProt::A0A0H2VG78	curated:CharProtDB::CH_091029	curated:CharProtDB::CH_091305	curated:CharProtDB::CH_091400	curated:CharProtDB::CH_091463	curated:CharProtDB::CH_091493	curated:CharProtDB::CH_091695	curated:CharProtDB::CH_122958	curated:CharProtDB::CH_124310	curated:SwissProt::A0A1D8PCL1	curated:SwissProt::F1R0H0	curated:SwissProt::O44616	curated:SwissProt::O44827	curated:SwissProt::P0AEP1	curated:SwissProt::P11166	curated:SwissProt::P11167	curated:SwissProt::P11168	curated:SwissProt::P11169	curated:SwissProt::P12336	curated:SwissProt::P14142	curated:SwissProt::P14246	curated:SwissProt::P14672	curated:SwissProt::P17809	curated:SwissProt::P19357	curated:SwissProt::P27674	curated:SwissProt::P32037	curated:SwissProt::P47843	curated:SwissProt::P58353	curated:SwissProt::P58354	curated:SwissProt::Q07647	curated:SwissProt::Q56ZZ7	curated:SwissProt::Q9JIF3	curated:SwissProt::Q9JJZ1	curated:SwissProt::Q9NY64	curated:SwissProt::Q9WV38	curated:SwissProt::Q9XSC2	curated:TCDB::A0QZX3	curated:TCDB::A0ZXK6	curated:TCDB::A1Z264	curated:TCDB::G4N740	curated:TCDB::H9BPB6	curated:TCDB::P15729	curated:TCDB::P23585	curated:TCDB::P49374	curated:TCDB::Q0SE66	curated:TCDB::Q2MDH1	curated:TCDB::Q2MEV7	curated:TCDB::Q63ZP5	curated:TCDB::Q7BEC4	curated:TCDB::Q8G3X1	curated:TCDB::Q8J0U9	curated:TCDB::Q8NTX0	curated:TCDB::Q9LT15	curated:SwissProt::O07563	curated:SwissProt::Q8TDB8	curated:CharProtDB::CH_091552	curated:CharProtDB::CH_121984	curated:SwissProt::P22732	curated:SwissProt::P43427	curated:SwissProt::P46408	curated:SwissProt::Q3T9X0	curated:SwissProt::Q6PXP3	curated:SwissProt::Q9BYW1	curated:SwissProt::Q9NRM0	curated:TCDB::Q26579	curated:TCDB::A3M0N3	curated:CharProtDB::CH_091058	curated:CharProtDB::CH_123257	curated:SwissProt::B8MYS7	curated:SwissProt::P32465	curated:SwissProt::P32466	curated:TCDB::Q9P3U6	curated:SwissProt::O95528	curated:SwissProt::Q5J316	curated:SwissProt::Q6NWF1	curated:SwissProt::Q8BFW9	curated:SwissProt::Q8TD20	curated:TCDB::B1PLM1	curated:TCDB::O61059	curated:TCDB::O61060	curated:TCDB::O76486	curated:TCDB::Q06222	curated:TCDB::A5Y0C3	curated:SwissProt::Q3UDF0	curated:SwissProt::Q9UGQ3	curated:TCDB::O25788	curated:TCDB::P0C105	curated:TCDB::Q04DP6	curated:TCDB::Q04FN1	curated:CharProtDB::CH_091224	curated:CharProtDB::CH_091141	curated:SwissProt::P21906	curated:SwissProt::Q8IRI6	curated:TCDB::C5DX43	curated:TCDB::P39004	curated:CharProtDB::CH_091031	ignore:CharProtDB::CH_091031	curated:TCDB::P43581	ignore:CharProtDB::CH_122303	ignore:SwissProt::P40886	ignore:TCDB::P54862	ignore:SwissProt::Q9P3U7	ignore:TCDB::C5E4Z7	ignore:CharProtDB::CH_123252	ignore:CharProtDB::CH_123250	ignore:CharProtDB::CH_122864	ignore:TCDB::P39924	ignore:CharProtDB::CH_124796	ignore:TCDB::P54854	uniprot:A0KXM0
 
 # solute_symporter (SSS) family transpoters
-SSS_glucose	Sodium/glucose cotransporter	curated:SwissProt::A0PJK1	curated:CharProtDB::CH_091086	curated:SwissProt::P11170	curated:SwissProt::P31636	curated:SwissProt::P31639	curated:SwissProt::P96169	curated:SwissProt::Q28610	curated:SwissProt::Q28728	curated:SwissProt::Q2M3M2	curated:SwissProt::Q6R4Q5	curated:SwissProt::Q8K0E3	curated:SwissProt::Q8WWX8	curated:SwissProt::Q9NY91	curated:SwissProt::Q9Z1F2	curated:TCDB::P26430	curated:TCDB::Q2A687
+SSS-glucose	Sodium/glucose cotransporter	curated:SwissProt::A0PJK1	curated:CharProtDB::CH_091086	curated:SwissProt::P11170	curated:SwissProt::P31636	curated:SwissProt::P31639	curated:SwissProt::P96169	curated:SwissProt::Q28610	curated:SwissProt::Q28728	curated:SwissProt::Q2M3M2	curated:SwissProt::Q6R4Q5	curated:SwissProt::Q8K0E3	curated:SwissProt::Q8WWX8	curated:SwissProt::Q9NY91	curated:SwissProt::Q9Z1F2	curated:TCDB::P26430	curated:TCDB::Q2A687
 
-glcU_Firmicutes	Glucose uptake protein GlcU	curated:SwissProt::O07881	curated:SwissProt::P40420	curated:TCDB::L8DP77	curated:TCDB::Q9CDF7
+# Named glcU' in GapMind to distinguish from an ABC transporter component named glcU
+glcU'	Glucose uptake protein GlcU	curated:SwissProt::O07881	curated:SwissProt::P40420	curated:TCDB::L8DP77	curated:TCDB::Q9CDF7
 
 PAST-A	proton-associated sugar transporter A	curated:SwissProt::Q8K4S3	curated:TCDB::Q9Y2W3
 
 # Ignore some uncharacterized homologs:
-# SwissProt::B0SR19
-# TCDB::Q8F4F7
-# SwissProt::P0DMV3 (structure is known; transports sucrose poorly; physiological substrate unclear)
-# TCDB::A2BS89
-# TCDB::Q57574 ("LbSemiSWEET") has glucose transport activity, but not clear if it is the physiological substrate
+# SwissProt::B0SR19,
+# TCDB::Q8F4F7,
+# SwissProt::P0DMV3 (structure is known; transports sucrose poorly; physiological substrate unclear),
+# TCDB::A2BS89,
+# TCDB::Q57574 ("LbSemiSWEET"; has glucose transport activity, but not clear if it is the physiological substrate).
 SemiSWEET	Sugar transporter SemiSWEET	curated:SwissProt::B0SR19	ignore:TCDB::Q8F4F7	ignore:SwissProt::P0DMV3	ignore:TCDB::A2BS89	ignore:TCDB::Q57574
 
 
@@ -47,33 +48,15 @@ SWEET1	bidirectional sugar transporter SWEET1	curated:SwissProt::Q8L9J7
 # Singleton 6 CharProtDB::CH_124120  high-affinity glucose transporter RGT2 Magnaporthe grisea 70-15
 # Singleton 7 CharProtDB::CH_124123  low-affinity glucose transporter HXT1 Magnaporthe grisea 70-15
 
-# Ignore porins
-# Singleton 8 SwissProt::A0QR29,TCDB::Q9RLP7 MSPA_MYCS2;; 1.B.24.1.1 Porin MspA;; M. smegmatis porin, MspA (cation selective due to a high density of negative charges in the constriction zone, but it transports glucose, serine, hydrophilic &beta;-lactams and (slowly) phosphate (Wolschendorf et al., 2007)) The MspC paralogue appears to have the same specificity as MspA. Both can also transport fluoroquinolones and chloramphenicol but not the larger erythromycin, kanamycin, and vancomycin (Danilchanka et al., 2008). Also allows uptake of ferric iron (Jones and Niederweis, 2010). The 3-d structure is known (PDB#1UUN). It is a &beta;-barrel with N- and C-termini of their single hairpins on the outside, and their chains run in an anti-clockwise direction around the central pore. Both of these characteristics are opposite in most gram-negative bacterial &beta;-barrels Mycolicibacterium smegmatis (strain ATCC 700084 / mc(2)155) (Mycobacterium smegmatis);; Mycobacterium smegmatis
-# Singleton 16 SwissProt::P9WKQ1,TCDB::P9WKQ1 SMASE_MYCTU;; 1.B.79.1.1 Sphingomyelinase; SMase; EC 3.1.4.12;; SpmT porin (N-terminus)-sphingomyelinase (external; C-terminus) of 490 aas and 8 putative transmembrane &beta;-strands in a &beta;-barrel Mycobacterium tuberculosis (strain ATCC 25618 / H37Rv);; Mycobacterium tuberculosis (strain ATCC 25618 / H37Rv)
-# Singleton 27 TCDB::Q51485 1.B.19.1.1 Cation-selective, glucose-inducible glucose-transporting porin (also transports glycerol, mannitol, fructose, maltose, pentoses, etc.) Pseudomonas aeruginosa
+# Ignore porins and various regulators and efflux systems
 
-# Regulatory, ignore
-# Cluster 21, 763-884 amino acids (not heteromeric), RGT2_YEAST / Q12300 / TC 2.A.1.1.19
-# Cluster 27, 729-734 amino acids (heteromeric) -- proton antiport, the equivalent of efflux, TC 2.A.1.1.84 / Q8LPQ8 / Q96290
-# Singleton 10 SwissProt::C1P5Z7,TCDB::C1P5Z7 SGRT_ECOLI;; 4.A.1.1.1 Putative inhibitor of glucose uptake transporter SgrT;; Putative inhibitor of glucose uptake transporter SgrT, component of Glucose porter (PtsG; GlcA; Umg) (transports D-glucose and &alpha;-methyl-D-glucopyranoside) Escherichia coli (strain K12);; Escherichia coli (strain K12) (heteromeric)
-# Singleton 15 SwissProt::P32862 RGT1_YEAST Glucose transport transcription regulator RGT1; Restores glucose transport protein 1 Saccharomyces cerevisiae (strain ATCC 204508 / S288c) (Baker's yeast)
+# ABC transporters:
 
-# Transports ADP-glucose, ignore
-# Cluster 17, 425-436 amino acids (not heteromeric); SwissProt::P29518,TCDB::P29518 BT1_MAIZE
-
-# Efflux, ignore
-# Cluster 18, 392-393 amino acids (not heteromeric), TCDB::P31675,ecocyc::B0070-MONOMER,metacyc::B0070-MONOMER
-
-
-# ABC transporters (several systems)
-
-# mglABC-like ABC transporters, from E. coli, Haloferax, Thermotoga, Agrobacterium, Phaeobacter
+# mglABC-like ABC transporters, from E. coli, Haloferax, Thermotoga, Agrobacterium, and Phaeobacter.
 # But in Haloferax, only two components are known; there is a SBP nearby but also a second permease.
-# So mark TSGDD_HALVD / D4GPW3 and D4GPW2 as ignore
+# So mark TSGDD_HALVD / D4GPW3 and D4GPW2 as ignore.
 # Also, there is one paper about the Salmonella ortholog of mglABC; not clear if that transports
-#  glucose or not, so ignore that as well (P23924)
-
-# mglA (b2149) or a shorter protein from Phaeobacter (PGA1_262p00450)
+#  glucose or not, so ignore that as well (P23924).
 mglA	glucose ABC transporter, ATP-binding component (MglA)	ignore:SwissProt::D4GPW3	curated:TCDB::G4FGN3	curated:TCDB::O05176	curated:TCDB::P0AAG8	curated:reanno::Phaeo:GFF3641	ignore:SwissProt::P23924
 
 # mglB (b2150) from E. coli (P0AEE5; 332 a.a.),
@@ -92,17 +75,13 @@ mglC	glucose ABC transporter, permease component (MglC)	curated:TCDB::G4FGN4	cur
 # which genetic data suggest are a glucose-6-phosphate transporter. Could they be a glucose transporter
 # instead? Not sure, so ignore those.
 # Fitness data also identified a gtsABCD-like glucose transporter in Acidovorax sp. GW101-3H11
-# (Ac3H11_2062:Ac3H11_2064:Ac3H11_2065:Ac3H11_2066; A0A165KPY4, A0A165KPZ4, A0A165KQ00, A0A165KQ08)
-# gtsA is the substrate-binding component
+# (Ac3H11_2062:Ac3H11_2064:Ac3H11_2065:Ac3H11_2066; A0A165KPY4, A0A165KPZ4, A0A165KQ00, A0A165KQ08).
 gtsA	glucose ABC transporter, substrate-binding component (GtsA)	curated:TCDB::Q88P38	curated:TCDB::Q72KX2	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1894	ignore:reanno::WCS417:GFF4324	uniprot:A0A165KPY4
 
-# gtsB, permease component 1
 gtsB	glucose ABC transporter, permease component 1 (GtsB)	curated:TCDB::Q88P37	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1895	curated:TCDB::Q72KX3	ignore:reanno::WCS417:GFF4323	uniprot:A0A165KPZ4
 
-# gtsC, permease component 2
 gtsC	glucose ABC transporter, permease component 2 (GtsC)	curated:TCDB::Q72KX4	curated:TCDB::Q88P36	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1896	ignore:reanno::WCS417:GFF4322	uniprot:A0A165KQ00
 
-# gtsD, ATPase component
 gtsD	glucose ABC transporter, ATPase component (GtsD)	curated:TCDB::Q72L52	ignore:BRENDA::Q97UY8	curated:TCDB::Q88P35	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1897	ignore:reanno::WCS417:GFF4321	uniprot:A0A165KQ08
 
 # ABC transporter glcSTUV from Saccharolobus/Sulfolobus
@@ -111,39 +90,38 @@ glcT	glucose ABC transporter, permease component 1 (GlcT)	curated:TCDB::Q97UZ0
 glcU	glucose ABC transporter, permease component 2 (GlcU)	curated:TCDB::Q97UY9
 glcV	glucose ABC transporter, ATPase component (GclV)	curated:BRENDA::Q97UY8
 
-# ABC transporter aglEFGK (Dshi_1652:Dshi_1648) from Dinoroseobacter shibae
-# The gene names are from aglEFGK of Sinorhizobium meliloti, which are involved in uptake of sucrose
+# ABC transporter aglEFGK (Dshi_1652:Dshi_1648) from Dinoroseobacter shibae.
+# The gene names are from the related system aglEFGK of Sinorhizobium meliloti,
+#  which are involved in uptake of sucrose
 # and some other disaccharides (PMID:10400573); in fitness data, they are important for maltose & trehalose
-# (i.e. see SMc03061 = aglE); not important on glucose but S. meliloti also has SM_b20894, close to gguA/mglA O05176
-# It is uncertain whether aglEFGK from S. meliloti can transport glucose or not, so it is ignored
-
+# (i.e. see SMc03061 = aglE); not important on glucose but S. meliloti also has SM_b20894, close to gguA/mglA O05176.
+# It is uncertain whether aglEFGK from S. meliloti can transport glucose or not, so it is ignored.
 # Dshi_1652 = A8LLL6
-aglE	glucose ABC transporter, substrate-binding component (AglE)	uniprot:A8LLL6	ignore:reanno::Smeli:SMc03061
+aglE'	glucose ABC transporter, substrate-binding component (AglE)	uniprot:A8LLL6	ignore:reanno::Smeli:SMc03061
 
 # Dshi_1651 = A8LLL5
-aglF	glucose ABC transporter, permease component 1 (AglF)	uniprot:A8LLL5	ignore:reanno::Smeli:SMc03062
+aglF'	glucose ABC transporter, permease component 1 (AglF)	uniprot:A8LLL5	ignore:reanno::Smeli:SMc03062
 
 # Dshi_1650 = A8LLL4
-aglG	glucose ABC transporter, permease component 2 (AglG)	uniprot:A8LLL4	ignore:reanno::Smeli:SMc03063
+aglG'	glucose ABC transporter, permease component 2 (AglG)	uniprot:A8LLL4	ignore:reanno::Smeli:SMc03063
 
 # Dshi_1648 = A8LLL2
-aglK	glucose ABC transporter, ATPase component (AglK)	uniprot:A8LLL2	ignore:reanno::Smeli:SMc03065
+aglK'	glucose ABC transporter, ATPase component (AglK)	uniprot:A8LLL2	ignore:reanno::Smeli:SMc03065
 
-# Transporters were analyzed uzing
+# Transporters and PTS systems were analyzed uzing
 # query: transporter:glucose:D-glucose:D-glucopyranose:ALPHA-GLUCOSE:GLC:CPD-15374
-# (run on May 21, 2020)
-transport: MFS_glucose
-transport: SSS_glucose
-transport: glcU_Firmicutes
-transport: PAST-A
-transport: SemiSWEET
-transport: SWEET1
-transport: mglA mglB mglC
-transport: gtsA gtsB gtsC gtsD
-transport: glcS glcT glcU glcV
-transport: aglE aglF aglG aglK
+glucose-transport: MFS-glucose
+glucose-transport: SSS-glucose
+glucose-transport: glcU'
+glucose-transport: PAST-A
+glucose-transport: SemiSWEET
+glucose-transport: SWEET1
+glucose-transport: mglA mglB mglC
+glucose-transport: gtsA gtsB gtsC gtsD
+glucose-transport: glcS glcT glcU glcV
+glucose-transport: aglE' aglF' aglG' aglK'
 
-# PTS systems (several systems)
+# PTS systems, forming glucose-6-phosphate:
 
 # Fused (one-component) PTS system, EIICBA (ptsG in B. subtilis; two systems from Staphylococcus)
 ptsG-crr	glucose PTS, enzyme II (CBA components, PtsG)	curated:CharProtDB::CH_001857	curated:SwissProt::Q53922	curated:SwissProt::Q57071
@@ -154,10 +132,10 @@ bglF	glucose PTS, enzyme II (BCA components, BglF)	curated:TCDB::P08722
 # PTS system EII-CB (ptsG) and EII-A (crr), in E. coli and Salmonella
 
 # EII-CB proteins.
-# Ignore O51590 (4.A.1.1.18) from Borrelia burgdorferi, which is not characterized and EIIA component is uncertain.
-# ignore E. coli malX (P19642), which facilitates diffusion of glucose (no phosphorylation);
+# Ignore O51590 (4.A.1.1.18) from Borrelia burgdorferi, which is not characterized and the EIIA component is uncertain.
+# Ignore E. coli malX (P19642), which facilitates diffusion of glucose (no phosphorylation);
 #   its physiological function is unclear so it is not listed as a sole glucose transporter.
-# ignore PTUCB_KLEPN / Q9AGA7 from Klebsiella, as the EII-A component was not described
+# Ignore PTUCB_KLEPN / Q9AGA7 from Klebsiella, as the EII-A component was not described
 ptsG	glucose PTS, enzyme IICB	ignore:SwissProt::Q9AGA7	curated:BRENDA::P69786	curated:SwissProt::P37439	ignore:TCDB::O51590	ignore:TCDB::P19642
 
 # Ignore a close homlog in Serratia (TC 4.A.3.2.5 / Q8L3C4) which is reported to be the II-A component
@@ -165,7 +143,7 @@ ptsG	glucose PTS, enzyme IICB	ignore:SwissProt::Q9AGA7	curated:BRENDA::P69786	cu
 crr	glucose PTS, enzyme IIA	curated:CharProtDB::CH_088352	curated:SwissProt::P0A283	ignore:TCDB::Q8L3C4
 
 # PTS system manXYZ (manX is EIIAB; manY is EIIC; manZ is EIID)
-# from E. coli, Listeria, Oenococcus, Lactobacillus, Streptococcus.
+# from E. coli, Listeria, Oenococcus, Lactobacillus, and Streptococcus.
 # Systems related to manXYZ in Streptococcus salivarius and Lactococcus lactis subsp. lactis are
 # reported to act on glucose, but are listed with other preferred substrates; ignore these.
 manX	glucose PTS, enzyme EIIAB	curated:CharProtDB::CH_088329	curated:TCDB::E1UCI0	curated:TCDB::Q04GK1	curated:TCDB::Q2QKM4	curated:TCDB::Q5M5W6	ignore:BRENDA::Q9S4L5	ignore:TCDB::D2BKY7
@@ -174,22 +152,21 @@ manX	glucose PTS, enzyme EIIAB	curated:CharProtDB::CH_088329	curated:TCDB::E1UCI
 # this is not ignored but possibly should be.
 manY	glucose PTS, enzyme EIIC	curated:CharProtDB::CH_088330	curated:TCDB::E1UCI1	curated:TCDB::Q04GK0	curated:TCDB::Q2QKM3	curated:TCDB::Q5M5W7
 
-
 # (The E. coli entry, P69805, is listed twice, because the sequence in TCDB has 3 extra N-terminal residues.)
 # Also similar is Lmo0781 (TC 4.A.6.1.16 / Q8Y8W1) from MpoABCD; should perhaps be ignored.
 manZ	glucose PTS, enzyme EIID	curated:SwissProt::P69805	curated:TCDB::E1UCI2	curated:TCDB::P69805	curated:TCDB::Q04GJ9	curated:TCDB::Q2QKM2	curated:TCDB::Q5M5W8	ignore:BRENDA::Q5IRC0	ignore:TCDB::D2BKY9
 
-PTS: ptsG-crr
-PTS: bglF
-PTS: ptsG crr
-PTS: manX manY manZ
+glucose-PTS: ptsG-crr
+glucose-PTS: bglF
+glucose-PTS: ptsG crr
+glucose-PTS: manX manY manZ
 
 # Dshi_1655 (A8LLL9) was identified using fitness data, is very important for growth on glucose and
 #    several glucose-containing disaccharides; and functional residues seem to be conserved.
 # The related protein PGA1_c05420 (I7DXX1) also seems to be glk.
 # Q5GAN8 = hexA from B. fragilis is a broad-specificity hexokinase (PMID:15659667).
-# Q5GBH5 = rokA = MONOMER-19002 from B. fragilis is a glucose/mannose/NAG kinase (PMID:15659667)
-#	(MetaCyc lists it as NAG kinase only but it is just as active on glucose).
+# Q5GBH5 = rokA = MONOMER-19002 from B. fragilis is a glucose/mannose/NAG kinase (PMID:15659667).
+#	(MetaCyc lists it as NAG kinase only but it is just as active on glucose.)
 # CH_123431 is nearly identical to a characterized broad-specificity hexose kinase, so ignore.
 # SCO5059 (Q9ADE8) is reported to have ATP-glucokinase activity (PMID:24200789), so ignore.
 glk	glucokinase	EC:2.7.1.1	EC:2.7.1.2	uniprot:A8LLL9	uniprot:Q5GAN8	curated:metacyc::MONOMER-19002	ignore:CharProtDB::CH_123431	ignore:BRENDA::Q9ADE8	uniprot:I7DXX1
@@ -199,16 +176,15 @@ gdh	quinoprotein glucose dehydrogenase	EC:1.1.5.2
 # Add Pseudomonas ppgL (PA4204 = Q9HWH7; see PMID:18832304)
 gnl	gluconolactonase	EC:3.1.1.17	uniprot:Q9HWH7
 
-# gluconate 2-dehydrogenase has three subunits; known in Pseudomonas fluorescens and Pantoea/Pectobacterium cypripedii
+# gluconate 2-dehydrogenase has three subunits; known in Pseudomonas fluorescens and Pantoea/Pectobacterium cypripedii.
 # There's also papers about two different enzymes in Gluconobacter.
-# PMID:17720837 describes A4PIA9 = gndS = gadh3; A4PIB0 = gndL = gadh1; A4PIB1 = gndC = gadh2
-#	BRENDA includes only A4PIB0
+# PMID:17720837 describes A4PIA9 = gndS = gadh3; A4PIB0 = gndL = gadh1; A4PIB1 = gndC = gadh2;
+#	BRENDA includes only A4PIB0.
 # PMID:27392695 shows that overexpressing GOX1232 to GOX1230 (Q5FRK3 G5EBD9 Q5FRK5), paralogs of gndSLC,
-#   leads to increased production of 2-ketogluconate; BRENDA includes only Q5FRK5
+#   leads to increased production of 2-ketogluconate; BRENDA includes only Q5FRK5.
 # Finally, C0LE03 is listed by BRENDA as a gluconate 2-dehydrogenase and is nearly identical to
 # Q4KKM7 = metacyc:MONOMER-12745, so include that as well.
-# Some papers also mention GOX0147 = 5FTU6 but that is the cytoplasmic 2-ketogluconate reductase
-
+# Some papers also mention GOX0147 = 5FTU6 but that is the cytoplasmic 2-ketogluconate reductase.
 gadh1	gluconate 2-dehydrogenase flavoprotein subunit	curated:SwissProt::O34214	curated:metacyc::MONOMER-12745	curated:BRENDA::A4PIB0	uniprot:G5EBD9	curated:BRENDA::C0LE03
 
 gadh2	gluconate 2-dehydrogenase cytochrome c subunit	curated:SwissProt::O34215	curated:metacyc::MONOMER-12746	uniprot:A4PIB1	curated:BRENDA::Q5FRK5
@@ -222,12 +198,22 @@ kguK	2-ketogluconokinase	EC:2.7.1.13
 
 kguD	2-keto-6-phosphogluconate reductase	EC:1.1.1.43
 
-# Entner-Doudoroff pathway: oxidation to 2-keto-3-deoxy-6-phosphogluconate and aldolase
-
 edd	phosphogluconate dehydratase	EC:4.2.1.12
 
 eda	2-keto-3-deoxygluconate 6-phosphate aldolase	EC:4.1.2.14	EC:4.1.2.55
 
-all: transport glk
-all: PTS
-all: gdh gnl gadh1 gadh2 gadh3 kguT kguK kguD edd eda
+# Glucose can be taken up and then phosphorylated to glucose 6-phosphate by the kinase glk.
+glucose-utilization: glucose-transport glk
+
+# Or, both uptake and phosphorylation are catalyzed by a PTS system.
+glucose-utilization: glucose-PTS
+
+# Or, glucose is oxidized to glucono-1,5-lactone in the periplasm (by gdh),
+# hydrolyzed to gluconate (by gnl), oxidized to 2-ketogluconate (by gadh123),
+# taken up by kguT, phosphorylated to 2-dehydro-6-phosphogluconate (by kguK),
+# reduced to gluconate 6-phosphate (by kguD), dehydrated by edd to
+# 2-dehydro-3-deoxy-gluconate 6-phosphate, and cleaved by aldolase eda
+# to pyruvate and D-glyceraldehyde 3-phosphate.
+glucose-utilization: gdh gnl gadh1 gadh2 gadh3 kguT kguK kguD edd eda
+
+all: glucose-utilization

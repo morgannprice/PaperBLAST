@@ -1,9 +1,13 @@
-# Transporters were identified using
-# query: transporter:L-fucose:L-fucopyranose:CPD-10329:CPD0-1107:CPD-15619
+# Fucose degradation in GapMind is based on
+# the MetaCyc pathway via L-fuculose (metacyc:FUCCAT-PWY)
+# or the oxidative pathway via 2,4-diketo-3-deoxy-L-fuconate (KDF) hydrolase (PMC6336799).
 
 # BT1277 (G8JZT2) is distantly related and important for fucose utilization
 fucP	L-fucose:H+ symporter FucP	curated:SwissProt::P11551	uniprot:G8JZT2
-transport: fucP
+
+# Transporters were identified using
+# query: transporter:L-fucose:L-fucopyranose:CPD-10329:CPD0-1107:CPD-15619
+fucose-transport: fucP
 
 # A 4-part ABC transporter was annotated in Sinorhizobium meliloti
 # based on fitness data and also from expression data.
@@ -14,30 +18,21 @@ SM_b21103	ABC transporter for L-fucose, substrate-binding component	curated:rean
 SM_b21104	ABC transporter for L-fucose, permease component 1	curated:reanno::Smeli:SM_b21104
 SM_b21105	ABC transporter for L-fucose, permease component 2	curated:reanno::Smeli:SM_b21105
 SM_b21106	ABC transporter for L-fucose, ATPase component	curated:reanno::Smeli:SM_b21106
-transport: SM_b21103 SM_b21104 SM_b21105 SM_b21106
+fucose-transport: SM_b21103 SM_b21104 SM_b21105 SM_b21106
 
 # A 3-part ABC transporter was identified in Burkholderia phytofirmans
 # based on fitness data
 BPHYT_RS34250	ABC transporter for L-fucose, substrate-binding component	uniprot:B2T9W0
 BPHYT_RS34245	ABC transporter for L-fucose, ATPase component	uniprot:B2T9V9
 BPHYT_RS34240	ABC transporter for L-fucose, permease component	uniprot:B2T9V8
-transport: BPHYT_RS34250 BPHYT_RS34245 BPHYT_RS34240
+fucose-transport: BPHYT_RS34250 BPHYT_RS34245 BPHYT_RS34240
 
 # A 3-part ABC transporter was identified in Herbaspirillum
 # seropedicae based on fitness data
 HSERO_RS05250	ABC transporter for L-fucose, ATPase component	uniprot:D8J111
 HSERO_RS05255	ABC transporter for L-fucose, permease component	uniprot:D8J112
 HSERO_RS05260	ABC transporter for L-fucose, substrate-binding component	uniprot:D8J113
-transport: HSERO_RS05250 HSERO_RS05255 HSERO_RS05260
-
-# MetaCyc pathway: fucose degradation
-# A mutarotase converts the beta-pyranose to the alpha-pyranose form,
-# an isomerase produces L-fuculose, a kinase forms L-fuculose
-# 1-phosphate, and an aldolase produces glycerone phosphate and
-# (S)-lactaldehyde.  lactaldehyde might be oxidized to lactate and
-# secreted (or oxidized to pyruvate); or, it might be reduced to
-# propane-1,2-diol and secreted.  tpi converts glycerone-phosphate to
-# glyceraldehyde 3-phosphate.
+fucose-transport: HSERO_RS05250 HSERO_RS05255 HSERO_RS05260
 
 # BT1276 (Q8A896) is important for fucose utilization
 fucU	L-fucose mutarotase FucU	EC:5.1.3.29	uniprot:Q8A896
@@ -55,37 +50,43 @@ lactaldehyde-conversion: fucO
 
 import fructose.steps:tpi # triose-phsophate isomerase
 
-all: transport fucU fucI fucK fucA tpi lactaldehyde-conversion
-
-# Another pathway, not listed in MetaCyc, involves a mutarotase to the
-# beta-pyranose form, fucose dehydrogenase to L-fucono-1,5-lactone,
-# lactonase to L-fuconate, dehydratase to 2-keto-3-deoxy-L-fuconate,
-# dehydrogenase to 2,4-diketo-3-deoxy-L-fuconate (also known as
-# 2,4-diketo-3-deoxy-L-rhamnonate), and hydrolase to lactate and
-# pyruvate. The lactate could be secreted or oxidized to pyruvate.
+# In the L-fucuolose pathway, mutarotase fucU converts the beta-pyranose to
+# the alpha-pyranose form, isomerase fucI produces L-fuculose, kinase fucK forms L-fuculose
+# 1-phosphate, and aldolase fucA produces glycerone phosphate and
+# (S)-lactaldehyde. Lactaldehyde might be oxidized to lactate and
+# secreted (or oxidized to pyruvate), or, it might be reduced to
+# propane-1,2-diol and secreted; tpi converts glycerone-phosphate to
+# glyceraldehyde 3-phosphate.
+all: fucose-transport fucU fucI fucK fucA tpi lactaldehyde-conversion
 
 # C785_RS21215 (A0A2E7P8M8) was shown to be a L-fucose dehydrogenase (PMC6336799)
 fdh	L-fucose 1-dehydrogenase	EC:1.1.1.122	uniprot:A0A2E7P8M8
 
-# BmulJ_04915 (A0A0H3KNC4) is the biochemically characterized enzyme, see PMID:23214453
+# BmulJ_04915 (A0A0H3KNC4) is the biochemically characterized enzyme, see PMID:23214453.
 # HSERO_RS05265 (D8J114) and BPHYT_RS34220 (B2T9V4) are important for fucose utilization
-lactonase	L-fucono-1,5-lactonase	uniprot:A0A0H3KNC4	curated:reanno::Smeli:SM_b21101	uniprot:A0A0H3KNC4	uniprot:D8J114	uniprot:B2T9V4
+fuconolactonase	L-fucono-1,5-lactonase	uniprot:A0A0H3KNC4	curated:reanno::Smeli:SM_b21101	uniprot:A0A0H3KNC4	uniprot:D8J114	uniprot:B2T9V4
 
-# HSERO_RS05235 (D8J108) is important for fucose utilization
-# Ignore the putative accessory protein BPHYT_RS34235
+# HSERO_RS05235 (D8J108) is important for fucose utilization.
+# Ignore the putative accessory protein BPHYT_RS34235.
 fucD	L-fuconate dehydratase	EC:4.2.1.68	uniprot:D8J108	ignore:reanno::BFirm:BPHYT_RS34235
 
-# no EC number, but XCC4067 (Q8P3K4) is annotated in SwissProt based on PMID:1714465217144652
+# No EC number, but XCC4067 (Q8P3K4) is annotated in SwissProt based on PMID:17144652.
 # C785_RS13675 (A0A4P7ABK7) was also shown to have this acivity (PMC6336799)
 # HSERO_RS19365	(D8IS13) and BPHYT_RS34215 (B2T9V3) are important for fucose utilization
 # (The substrate for EC 1.1.1.401 (2-dehydro-3-deoxy-L-rhamnonate 4-dehydrogenase)
 #  has the other stereochemistry at position 4.)
 fucDH	2-keto-3-deoxy-L-fuconate 4-dehydrogenase	curated:SwissProt::Q8P3K4	uniprot:A0A4P7ABK7	uniprot:D8IS13	uniprot:B2T9V3
 
-# C785_RS20550 (A0A2E7P912) was shown to be a L-2-keto-3-deoxyfuconate  (L-KDF) hydrolase by PMC6336799
-# HSERO_RS06355 (D8INW0) is important for fucose utilization
-# Q39BA7 is rather closely related but is reported to be a ureidoglycolate lyase
-# metacyc MONOMER-16233 is misannotated as a dehydrogenase in MetaCyc -- it is the hydrolase
+# C785_RS20550 (A0A2E7P912) was shown to be a L-2-keto-3-deoxyfuconate  (L-KDF) hydrolase by PMC6336799.
+# HSERO_RS06355 (D8INW0) is important for fucose utilization.
+# Q39BA7 is rather closely related but is reported to be a ureidoglycolate lyase.
+# metacyc MONOMER-16233 is misannotated as a dehydrogenase in MetaCyc -- it is the hydrolase.
 KDF-hydrolase	2,4-diketo-3-deoxy-L-fuconate hydrolase	uniprot:A0A2E7P912	curated:reanno::BFirm:BPHYT_RS34210	curated:reanno::Smeli:SM_b21112	uniprot:D8INW0	ignore:SwissProt::Q39BA7	curated:metacyc::MONOMER-16233
 
-all: transport fucU fdh lactonase fucD fucDH KDF-hydrolase
+# In the oxidative pathway, mutarotase fucU forms the
+# beta-pyranose form, fucose dehydrogenase (fdh) forms L-fucono-1,5-lactone,
+# a lactonase forms L-fuconate, dehydratase fucD forms 2-keto-3-deoxy-L-fuconate,
+# dehydrogenase fucDH forms 2,4-diketo-3-deoxy-L-fuconate (KDF, also known as
+# 2,4-diketo-3-deoxy-L-rhamnonate), and a hydrolase forms lactate and
+# pyruvate. The lactate could be secreted or oxidized to pyruvate.
+all: fucose-transport fucU fdh fuconolactonase fucD fucDH KDF-hydrolase

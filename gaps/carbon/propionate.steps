@@ -1,28 +1,28 @@
 # Propionate degradation in GapMind is based on
 # MetaCyc pathways for the 2-methylcitrate cycle (metacyc:PWY0-42, metacyc:PWY-5747)
-# and MetaCyc pathways for propanoyl-CoA degradation (metacyc:PROPIONMET-PWY, metacyc:PWY-7574).
+# and for propanoyl-CoA degradation (metacyc:PROPIONMET-PWY, metacyc:PWY-7574).
 
 putP	propionate transporter; proline:Na+ symporter	curated:SwissProt::P07117
 
 # Transporters were identified using:
 # query: transporter:propionate:propanoate
-transport: putP
+propionate-transport: putP
 
 SLC5A8	sodium-coupled monocarboxylate transporter	curated:SwissProt::Q8N695
-transport: SLC5A8
+propionate-transport: SLC5A8
 
 # Shewana3_2904 (A0KZB2) from Shewanella sp. ANA-3 is important for propionate utilization;
 # it is also a lactate permease.
 # Similarly, the distantly related SO0827 from Shewanella oneidensis (Q8EIL2) is
 # important for propionate utilization.
 lctP	propionate permease	uniprot:A0KZB2	uniprot:Q8EIL2
-transport: lctP
+propionate-transport: lctP
 
 mctC	propionate:H+ symporter	curated:SwissProt::Q8NS49
-transport: mctC
+propionate-transport: mctC
 
 mctP	propionate permease	curated:TCDB::Q8VM88	curated:SwissProt::Q1M7A2
-transport: mctP
+propionate-transport: mctP
 
 # Pdr12p is an exporter, ignored
 # Also ignore Best1, a Ca2+ activated anion channel
@@ -48,22 +48,22 @@ prpC	2-methylcitrate synthase	EC:2.3.3.5	curated:BRENDA::P45858
 
 prpD	2-methylcitrate dehydratase	EC:4.2.1.79
 
-# Many aconitate hydratases are closely related to (2R,3S)-2-methylcitrate dehydratases
+# (2R,3S)-2-methylcitrate dehydratases are closely related to
+# aconitate hydratases (EC:4.2.1.3), which are ignored.
 acn	(2R,3S)-2-methylcitrate dehydratase	EC:4.2.1.99	ignore_other:4.2.1.3
 
-# Many 2-methylisocitrate lyases are closely related to isocitrate lyases
+# Many 2-methylisocitrate lyases are closely related to isocitrate lyases (EC:4.1.3.1)
 prpB	2-methylisocitrate lyase	EC:4.1.3.30	ignore_other:4.1.3.1
 
 # acnM from Ralstonia eutropha (Q937N8) is proposed to have this activity as well (PMID:11495997), but is
 # annotated in SwissProt as aconitase or (2R,3S)-2-methylisocitrate dehydratase instead
 acnD	2-methylcitrate dehydratase (2-methyl-trans-aconitate forming)	EC:4.2.1.117	ignore:SwissProt::Q937N8
 
-# SwissProt annotates Q937N7 with this activity, but a vague EC number
-
+# SwissProt annotates Q937N7 with this activity, but with a vague EC number.
 # The periplasmic substrate-binding protein A0A0A1H8I4 has aconitate
 # isomerase activity but has a high Km (PMID:26293748), and its
 # periplasmic location would prevent it from participating in the
-# methylcitrate cycle.
+# methylcitrate cycle, so it is ignored.
 prpF	methylaconitate isomerase	EC:5.3.3.7	curated:SwissProt::Q937N7	ignore:SwissProt::A0A0A1H8I4
 
 # In the fitness browser reannotations, Dshi_0724 from Dinoroseobacter
@@ -91,45 +91,49 @@ mcm-small	methylmalonyl-CoA mutase, small (adenosylcobamide-binding) subunit	cur
 # loads B12 onto mcm and protects it from inactivation (see
 # PMC4631608); this is not described here. Some fused mcm proteins include
 # a MeaB domain as well (i.e., uniprot:Q8F222, uniprot:Q8Y2U5).
-mutase: mcmA
-mutase: mcm-large mcm-small
+methylmalonyl-CoA-mutase: mcmA
+methylmalonyl-CoA-mutase: mcm-large mcm-small
 
 pco	propanyl-CoA oxidase	EC:1.3.3.6
 hpcD	3-hydroxypropionyl-CoA dehydratase	EC:4.2.1.116
 dddA	3-hydroxypropionate dehydrogenase	EC:1.1.1.59
 
-# methylmalonate semialdehyde dehydrogenase often has this activity as well
-mmsA	malonate semialdehyde dehydrogenase (CoA-acylating)	EC:1.2.1.18	ignore_other:1.2.1.27	ignore:SwissProt::Q9I702
+# Ignore similarity to methylmalonate semialdehyde dehydrogenase (EC:1.2.1.27), which often has this activity as well
+iolA	malonate semialdehyde dehydrogenase (CoA-acylating)	EC:1.2.1.18	ignore_other:1.2.1.27	ignore:SwissProt::Q9I702
 
 # In 2-methylcitrate cycle I,
-# propionate is activated to propionyl-CoA by prpE and
-# then combined with oxalacetate (by prpC) to give methylcitrate,
+# propionyl-CoA is combined with oxalacetate (by prpC) to give methylcitrate,
 # dehydrated to cis-2-methylaconitate by prpD,
 # hydrated to (2R,3S)-2-methylisocitrate,
 # and a lyase produces pyruvate and succinate.
 # (We consider succinate as a central intermediate,
 # as most organisms can activate it to succinyl-CoA
 # or can oxidize it to fumarate and convert that to oxaloacetate.)
-all: transport prpE prpC prpD acn prpB
+propionyl-CoA-degradation: prpC prpD acn prpB
 
 # In 2-methylcitrate cycle II, a different dehydratase (acnD) and an isomerase (prpF) replace the
 # dehydratase prpD; acnD dehydrates (2S,3S)-2-methylcitrate to
 # 2-methyl-trans-aconitate, and prpF isomerizes it to
 # cis-2-methylaconitate.
-all: transport prpE prpC acnD prpF acn prpB
+propionyl-CoA-degradation: prpC acnD prpF acn prpB
 
-# In propanoyl CoA degradation I, propanoyl-CoA is formed by the ligase prpE,
-# propionyl-CoA carboxylase forms (S)-methylmalonyl-CoA,
+# In propanoyl CoA degradation I, propionyl-CoA carboxylase
+# forms (S)-methylmalonyl-CoA,
 # methylmalonyl-CoA epimerase forms (R)-methylmalonyl-CoA, and
 # methylmalonyl-CoA mutase forms succinyl-CoA, which is a central
 # metabolite. (Note that methylmalonyl-CoA mutase requires
 # adenosylcobamide, a form of vitamin B12, for activity.)
-all: transport prpE propionyl-CoA-carboxylase epi mutase
+propionyl-CoA-degradation: propionyl-CoA-carboxylase epi methylmalonyl-CoA-mutase
 
 # In propanoyl-CoA degradation II:
 # propionyl-CoA is oxidized to acrylyl-CoA by pco, hydrated
 # to 3-hydroxypropionyl-CoA, hydrolzed to 3-hydroxypropionate,
 # oxidized to 3-oxopropionate (malonate semialdehyde), and
 # oxidized to acetyl-CoA and CO2.
-all: transport prpE pco hpcD dddA mmsA
+propionyl-CoA-degradation: pco hpcD dddA iolA
+
+# In all of the pathways, propionate is first activated to propionyl-CoA by prpE
+propionate-degradation: prpE propionyl-CoA-degradation
+
+all: propionate-transport propionate-degradation
 

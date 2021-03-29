@@ -11,13 +11,10 @@ mtlG	ABC transporter for polyols MtlEFGK, permease component MtlG	curated:TCDB::
 
 mtlK	ABC transporter for polyols MtlEFGK, permease component MtlK	curated:TCDB::O30494	curated:reanno::BFirm:BPHYT_RS16095	curated:reanno::Phaeo:GFF1302	curated:reanno::WCS417:GFF2490	curated:reanno::acidovorax_3H11:Ac3H11_2941	curated:reanno::pseudo5_N2C3_1:AO356_00010	curated:reanno::pseudo6_N2E2:Pf6N2E2_1960	ignore:reanno::pseudo3_N2E3:AO353_25895	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_3039	ignore:TCDB::P54933
 
-# polyol ABC transporter, known as MtlEFGK in Pseudomonas fluorescens (TC 3.A.1.1.49).
-# mtlE = substrate-binding component;
-# mtlF = permease component;
-# mtlG = permease component;
-# mtlK = ATPase component.
-# The system in Pseudomonas fluorescens FW300-N2E3 and Pseudomonas fluorescens GW456-L13 is very similar
-# but FW300-N2E3 does not grow on sorbitol as the sole C source, and we have no fitness data for GW456-L13 on sorbitol,
+# A polyol ABC transporter, known as MtlEFGK in Pseudomonas fluorescens (TC 3.A.1.1.49).
+# Pseudomonas fluorescens FW300-N2E3 and Pseudomonas fluorescens GW456-L13 have very similar systems,
+# but FW300-N2E3 does not grow on sorbitol as the sole carbon source,
+# and we have no fitness data for GW456-L13 on sorbitol,
 # so it is uncertain whether they transport sorbitol or not. They are marked as ignore.
 #
 # A related system in Rhodobacter sphaeroides, smoEFGK, appears in TCDB (as TC 3.A.1.1.5) but there does not
@@ -51,21 +48,25 @@ SOT	sorbitol:H+ co-transporter SOT1 or SOT2	curated:CharProtDB::CH_091483	curate
 
 # TakP from Rhodobacter sphaeroides (Q3J1R2) was originally misannotated as SmoM, ignored.
 
-# transport coupled to phosphorylation
-PTS: mtlA
-PTS: srlABE
+# PTS systems form sorbitol 6-phosphate
+sorbitol-PTS: mtlA
+sorbitol-PTS: srlABE
 
-# Rules for sorbitol transport were built using curated clusters for transporters of
+# Rules for sorbitol transport were built using curated clusters for transporters and PTS systems of
 # sorbitol / D-sorbitol / glucitol / D-glucitol
-# on May 6, 2020
-transport: SOT
-transport: mtlEFGK
+sorbitol-transport: SOT
+sorbitol-transport: mtlEFGK
 
 sdh	sorbitol dehydrogenase	EC:1.1.1.14	term:sorbitol dehydrogenase
-# In pathway I, sorbitol dehydrogenase (sdh) forms fructose.
-all: transport sdh
+
+import fructose.steps:scrK # fructokinase
+
+# In pathway I, sorbitol dehydrogenase (sdh) forms fructose and a fructokinase forms fructose 6-phosphate,
+# a central metabolite.
+all: sorbitol-transport sdh scrK
 
 srlD	sorbitol 6-phosphate 2-dehydrogenase	EC:1.1.1.140	term:sorbitol-6-phosphate dehydrogenase
+
 # In pathway II, the PTS uptake system forms sorbitol 6-phosphate,
-# and dehydrogenase srlD forms fructose 6-phosphate, a central metabolite.
-all: PTS srlD
+# and dehydrogenase srlD forms fructose 6-phosphate.
+all: sorbitol-PTS srlD

@@ -1,8 +1,8 @@
 # 2-deoxy-D-ribonate degradation is based on an oxidative pathway for
 # deoxyribose degradation (metacyc:PWY-8058). 2-deoxyribonate is thought
 # to be the primary natural substrate for this pathway (PMC6365646).
-# Klebsiella michiganensis appears to consume deoxyribonate via
-# deoxyribonyl-CoA dehydrogenase (PMC6365646), but this pathway is
+# Alternatively, Klebsiella michiganensis appears to consume deoxyribonate via
+# a deoxyribonyl-CoA dehydrogenase (PMC6365646), but this pathway is
 # less established and is not included in GapMind.
 
 deoxyribonate-transport	2-deoxy-D-ribonate transporter	term:deoxy%ribonate transporter

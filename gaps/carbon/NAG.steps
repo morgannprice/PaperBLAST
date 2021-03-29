@@ -8,24 +8,30 @@
 
 # unified EII-ABC (as in E. coli and Klebsiella pneumoniae)
 nagEcba	N-acetylglucosamine phosphotransferase system, EII-CBA components	curated:BRENDA::P09323	curated:BRENDA::P45604
-PTS: nagEcba
+
+# PTS systems form N-acetylglucosamine 6-phosphate
+NAG-PTS: nagEcba
 
 # nagFE, where nagF has PTS I, Hpr, and II-A, and nagE has II-CB
 # (in Burkholderia phytofirmans and two Pseudomonas fluorescens, and in P. aeruginosa)
 nagF	N-acetylglucosamine phosphotransferase system, E-I, Hpr, and EII-A components (NagF)	curated:reanno::BFirm:BPHYT_RS02740	curated:reanno::pseudo3_N2E3:AO353_04460	curated:reanno::pseudo5_N2C3_1:AO356_17540	curated:TCDB::Q9HXN5
 nagEcb	N-acetylglucosamine phosphotransferase system, EII-CB components	curated:reanno::BFirm:BPHYT_RS02745	curated:reanno::pseudo3_N2E3:AO353_04465	curated:reanno::pseudo5_N2C3_1:AO356_17535	curated:TCDB::Q9HXN4
-PTS: nagF nagEcb
+NAG-PTS: nagF nagEcb
 
 # Streptomyces coelicolor has just EII-B and EII-C (ptsB, ptsC);
 #  "crr" (SCO1390 or uniprot:Q9KZP2) is the EII-A (see PMC3294797).
 # Streptomyces olivaceoviridis has a related system with EII-B, EII-C, and EII-C' components (ptsBC1C2).
-# Either ptsC1 or ptsC2 suffices for xylose uptake but ptsC2 is specific for NAG (PMID:12436256).
-# So, put ptsC2 with S. coelicolor's ptsC; not sure if ptsC1 = uniprot:Q8GBT7 should be marked ignore or not.
 # Did not find any papers about the EII-A component in S. olivaceoviridis.
 crr	N-acetylglucosamine phosphotransferase system, EII-A component Crr	uniprot:Q9KZP2
+
 ptsB	N-acetylglucosamine-specific phosphotransferase system, EII-B component PtsB	curated:SwissProt::Q9S2H6	curated:TCDB::Q8GBT8
+
+# In S. olivaceoviridis, either ptsC1 or ptsC2 suffices for xylose uptake,
+# but ptsC2 is specific for NAG (PMID:12436256), so include ptsC2 here.
+# Not sure if ptsC1 = uniprot:Q8GBT7 should be marked ignore or not.
 ptsC	N-acetylglucosamine phosphotransferase system, EII-C component PtsC	curated:SwissProt::Q9S2H4	curated:TCDB::Q8GBT6
-PTS: crr ptsB ptsC
+
+NAG-PTS: crr ptsB ptsC
 
 # Bacillus subtilis has EII-CB, known as nagP.
 # The major EII-A is ptsG (uniprot:P20166, see PMID:30038046),
@@ -35,7 +41,7 @@ PTS: crr ptsB ptsC
 #	(YpqE has EII-A only, while GamP is the EII-CBA protein for glucosamine)
 nagEIIA	N-acetylglucosamine phosphotransferase system, EII-A component (PtsG/YpqE/GamP)	curated:TCDB::P20166	uniprot:P50829	curated:SwissProt::P39816
 nagPcb	N-acetylglucosamine phosphotransferase system, EII-CB component NagP	curated:SwissProt::O34521
-PTS: nagEIIA nagPcb
+NAG-PTS: nagEIIA nagPcb
 
 # ABC transporters:
 
@@ -48,39 +54,42 @@ SMc02873	N-acetylglucosamine ABC transporter, substrate-binding component	curate
 
 # Transporters were identified using:
 # query: transporter:N-acetylglucosamine:N-ACETYL-D-GLUCOSAMINE:CPD-12541
-transport: SMc02869 SMc02872 SMc02871 SMc02873
+NAG-transport: SMc02869 SMc02872 SMc02871 SMc02873
 
 # Streptomyces olivaceoviridis has ngcEFG, with the presumed ATPase component
 # not identified. It probably depends on a shared ATPase component such as msiK (known in S. coelicolor)
 ngcE	N-acetylglucosamine ABC transporter, substrate-binding component (NgcE)	curated:TCDB::Q8RJV0
 ngcF	N-acetylglucosamine ABC transporter, permease component 1 (NgcF)	curated:TCDB::Q8RJU9
 ngcG	N-acetylglucosamine ABC transporter, permease component 2 (NgcG)	curated:TCDB::Q8RJU8
-transport: ngcE ngcF ngcG
+NAG-transport: ngcE ngcF ngcG
 
 # Other transporters:
 
 nagP	N-acetylglucosamine transporter NagP	curated:TCDB::Q8EBL0	curated:reanno::ANA3:7025962
-transport: nagP
+NAG-transport: nagP
 
 nag3	N-acetylglucosamine transporter nag3/nag4	curated:SwissProt::A0A1D8PQG0	curated:SwissProt::Q59RG0
-transport: nag3
+NAG-transport: nag3
 
 ngt1	N-acetylglucosamine:H+ symporter Ngt1	curated:CharProtDB::CH_123262
-transport: ngt1
+NAG-transport: ngt1
 
 # Ignore a putative NAG deacetylase from C. albicans, not given this EC number, in CharProtDB
 nagA	N-acetylglucosamine 6-phosphate deacetylase	EC:3.5.1.25	ignore:CharProtDB::CH_123434
-# Add the Candida isomerase, not given this EC number by CharProtDB
-# And fitness data confirms the proposal that SM_b21218 (Q92VI1) is this enzyme
+
+# Add the Candida isomerase, not given this EC number by CharProtDB.
+# And fitness data confirms the proposal that SM_b21218 (Q92VI1) is this enzyme.
 nagB	glucosamine 6-phosphate deaminase (isomerizing)	EC:3.5.99.6	curated:CharProtDB::CH_123433	uniprot:Q92VI1
 
 # Both pathways involve N-acetylglucosamine 6-phosphate,
 # followed by deacetylase nagA and the isomerizing deaminase nagB, which produces fructose 6-phosphate,
 # a central metabolic intermediate.
-all: PTS nagA nagB
+NAG-utilization: NAG-PTS nagA nagB
 
-# Ignore a putative enzyme from C. albicans, not given this EC number, in CharProtDB
+# Ignore a putative enzyme from C. albicans, not given this EC number in CharProtDB.
 # PMC2832512 identified two NAG kinases in Xanthomonas campestris, XCC2886 (Q8P6S9) and XCC2943 (Q8P6M4)
 nagK	N-acetylglucosamine kinase	EC:2.7.1.59	ignore:CharProtDB::CH_123431	uniprot:Q8P6S9	uniprot:Q8P6M4
 
-all: transport nagK nagA nagB
+NAG-utilization: NAG-transport nagK nagA nagB
+
+all: NAG-utilization

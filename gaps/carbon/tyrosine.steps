@@ -1,5 +1,5 @@
 # Tyrosine utilization in GapMind is based on MetaCyc pathway
-# tyrosine degraation I, via homogentisate (metacyc:TYRFUMCAT-PWY).
+# tyrosine degradation I, via homogentisate (metacyc:TYRFUMCAT-PWY).
 # This pathway requires oxygen.
 # Another pathway via 4-hydroxyphenylacetate is known (metacyc:PWY-5151),
 # but the 4-hydroxyphenylpyruvate oxidase has not been linked to sequence.
@@ -12,22 +12,22 @@ aroP	L-tyrosine transporter (AroP/FywP)	curated:TCDB::F2HN33	curated:TCDB::P1599
 # The ABC transporter livFGHM (with substrate-binding component livK or livJ) may be able to
 # transport tyrosine, but it did not suffice to enable growth of a tyrosine auxotroph
 # (PMC305776), so it is not included.
-transport: aroP
+tyrosine-transport: aroP
 
 tyrP	Tyrosine permease	curated:TCDB::P0AAD4
-transport: tyrP
+tyrosine-transport: tyrP
 
 TAT1	L-tyrosine permease TAT1	curated:CharProtDB::CH_091631
-transport: TAT1
+tyrosine-transport: TAT1
 
 MCT10	L-tyrosine transporter MCT10	curated:SwissProt::Q91Y77
-transport: MCT10
+tyrosine-transport: MCT10
 
 CAT	L-tyrosine transporter CAT	curated:TCDB::ALD51314.1
-transport: CAT
+tyrosine-transport: CAT
 
 tyt1	L-tyrosine:Na+ symporter Tyt1	curated:TCDB::Q8RHM5
-transport: tyt1
+tyrosine-transport: tyt1
 
 # Porins such as opdT are not included
 
@@ -39,9 +39,7 @@ transport: tyt1
 # Amino acid exporters such as E. coli yddG are not included.
 
 # Steps for acetoacetate utilization
-import leucine.steps:atoA atoD aacS aa_activation
-import deoxyribose.steps:atoB # acetyl-CoA acetyltransferase
-acetoacetate_utilization: aa_activation atoB
+import leucine.steps:acetoacetate-degradation
 
 # Q8EKK9 and Q9RSJ4 are misannotated in BRENDA
 HPD	4-hydroxyphenylpyruvate dioxygenase	EC:1.13.11.27	ignore:BRENDA::Q8EKK9	ignore:BRENDA::Q9RSJ4
@@ -54,4 +52,6 @@ fahA	fumarylacetoacetate hydrolase	EC:3.7.1.2
 # isomerase forms 4-fumaryl-acetoacetate, and a hydrolase yields acetoacetate
 # and fumarate. (Fumarate is part of the TCA cycle so its catabolism is
 # not described.)
-all: transport HPD hmgA maiA fahA acetoacetate_utilization
+tyrosine-degradation: HPD hmgA maiA fahA acetoacetate-degradation
+
+all: tyrosine-transport tyrosine-degradation

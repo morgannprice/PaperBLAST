@@ -1,6 +1,5 @@
 # Citrulline can be catabolized via ornithine carbamoyltransferase in reverse (PMID:3129535).
-# We also suspect that some bacteria use citrullinase (EC:3.5.1.20) to consume citrulline,
-# but this has not been proven.
+# Genetic evidence suggests that some bacteria use a putative citrullinase (EC:3.5.1.20) to consume citrulline.
 
 # An ABC transporter for citrulline (and arginine) was identified in
 # two strains of Pseudomonas fluorescens.
@@ -18,28 +17,39 @@ AO353_03040	ABC transporter for L-Citrulline, ATPase component	curated:reanno::p
 
 # Transporters were identified using
 # query: transporter:citrulline:L-citrulline
-transport: AO353_03055 AO353_03050 AO353_03045 AO353_03040
+citrulline-transport: AO353_03055 AO353_03050 AO353_03045 AO353_03040
 
 # Mitochondrial ornithine/citrulline exchangers were ignored.
 
-import proline.steps:put1 putA # for proline degradation
-
 # GABA (gamma-aminobutyrate) is a common intermediate
-import putrescine.steps:gabT gabD # for GABA degradation
-import putrescine.steps:patA puo patD puuA puuB puuC puuD
+import putrescine.steps:GABA-degradation putrescine-degradation
+
+import leucine.steps:atoB # acetyl-CoA acetyltransferase is part of glutaryl-CoA degradation
+import phenylacetate.steps:glutaryl-CoA-degradation # glutaryl-CoA is part of 5-aminovalerate degradation
+import lysine.steps:5-aminovalerate-degradation # 5-aminovalerate-degradation is part of proline degradation
+import proline.steps:proline-degradation # proline is an intermediate in ornithine degradation
 
 # arcB = ornithine carbamoyltransferase
 # arcC = carbamate kinase
-import arginine.steps:GABA-degradation putrescine-degradation proline-degradation ornithine-degradation arcB arcC
-
-putrescine-degradation: patA patD GABA-degradation
-putrescine-degradation: puo patD GABA-degradation
-putrescine-degradation: puuA puuB puuC puuD GABA-degradation
+import arginine.steps:ornithine-degradation arcB arcC
 
 # Citrulline is coverted to ornithine by ornithine
-# carbamoyltransferase (arcB) in reverse.  The
+# carbamoyltransferase (arcB) in reverse; the
 # carbamoyltransferase reaction also yields carbamoyl-phosphate, which
 # is consumed by carbamate kinase (arcC) in reverse.
-all: transport arcB arcC ornithine-degradation
+all: citrulline-transport arcB arcC ornithine-degradation
 
+# The characterized enzyme hydrolyzes citrulline to ornithine, carbon dioxide, and ammonia
+# (FTT0435 or FTT_0435 or Q5NHL7_FRATT; PMID:19502406).
+# Genetic evidence from diverse bacteria shows that a family of putative hydrolases
+# is involved in ornithine utilization: PGA1_c16380 (GFF1616) from Phaeobacter inhibens;
+# AO353_25635 from Pseudomonas fluorescens FW300-N2E3, and PS417_17580 (GFF3434) from Pseudomonas simiae WCS417.
+# These are distantly related to arginine deiminases and were originally reannotated as such
+# (operating in reverse), but Equilibrator predicts that the reverse reaction is thermodynamically
+# very unfavorable. Also, the guanidino-binding residues are not conserved.
+# They are probably citrullinases.
+citrullinase	putative citrullinase	EC:3.5.1.20	uniprot:Q5NHL7_FRATT	curated:reanno::Phaeo:GFF1616	curated:reanno::pseudo3_N2E3:AO353_25635	curated:reanno::WCS417:GFF3434
 
+# Alternatively, a putative citrullinase hydrolyzes citrulline; the product
+# is probably ornithine.
+all: citrulline-transport citrullinase ornithine-degradation

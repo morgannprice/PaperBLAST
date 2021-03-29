@@ -5,7 +5,7 @@
 # Salmonella deoP is near deoK and can enhance growth of E. coli on deoxyribose, even
 # though it is not essential for deoxyribose utilization in Salmonella, see PMC94358
 deoP	deoxyribose transporter	uniprot:A0A5K1UX94
-transport: deoP
+deoxyribose-transport: deoP
 
 # The best-known pathway for deoxyribose utilizatoin involves a
 # kinase forming deoxyribose-5-phosphate, an aldolase, forming
@@ -16,18 +16,9 @@ transport: deoP
 deoK	deoxyribokinase	EC:2.7.1.229	EC:2.7.1.15
 
 # Produces acetaldehyde and glyceraldehyde 3-phosphate
-deoC	deoxyribose-phosphate aldolase	EC:4.1.2.4
+deoC	deoxyribose-5-phosphate aldolase	EC:4.1.2.4
 
-# Oxidizes acetaldehyde to acetyl-CoA, usually with NAD+ as the electron acceptor.
-# Q2XQZ7 is probably acetaldehyde dehydrogenase but is misannotated in BRENDA
-# Some very similar sequences are propanal dehydrogenases (1.2.1.87)
-# or butanal dehydrogenases (1.2.1.57); these sequences often act on
-# acetaldehyde as well.
-# Fitness data implies that BWI76_RS21985 is a broad aldehyde dehydrogenase, including activity on acetaldehyde
-# Also, many enzymes are bifunctional alcohol/acetaldehyde dehydrogenases and these
-# may be annotated as 1.1.1.1 or 1.1.1.71 only, so ignore hits to those as well.
-# Also, EC 1.2.1.3 also describes aldehyde dehydrogenases with broad substrate ranges; those hits are also ignored.
-acetald-dehyd	acetaldehyde dehydrogenase	EC:1.2.1.10	curated:reanno::Koxy:BWI76_RS21985	ignore:BRENDA::Q2XQZ7	ignore_other:1.2.1.87	ignore_other:1.2.1.57	ignore_other:1.1.1.1	ignore_other:1.1.1.71	ignore_other:1.2.1.3	curated:CharProtDB::CH_003797
+import ethanol.steps:acetaldehyde-degradation
 
 # Another pathway involves periplasmic oxidation to deoxyribonate,
 # cytoplasmic oxidation to 2-deoxy-3-ketoribonate, and a cleavage
@@ -47,37 +38,11 @@ drdehyd-beta	2-deoxy-D-ribose dehydrogenase, beta subunit	term:deoxy%ribose dehy
 drdehyd-cytc	2-deoxyribose-D dehydrogenase, cytochrome c component	term:cytochrome%deoxyribose dehydrogenase	ignore_other:vanillin dehydrogenase
 deoxyribose-dehyd: drdehyd-alpha drdehyd-beta drdehyd-cytc
 
-deoxyribonate-transport	2-deoxy-D-ribonate transporter	term:deoxy%ribonate transporter
+import leucine.steps:acetoacetate-degradation # acetoacetate is an intermediate in deoxyribonate degradation
+import deoxyribonate.steps:deoxyribonate-transport deoxyribonate-degradation
 
-deoxyribonate-dehyd	2-deoxy-D-ribonate 3-dehydrogenase	term:2-deoxy-D-ribonate 3-dehydrogenase
+# The deoxyribose 5-phosphate pathway involves the kinase deoK and the aldolase deoC.
+all: deoxyribose-transport deoK deoC acetaldehyde-degradation
 
-# The cleavage enzyme produces glyceroyl-CoA and acetoacetate
-# The enzyme for the conversion of glyceroyl-CoA to glycerate is not known.
-# The enzymes for the conversion of acetoacetate to acetoacetyl-CoA was not identified
-# and so is not listed here -- it might involve a CoA transferase (i.e., PS417_10525 and PS417_10520)
-# or a acetoacetyl-CoA synthetase (EC 6.2.1.16)
-
-ketodeoxyribonate-cleavage	2-deoxy-3-keto-D-ribonate cleavage enzyme	term:2-deoxy-3-keto-D-ribonate cleavage enzyme	term:2-deoxy-3-keto-D-ribonoate cleavage enzyme
-
-# Produces 2-phospho-D-glycerate, an intermediate in glycolysis.
-# psRCH2:GFF1145 is believed to do this reaction but was not annotated with this this EC number
-garK	glycerate 2-kinase	EC:2.7.1.165	curated:reanno::psRCH2:GFF1145
-
-# Acetoacetate activation is described in leucine.steps
-import leucine.steps:atoA atoD aacS
-aa-activation: atoA atoD
-aa-activation: aacS
-
-# Produces 2 acetyl-CoA from acetoacetyl-CoA and CoA.
-# EC:2.3.1.16 describes a broader range of beta-ketothiolases.
-# This enzyme is usually homomeric, but uniprot:I3R3D0 and uniprot:I3RA71 are non-catalytic subunits
-# of an enzyme from Haloferax mediterranei that also contains a
-# "normal" catalytic subunit (uniprot:I3R3D1, uniprot:I3RA72).
-# Inclusion of uniprot:P07256 was an error in BRENDA.
-# And CharProtDB includes an odd annotation of the form "similar to acetyl-CoA acetyltransferase"
-atoB	acetyl-CoA C-acetyltransferase	EC:2.3.1.9	ignore_other:2.3.1.16	ignore:BRENDA::P07256	ignore:BRENDA::I3R3D0	ignore:BRENDA::I3RA71	ignore_other:similar to acetyl-CoA acetyltransferase
-
-# The deoxyribose 5-phosphate pathway begins with the kinase deoK.
-all: transport deoK deoC acetald-dehyd
-# The oxidative pathway begins with oxidation in the periplasm.
-all: deoxyribose-dehyd deoxyribonate-transport deoxyribonate-dehyd ketodeoxyribonate-cleavage garK aa-activation atoB
+# The oxidative pathway involves oxidation in the periplasm to deoxyribonate.
+all: deoxyribose-dehyd deoxyribonate-transport deoxyribonate-degradation

@@ -13,18 +13,18 @@ sdc	succinate:Na+ symporter Sdc	curated:TCDB::A4QAL6	curated:SwissProt::Q21339	c
 
 # Transporters were identified using
 # query: transporter:succinate
-transport: sdc
+succinate-transport: sdc
 
-# not initially included were AO356_18980, Q9I4F5, Q01857.
+# not initially included were AO356_18980, Q9I4F5, or Q01857.
 dctA	succinate:H+ symporter DctA	curated:CharProtDB::CH_014038	curated:TCDB::P96603	curated:TCDB::Q1J1H5	curated:TCDB::Q848I3	curated:reanno::pseudo5_N2C3_1:AO356_18980	curated:SwissProt::Q9I4F5	curated:TCDB::Q01857
-transport: dctA
+succinate-transport: dctA
 
 # Ignore TCDB::A1JRS3 whose specificity seems to be unknown (although there is structural information)
 dauA	succinate:H+ symporter DauA	curated:SwissProt::P0AFR2	ignore:TCDB::A1JRS3
-transport: dauA
+succinate-transport: dauA
 
 satP	succinate:H+ symporter SatP	curated:SwissProt::P0AC98
-transport: satP
+succinate-transport: satP
 
 # TRAP transporter DctQMP.
 # The P. aeruginosa system was not initially included (annotated as C4-dicarboxylate system; Q9HU16-8).
@@ -36,7 +36,7 @@ transport: satP
 # PGA1_c20660 = dctM = I7DRS6,
 # PGA1_c20680 = dctP = I7END8.
 # Finally, ignore the system from S. amazonensis SB2B (Sama_2209:Sama_2211)
-# as we have no fitness data for succinate from this organism (but it does utilize it)
+# as we have no fitness data for succinate from this organism (but it does utilize succinate).
 dctQ	succinate TRAP transporter, small permease component DctQ	curated:SwissProt::O07837	curated:SwissProt::Q9HU17	curated:reanno::PV4:5208944	curated:reanno::psRCH2:GFF4196	uniprot:Q9KQS0	ignore:reanno::SB2B:6938089	uniprot:I7EY26
 
 dctM	succinate TRAP transporter, large permease protein DctM	curated:SwissProt::O07838	curated:SwissProt::Q9HU16	curated:reanno::PV4:5208943	uniprot:Q9KQS1	ignore:reanno::SB2B:6938090	uniprot:I7DRS6
@@ -44,13 +44,16 @@ dctM	succinate TRAP transporter, large permease protein DctM	curated:SwissProt::
 # B. subtilis DctB is similar to DctP but is probably involved in sensing, not transport, so is not included.
 # Q2IUT5 = RPB_3329, A3QCW5 = Shew_1446 = 5208945, and Q8ECK4 = SO_3134 were shown to bind succinate (PMC4310620).
 dctP	succinate TRAP transporter, component DctP	curated:SwissProt::P37735	curated:SwissProt::Q9HU18	curated:reanno::PV4:5208945	curated:SwissProt::Q9KQR9	ignore:reanno::SB2B:6938088	uniprot:I7END8	uniprot:Q2IUT5	uniprot:Q8ECK4
-transport: dctQ dctM dctP
+succinate-transport: dctQ dctM dctP
 
 # The TRAP system Dshi_1194:Dshi_1195 (A8LI82,A8LI83) is important for utilization of
-# succinate, fumarate, L-malate, and 2-oxoglutarate
-Dshi_1194	TRAP transporter for succinate, fumarate, L-malate, and 2-oxoglutarate, fused 4TM/12TM components	uniprot:A8LI82
-Dshi_1195	TRAP transporter for succinate, fumarate, L-malate, and 2-oxoglutarate, substrate-binding component	uniprot:A8LI83
-transport: Dshi_1194 Dshi_1195
+# succinate, fumarate, L-malate, and 2-oxoglutarate,
+# as is the related system HP15_723:HP15_722 (E4PQE4,E4PQE3).
+Dshi_1194	TRAP transporter for succinate, fumarate, L-malate, and 2-oxoglutarate, fused 4TM/12TM components	uniprot:A8LI82	uniprot:E4PQE4
+
+Dshi_1195	TRAP transporter for succinate, fumarate, L-malate, and 2-oxoglutarate, substrate-binding component	uniprot:A8LI83	uniprot:E4PQE3
+
+succinate-transport: Dshi_1194 Dshi_1195
 
 # Ignore mitochondrial dicarboxylate:phosphate antiporters
 # Ignore antiporters dcuA/dcuB (i.e., fumarate:succinate antiport does not facilitate utilization of succinate)
@@ -62,4 +65,4 @@ transport: Dshi_1194 Dshi_1195
 # Ignore succinate efflux transporter DcuC (although it acts as a succinate:proton symporter,
 # so maybe it could suffice)
 
-all: transport
+all: succinate-transport

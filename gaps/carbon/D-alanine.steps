@@ -15,7 +15,7 @@ Pf6N2E2_5405	ABC transporter for D-Alanine, ATPase component	curated:reanno::pse
 
 # Transporters were identified using:
 # query: transporter:D-alanine:D-ala.
-transport: Pf6N2E2_5402 Pf6N2E2_5403 Pf6N2E2_5404 Pf6N2E2_5405
+D-alanine-transport: Pf6N2E2_5402 Pf6N2E2_5403 Pf6N2E2_5404 Pf6N2E2_5405
 
 # Spore germination proteins and B. subtilis ygqE, which is not really characterized, were ignored.
 # An ABC transporter from Azospirillum brasilense, with 5
@@ -29,17 +29,17 @@ AZOBR_RS08240	D-alanine ABC transporter, permease component 2	uniprot:G8ALI9
 AZOBR_RS08245	D-alanine ABC transporter, ATPase component 1	uniprot:G8ALJ0
 AZOBR_RS08250	D-alanine ABC transporter, ATPase component 2	uniprot:G8ALJ1
 AZOBR_RS08260	D-alanine ABC transporter, substrate-binding component	uniprot:G8ALJ3
-transport: AZOBR_RS08235 AZOBR_RS08240 AZOBR_RS08245 AZOBR_RS08250 AZOBR_RS08260
+D-alanine-transport: AZOBR_RS08235 AZOBR_RS08240 AZOBR_RS08245 AZOBR_RS08250 AZOBR_RS08260
 
 cycA	D-alanine:H+ symporter CycA	curated:SwissProt::A0A0H2VDI7	curated:SwissProt::P0AAE0	curated:TCDB::F2HQ24	curated:TCDB::M1IW84	curated:reanno::WCS417:GFF1065	curated:reanno::pseudo3_N2E3:AO353_16120	curated:reanno::pseudo5_N2C3_1:AO356_17670	curated:SwissProt::A2RI86
 
-transport: cycA
+D-alanine-transport: cycA
 
 mctP	D-alanine transporter MctP	curated:TCDB::Q8VM88	curated:SwissProt::Q1M7A2	uniprot:B2T7V3
-transport: mctP
+D-alanine-transport: mctP
 
 dadA	D-alanine dehydrogenase	term:D-alanine%dehydrogenase
 
-all: transport dadA
+all: D-alanine-transport dadA
 
 

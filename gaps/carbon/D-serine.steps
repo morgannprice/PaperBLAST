@@ -1,16 +1,17 @@
 # D-serine degradation in GapMind is based on the MetaCyc pathway (metacyc:PWY0-1535)
 
 cycA	D-serine:H+ symporter CycA	curated:SwissProt::A0A0H2VDI7	curated:SwissProt::P0AAE0	curated:TCDB::F2HQ24	curated:TCDB::M1IW84	curated:SwissProt::A2RI86
+
 # Transporters were identified using
 # query: transporter:D-serine:D-ser
-transport: cycA
+D-serine-transport: cycA
 
 dsdX	D-serine transporter DsdX	curated:SwissProt::A0A0H2VAP9	curated:SwissProt::P08555
-transport: dsdX
+D-serine-transport: dsdX
 
 # A mammalian solute carrier protein was ignored
 
 dsdA	D-serine ammonia-lyase	EC:4.3.1.18
 
-# An ammonia-lyase that converts D-serine to pyruvate and ammonium.
-all: transport dsdA
+# The ammonia-lyase (dsdA) converts D-serine to pyruvate and ammonium.
+all: D-serine-transport dsdA

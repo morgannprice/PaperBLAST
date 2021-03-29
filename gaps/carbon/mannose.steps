@@ -5,12 +5,12 @@
 
 # PTS systems
 
-# E. coli has manXYZ, where manX has EII-AB, manY has EII-C, and manZ has EII-D
-#   (manZ is listed twice with slightly different sequence lengths).
+# E. coli has manXYZ, where manX has EII-AB, manY has EII-C, and manZ has EII-D.
+#   (ManZ is listed twice with slightly different sequence lengths).
 # Similar systems are known in Lactococcus lactis, Listeria monocytogenes, and Streptococcus thermophilus.
 # However, the S. thermophilus system seems not to be active due to a defective IIC domain (PMID:12957931), so
-#   these proteins are marked ignore.
-# L. monocytogenes also has a PTS-like regulatory system, mpoABCD, which is not included
+#   those proteins are marked ignore.
+# L. monocytogenes also has a PTS-like regulatory system, mpoABCD, which is not included.
 #   (It is reported to act as a glucose transporter, but slowly; not clear if it transports mannose.)
 # There's also a paper about manLMN from Streptococcus salivarius, but I don't think it is actually
 # characterized, so ignore.
@@ -18,11 +18,13 @@
 manX	mannose PTS system, EII-AB component ManX/ManL	curated:CharProtDB::CH_088329	curated:TCDB::D2BKY7	curated:TCDB::E1UCI0	ignore:TCDB::Q5M5W6	ignore:BRENDA::Q9S4L5	ignore:TCDB::Q04GK1	ignore:TCDB::Q2QKM4
 manY	mannose PTS system, EII-C component ManY/ManM	curated:CharProtDB::CH_088330	curated:TCDB::D2BKY8	curated:TCDB::E1UCI1	ignore:TCDB::Q5M5W7	ignore:TCDB::Q8Y8W0	ignore:TCDB::Q04GK0	ignore:TCDB::Q2QKM3
 manZ	mannot PTS system, EII-D component ManZ/ManN	curated:SwissProt::P69805	curated:TCDB::D2BKY9	curated:TCDB::E1UCI2	curated:TCDB::P69805	ignore:TCDB::Q5M5W8	ignore:TCDB::Q04GJ9	ignore:TCDB::Q2QKM2	ignore:BRENDA::Q5IRC0	ignore:TCDB::Q8Y8W1
-PTS: manX manY manZ
+
+# PTS systems form D-mannose 6-phosphate
+mannose-PTS: manX manY manZ
 
 # B. subtilis has a combined EII-BCA PTS system
 manP	mannose PTS system, EII-CBA components	curated:BRENDA::O31645
-PTS: manP
+mannose-PTS: manP
 
 # ABC transporters are described in Saccharolobus solfataricus (formerly Sulfolobus),
 # Thermus thermophilus, Pseudomonas fluorescens and P. simiae, Thermotoga maritima,
@@ -36,14 +38,14 @@ glcT	mannose ABC transporter, permease component 1 (GlcT)	curated:TCDB::Q97UZ0
 glcU	mannose ABC transporter, permease component 2 (GlcU)	curated:TCDB::Q97UY9
 glcV	mannose ABC transporter, ATPase component GlcV	curated:BRENDA::Q97UY8
 
-# Transporters were identified using
+# Transporters and PTS systems were identified using
 # query: transporter:mannose:D-mannose:D-mannopyranose:CPD-13559:CPD-12601
-transport: glcS glcT glcU glcV
+mannose-transport: glcS glcT glcU glcV
 
-# The Pseudomonas fluorescens or Pseudomonas simiae system (4 components) is very similar
-# to the mtlEFGK system from P. fluorescens DSM50106, which is not reported to take up 
-# mannose but takes up mannitol and sorbitol. So I gave this system the same names.
-# It is also quite similar (>=75% a.a. identity) to a system for sorbitol utilization in other P. fluorescens,
+# The 4-component mannose ABC transporter from Pseudomonas fluorescens or Pseudomonas simiae
+# is very similar to mtlEFGK system from P. fluorescens DSM50106, which is not reported to take up 
+# mannose but takes up mannitol and sorbitol. So GapMind uses the same gene names.
+# This system is also quite similar (>=75% a.a. identity) to a system for sorbitol utilization in other P. fluorescens,
 # which is also ignored.
 # The next-closest characterized systems are mostly sorbitol transporters and they should also be
 # ignored (probably).
@@ -51,14 +53,14 @@ mtlG	mannose ABC transporter, permease component 1 (MtlG)	curated:reanno::WCS417
 mtlF	mannose ABC transporter, permease component 2 (MtlF)	curated:reanno::WCS417:GFF2492	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3041	curated:reanno::pseudo3_N2E3:AO353_25885	ignore:TCDB::O30492	ignore:reanno::pseudo5_N2C3_1:AO356_00020	ignore:reanno::pseudo6_N2E2:Pf6N2E2_1962
 mtlE	mannose ABC transporter, substrate-binding component MtlE	curated:reanno::WCS417:GFF2493	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3042	curated:reanno::pseudo3_N2E3:AO353_25880	ignore:TCDB::O30491	ignore:reanno::pseudo5_N2C3_1:AO356_00025	ignore:reanno::pseudo6_N2E2:Pf6N2E2_1963
 mtlK	mannose ABC transporter, ATPase component MtlK	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3039	curated:reanno::WCS417:GFF2490	curated:reanno::pseudo3_N2E3:AO353_25895	ignore:TCDB::O30494	ignore:TCDB::O30494	ignore:reanno::pseudo6_N2E2:Pf6N2E2_1960	ignore:reanno::pseudo5_N2C3_1:AO356_00010
-transport: mtlG mtlF mtlE mtlK
+mannose-transport: mtlG mtlF mtlE mtlK
 
 # The Thermus thermophilus system (4 components)
 TT_C0211	mannose ABC transporter, ATPase component MalK1	curated:TCDB::Q72L52
 TT_C0327	mannose ABC transporter, permease component 1	curated:TCDB::Q72KX3
 TT_C0326	mannose ABC transporter, permease component 2	curated:TCDB::Q72KX4
 TT_C0328	mannose ABC transporter, substrate-binding component	curated:TCDB::Q72KX2
-transport: TT_C0211 TT_C0327 TT_C0326 TT_C0328
+mannose-transport: TT_C0211 TT_C0327 TT_C0326 TT_C0328
 
 # The Thermotoga maritima system (5 components)
 TM1746	mannose ABC transporter, substrate-binding component	curated:TCDB::Q9X268
@@ -66,58 +68,62 @@ TM1747	mannose ABC transporter, permease component 1	curated:TCDB::Q9X269
 TM1748	mannose ABC transporter, permease component 2	curated:TCDB::Q9X270
 TM1749	mannose ABC transporter, ATPase component 1	curated:TCDB::Q9X271
 TM1750	mannose ABC transporter, ATPase component 2	curated:TCDB::Q9X272
-transport: TM1746 TM1747 TM1748 TM1749 TM1750
+mannose-transport: TM1746 TM1747 TM1748 TM1749 TM1750
 
 # The Ensifer meliloti system (3 components)
 frcA	mannose ABC transporter, ATPase component FrcA	curated:SwissProt::Q9F9B0
 frcB	mannose ABC transporter, substrate-binding component FrcB	curated:SwissProt::Q9F9B2
 frcC	mannose ABC transporter, permease component FrcC	curated:SwissProt::Q9F9B1
-transport: frcA frcB frcC
+mannose-transport: frcA frcB frcC
 
 # The Herbaspirillum seropedicae system (3 components)
 HSERO_RS03635	mannose ABC transporter, substrate-binding component	uniprot:D8IZC6
 HSERO_RS03640	mannose ABC transporter, ATPase component	uniprot:D8IZC7
 HSERO_RS03645	mannose ABC transporter, permease component	uniprot:D8IZC8
-transport: HSERO_RS03635 HSERO_RS03640 HSERO_RS03645
+mannose-transport: HSERO_RS03635 HSERO_RS03640 HSERO_RS03645
+
+# Homomeric transporters:
 
 STP6	mannose:H+ symporter	curated:CharProtDB::CH_091493	curated:TCDB::Q9LT15
-transport: STP6
+mannose-transport: STP6
 
 gluP	mannose:Na+ symporter	curated:TCDB::O25788	curated:reanno::SB2B:6936374
-transport: gluP
+mannose-transport: gluP
 
 glcP	mannose:H+ symporter	curated:SwissProt::O07563
 
-transport: glcP
+mannose-transport: glcP
+
+MST1	mannose:H+ symporter	curated:TCDB::A0ZXK6
+mannose-transport: MST1
+
+manMFS	mannose transporter, MFS superfamily	curated:reanno::pseudo5_N2C3_1:AO356_28540
+mannose-transport: manMFS
 
 # Ignore Snf3p (TCDB::Q06222 2.A.1.1.18) which has a regulatory role
 
-MST1	mannose:H+ symporter	curated:TCDB::A0ZXK6
-transport: MST1
 
-manMFS	mannose transporter, MFS superfamily	curated:reanno::pseudo5_N2C3_1:AO356_28540
-transport: manMFS
-
-# SMc03111 (P29954) is specifically important for utilizing mannose and mannitol, and
+# SMc03111 (P29954) is specifically important for utilizing mannose and mannitol,
 # which confirms it is mannose 6-phosphate isomerase
 manA	mannose-6-phosphate isomerase	EC:5.3.1.8	uniprot:P29954
 
 # In pathway I, after uptake and phosphorlation by a PTS system, mannose-6-phosphate isomerase (manA)
 # produces fructose-6-phosphate, which is a central metabolic intermediate.
-all: PTS manA
+all: mannose-PTS manA
 
-# Ignore some vaguely annotated mannose or mannose-6-P isomerases
-man_isomerase	D-mannose isomerase	EC:5.3.1.7	ignore:reanno::pseudo3_N2E3:AO353_03400	ignore:reanno::pseudo1_N1B4:Pf1N1B4_597	ignore:reanno::pseudo5_N2C3_1:AO356_05200
-import fructose.steps:scrK # fructokinase
+# Ignore some vaguely annotated mannose or mannose-6-phosphate isomerases
+man-isomerase	D-mannose isomerase	EC:5.3.1.7	ignore:reanno::pseudo3_N2E3:AO353_03400	ignore:reanno::pseudo1_N1B4:Pf1N1B4_597	ignore:reanno::pseudo5_N2C3_1:AO356_05200
 
-# Or, D-mannose isomerase yields
-# fructose, which can be metabolized by fructokinase (scrK).
-all: transport man_isomerase scrK
 
 # SMc03109 was annotated as mannokinase but not given this EC number.
 # rokA (MONOMER-19002) and hexA (Q5GAN8) are hexose kinases, including mannose kinases (PMID:PMC545704)
 mannokinase	D-mannose kinase	EC:2.7.1.7	curated:reanno::Smeli:SMc03109	curated:metacyc::MONOMER-19002	uniprot:Q5GAN8
 
 # In pathway II, after uptake, mannose kinase is followed by isomerization to fructose 6-phosphate.
-all: transport mannokinase manA
+all: mannose-transport mannokinase manA
 
+import fructose.steps:scrK # fructokinase
+
+# Or, D-mannose isomerase yields
+# fructose, which can be metabolized by fructokinase (scrK).
+all: mannose-transport man-isomerase scrK

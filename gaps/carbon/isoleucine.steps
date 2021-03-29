@@ -3,11 +3,6 @@
 # The other pathways are fermentative and do not lead to carbon incorporation
 # (metacyc:PWY-5078, metacyc:PWY-8184).
 
-# 3-methyl-2-oxopentanoate dehydrogenase is one of the activities of
-# branched-chain alhpa-ketoacid dehydrogenases, which pass electrons
-# to NAD (EC 1.2.1.25) or ferredoxin (EC 1.2.7.7), as described in
-# leucine.steps.
-
 # E. coli livFGHMJ or livFGHMK (livK and livJ are alternate SBPs);
 #   and the related system livJFGHM from Streptococcus pneumoniae;
 #   and the related system braCDEFG from Pseudomonas aeruginosa (braC is the SBP);
@@ -34,9 +29,8 @@ livM	L-isoleucine ABC transporter, permease component 2 (LivM/BraE)	curated:Swis
 
 # Transporters were identified using
 # query: transporter:isoleucine:L-isoleucine:ile
-# Non-specific large neutral amino acid tranpsorters from mammals were ignored
-# Amino acid efflux pumps were ignored
-transport: livF livG livJ livH livM
+# and non-specific large neutral amino acid tranpsorters from mammals were ignored.
+isoleucine-transport: livF livG livJ livH livM
 
 # Synechocystis sp. NatABCDE; also a similar system in Anabaena
 # (also known as N-I; TC 3.A.1.4.6) is thought to transport isoleucine (PMC4500139).
@@ -48,56 +42,49 @@ natB	L-isoleucine ABC transporter, substrate-binding component NatB	ignore:TCDB:
 natC	L-isoleucine ABC transporter, permease component 1 (NatC)	ignore:TCDB::P74455	curated:TCDB::Q8YY08
 natD	L-isoleucine ABC transporter, permease component 2 (NatD)	ignore:TCDB::P74318	curated:TCDB::Q8YXD0
 natE	L-isoleucine ABC transporter, ATPase component 2 (NatE)	ignore:TCDB::P73650	curated:TCDB::Q8YT15
-transport: natA natB natC natD natE
+isoleucine-transport: natA natB natC natD natE
 
 Bap2	L-isoleucine permease Bap2	curated:CharProtDB::CH_091448	curated:SwissProt::P38084	curated:TCDB::Q2VQZ4
-transport: Bap2
+isoleucine-transport: Bap2
 
 brnQ	L-isoleucine:cation symporter BrnQ/BraZ/BraB	curated:TCDB::P0AD99	curated:TCDB::P25185	curated:TCDB::P19072
-transport: brnQ
+isoleucine-transport: brnQ
 
 bcaP	L-isoleucine uptake transporter BcaP/CitA	curated:TCDB::S6EX81
-transport: bcaP
+isoleucine-transport: bcaP
 
+# Amino acid efflux pumps were ignored
 
-import propionate.steps:prpC prpD acn prpB acnD prpF epi mutase propionyl-CoA-carboxylase
+import propionate.steps:propionyl-CoA-degradation
 
-# propionyl-CoA is an intermediate in isoleucine degradation.
-# It can be catabolized via 2-methylcitrate synthase (prpC) to succinate,
-# or via carboxylation to (S)-methylmalonate, followed by epimerase (epi) to
-# (R)-methylmalonate and methylmalonyl-CoA mutase to succinyl-CoA.
-propionyl-CoA-degradation: prpC prpD acn prpB
-propionyl-CoA-degradation: prpC acnD prpF acn prpB
-propionyl-CoA-degradation: propionyl-CoA-carboxylase epi mutase
+import leucine.steps:BKD # branched-chain alpha-ketoacid dehydrogenases
 
-import leucine.steps:bkd # branched-chain alpha-ketoacid dehydrogenases
-
-# EC 1.3.85 includes (2S)-2-methylbutanoyl-CoA dehydrogenases and also
-# isobutyryl-CoA dehydrogenases (involved in valine degradation,
-# usually given EC 1.3.8.5 as well) or sometimes 3-methylbutanoyl-CoA
-# dehydrogenases (involved in leucine degradation, usually given EC
-# 1.3.8.4). Some enzymes act on all three methylacyl-CoA
+# EC:1.3.8.5 includes (2S)-2-methylbutanoyl-CoA dehydrogenases and also
+# isobutyryl-CoA dehydrogenases (involved in valine degradation)
+# or sometimes 3-methylbutanoyl-CoA
+# dehydrogenases (involved in leucine degradation, usually given
+# EC:1.3.8.4). Some enzymes act on all three methylacyl-CoA
 # substrates. Other genes are required only for valine degradation and
 # their activity on 2-methylbutanoyl-CoA uncertain, so they are marked
 # ignore.
-
-# PfGW456L13_2983 and Shewana3_2769 (7025618) and PP_2216 (MONOMER-17424)
+#
+# PfGW456L13_2983 and Shewana3_2769 (VIMSS 7025618) and PP_2216 (MONOMER-17424)
 # were annotated with other EC numbers (implying other acyl-CoA substrates)
 # but are involved in isoleucine utilization, so are included.
 #
 # Various isobutyryl-CoA dehydrogenases are ignored (they may well act on 2-methylbutanoyl-CoA as well).
 #
-# P45857 (mmgC from B. subtilis) is part of an operon with methylcitrate cycle genes, and
+# uniprot:P45857 (mmgC from B. subtilis) is part of an operon with methylcitrate cycle genes, and
 # could be involved in isoleucine catabolism, but its biochemical activity is uncertain,
-# so it is ignored, as is the nearly-identical CH_091788
-#
-# Some related proteins are isovaleroyl-CoA dehydrogenases (3-methylbutanoyl-CoA dehydrogenases, EC 1.3.8.4)
-# and these should perhaps be ignored as well.
-
+# so it is ignored, as is the nearly-identical CH_091788.
 acdH	(2S)-2-methylbutanoyl-CoA dehydrogenase	EC:1.3.8.5	curated:reanno::pseudo13_GW456_L13:PfGW456L13_2983	curated:reanno::ANA3:7025618	curated:metacyc::MONOMER-17424	ignore:reanno::psRCH2:GFF2392	ignore:reanno::WCS417:GFF2713	ignore:reanno::pseudo13_GW456_L13:PfGW456L13_2985	ignore:reanno::pseudo3_N2E3:AO353_25670	ignore:SwissProt::P45857	ignore:CharProtDB::CH_091788
 
-# Psest_2437 (GFF2389) is the enoyl-CoA hydrotase for both isoleucine and valine degradation
-# Q9SE41 and Q51969 (MONOMER-11695) are likely misannotated, see valine.steps
+# Psest_2437 (GFF2389) is the enoyl-CoA hydrotase for both isoleucine and valine degradation.
+# A paper claiming that uniprot:Q9SE41 (PMID:23809632) is ech relies on
+# homology modeling, and it could well be a hydrolase instead; it is
+# 69% identical to the hydrolase from Arabidopsis (uniprot:Q9LKJ1).  And
+# MetaCyc linked uniprot:Q51969 (MONOMER-11695) from P. putida to ech, but the
+# sequence shown in the paper (PMID:12115060, Fig. 3) is different.
 ech	2-methyl-3-hydroxybutyryl-CoA hydro-lyase	EC:4.2.1.17	curated:reanno::psRCH2:GFF2389	ignore_other:4.2.1.150	ignore:BRENDA::Q9SE41	ignore:metacyc::MONOMER-11695
 
 # SO1683 (Q8EGC1) was proposed to have this activity (PMC2612455; PMC3219624) and is important for
@@ -108,7 +95,7 @@ ivdG	3-hydroxy-2-methylbutyryl-CoA dehydrogenase	EC:1.1.1.178	uniprot:Q8EGC1
 fadA	2-methylacetoacetyl-CoA thiolase	EC:2.3.1.16	ignore_other:2.3.1.9
 
 # A transaminase (which is not represented) converts isoleucine to (3S)-3-methyl-2-oxopentanoate,
-# the 2-oxoacid dehydrogenase (decarboxylating) bkd forms
+# the decarboxylating dehydrogenase BKD forms
 # (2S)-2-methylbutanoyl-CoA, dehydrogenase acdH forms
 # (E)-2-methylcrotonyl-CoA, hydratase ech forms
 # (2S,3S)-3-hydroxy-2-methylbutanoyl-CoA, dehydrogenase ivdG forms
@@ -116,7 +103,7 @@ fadA	2-methylacetoacetyl-CoA thiolase	EC:2.3.1.16	ignore_other:2.3.1.9
 # acetyl-CoA.
 # (The initial transaminase is not represented because
 # amino-acid aminotransferases are often non-specific.)
-all: transport bkd acdH ech ivdG fadA propionyl-CoA-degradation
+all: isoleucine-transport BKD acdH ech ivdG fadA propionyl-CoA-degradation
 
 # MetaCyc Pathway: L-isoleucine degradation II
 # is a fermentative pathway, to 2-methylbutanol. It does not yield any

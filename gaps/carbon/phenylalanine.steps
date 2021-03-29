@@ -26,43 +26,28 @@ livJ	L-phenylalanine ABC transporter, substrate-binding component LivJ/LivK	cura
 
 # Transporters were identified using
 # query: transporter:phenylalanine:L-phenylalanine:phe
-transport: livF livG livH livM livJ
+phenylalanine-transport: livF livG livH livM livJ
 
-# RR42_RS33495 from Cupriavidus basilensis FW507-4G11 (A0A0C4YP23) is the phenylalanine transporter
-# Ignore A2RMP5, an ortholog from another Lactococcus
+# RR42_RS33495 from Cupriavidus basilensis FW507-4G11 (A0A0C4YP23) is the phenylalanine transporter.
+# Ignore A2RMP5, an ortholog from another Lactococcus.
 aroP	L-phenylalanine:H+ symporter AroP	curated:TCDB::P15993	curated:TCDB::F2HN33	curated:TCDB::P24207	curated:TCDB::Q2VQZ4	curated:TCDB::Q46065	uniprot:A0A0C4YP23	ignore:SwissProt::A2RMP5
 
-transport: aroP
+phenylalanine-transport: aroP
 
 # non-specific eukaryotic transporters (i.e., Q01650) and the related serine/threonine exchanger SteT were excluded
 # amino acid exporters such as yddG were excluded
 
+# acetoacetate is an intermediate in tyrosine degradation
+import leucine.steps:acetoacetate-degradation
 
-# Steps for acetoacetate utilization
-import leucine.steps:aa_activation
-import deoxyribose.steps:atoB # acetyl-CoA acetyltransferase
-acetoacetate_utilization: aa_activation atoB
+# tyrosine is an intermediate in phenylalanine degradation
+import tyrosine.steps:tyrosine-degradation
 
-# Steps for tyrosine utilization
-import tyrosine.steps:HPD hmgA maiA fahA
-tyrosine-utilization: HPD hmgA maiA fahA acetoacetate_utilization
-
-# Steps for phenylacetate utilization
-import phenylacetate.steps:phenylacetyl-CoA-dehydrogenase phenylglyoxylate-dehydrogenase benzoyl-CoA-degradation paaK paaA paaB paaC paaE paaG paaZ1 paaZ2 paaJ1 paaF paaH paaJ2
-
-
-#phenylacetate-utilization: paaK paaA paaB paaC paaE paaG paaZ1 paaZ2 paaJ1 paaF paaH paaJ2
-#phenylacetate-utilization: paaK phenylacetyl-CoA-dehydrogenase phenylglyoxylate-dehydrogenase benzoyl-CoA-degradation
-
-phenylacetyl-CoA-utilization: paaA paaB paaC paaE paaG paaZ1 paaZ2 paaJ1 paaF paaH paaJ2
-phenylacetyl-CoA-utilization: phenylacetyl-CoA-dehydrogenase phenylglyoxylate-dehydrogenase benzoyl-CoA-degradation
+# phenylacetate is an intermediate in phenylalanine degradation
+import phenylacetate.steps:phenylacetate-degradation phenylacetyl-CoA-degradation
 
 # Several pathways involve transamination to phenylpyruvate
 ARO8	L-phenylalanine transaminase	EC:2.6.1.1	EC:2.6.1.27	EC:2.6.1.57	ignore:BRENDA::Q845W8	ignore:BRENDA::A0A060PQX5	ignore:SwissProt::P52878	ignore:BRENDA::O57946
-
-# Phenylpyruvate can be decarboxylated to phenylacetaldehyde by the typical
-# homomeric enzyme, or by a heterodimer reported in Streptomyces virginiae
-# (see PMID:28719183)
 
 ARO10	phenylpyruvate decarboxylase	EC:4.1.1.43	ignore:BRENDA::A0A222AKA3
 
@@ -71,6 +56,9 @@ PPDCalpha	phenylpyruvate decarboxylase, alpha subunit	curated:BRENDA::A0A222AKA3
 # The beta subunit is not curated but is MF179146 = ASO76824.1, identical in sequence to G1UHX5
 PPDCbeta	phenylpyruvate decarboxylase, beta subunit	uniprot:G1UHX5
 
+# Phenylpyruvate can be decarboxylated to phenylacetaldehyde by the typical
+# homomeric enzyme, or by a heterodimer reported in Streptomyces virginiae
+# (see PMID:28719183)
 phenylpyruvate-decarboxylase: ARO10
 phenylpyruvate-decarboxylase: PPDCalpha PPDCbeta
 
@@ -81,11 +69,11 @@ iorB	phenylpyruvate:ferredoxin oxidoreductase, IorB subunit	curated:BRENDA::O078
 # A fused enzyme is described in Phaeobacter gallaeciensis (ior1 = A9ERV7 = I7EJ57, see PMC3346364).
 iorAB	phenylpyruvate:ferredoxin oxidoreductase, fused IorA/IorB	curated:reanno::BFirm:BPHYT_RS02015	curated:reanno::Marino:GFF880	uniprot:I7EJ57
 
-# phenylpyruvate:ferredoxin oxidoreductase has both heterodimeric
-# (iorA/iorB) and fused (iorAB) forms.
 # This enzyme is usually known as
 # indolepyruvate:ferredoxin oxidoreductase, but it acts on
-# phenylpyruvate as well (PMID:8206994).
+# phenylpyruvate as well, forming phenylacetyl-CoA (PMID:8206994).
+# Phenylpyruvate:ferredoxin oxidoreductase has both heterodimeric
+# (iorA/iorB) and fused (iorAB) forms.
 phenylpyruvate-fd-oxidoreductase: iorA iorB
 phenylpyruvate-fd-oxidoreductase: iorAB
 
@@ -93,14 +81,14 @@ phenylpyruvate-fd-oxidoreductase: iorAB
 # phenylpyruvate (also known as 3-phenyl-2-oxo-propanoate),
 # and phenylpyruvate:ferredoxin oxidoreductase, which forms
 # phenylacetyl-CoA.
-all: transport ARO8 phenylpyruvate-fd-oxidoreductase phenylacetyl-CoA-utilization
+all: phenylalanine-transport ARO8 phenylpyruvate-fd-oxidoreductase phenylacetyl-CoA-degradation
 
 pad-dh	phenylacetaldehyde dehydrogenase	EC:1.2.1.39
 
 # In the anaerobic pathway, the transaminase ARO8 forms
 # phenylpyruvate, a carboxy-lyase forms phenylacetaldehyde,
-# and a dehydrogenase (pad-dh) forms phenylacetate, which is activated to phenylacetyl-CoA.
-all: transport ARO8 phenylpyruvate-decarboxylase pad-dh paaK phenylacetyl-CoA-utilization
+# and a dehydrogenase (pad-dh) forms phenylacetate
+all: phenylalanine-transport ARO8 phenylpyruvate-decarboxylase pad-dh phenylacetate-degradation
 
 # This enzyme is ebA5005 = Q5P143. It runs in parallel with a
 # phenylacetaldehyde dehydrogenase (PMID:24214948).
@@ -108,7 +96,7 @@ pfor	phenylacetaldeyde:ferredoxin oxidoreductase	EC:1.2.7.5	uniprot:Q5P143
 
 # Or, in a variation on the anaerobic pathway, the phenylacetaldehyde is oxidized to phenylacetate
 # by phenylacetaldehyde:ferredoxin oxidoreductase (pfor).
-all: transport ARO8 phenylpyruvate-decarboxylase pfor paaK phenylacetyl-CoA-utilization
+all: phenylalanine-transport ARO8 phenylpyruvate-decarboxylase pfor phenylacetate-degradation
 
 PAH	phenylalanine 4-monooxygenase	EC:1.14.16.1
 
@@ -125,5 +113,5 @@ QDPR	6,7-dihydropteridine reductase	EC:1.5.1.34	EC:1.5.1.50	ignore:SwissProt::P2
 # In the aerobic pathway, PAH forms tyrosine and hydroxylates its
 # tetrahydropterin co-substrate; the tetrahydropterin is regenerated
 # by dehydratase PCBD and reductase QDPR.
-all: transport PAH PCBD QDPR tyrosine-utilization
+all: phenylalanine-transport PAH PCBD QDPR tyrosine-degradation
 

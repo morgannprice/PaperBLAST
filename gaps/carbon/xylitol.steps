@@ -3,19 +3,20 @@
 # or on utilization via a phosphotransferase system and
 # D-xylulose-5-phosphate 2-reductase (PMID:27553222).
 
-# Fused (one-component) PTS system, EII-ABC, from Streptococcus mutans,
-# forming D-xylitol-5-phsophate.
+# Fused (one-component) PTS system, EII-ABC, from Streptococcus mutans.
 # A fairly close homolog from Streptococcus agalactiae is annotated
 # as a fructose PTS (fru1), but does not seem to have been characterized,
 # and could well be a xylitol PTS as well.
 fruI	xylitol PTS, enzyme IIABC (FruI)	curated:TCDB::Q1LZ59	ignore:TCDB::Q3K0G6
-PTS: fruI
+
+# PTS systems form D-xylitol-5-phsophate
+xylitol-PTS: fruI
 
 # A three-part PTS system. Axl is short for arabitol and xylitol.
 EIIA-Axl	xylitol PTS, enzyme IIA (EIIA-Axl)	curated:TCDB::Q71WA4
 EIIB-Axl	xylitol PTS, enzyme IIB (EIIB-Axl)	curated:TCDB::Q71WA5
 EIIC-Axl	xylitol PTS, enzyme IIC (EIIC-Axl)	curated:TCDB::Q71WA6
-PTS: EIIA-Axl EIIB-Axl EIIC-Axl
+xylitol-PTS: EIIA-Axl EIIB-Axl EIIC-Axl
 
 # 4-component ABC transporter in Dinoroseobacter shibae.
 Dshi_0546	xylitol ABC transporter, ATPase component	curated:reanno::Dino:3607124
@@ -23,25 +24,25 @@ Dshi_0547	xylitol ABC transporter, substrate-binding component	curated:reanno::D
 Dshi_0548	xylitol ABC transporter, permease component 1	curated:reanno::Dino:3607126
 Dshi_0549	xylitol ABC transporter, permease component 2	curated:reanno::Dino:3607127
 
-# Transporters were identified using
+# Transporters and PTS systems were identified using
 # query: transporter:xylitol
-transport: Dshi_0546 Dshi_0547 Dshi_0548 Dshi_0549
+xylitol-transport: Dshi_0546 Dshi_0547 Dshi_0548 Dshi_0549
 
 # 4-component ABC transporter in Herbaspirillum seropedicae
 HSERO_RS17000	xylitol ABC transporter, substrate-binding component	uniprot:D8IPH7
 HSERO_RS17005	xylitol ABC transporter, permease component 1	uniprot:D8IPH8
 HSERO_RS17010	xylitol ABC transporter, permease component 2	uniprot:D8IPH9
 HSERO_RS17020	xylitol ABC transporter, ATPase component	uniprot:D8IPI1
-transport: HSERO_RS17000 HSERO_RS17005 HSERO_RS17010 HSERO_RS17020
+xylitol-transport: HSERO_RS17000 HSERO_RS17005 HSERO_RS17010 HSERO_RS17020
 
 # 3-component ABC transporter in Pseudomonas simiae WCS417
 PS417_12065	xylitol ABC transporter, ATPase component	uniprot:A0A1N7TX47
 PS417_12060	xylitol ABC transporter, permease component	uniprot:A0A1N7UKA9
 PS417_12055	xylitol ABC transporter, substrate-binding component	uniprot:A0A1N7UEK0
-transport: PS417_12065 PS417_12060 PS417_12055
+xylitol-transport: PS417_12065 PS417_12060 PS417_12055
 
 PLT5	xylitol:H+ symporter PLT5	curated:CharProtDB::CH_091483	curated:TCDB::Q1XF07
-transport: PLT5
+xylitol-transport: PLT5
 
 # xdhA is xylitol dehydrogenase
 # xylB is D-xylulokinase
@@ -50,7 +51,7 @@ import xylose.steps:xdhA xylB
 # In the MetaCyc pathway, the dehydrogenase xdhA forms
 # D-xylulose and the kinase xylB forms D-xylulose-5-phosphate, which is
 # an intermediate in the pentose phosphate pathway.
-all: transport xdhA xylB
+all: xylitol-transport xdhA xylB
 
 # The D-xylulose-5-phosphate 2-reductase activity is probably provided by
 # lmo2663 and/or lmo2664, but it possible that these enzymes produce D-arabitol-1-phosphate instead
@@ -63,4 +64,4 @@ x5p-reductase	D-xylulose-5-phosphate 2-reductase	uniprot:Q8Y414	uniprot:Q8Y413
 # thought to involve a D-xylulose-5-phosphate 2-reductase (in
 # reverse) that forms D-xylulose-5-phosphate,
 # which is consumed by the pentose phosphate pathway (PMID:3104310, PMID:27553222).
-all: PTS x5p-reductase
+all: xylitol-PTS x5p-reductase

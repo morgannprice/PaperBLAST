@@ -1,7 +1,7 @@
 # Many bacteria take up fructose by a phosphotransferase (PTS) system
 # that forms fructose 1-phosphate; this can be consumed via 1-phosphofructokinase
 # and glycolysis (metacyc:PWY0-1314).
-# There also also PTS systems that form fructose 6-phosphate, which is
+# Alternatively, some PTS systems form fructose 6-phosphate, which is
 # a central metabolic intermediate.
 # Fructose can also be taken up directly and then phosphorylated to
 # fructose 6-phosphate, a central metabolic intermediate.
@@ -10,7 +10,7 @@
 # 6-phosphate (PMID:9579084). This path is not included in GapMind because
 # phosphofructomutase has not been linked to sequence.
 # Also, in eukaryotes, fructose-1,6-bisphosphate aldolase is reported
-# to cleave fructose 1-P to glycerone phosphate and glyceraldehyde
+# to cleave fructose 1-phosphate to glycerone phosphate and glyceraldehyde
 # (metacyc:PWY66-373). This would make 1-phosphofructokinase
 # unnececessary. It's not clear that this occurs in prokaryotes, so
 # this is not listed.
@@ -33,59 +33,59 @@
 #   Xanthomonas campestris: FruA = P23355 and FruI = XCC2370 = P45597
 
 fruA	fructose-specific PTS system (fructose 1-phosphate forming), EII-B'BC components	curated:BRENDA::Q8DWE7	curated:SwissProt::P20966	curated:SwissProt::P23355	ignore:TCDB::P32154	curated:TCDB::Q9HY57	curated:TCDB::Q9RZP7	uniprot:G8B0J2
+
 # Homologs of fruB from Salmonella typhimurium and Haemophilus influenzae probably have the
 # same function, but are annotated differently in SwissProt.
 fruB	fructose-specific PTS system (fructose 1-phosphate forming), Hpr and EII-A components	curated:SwissProt::P69811	ignore:SwissProt::P17127	ignore:SwissProt::P44715
+
 # Homologs of fruI in other Pseudomonas fluorescens are annotated differently, but
 # are important for fructose utilization, so probably have the same function.
 fruI	fructose-specific PTS system (fructose 1-phosphate forming), EI, Hpr, and EII-A components	curated:TCDB::Q9HY55	curated:reanno::azobra:AZOBR_RS32325	curated:reanno::pseudo3_N2E3:AO353_05485	curated:SwissProt::P45597	curated:reanno::pseudo1_N1B4:Pf1N1B4_1146	curated:reanno::pseudo5_N2C3_1:AO356_07335	curated:reanno::WCS417:GFF780	curated:reanno::psRCH2:GFF3291
+
 # Streptococcus mutans has FruA-like "FruC" plus "FruD" with EII-A only.
 fruD	fructose-specific PTS system (fructose 1-phosphate forming), EII-A component	curated:BRENDA::Q8DWE6
 
 # Fructose 1-phosphate forming PTS systems contain FruA with either FruB, FruI, or FruD.
 # FruA has EII-B'BC components; the other genes all have E-IIA but their domain content varies.
 # FruB has E-IIA and Hpr components; FruI has EI-Hpr-IIA components; and FruD has E-IIA only.
-PTS_1_phosphate: fruA fruB
-PTS_1_phosphate: fruA fruI
-PTS_1_phosphate: fruA fruD
+fructose-PTS-1-phosphate: fruA fruB
+fructose-PTS-1-phosphate: fruA fruI
+fructose-PTS-1-phosphate: fruA fruD
 
-# 3-part PTS system (fructose 1-P forming) in Haloferax volcanii, Haloterrigena turkmenica, Haloarcula marismortui
+# 3-part PTS system (fructose 1-phosphate forming) in Haloferax volcanii, Haloterrigena turkmenica, Haloarcula marismortui.
 # The Haloarcula gene cluster also includes enzyme I (ptsI, Q5V5X2) and HPr (ptsH, Q5V5X3),
 # which is not represented here
 fruII-A	fructose-specific PTS system (fructose 1-phosphate forming), EII-A component	curated:TCDB::D2RXA7	curated:SwissProt::D4GYE4	curated:TCDB::Q5V5X4
 fruII-B	fructose-specific PTS system (fructose 1-phosphate forming), EII-B component	curated:SwissProt::D4GYE1	curated:TCDB::D2RXA4	curated:TCDB::Q5V5X1
 fruII-C	fructose-specific PTS system (fructose 1-phosphate forming), EII-C component	curated:SwissProt::D4GYE5	curated:TCDB::D2RXA8	curated:TCDB::Q5V5X5
-PTS_1_phosphate: fruII-A fruII-B fruII-C
+fructose-PTS-1-phosphate: fruII-A fruII-B fruII-C
 
 # Spiroplasma citri has a unified PTS system E-IIABC which clustered with fruA above but is distantly related
 # The others were in cluster 4
 fruII-ABC	fructose-specific PTS system (fructose 1-phosphate forming), EII-ABC components	curated:TCDB::Q9RMF5	curated:TCDB::Q3K0G6	curated:TCDB::P71012	curated:TCDB::Q0S1N2	curated:TCDB::Q1LZ59
-PTS_1_phosphate: fruII-ABC
+fructose-PTS-1-phosphate: fruII-ABC
 
 # Fructose 6-phosphate forming PTS systems, which are all of the "mannose" type
-# and have an additional EII-D component
+# and have an additional EII-D component.
 # B. subtilis has 4 components (levDEFG, also known as ptfABCD)
 # while in E. coli, Oneococcus oeni, and Streptococcus thermophilus, the EII-AB components are fused
 
 levD	fructose PTS system (fructose 6-phosphate forming), EII-A component	curated:SwissProt::P26379
 levE	fructose PTS system (fructose 6-phosphate forming), EII-B component	curated:SwissProt::P26380
 
-# Cluster 7 323-331 amino acids (heteromeric)
-# Q9S4L5 is nearly identical to  Q5M5W6, not sure if it acts on fructose or not
-# D2BKY7 is very similar to Q5M5W6 and has been studied mostly as a receptor to bacteriocins; not
-#   sure if it acts on fructose or not
+# uniprot:Q9S4L5 is nearly identical to uniprot:Q5M5W6; not sure if it acts on fructose or not.
+# uniprot:D2BKY7 is very similar to uniprot:Q5M5W6 and has been studied mostly as a receptor to bacteriocins; not
+#   sure if it acts on fructose or not.
 levDE	fructose PTS system (fructose 6-phosphate forming), EII-AB component	curated:CharProtDB::CH_088329	curated:TCDB::Q04GK1	curated:TCDB::Q5M5W6	ignore:BRENDA::Q9S4L5	ignore:TCDB::D2BKY7
 
-# Cluster 5 266-275 amino acids (heteromeric)
 levF	fructose PTS system (fructose 6-phosphate forming), EII-C component	curated:CharProtDB::CH_088330	curated:TCDB::P26381	curated:TCDB::Q04GK0	curated:TCDB::Q5M5W7
 
-# Cluster 6 275-304 amino acids (heteromeric)
-# Ignore SwissProt::P69805 which is nearly identical to P69805
-# Ignore Q5IRC0, whose specificity is unknown
+# Ignore SwissProt::P69805 which is nearly identical to P69805.
+# Ignore Q5IRC0, whose specificity is unknown.
 levG	fructose PTS system (fructose 6-phosphate forming), EII-D component	curated:TCDB::P26382	curated:TCDB::P69805	curated:TCDB::Q04GJ9	curated:TCDB::Q5M5W8	ignore:SwissProt::P69805	ignore:BRENDA::Q5IRC0
 
-PTS_6_phosphate: levD levE levF levG
-PTS_6_phosphate: levDE levF levG
+fructose-PTS-6-phosphate: levD levE levF levG
+fructose-PTS-6-phosphate: levDE levF levG
 
 # ABC type transporters
 
@@ -94,82 +94,84 @@ araV	fructose ABC transporter, ATPase component AraV	curated:TCDB::Q97UF2
 araU	fructose ABC transporter, permease component 1 (AraU)	curated:TCDB::Q97UF3
 araT	fructose ABC transporter, permease component 2 (AraT)	curated:TCDB::Q97UF4
 araS	fructose ABC transporter, substrate-binding component AraS	curated:TCDB::Q97UF5
-# Transporters were found using
-# query: transporter:fructose:D-fructose:BETA-D-FRUCTOSE.
-transport: araV araU araT araS
 
-# FruEFGK from Bifidobacterium longum
-# (fruF is distantly related to fruC below)
+# Transporters and PTS systems (forming -1-phosphate or -6-phosphate) were found using
+# query: transporter:fructose:D-fructose:BETA-D-FRUCTOSE.
+fructose-transport: araV araU araT araS
+
+# FruEFGK from Bifidobacterium longum.
+# (FruF is distantly related to frcC, which is described separately)
 fruE	fructose ABC transporter, substrate-binding component FruE	curated:SwissProt::Q8G848
 fruF	fructose ABC transporter, permease component 1 (FruF)	curated:SwissProt::Q8G846
 fruG	fructose ABC transporter, permease component 2 (FruG)	curated:SwissProt::Q8G845
 fruK	fructose ABC transporter, ATPase component FruK	curated:SwissProt::Q8G847
-transport: fruE fruF fruG fruK
+fructose-transport: fruE fruF fruG fruK
 
-# FrcABC from Rhizobium meliloti
-# A distantly related system in Ralstonia eutropha H16 is required for fructose utilization (21478317),
+# FrcABC from Rhizobium meliloti.
+# A distantly related system in Ralstonia eutropha H16 is required for fructose utilization (PMID:21478317),
 # and fitness data confirms that the homologs in Cupriavidus basilensis 4G11 are
 # important during growth on fructose
 # (frcA = RR42_RS03360 = A0A0C4Y5F6; frcC = RR42_RS03365 = A0A0C4Y7K0; frcB = RR42_RS03370 = A0A0C4Y591)
 frcA	fructose ABC transporter, ATPase component FrcA	curated:SwissProt::Q9F9B0	uniprot:A0A0C4Y5F6
 frcB	fructose ABC transporter, substrate-binding component FrcB	curated:SwissProt::Q9F9B2	uniprot:A0A0C4Y591
 frcC	fructose ABC transporter, permease component FrcC	curated:SwissProt::Q9F9B1	uniprot:A0A0C4Y7K0
-transport: frcA frcB frcC
+fructose-transport: frcA frcB frcC
 
-# Cluster 2 486-540 amino acids (not heteromeric) -- MFS type
+# Homomeric transporters:
+
 # Ignore Q6PXP3 (GTR7_HUMAN) as there is debate as to its activity
 Slc2a5	fructose:H+ symporter	curated:TCDB::A0ZXK6	curated:CharProtDB::CH_091463	curated:SwissProt::P22732	curated:SwissProt::P43427	curated:SwissProt::P46408	curated:SwissProt::P58353	ignore:SwissProt::Q6PXP3	curated:SwissProt::Q9WV38	curated:TCDB::Q9XIH7
-transport: Slc2a5
+fructose-transport: Slc2a5
 
-# Cluster 10 601-628 amino acids (not heteromeric)
 ffz	fructose facilitator (uniporter)	curated:TCDB::C5DX43	curated:TCDB::C5E4Z7	curated:TCDB::Q70WR7
-transport: ffz
+fructose-transport: ffz
 
-# Cluster 12 458-468 amino acids (not heteromeric)
 glcP	fructose:H+ symporter GlcP	curated:TCDB::P15729	curated:reanno::Korea:Ga0059261_1777
-transport: glcP
+fructose-transport: glcP
 
 ght6	high-affinity fructose transporter ght6	curated:CharProtDB::CH_091085
-transport: ght6
+fructose-transport: ght6
 
 STP6	sugar transport protein 6	curated:CharProtDB::CH_091493
-transport: STP6
-
-# Ignore CharProtDB::CH_122687,  potential proton-coupled fructose symporter from Candida albicans,
-# not actually characterized
+fructose-transport: STP6
 
 THT2A	fructose THT2A	curated:TCDB::Q06222
-transport: THT2A
-
-# Ignore the fructose porin (TCDB::Q51485, 1.B.19.1.1) from Pseudomonas aeruginosa
+fructose-transport: THT2A
 
 frt1	fructose:H+ symporter Frt1	curated:TCDB::Q8NJ22
-transport: frt1
+fructose-transport: frt1
 
 # N515DRAFT_1918 (A0A1I2JXG1) from Dyella japonica UNC79MFTsu3.2 is an MFS-type transporter that is
 # specifically important for growth on fructose.
 fruP	fructose porter FruP	uniprot:A0A1I2JXG1
-transport: fruP
+fructose-transport: fruP
 
 # The putative hexose transporter BT1758 (Q8A6W8) is important for fructose and levan utilization
 # It is in a fructan utilization cluster, so was propsoed to be the fructose transporter (see PMC3225772)
 BT1758	fructose transporter	uniprot:Q8A6W8
-transport: BT1758
+fructose-transport: BT1758
+
+# Ignore CharProtDB::CH_122687,  potential proton-coupled fructose symporter from Candida albicans,
+# not actually characterized
+
+# Ignore the fructose porin (TCDB::Q51485, 1.B.19.1.1) from Pseudomonas aeruginosa
 
 # For a PTS forming fructose 6-phosphate, no further steps are needed to reach
 # central metabolism.
-all: PTS_6_phosphate
+fructose-utilization: fructose-PTS-6-phosphate
 
 # ignore fragmentary sequence of Q09123
 scrK	fructokinase	EC:2.7.1.4	ignore:SwissProt::Q09123
-# For direct transport, the usual pathway is fructokinase (scrK), forming fructose 6-phosphate.
-all: transport scrK
 
+# For direct transport, the usual pathway is fructokinase (scrK), forming fructose 6-phosphate.
+fructose-utilization: fructose-transport scrK
 
 1pfk	1-phosphofructokinase	EC:2.7.1.56
+
 # Ignore several fragmentary sequences, and CH_091808 seems to be misannotated with another EC number
 # Q5SJM8 is nearly identical to Q72K02, a bifunctional aldolase/phosphatase, but is annotated only as phosphatase
 fba	fructose 1,6-bisphosphate aldolase	EC:4.1.2.13	ignore:SwissProt::P84722	ignore:SwissProt::P86979	ignore:SwissProt::P86980	ignore:CharProtDB::CH_091808	ignore:BRENDA::Q5SJM8
+
 # Ignore a fragmentary (allergen) sequence
 tpi	triose-phosphate isomerase	EC:5.3.1.1	ignore:SwissProt::P85814
 
@@ -177,5 +179,6 @@ tpi	triose-phosphate isomerase	EC:5.3.1.1	ignore:SwissProt::P85814
 # cleavage by fructose 1,6-bisphosphate aldolase (fba); triose-phosphate isomerase (tpi)
 # converts the glycerone phosphate to D-glyceraldehyde 3-phosphate, which is
 # a central metabolic intermediate.
-all: PTS_1_phosphate 1pfk fba tpi
+fructose-utilization: fructose-PTS-1-phosphate 1pfk fba tpi
 
+all: fructose-utilization

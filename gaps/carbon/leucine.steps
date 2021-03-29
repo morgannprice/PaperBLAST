@@ -32,7 +32,7 @@ livM	L-leucine ABC transporter, permease component 2 (LivM/BraE)	curated:SwissPr
 
 # Transporters were identified using
 # query: transporter:leucine:L-leucine
-transport: livF livG livJ livH livM
+leucine-transport: livF livG livJ livH livM
 
 # Synechocystis natABCDE and a related system in Anabaena (annotated with "leu" not leucine as the substrate)
 natA	L-leucine ABC transporter, ATPase component 1 (NatA)	curated:TCDB::Q55164	curated:TCDB::Q7A2H0
@@ -40,28 +40,28 @@ natB	L-leucine ABC transporter, substrate-binding component NatB	curated:TCDB::Q
 natC	L-leucine ABC transporter, permease component 1 (NatC)	curated:TCDB::P74455	curated:TCDB::Q8YY08
 natD	L-leucine ABC transporter, permease component 2 (NatD)	curated:TCDB::P74318	curated:TCDB::Q8YXD0
 natE	L-leucine ABC transporter, ATPase component 2 (NatE)	curated:TCDB::P73650	curated:TCDB::Q8YT15
-transport: natA natB natC natD natE
+leucine-transport: natA natB natC natD natE
 
 # AapJQMP from Rhizobium leguminosarum is described in glutamate.steps
 import glutamate.steps:aapJ aapQ aapM aapP
-transport: aapJ aapQ aapM aapP
+leucine-transport: aapJ aapQ aapM aapP
 
 # Homomeric transporters:
 
 leuT	L-leucine:Na+ symporter LeuT	curated:TCDB::O67854
-transport: leuT
+leucine-transport: leuT
 
 brnQ	L-leucine:Na+ symporter BrnQ/BraB	curated:TCDB::P0AD99	curated:TCDB::P19072
-transport: brnQ
+leucine-transport: brnQ
 
 bcaP	L-leucine uptake transporter BcaP	curated:TCDB::S6EX81
-transport: bcaP
+leucine-transport: bcaP
 
 Bap2	L-leucine permease Bap2	curated:CharProtDB::CH_091448	curated:TCDB::Q2VQZ4
-transport: Bap2
+leucine-transport: Bap2
 
 AAP1	L-leucine permease AAP1	curated:CharProtDB::CH_091601
-transport: AAP1
+leucine-transport: AAP1
 
 # Ignore heteromeric systems found only in animals (i.e., TC 2.A.3.8.25)
 # Ignore regulatory proteins such as SC16B_HUMAN, SSY1_YEAST
@@ -95,23 +95,23 @@ ofoB	branched-chain alpha-ketoacid:ferredoxin oxidoreductase, beta subunit OfoB	
 
 ofo	branched-chain alpha-ketoacid:ferredoxin oxidoreductase, fused	curated:reanno::Cup4G11:RR42_RS19540	curated:reanno::psRCH2:GFF3452	ignore_other:1.2.7.7	ignore_other:1.2.7.11
 
-# 4-methyl-2-oxopentanoate dehydrogenases can pass electrons to
-# NAD (EC:1.2.1.25) or to ferredoxin (EC:1.2.7.7).
+# These decarboxylating dehydrogenases act on
+# 4-methyl-2-oxopentanoate,
+# 3-methyl-2-oxobutanoate (2-oxoisovalerate)
+# and (S)-3-methyl-2-oxopentanoate and are known as the branched-chain
+# alpha-ketoacid dehydrogenases.
+# They can pass electrons to NAD (EC:1.2.1.25) or to ferredoxin (EC:1.2.7.7).
 # The NAD-dependent enzyme is the sum of three activities:
 # EC:1.2.4.4 (the 4-methyl-2-oxopentanoate dehydrogenase, with transfer to the lipopoyllysine residue of 2.3.1.168)
 #   which is itself heteromeric, with alpha and beta subunits;
 # EC:2.3.1.168 (dihydrolipoyllysine-residue (3-methylbutanoyl)transferase);
 # and EC:1.8.1.4 (dihydrolipoyl dehydrogenase, transferring electrons to NAD).
-#
-# These enzymes also act on 3-methyl-2-oxobutanoate (2-oxoisovalerate)
-# and (S)-3-methyl-2-oxopentanoate and are known as the branched-chain
-# alpha-ketoacid dehydrogenases.
-# The well-characterized ferredoxin-dependent enzymes have 2 subunits (ofoAB) or 3 subunits (vorABC).
-bkd: bkdA bkdB bkdC lpd
-bkd: vorA vorB vorC
-bkd: ofoA ofoB
-# Genetic data identified a fused enzyme with just 1 subunit (ofo).
-bkd: ofo
+BKD: bkdA bkdB bkdC lpd
+# The well-characterized ferredoxin-dependent enzymes have 3 subunits (vorABC) or 2 subunits (ofoAB).
+BKD: vorA vorB vorC
+BKD: ofoA ofoB
+# Genetic data identified a fused ferredoxin-dependent enzyme with just 1 subunit (ofo).
+BKD: ofo
 
 liuA	isovaleryl-CoA dehydrogenase	EC:1.3.8.4	EC:1.3.99.10
 
@@ -135,20 +135,29 @@ aacS	acetoacetyl-CoA synthetase	EC:6.2.1.16
 # or succinyl-CoA:acetoacetyl-CoA transferase (EC:2.8.3.5, also known as 3-oxoacid CoA-transferase)
 # can activate acetoacetate.
 # These have an A and B subunit.
-aa_activation: atoA atoD
+acetoacetate-activation: atoA atoD
 # Alternatively, an ATP-dependent ligase (aacS) can activate acetoacetate (EC:6.2.1.16).
-aa_activation: aacS
+acetoacetate-activation: aacS
 
-import deoxyribose.steps:atoB # acetyl-CoA acetyltransferase
+# Produces two acetyl-CoA from acetoacetyl-CoA and CoA.
+# EC:2.3.1.16 describes a broader range of beta-ketothiolases.
+# This enzyme is usually homomeric, but uniprot:I3R3D0 and uniprot:I3RA71 are non-catalytic subunits
+# of an enzyme from Haloferax mediterranei that also contains a
+# "normal" catalytic subunit (uniprot:I3R3D1, uniprot:I3RA72).
+# Inclusion of uniprot:P07256 was an error in BRENDA.
+# And CharProtDB includes an odd annotation of the form "similar to acetyl-CoA acetyltransferase"
+atoB	acetyl-CoA C-acetyltransferase	EC:2.3.1.9	ignore_other:2.3.1.16	ignore:BRENDA::P07256	ignore:BRENDA::I3R3D0	ignore:BRENDA::I3RA71	ignore_other:similar to acetyl-CoA acetyltransferase
+
+# The acetoacetate is activated to acetoacetyl-CoA,
+# and cleaved by acetyl-CoA acetyltransferase,
+# giving two acetyl-CoA.
+acetoacetate-degradation: acetoacetate-activation atoB
 
 # After transamination to 4-methyl-2-oxopentanoate by ilvE,
 # kbd oxidatively decarboxylates it to isovaleryl-CoA (also known as 3-methylbutanoyl-CoA),
 # liuA oxidizes it to 3-methylcrotonyl-CoA,
 # liuBD carboxylates it to 3-methylglutaconyl-CoA,
 # liuC hydrates it to hydroxymethylglutaryl-CoA,
-# and liuE hydrolyzes it to acetoacetate + acetyl-CoA.
-# The acetoacetate is activated to acetoacetyl-CoA,
-# and cleaved by acetyl-CoA acetyltransferase,
-# giving 2 acetyl-CoA, for a total of 3 acetyl-CoA
-# produced.
-all: transport ilvE bkd liuA liuB liuD liuC liuE aa_activation atoB
+# and liuE hydrolyzes it to acetoacetate and acetyl-CoA.
+all: leucine-transport ilvE BKD liuA liuB liuD liuC liuE acetoacetate-degradation
+

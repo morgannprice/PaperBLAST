@@ -7,58 +7,44 @@
 
 # ABC transporters: BraCDEFG from Pseudomonas aeruginosa and LivJFGHM from Streptococcus pneumoniae.
 # A related system, NatABCDE from Anabaena PCC 7120 (transporter N-I), is also thought to transport threonine
-# (see PMC177005; the genes are in TC 3.A.1.4.6)
-# These are all described by the rules for braCDEFG
+# (see PMC177005; the genes are in TC 3.A.1.4.6).
+# These are all described by the rules for braCDEFG.
 import alanine.steps:braC braD braE braF braG
 
 # Transporters were identified using
 # query: transporter:threonine:L-threonine:thr
-transport: braC braD braE braF braG
+threonine-transport: braC braD braE braF braG
 
 tdcC	L-threonine:H+ symporter TdcC	curated:SwissProt::P0AAD8
-transport: tdcC
+threonine-transport: tdcC
 
 sstT	L-threonine:Na+ symporter SstT	curated:SwissProt::P0AGE4
-transport: sstT
+threonine-transport: sstT
 
-# A closely related protein is annotated as a serine permease only
+# A closely related protein (uniprot:A2RI87) is annotated as a serine permease only
 serP1	L-threonine uptake transporter SerP1	curated:TCDB::F2HQ25	ignore:SwissProt::A2RI87
-transport: serP1
+threonine-transport: serP1
 
 phtA	L-threonine uptake permease PhtA	curated:TCDB::Q5ZY33
-transport: phtA
+threonine-transport: phtA
 
 snatA	L-threonine transporter snatA	curated:TCDB::Q8J305
-transport: snatA
+threonine-transport: snatA
 
 # Specifically important for threonine utilization, and downstream of kbl and tdh.
 # Homologs are D/L-alanine or serine:H+ symporters
 # (i.e., E. coli cycA)
 RR42_RS28305	L-threonine:H+ symporter	uniprot:A0A0C4YRF7
-transport: RR42_RS28305
+threonine-transport: RR42_RS28305
 
 # Serine/threonine exchangers, exporters, and non-specific metazoan transporters were ignored.
 
-# propanoyl-CoA is a common intermediate in threonine degradation.
-import propionate.steps:propionyl-CoA-carboxylase epi mcmA mcm-large mcm-small pco hpcD dddA prpC prpD acn prpB
+# propionyl-CoA is a common intermediate in threonine degradation
+import propionate.steps:propionyl-CoA-degradation
 
-methylmalonyl-CoA-mutase: mcmA
-methylmalonyl-CoA-mutase: mcm-large mcm-small
-
-propionyl-CoA-degradation: propionyl-CoA-carboxylase epi methylmalonyl-CoA-mutase
-
-# propionyl-CoA can be consumed by
-# propanyl-CoA oxidase (pco),
-# 3-hydroxypropionyl-CoA dehydratase (hpcD),
-# and 3-hydroxypropionate dehydratase (dddA).
-propionyl-CoA-degradation: pco hpcD dddA
-
-# Or by
-# 2-methylcitrate synthase (prpC),
-# 2-methylcitrate dehydratase (prpD),
-# (2R,3S)-2-methylcitrate dehydratase (acn),
-# and 2-methylisocitrate lyase (prpB)
-propionyl-CoA-degradation: prpC prpD acn prpB
+# Acetaldehyde is an intermediate in threonine degradation.
+# Also ackA (acetate kinase) and pta are involved in consuming acetyl phosphate.
+import ethanol.steps:acetaldehyde-degradation ackA pta
 
 # glycine is an intermediate in threonine utilization
 
@@ -74,11 +60,8 @@ grdC	glycine reductase component C, beta subunit	curated:CharProtDB::CH_017328	i
 
 glycine-reductase: grdA grdE grdB grdD grdC
 
-# ackA is acetate kinase (here, used in reverse)
-# pta is phosphate acetyltransferase
-import acetate.steps:ackA pta
-
-# Glycine can be reduced to acetyl phosphate by glycine reductase (EC:1.21.4.2).
+# Glycine can be reduced to acetyl phosphate by glycine reductase (EC:1.21.4.2), and then
+# converted to acetate (by ackA in reverse) or acetyl-CoA (by pta)
 glycine-degradation: glycine-reductase ackA
 glycine-degradation: glycine-reductase pta
 
@@ -98,18 +81,14 @@ glycine-degradation: gcvP gcvT gcvH lpd
 gloA	glyoxylase I	EC:4.4.1.5	ignore:SwissProt::P84719
 gloB	hydroxyacylglutathione hydrolase (glyoxalase II)	EC:3.1.2.6
 
-# PMID:19196979 showed that dld-II (SO_1521, Q8EGS3) is a D-lactate dehydrogenase.
-# D-lactate dehydrogenases from Lactobacillus delbrueckii are annotated as
-# EC:1.1.1.345 (D-2-hydroxyacid dehydrogenase),
-# which is usually used for enzymes that prefer larger substrates.
-D-LDH	D-lactate dehydrogenase	EC:1.1.1.28	EC:1.1.99.6	EC:1.1.2.4	uniprot:Q8EGS3	curated:BRENDA::Q1GAA2	curated:BRENDA::Q48534
+import D-lactate.steps:D-lactate-dehydrogenase
 
 # In methylglyoxal degradation I (metacyc:PWY-5386),
 # gloA condenses methylglyoxal with glutathione to
 # (R)-S-lactoylglutathione, gloB cleaves it to D-lactate (also known as
 # (R)-lactate) and glutathione, and the lactate is oxidized to
 # pyruvate.
-methylglyoxal-degradation: gloA gloB D-LDH
+methylglyoxal-degradation: gloA gloB D-lactate-dehydrogenase
 
 # MetaCyc Pathway: methylglyoxal degradation II is not thought to
 # occur in prokaryotes and is not described here.
@@ -122,13 +101,13 @@ methylglyoxal-degradation: gloA gloB D-LDH
 # methylglyoxal reductases and may well have that activity as well.
 yvgN	methylglyoxal reductase (NADPH-dependent)	EC:1.1.1.283	ignore_other:1.1.1.184
 import rhamnose.steps:aldA # lactaldehyde dehydrogenase
-# A0A0H3W5K4/I3VSF1 appears to be misannotated in BRENDA
-L-LDH	L-lactate dehydrogenase	EC:1.1.2.3	EC:1.1.1.27	ignore:BRENDA::A0A0H3W5K4	ignore:BRENDA::I3VSF1
+
+import L-lactate.steps:L-lactate-degradation
 
 # In methylglyoxal degradation IV (metacyc:PWY-5459), yvgN reduces
 # methylglyoxal to (S)-lactaldehyde, aldA oxidizes it to (S)-lactate (also known as
-# L-lactate), and this is oxidized to pyruvate.
-methylglyoxal-degradation: yvgN aldA L-LDH
+# L-lactate).
+methylglyoxal-degradation: yvgN aldA L-lactate-degradation
 
 # MetaCyc Pathway: methylglyoxal degradation V is very similar to
 # pathway IV but with a different L-lactate dehydrogenase.
@@ -153,7 +132,7 @@ tdcE	2-ketobutyrate formate-lyase	curated:SwissProt::P42632	curated:BRENDA::P093
 # then formate-lyase (tdcE) converts this to propanoyl-CoA.
 # (MetaCyc also includes conversion to propanoate, which forms ATP, but this does not allow for
 # growth unless the formate can be utilized.)
-all: transport tdcB tdcE propionyl-CoA-degradation
+all: threonine-transport tdcB tdcE propionyl-CoA-degradation
 
 tdh	L-threonine 3-dehydrogenase	EC:1.1.1.103
 kbl	glycine C-acetyltransferase (2-amino-3-ketobutyrate CoA-ligase)	EC:2.3.1.29
@@ -161,22 +140,14 @@ kbl	glycine C-acetyltransferase (2-amino-3-ketobutyrate CoA-ligase)	EC:2.3.1.29
 # In L-threonine degradation II, a dehydrogenase (tdh)
 # forms L-2-amino-3-oxobutanoate, and a C-acetyltransferase (kbl)
 # cleaves this to acetyl-CoA and glycine.
-all: transport tdh kbl glycine-degradation
+all: threonine-transport tdh kbl glycine-degradation
 
 
 tynA	aminoacetone oxidase	EC:1.4.3.21
 
 # In L-threonine degradation III, tdh forms L-2-amino-3-oxobutanoate,
 # and oxidase tynA forms methylglyoxal.
-all: transport tdh tynA methylglyoxal-degradation
-
-# acetaldehyde is an intermediate in threonine degradation
-
-# ald-dh-CoA is acetaldehyde dehydrogenase, acylating
-# adh is acetaldehyde dehydrogenase (not acylating)
-import ethanol.steps:ald-dh-CoA adh
-acetaldehyde-degradation: ald-dh-CoA
-acetaldehyde-degradation: adh
+all: threonine-transport tdh tynA methylglyoxal-degradation
 
 # Some serine hydroxymethyltransferases (glyA) are reported to carry out
 # the L-threonine aldolase reaction, but the Km are high (see PMC219072 or PMID:22141341).
@@ -186,5 +157,5 @@ ltaE	L-threonine aldolase	EC:4.1.2.5	EC:4.1.2.48	ignore:SwissProt::P0A825	ignore
 
 # In L-threonine degradation IV, aldolase ltaE
 # cleaves threonine to acetaldehyde and glycine.
-all: transport ltaE acetaldehyde-degradation glycine-degradation
+all: threonine-transport ltaE acetaldehyde-degradation glycine-degradation
 

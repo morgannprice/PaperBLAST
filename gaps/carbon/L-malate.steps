@@ -1,27 +1,26 @@
 # Since L-malate is a TCA cycle intermediate, catabolic reactions are not represented in GapMind.
 
-# In B. subtilis, mleN (P54571) can contribute to growth on malate by
-# a malate:lactate antiport mechanism, see PMID:10903309, but it is
-# not clear how this could be the sole malate uptake system for growth
-# (no fixed carbon would be available for growth), so it was excluded.
-
 sdlC	L-malate:Na+ symporter SdlC	curated:TCDB::A4QAL6	curated:CharProtDB::CH_091173	curated:SwissProt::Q21339	curated:TCDB::Q2FFH9	curated:TCDB::Q65NC0	curated:TCDB::Q9KNE0	curated:SwissProt::Q99SX1
 
 # Transporters were identified using
-# query: transporter:malate:L-malate:(S)-malate
+# query: transporter:malate:L-malate:(S)-malate.
 # (None of these transporters seem to be specific for D-malate, although
 # E. coli can grow with D-malate as the sole source of carbon.)
-transport: sdlC
+# In B. subtilis, mleN (uniprot:P54571) can contribute to growth on malate by
+# a malate:lactate antiport mechanism (PMID:10903309), but it is
+# not clear how this could be the sole malate uptake system for growth
+# (no fixed carbon would be available for growth), so it was excluded.
+L-malate-transport: sdlC
 
 dctA	L-malate:H+ symporter DctA	curated:TCDB::P96603	curated:TCDB::Q01857	curated:TCDB::Q1J1H5	curated:TCDB::Q848I3	curated:reanno::pseudo5_N2C3_1:AO356_18980	curated:SwissProt::Q9I4F5	curated:CharProtDB::CH_014038
-transport: dctA
+L-malate-transport: dctA
 
 # This cluster seems to include both H+ and Na+ dependent malate transporters, as well
 # as Lactococcus lactis mleP or maeP (O07032) which also exports lactate.
 maeN	malate transporter maeN	curated:SwissProt::O05256	curated:TCDB::O07032	curated:TCDB::P94363	curated:TCDB::Q53787
-transport: maeN
+L-malate-transport: maeN
 
-# 3-component TRAP tranpsorter dctMPQ.
+# 3-component TRAP transporter dctMPQ.
 # In Phaeobacter inhibens, the system is important for L-malate utilization:
 # PGA1_c20660 = dctM = I7DRS6;
 # PGA1_c20680 = dctP = I7END8;
@@ -35,19 +34,19 @@ dctP	L-malate TRAP transporter, substrate-binding component DctP	curated:SwissPr
 
 dctQ	L-malate TRAP tranpsorter, small permease component DctQ	curated:SwissProt::O07837	curated:reanno::PV4:5208944	uniprot:I7EY26	ignore:reanno::SB2B:6938089
 
-transport: dctM dctP dctQ
+L-malate-transport: dctM dctP dctQ
 
 import succinate.steps:Dshi_1194 Dshi_1195 # TRAP dicarboxylate transporter
-transport: Dshi_1194 Dshi_1195
+L-malate-transport: Dshi_1194 Dshi_1195
 
 mae1	L-malate:H+ symporter Mae1	curated:CharProtDB::CH_016604
-transport: mae1
+L-malate-transport: mae1
 
 mleP	malate permease MleP	curated:TCDB::Q48797
-transport: mleP
+L-malate-transport: mleP
 
 # Eukaryotic antiporters or carrier porters were excluded.
 # Eukaryotic translocators (DIT1/DIT2) which export glutamate were excluded.
 # Aluminum-activated efflux systems were excluded.
 
-all: transport
+all: L-malate-transport

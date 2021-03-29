@@ -1,67 +1,64 @@
 # Galactose utilization in GapMind is based on MetaCyc pathways
-# lactose and galactose degradation I (via tagatose 6-phosphate, metacyc:LACTOSECAT-PWY),
-# the Leloir pathway (via UDP-galactose, metacyc:PWY-6317),
+# lactose and galactose degradation I via tagatose 6-phosphate (metacyc:LACTOSECAT-PWY),
+# the Leloir pathway via UDP-galactose (metacyc:PWY-6317),
 # and the oxidative pathway via D-galactonate (metacyc:GALDEG-PWY).
-# Pathway IV (via galactitol, metacyc:PWY-6693) is not reported in prokaryotes and is not included.
+# Pathway IV via galactitol (metacyc:PWY-6693) is not reported in prokaryotes and is not included.
 # (There is no pathway III.)
 
 # ABC transporters
 # Escherichia coli has a 3-part system (mglABC) and a 4-part system (ytfQTR-yjtF)
-#   Salmonella typhimurium also has mglABC; but only mglA is listed
 
+#   Salmonella typhimurium also has mglABC; but only mglA is listed
 mglA	galactose ABC transporter, ATPase component MglA	curated:TCDB::P0AAG8	curated:SwissProt::P23924
 mglB	galactose ABC transporter, substrate-binding component MglB	curated:TCDB::P0AEE5
 mglC	galactose ABC transporter, permease component MglC	curated:TCDB::P23200
 
-# Transporters were identified using:
+# Transporters and PTS systems were identified using:
 # query: transporter:galactose:D-galactose:D-galactofuranose:D-galactopyranose:CPD0-2486:CPD0-2485:alpha-d-galactose:CPD-15590
-transport: mglA mglB mglC
+galactose-transport: mglA mglB mglC
 
 ytfQ	galactose ABC transporter, substrate-binding component	curated:SwissProt::P39325
 ytfR	galactose ABC transporter, ATPase component	curated:ecocyc::YTFR-MONOMER
 ytfT	galactose ABC transporter, permease component 1	curated:SwissProt::P39328
 yjtF	galactose ABC transporter, permease component 2	curated:SwissProt::P37772
-transport: ytfQ ytfR ytfT yjtF
+galactose-transport: ytfQ ytfR ytfT yjtF
 
 # Agrobacterium tumefaciens / radiobacter has a 3-part transporter (GguAB-ChvE, also known as CVE1)
-
 gguA	galactose ABC transporter, ATPase component GguA	curated:TCDB::O05176
 gguB	galactose ABC transporter, permease component GguB	curated:TCDB::O05177
 # SbpA from Azospirillum brasilense (P543083) is involved in chemotaxis towards galactose, and could well
 # be part of a galactose transport system
 chvE	galactose ABC transporter, substrate-binding component ChvE	curated:TCDB::P25548	ignore:SwissProt::P54083
-transport: gguA gguB chvE
+galactose-transport: gguA gguB chvE
 
 # Sulfolobus (Saccharolobus) solfataricus has a 4-part transporter glcSTUV
 glcS	galactose ABC transporter, substrate-binding component GlcS	curated:SwissProt::Q97UZ1
 glcT	galactose ABC transporter, permease component 1 (GlcT)	curated:TCDB::Q97UZ0
 glcU	galactose ABC transporter, permease component 2 (GlcU)	curated:TCDB::Q97UY9
 glcV	galactose ABC transporter, ATPase component (GlcV)	curated:BRENDA::Q97UY8
-transport: glcS glcT glcU glcV
+galactose-transport: glcS glcT glcU glcV
 
-# Pseudomonas fluorescens has a 4-part transporter
+# Pseudomonas fluorescens has a 4-part transporter.
 # A related system in P. simiae WCS417 is slightly deleterious during growth on galactose,
-#  so it could be a galactose transporter; it is marked ignore
+#  so it could be a galactose transporter; it is marked ignore.
 # A related system is also found in P. putida (gtsABCD), which does not utilize galactose,
 # but similar systems in other Pseudomonas do seem to be involved in galactose transport
-# (i.e., AO356_05195:AO356_05180 from FW300-N2C3), so gtsABCD is also marked ignore.
-
+# (i.e., AO356_05195:AO356_05180 from FW300-N2C3), so gtsABCD is also marked ignore..
 PfGW456L13_1894	ABC transporter for D-Galactose and D-Glucose, periplasmic substrate-binding component	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1894	ignore:reanno::WCS417:GFF4324	ignore:TCDB::Q88P38
 PfGW456L13_1895	ABC transporter for D-Galactose and D-Glucose, permease component 1	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1895	ignore:reanno::WCS417:GFF4323	ignore:TCDB::Q88P37
 PfGW456L13_1896	ABC transporter for D-Galactose and D-Glucose, permease component 2	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1896	ignore:reanno::WCS417:GFF4322	ignore:TCDB::Q88P36
 PfGW456L13_1897	ABC transporter for D-Galactose and D-Glucose, ATPase component	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1897	ignore:reanno::WCS417:GFF4321	ignore:TCDB::Q88P35
-transport: PfGW456L13_1894 PfGW456L13_1895 PfGW456L13_1896 PfGW456L13_1897
+galactose-transport: PfGW456L13_1894 PfGW456L13_1895 PfGW456L13_1896 PfGW456L13_1897
 
 # Burkholderia phytofirmans and some other Pseudomonas fluorescens (such as FW300-N2E2)
 # have a 3-part galactose transporter. (This P. fluorescens system also transports L-arabinose.)
-
 # BPHYT_RS16935 = B2SYR6; Pf6N2E2_5968 = A0A161H4E4
 BPHYT_RS16935	galactose ABC transporter, substrate-binding component	uniprot:B2SYR6	uniprot:A0A161H4E4
 # BPHYT_RS16930 = B2SYR5; Pf6N2E2_5969 = A0A165ZSX8
 BPHYT_RS16930	galactose ABC transporter, ATPase component	uniprot:B2SYR5	uniprot:A0A165ZSX8
 # BPHYT_RS16925 = B2SYR4; Pf6N2E2_5970 = A0A161GM94
 BPHYT_RS16925	galactose ABC transporter, permease component	uniprot:B2SYR4	uniprot:A0A161GM94
-transport: BPHYT_RS16935 BPHYT_RS16930 BPHYT_RS16925
+galactose-transport: BPHYT_RS16935 BPHYT_RS16930 BPHYT_RS16925
 
 # PTS systems (forming galactose-6-phosphate)
 
@@ -70,118 +67,112 @@ transport: BPHYT_RS16935 BPHYT_RS16930 BPHYT_RS16925
 ptcA	galactose PTS system, EIIA component	curated:SwissProt::A2RIE7	ignore:SwissProt::Q9CIE9
 ptcB	galactose PTS system, EIIB component	curated:SwissProt::A2RIE6	ignore:SwissProt::Q9CIF0
 ptcEIIC	galactose PTS system, EIIC component	curated:SwissProt::A2RJV0
-PTS: ptcA ptcB ptcEIIC
+galactose-PTS: ptcA ptcB ptcEIIC
+
+# Homomeric transporters
 
 galP	galactose:H+ symporter GalP	curated:SwissProt::P0AEP1	curated:CharProtDB::CH_091493	curated:SwissProt::P0AE24	curated:SwissProt::P96710	curated:TCDB::Q9LT15
-transport: galP
+galactose-transport: galP
 
 
 HP1174	Na+-dependent galactose transporter	curated:TCDB::O25788	curated:TCDB::P0C105
-transport: HP1174
+galactose-transport: HP1174
 
 gal2	galactose transporter	curated:CharProtDB::CH_091029
-transport: gal2
+galactose-transport: gal2
 
 SGLT1	sodium/galactose cotransporter	curated:CharProtDB::CH_091086
-transport: SGLT1
+galactose-transport: SGLT1
 
 CeSWEET1	galactose transporter	curated:SwissProt::O45102
-transport: CeSWEET1
+galactose-transport: CeSWEET1
 
 # Echvi_1871 (L0FZF3) seems to be a glucose/galactose transporter.
-# CA265_RS06130 (A0A1X9Z2P8) sees to be a galactose transporter.
+# CA265_RS06130 (A0A1X9Z2P8) seems to be a galactose transporter.
 sglS	sodium/galactose cotransporter	curated:SwissProt::P96169	uniprot:L0FZF3	uniprot:A0A1X9Z2P8
-transport: sglS
+galactose-transport: sglS
 
 MST1	galactose:H+ symporter	curated:TCDB::A0ZXK6
-transport: MST1
+galactose-transport: MST1
 
 lacP	galactose:H+ symporter	curated:TCDB::P07921
-transport: lacP
+galactose-transport: lacP
 
 # Ignore TCDB::A1RW34 2.A.1.66.1, which is not characterized
 
-# EC 5.3.1.26; only a few known members, all heterodimeric
+# EC:5.3.1.26; only a few characterized members, all heterodimeric
 lacA	galactose-6-phosphate isomerase, lacA subunit	curated:SwissProt::P23494	curated:metacyc::MONOMER-2781
 lacB	galactose-6-phosphate isomerase, lacB subunit	curated:SwissProt::P23495	curated:metacyc::MONOMER-2782
+
 lacC	D-tagatose-6-phosphate kinase	EC:2.7.1.144
 
 lacD	D-tagatose-1,6-bisphosphate aldolase (monomeric)	curated:BRENDA::Q5HE13	curated:SwissProt::P26593
 
 gatY	D-tagatose-1,6-bisphosphate aldolase, catalytic subunit (GatY/KbaY)	curated:CharProtDB::CH_024465	curated:SwissProt::P0C8J6	curated:SwissProt::P0C8J7	curated:SwissProt::Q8VS16	curated:SwissProt::Q9KIP8
-
 gatZ	D-tagatose-1,6-bisphosphate aldolase, chaperone subunit (GatZ/KbaZ)	curated:SwissProt::P0C8J8	curated:SwissProt::P0C8J9	curated:SwissProt::P0C8K0	curated:metacyc::MONOMER-18280	curated:SwissProt::Q8VS12
 
 # Two forms of D-tagatose-1,6-phosphate aldolase are known, homomeric (lacD) or heteromeric (gatYZ or kbaYZ)
-tag16P_aldolase: lacD
-tag16P_aldolase: gatY gatZ
+tag16P-aldolase: lacD
+tag16P-aldolase: gatY gatZ
 
-tpi	triose-phosphate isomerase	EC:5.3.1.1	ignore:SwissProt::P85814
-
-# MetaCyc Pathway: D-galactose degradation II followed by D-galactonate degradation
-# involves 1-dehdyrogenase forming the 1,4-lactone [although some enzymes probably form 1,5-lactones],
-# hydrolysis to D-galactonate,
-# and dehydratase, kinase, and aldolase reactions
-# (forming pyruvate and 3-phosphoglycerate)
-
-
-# via isomerization to tagatose-6-phosphate,
-# tagatose-6-phosphate kinase,
-# tagatose-bisphosphate aldolase (forming glycerone phosphate and glyceraldehyde 3-phosphate),
-# and tpi to convert glcyerone phosphate to glyceraldehyde 3-phosphate
-
-# MetaCyc Pathway: D-galactose degradation I (Leloir pathway)
-#  galactose 1-epimerase (to alpha-D-galactopyranose), galactose kinase (to galactose 1-P),
-#  galT to transfer (from UDP-glucose) to UDP-galactose, releasing alpha-glucose-1-phosphate
-#  galE (epimerase) converting UDP-galactose back to UDP-glucose,
-#  and phosphoglucomutase to form glucose-6-phosphate
-#
+import fructose.steps:tpi
 
 # The tagatose 6-phosphate pathway involves the isomerization of galactose 6-phosphate
 # to tagatose-6-phosphate (by lacAB), phosphorylation to tagatose 1,6-bisphosphate (by lacC), and an aldolase.
-all: PTS lacA lacB lacC tag16P_aldolase tpi
+galactose-6-phosphate-degradation: lacA lacB lacC tag16P-aldolase tpi
 
-#galM	galactose 1-epimerase	EC:5.1.3.3
 # Some curated sequences match an HMM and are annotated as galactokinases, but
 # without the EC number.
-galK	galactokinase	EC:2.7.1.6	ignore_other:galactokinase
+galK	galactokinase (-1-phosphate forming)	EC:2.7.1.6	ignore_other:galactokinase
+
 # In the reannotations, galT is often misannotated as 2.7.7.10 (using UTP rather than UDP-glucose
 # as the substrate)
 galT	UDP-glucose:alpha-D-galactose-1-phosphate uridylyltransferase	EC:2.7.7.12	curated:reanno::Cola:Echvi_0695	curated:reanno::Pedo557:CA265_RS06120
 
 # Echvi_1472 (L0FXG3) is important for galactose utilization and similar to E. coli galE
 galE	UDP-glucose 4-epimerase	EC:5.1.3.2	uniprot:L0FXG3
+
 # PH0923 (MONOMER-13382) is both phosphomannomutase and phosphoglucomutase (PMID:16091590)
 pgmA	alpha-phosphoglucomutase	EC:5.4.2.2	curated:metacyc::MONOMER-13382
 
-# The Leloir pathway begins with the kinase (galK), a uridyltransferase (galT), and an epimerase
-# (galE), forming UDP-glucose, which is converted to glucose 1-phosphate by the same uridyltransferase.
-# (We initially included galM in our model of the Leloir pathway, but found that in most
-# bacteria, galM proteins were not important for fitness during growth on galactose;
-# the only exception was Echvi_0697.
-# Commercial galactose, which is likely a mixture of
-# alpha/beta confirmations; also, galactose will isomerize in water.)
-all: transport galK galT galE pgmA
+# In the Leloir pathway, galactokinase (galK) forms galactose
+# 1-phosphate, a uridyltransferase (galT) uses glucose 1-phosphate to
+# form UDP-galactose, an epimerase (galE) forms UDP-glucose, and this
+# is converted to glucose 1-phosphate by the same uridyltransferase.
+# (We initially included the 1-epimerase galM, EC:5.1.3.3, in our model of the
+# Leloir pathway, but found that in most bacteria, galM proteins were
+# not important for fitness during growth on galactose; the only
+# exception was Echvi_0697.)
+galactose-degradation: galK galT galE pgmA
 
 # Some L-arabinose dehydrogenases (EC 1.1.1.46) are bifunctional.
-# Q92RN6 is annotated as a probable galactose dehydrogenase, and mutants are defective in utilization,
+# uniprot:Q92RN6 is annotated as a probable galactose dehydrogenase, and mutants are defective in utilization,
 # but was not given this EC number.
 galdh	D-galactose 1-dehydrogenase (forming 1,4- or 1,5-lactones)	EC:1.1.1.48	EC:1.1.1.360	ignore_other:1.1.1.46	curated:SwissProt::Q92RN6
 
-# Some galactonolactonases are also L-arabinolactonases (EC 3.1.1.15).
-# Also BRENDA annotates A3FJ64 (from Bacillus thuringensis) as this, which seems questionable.
+# This step includes both galactono-1,4-lactonases (EC:3.1.1.25) and galactono,1-5-lactonases.
+# Some galactonolactonases are also L-arabinolactonases (EC 3.1.1.15), so those are ignored.
+# BRENDA annotates uniprot:A3FJ64 (from Bacillus thuringensis) as this, which seems questionable.
 # Fitness data confirms diverged lactonases N515DRAFT_1229 (A0A1I2AUG6) and BPHYT_RS16915 (B2SYR2).
-# PS417_17365 from P. simiae WCS417 (GFF3393) is a galactono-1,5-lactonase, so is not given this EC number.
+# PS417_17365 from P. simiae WCS417 (GFF3393) is a galactono-1,5-lactonase, so is not given the EC number.
 # Similarly for PfGW456L13_3314.
 # In Acidovorax sp. GW101-3H11, fitness data suggests that the lactonase is Ac3H11_615 (A0A165IRV8).
-lactonase	galactonolactonase (either 1,4- or 1,5-lactone)	EC:3.1.1.25	ignore_other:3.1.1.15	ignore:BRENDA::A3FJ64	uniprot:B2SYR2	uniprot:A0A1I2AUG6	curated:reanno::WCS417:GFF3393	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3314	uniprot:A0A165IRV8
+galactonolactonase	galactonolactonase (either 1,4- or 1,5-lactone)	EC:3.1.1.25	ignore_other:3.1.1.15	ignore:BRENDA::A3FJ64	uniprot:B2SYR2	uniprot:A0A1I2AUG6	curated:reanno::WCS417:GFF3393	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3314	uniprot:A0A165IRV8
+
 dgoD	D-galactonate dehydratase	EC:4.2.1.6	EC:4.2.1.140
-# BRENDA misannotates Q9zU29 as dgoK
-# fitness data confirms diverged dgoK's BPHYT_RS16950 (B2SYR9), N515DRAFT_1233 (A0A1I2AR49),
-#   HSERO_RS05160 (D8J0Z3)
+
+# BRENDA misannotates Q9zU29 as dgoK.
+# Fitness data confirms diverged dgoK proteins BPHYT_RS16950 (B2SYR9), N515DRAFT_1233 (A0A1I2AR49),
+#   and HSERO_RS05160 (D8J0Z3).
 dgoK	2-dehydro-3-deoxygalactonokinase	EC:2.7.1.58	EC:2.7.1.178	ignore:BRENDA::Q9ZU29	uniprot:B2SYR9	uniprot:A0A1I2AR49	uniprot:D8J0Z3
+
 dgoA	2-dehydro-3-deoxy-6-phosphogalactonate aldolase	EC:4.1.2.21	EC:4.1.2.55
 
-# The oxidative pathwa begins with oxidation to a lactone and hydrolysis to galactonate;
+# The oxidative pathway begins with oxidation to a lactone (by galdh) and hydrolysis to galactonate;
 # galactonate is then dehydrated, phosphorylated, and cleaved by an aldolase.
-all: transport galdh lactonase dgoD dgoK dgoA
+galactose-degradation: galdh galactonolactonase dgoD dgoK dgoA
+
+galactose-utilization: galactose-PTS galactose-6-phosphate-degradation
+galactose-utilization: galactose-transport galactose-degradation
+
+all: galactose-utilization

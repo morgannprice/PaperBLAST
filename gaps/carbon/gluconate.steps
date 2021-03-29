@@ -18,9 +18,10 @@
 gntA	gluconate TRAP transporter, small permease component	uniprot:Q930R3	uniprot:G8AR26	curated:reanno::psRCH2:GFF2080	uniprot:A0A165IVI0
 gntB	gluconate TRAP transporter, large permease component	uniprot:Q930R2	curated:reanno::azobra:AZOBR_RS15920	curated:reanno::psRCH2:GFF2081	uniprot:A0A165IWV9
 gntC	gluconate TRAP transporter, periplasmic solute-binding component	uniprot:Q930R1	uniprot:G8AR24	curated:reanno::psRCH2:GFF2082	uniprot:A0A165IVH1
-# Transporters were identified using
+
+# Transporters and PTS systems were identified using
 # query: transporter:gluconate:D-gluconate
-transport: gntA gntB gntC
+gluconate-transport: gntA gntB gntC
 
 # Ignore TC 4.A.6.1.14 / Q8DR76 which transports disaccharides of glucuronate
 
@@ -29,13 +30,13 @@ gntEIIB	gluconate PTS system, IIB component	curated:TCDB::Q82ZC7
 gntEIIC	gluconate PTS system, IIC component	curated:TCDB::Q82ZC5
 gntEIID	gluconate PTS system, IID component	curated:TCDB::Q82ZC6
 # PTS systems (forming 6-phosphogluconate)
-PTS: gntEIIA gntEIIB gntEIIC gntEIID
+gluconate-PTS: gntEIIA gntEIIB gntEIIC gntEIID
 
 gntT	gluconate:H+ symporter GntT	curated:SwissProt::P39344	curated:SwissProt::P39835	curated:TCDB::P0AC94	curated:TCDB::P0AC96	curated:TCDB::P12012	curated:reanno::BFirm:BPHYT_RS16725	curated:reanno::Cup4G11:RR42_RS28835
-transport: gntT
+gluconate-transport: gntT
 
 ght3	gluconate transporter Ght3	curated:CharProtDB::CH_091200
-transport: ght3
+gluconate-transport: ght3
 
 # Ignore CharProtDB::CH_122791 (PTH1), not actually characterized
 # Ignore Gluconate transport inducer 1 (O14367)
@@ -45,21 +46,21 @@ transport: ght3
 # CH_125646 is annotated as gluconokinase but was not given the EC number
 gntK	D-gluconate kinase	EC:2.7.1.12	curated:reanno::psRCH2:GFF2080	ignore:BRENDA::Q61036	ignore:BRENDA::Q29502	curated:CharProtDB::CH_125646
 
-# Gluconate 6-phosphate can be formed by PTS systems or by the kinase gntK.
-gluconate_phosphate: PTS
-gluconate_phosphate: transport gntK
+# Cytoplasmic gluconate 6-phosphate can be formed by PTS systems or by the kinase gntK.
+to-gluconate-6-phosphate: gluconate-PTS
+to-gluconate-6-phosphate: gluconate-transport gntK
 
 # This forms ribulose-5-phosphate, which is an intermediate in the pentose phosphate pathway
 gnd	6-phosphogluconate dehydrogenase, decarboxylating	EC:1.1.1.44	EC:1.1.1.343
 
 import glucose.steps:edd eda gadh1 gadh2 gadh3 kguT kguK kguD
 
-# Gluconate phosphate can be consumed by the Entner-Doudoroff pathway (edd and eda) or by
+# Gluconate 6-phosphate can be consumed by the Entner-Doudoroff pathway (edd and eda) or by
 # oxidative decarboxylation (by gnd) to ribulose 5-phosphate, an intermediate in the pentose phosphate
-# pathway. Alternatively, if gluconate is oxidized to 2-ketogluconate in the periplasm, it
+# pathway. Alternatively, if gluconate is oxidized to 2-ketogluconate in the periplasm (by gadh123), it
 # can be taken up by kguT, phosphorylated, reduced to gluconate 6-phosphate, and consumed
 # by the Entner-Doudoroff pathway.
-all: gluconate_phosphate edd eda
-all: gluconate_phosphate gnd
+all: to-gluconate-6-phosphate edd eda
+all: to-gluconate-6-phosphate gnd
 all: gadh1 gadh2 gadh3 kguT kguK kguD edd eda
 

@@ -23,6 +23,6 @@
 # The homolog from Listeria is known as Hpt and is required for utilization of glucose-6-phosphate (PMID:11756655)
 uhpT	glucose-6-phosphate:phosphate antiporter	curated:ecocyc::UHPT-MONOMER	curated:TCDB::Q9Z7N9	uniprot:Q8VMX0
 
-transport: uhpT
+glucose-6-P-transport: uhpT
 
-all: transport
+all: glucose-6-P-transport

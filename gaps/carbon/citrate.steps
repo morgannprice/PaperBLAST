@@ -6,8 +6,7 @@
 # bacteria, ATP-citrate lyase is not necessary for aerobic utilization
 # of citrate.
 
-# Heteromeric transporters: E.coli FecBCDE, C. glutamicum TctABC.
-# TctABC is also studied in S. typhimurium and D. shibae but was missed by the query
+# Heteromeric transporters: E.coli FecBCDE and C. glutamicum TctABC.
 
 fecB	ferric citrate ABC transporter, substrate-binding component FecB	curated:SwissProt::P15028
 fecC	ferric citrate ABC transporter, permease component 1 (FecC)	curated:SwissProt::P15030
@@ -16,51 +15,50 @@ fecE	ferric citrate ABC transporter, ATPase component FecE	curated:CharProtDB::C
 
 # Transporters were identified using
 # query: transporter:citric:citrate
-transport: fecB fecC fecD fecE
+citrate-transport: fecB fecC fecD fecE
 
+# TctABC is also studied in S. typhimurium and D. shibae but was missed by the query.
 # Fitness data confirms that HP15_2659:HP15_2661 (E4PJQ9,E4PJR0,E4PJR1) in Marinobacter adhaerens
 # are tctABC
 tctA	citrate/Na+ symporter, large transmembrane component TctA	curated:TCDB::S5Y5N9	curated:TCDB::Q9FA44	curated:reanno::Dino:3609738	uniprot:E4PJQ9
 tctB	citrate/Na+ symporter, small transmembrane component TctB	curated:TCDB::S5XH28	curated:TCDB::Q9FA45	curated:reanno::Dino:3609739	uniprot:E4PJR0
 tctC	citrate/Na+ symporter, substrate-binding component TctC	curated:TCDB::S5XTE7	curated:TCDB::Q9FA46	curated:reanno::Dino:3609740	uniprot:E4PJR1
-transport: tctA tctB tctC
+citrate-transport: tctA tctB tctC
 
 # Homomeric transporters:
 
 SLC13A5	citrate:Na+ symporter	curated:CharProtDB::CH_091173	curated:SwissProt::Q86YT5	curated:SwissProt::Q8CJ44	curated:TCDB::Q13183
-transport: SLC13A5
+citrate-transport: SLC13A5
 
 citA	citrate:H+ symporter CitA	curated:CharProtDB::CH_014606	curated:SwissProt::P0A2G3	curated:TCDB::P16482
-transport: citA
+citrate-transport: citA
 
 cimH	citrate:H+ symporter CimH	curated:TCDB::P94363
-transport: cimH
+citrate-transport: cimH
 
 citW	citrate exchange transporter CitW (with lactate or acetate)	curated:BRENDA::Q8VS41	curated:TCDB::P21608
-transport: citW
+citrate-transport: citW
 
 cit1	citrate:H+ symporter Cit1	curated:TCDB::Q6D017
-transport: cit1
+citrate-transport: cit1
 
 citT	citrate:succinate antiporter CitT	curated:SwissProt::P0AE74
-transport: citT
+citrate-transport: citT
 
 # (Some of these were missed by the query, probably because the substrate field in TCDB mentions the cation only)
 citM	citrate:cation:H+ symporter CitM	curated:SwissProt::P55069	curated:TCDB::A4QA05	curated:TCDB::P42308	curated:TCDB::Q9S242	curated:TCDB::Q8DUC7
-transport: citM
+citrate-transport: citM
 
 citS	citrate:Na+ symporter CitS	curated:TCDB::P31602
-transport: citS
+citrate-transport: citS
 
 # Ignored metazoan or mitochondrial citric acid carrier proteins
 # Ignored plant citric acid efflux proteins
 # Ignored outer membrane ferric citrate porins (fecA)
 # Ignored vcINDY, reported to have low affinity for citrate
 
-
 # Citrate lyase has 3 subunits citDEF; activity also requires acetylation by
-# citrate lyase synthetase (citC); this is not represented here
-
+# citrate lyase synthetase (citC); this is not represented here.
 citD	citrate lyase, acyl carrier component CitD	curated:metacyc::MONOMER-17000	curated:metacyc::ACPSUB-MONOMER
 citE	citrate lyase, citryl-ACP lyase component CitE	curated:BRENDA::Q037K5	curated:SwissProt::P0A9I1	curated:metacyc::MONOMER-16999
 citF	citrate lyase, citrate-ACP transferase component CitF	curated:SwissProt::P75726
@@ -68,7 +66,7 @@ citF	citrate lyase, citrate-ACP transferase component CitF	curated:SwissProt::P7
 # ATP-citrate lyase (citDEF) produces oxaloacetate (a central metabolite) and acetate.
 # Because this is often a fermentative pathway, the acetate may be excreted,
 # so activation to acetyl-CoA is not represented.
-all: transport citD citE citF
+all: citrate-transport citD citE citF
 
 # Some similar sequences are annotated as aconitase but without the EC number
 acn	aconitase	EC:4.2.1.3	ignore_other:aconitase
@@ -77,5 +75,5 @@ acn	aconitase	EC:4.2.1.3	ignore_other:aconitase
 # enzymatic subunits, so this is not represented here
 icd	isocitrate dehydrogenase	EC:1.1.1.41	EC:1.1.1.42	EC:1.1.1.286
 
-# Or, citrate is isomerized to isocitrate and oxidized to 2-oxoglutarate by acn and icd.
-all: transport acn icd
+# Or, citrate is isomerized to isocitrate by acn and oxidized to 2-oxoglutarate by icd.
+all: citrate-transport acn icd

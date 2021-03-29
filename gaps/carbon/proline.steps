@@ -1,9 +1,8 @@
 # Proline degradation in GapMind is based on
-# MetaCyc pathway I (metacyc:PROUT-PWY).
-# Pathway II (metacyc:PWY-8186) is a fermentative
-# pathway that does not result in carbon incorporation
-# (although degradation pathways for the end product, 5-aminopentanoate,
-# are known).
+# MetaCyc pathway I via glutamate semialdehyde dehydrogenase (metacyc:PROUT-PWY)
+# and pathway II via 5-aminopentanoate (metacyc:PWY-8186).
+# (MetaCyc describes 5-aminopentanoate, also known as 5-aminovalerate, as a
+#  fermentative end product, but it is further degraded 
 
 # ABC transporters:
 
@@ -13,14 +12,14 @@ proV	proline ABC transporter, ATPase component ProV	curated:CharProtDB::CH_00155
 proW	proline ABC transporter, permease component ProW	curated:SwissProt::P14176	ignore:SwissProt::E0SCY2
 proX	proline ABC transporter, substrate-binding component ProX	curated:CharProtDB::CH_024698	ignore:SwissProt::E0SCY3
 
-# query: transporter:proline:L-proline
-transport: proV proW proX
+# Transporters were identified using query: transporter:proline:L-proline
+proline-transport: proV proW proX
 
 # In Listeria monocytogenes and in Lactococcus lactis, the permease is fused to the substrate-binding component.
 opuBA	proline ABC transporter, ATPase component OpuBA/BusAA	curated:TCDB::Q93A35	curated:TCDB::Q9RQ06
 # Ignore a nearly-identical protein from L. lactis, annotated as a quarternary amine transporter
 opuBB	proline ABC transporter, fused permease and substrate-binding components OpuBB/BusAB	curated:TCDB::Q93A34	curated:TCDB::Q9RQ05	ignore:BRENDA::Q7DAU8
-transport: opuBA opuBB
+proline-transport: opuBA opuBB
 
 # Synechocystis sp. NatABCDE; also a similar system in Anabaena
 natA	proline ABC transporter, ATPase component 1 (NatA)	curated:TCDB::Q55164	curated:TCDB::Q7A2H0
@@ -28,13 +27,13 @@ natB	proline ABC transporter, substrate-binding component NatB	curated:TCDB::Q55
 natC	proline ABC transporter, permease component 1 (NatC)	curated:TCDB::P74455	curated:TCDB::Q8YY08
 natD	proline ABC transporter, permease component 2 (NatD)	curated:TCDB::P74318	curated:TCDB::Q8YXD0
 natE	proline ABC transporter, ATPase component 2 (NatE)	curated:TCDB::P73650	curated:TCDB::Q8YT15
-transport: natA natB natC natD natE
+proline-transport: natA natB natC natD natE
 
 # Ensifer meliloti (formerly Rhizobium or Sinorhizobium) hutVWX
 hutV	proline ABC transporter, ATPase component HutV	curated:TCDB::Q9KKE1
 hutW	proline ABC transporter, permease component HutW	curated:TCDB::Q9KKE2
 hutX	proline ABC transporter, substrate-binding component HutX	curated:TCDB::Q9KKE3
-transport: hutV hutW hutX
+proline-transport: hutV hutW hutX
 
 # Azospirillum brasilense -- just one component is in the reannotations, but
 # all show up in the fitness data for proline.
@@ -43,7 +42,7 @@ AZOBR_RS08240	proline ABC transporter, permease component 2	uniprot:G8ALI9
 AZOBR_RS08245	proline ABC transporter, ATPase component 1	uniprot:G8ALJ0
 AZOBR_RS08250	proline ABC transporter, ATPase component 2	uniprot:G8ALJ1
 AZOBR_RS08260	proline ABC transporter, substrate-binding component	uniprot:G8ALJ3
-transport: AZOBR_RS08235 AZOBR_RS08240 AZOBR_RS08245 AZOBR_RS08250 AZOBR_RS08260
+proline-transport: AZOBR_RS08235 AZOBR_RS08240 AZOBR_RS08245 AZOBR_RS08250 AZOBR_RS08260
 
 # 5-part ABC transporter in Herbaspirillum brasilense, identified using fitness data.
 # This system is distantly related to AZOBR_RS08235:RS08260
@@ -52,48 +51,48 @@ HSERO_RS00885	proline ABC transporter, permease component 1	uniprot:D8IUY4
 HSERO_RS00890	proline ABC transporter, permease component 2	uniprot:D8IUY5
 HSERO_RS00895	proline ABC transporter, ATPase component 1	uniprot:D8J1T6
 HSERO_RS00900	proline ABC transporter, ATPase component 2	uniprot:D8IUY7
-transport: HSERO_RS00870 HSERO_RS00885 HSERO_RS00890 HSERO_RS00895 HSERO_RS00900
+proline-transport: HSERO_RS00870 HSERO_RS00885 HSERO_RS00890 HSERO_RS00895 HSERO_RS00900
 
 # AapJQMP from Rhizobium leguminosarum is described in glutamate.steps
 import glutamate.steps:aapJ aapQ aapM aapP
-transport: aapJ aapQ aapM aapP
+proline-transport: aapJ aapQ aapM aapP
 
 # Other transporters:
 
 proY	proline:H+ symporter	curated:TCDB::Q2VQZ4	curated:CharProtDB::CH_091285	curated:CharProtDB::CH_122066	curated:SwissProt::P46349	curated:SwissProt::Q9URZ3	curated:TCDB::P0AAE2	curated:TCDB::P37460
-transport: proY
+proline-transport: proY
 
 putP	proline:Na+ symporter	curated:SwissProt::O06493	curated:SwissProt::P07117	curated:SwissProt::P94392	curated:SwissProt::Q2FWY7	curated:TCDB::O24896	curated:TCDB::Q9I5F5
-transport: putP
+proline-transport: putP
 
 PROT1	proline transporter	curated:CharProtDB::CH_091590	curated:SwissProt::P92962	curated:SwissProt::Q60DN5	curated:SwissProt::Q9SJP9	curated:TCDB::Q9XE48
-transport: PROT1
+proline-transport: PROT1
 
 SLC6A7	proline:Na+ symporter	curated:CharProtDB::CH_091144	curated:SwissProt::Q64093	curated:TCDB::P48065	curated:TCDB::Q99884
-transport: SLC6A7
+proline-transport: SLC6A7
 
 proP	proline:H+ symporter ProP	curated:CharProtDB::CH_024324	curated:SwissProt::Q47421	curated:SwissProt::Q79VC4
-transport: proP
+proline-transport: proP
 
 ectP	proline transporter EctP	curated:SwissProt::Q79VE0	curated:SwissProt::Q87NZ5	curated:SwissProt::Q87PP5
-transport: ectP
+proline-transport: ectP
 
 betS	proline transporter BetS	curated:SwissProt::G3XCN6
-transport: betS
+proline-transport: betS
 
 BAC2	basic amino acid carrier BAC2	curated:SwissProt::Q9CA93
-transport: BAC2
+proline-transport: BAC2
 
 AAT20.2	proline transporter	curated:TCDB::A4HUI4
-transport: AAT20.2
+proline-transport: AAT20.2
 
 # Identified using fitness data for Caulobacter crescentus
 CCNA_00435	proline transporter	uniprot:A0A0H3C3Q5
-transport: CCNA_00435
+proline-transport: CCNA_00435
 
 # Identified using fitness data for Dyella japonica
 N515DRAFT_2924	proline transporter	uniprot:A0A1I1Y8J0
-transport: N515DRAFT_2924
+proline-transport: N515DRAFT_2924
 
 # Ignore SLC7A8, not sure if it has much activity as a proline transporter
 # Ignore OdpB, a porin
@@ -103,8 +102,32 @@ put1	proline dehydrogenase	EC:1.5.5.2	EC:1.5.99.8
 # formerly known as 1-pyrroline-5-carboxylate dehydrogenase (EC:1.5.1.12)
 putA	L-glutamate 5-semialdeyde dehydrogenase	EC:1.2.1.88	EC:1.5.1.12
 
-# Proline dehydrogenase (put1) to (S)-1-pyrroline-5-carboxylate, which spontaneously hydrates to
+# Q4D480 is misannotated in BRENDA.
+prdF	proline racemase	EC:5.1.1.4	ignore:BRENDA::Q4D480
+
+prdA	D-proline reductase, prdA component	curated:CharProtDB::CH_013105	curated:SwissProt::Q9Z4P6	ignore_other:1.21.4.1
+
+prdB	D-proline reductase, prdB component	curated:BRENDA::Q17ZY6	curated:CharProtDB::CH_013103	ignore_other:1.21.4.1
+
+# PrdC is identified as CLOST_2236 (E3PU00) by PMC3091704
+prdC	D-proline reductase, electron transfer component PrdC	uniprot:E3PU00
+
+# D-proline reductase includes components PrdA and PrdB and electron transfer protein PrdC
+D-proline-reductase: prdA prdB prdC
+
+import leucine.steps:atoB # acetyl-CoA acetyltransferase is part of glutaryl-CoA degradation
+import phenylacetate.steps:glutaryl-CoA-degradation # glutaryl-CoA is part of 5-aminovalerate degradation
+import lysine.steps:5-aminovalerate-degradation
+
+# In pathway I, proline dehydrogenase (put1) forms
+# (S)-1-pyrroline-5-carboxylate, which spontaneously hydrates to
 # L-glutamate 5-semialdehyde, and a dehydrogenase (putA) to glutamate.
-# Glutamate can be transaminated to 2-oxoglutarate, which is an intermediate
-# in central metabolism (not represented).
-all: transport put1 putA
+# Glutamate can be transaminated to 2-oxoglutarate, which is an
+# intermediate in central metabolism (not represented).
+proline-degradation: put1 putA
+
+# In pathway II, proline racemase (prdF) forms D-proline, and
+# a reductase forms 5-aminovalerate.
+proline-degradation: prdF D-proline-reductase 5-aminovalerate-degradation
+
+all: proline-transport proline-degradation

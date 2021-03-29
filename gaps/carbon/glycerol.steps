@@ -1,20 +1,15 @@
 # Glycerol utilization in GapMind is based on MetaCyc pathways
 # glycerol degradation I via glycerol kinase (metacyc:PWY-4261),
 # II via dihydroxyacetone kinase (metacyc:PWY-6131),
-# or V via dihydroxyacetone:PEP phoshpotransferase (metacyc:GLYCEROLMETAB-PWY).
+# or V via dihydroxyacetone:PEP phosphotransferase (metacyc:GLYCEROLMETAB-PWY).
 # Two fermentative pathways are not included because they do not lead to
 # carbon incorporation (metacyc:PWY-6130, metacyc:PWY-7003).
-
-
-# MetaCyc Pathway: glycerol degradation II involves
-# glycerol dehydrogenase (dhaD, 1.1.1.6) and dihydroxyacetone kinase (and tpi)
-
 
 # ABC transporters:
 
 # GlpSTPQV from Rhizobium leguminosarum
 # and a related system from Acidovorax GW101-3H11.
-# GlpS/GlpT are similar to each other; GlpS is more similar to Ac3H11_791 and GlpT to Ac3H11_792
+# GlpS/GlpT are similar to each other; GlpS is more similar to Ac3H11_791 and GlpT to Ac3H11_792.
 glpS	glycerol ABC transporter, ATPase component 1 (GlpS)	curated:TCDB::G3LHY8	curated:reanno::acidovorax_3H11:Ac3H11_791
 glpT	glycerol ABC transporter, ATPase component 2 (GlpT)	curated:TCDB::G3LHY9	curated:reanno::acidovorax_3H11:Ac3H11_792
 glpP	glycerol ABC transporter, permease component 1 (GlpP)	curated:TCDB::G3LHZ0	curated:reanno::acidovorax_3H11:Ac3H11_793
@@ -22,36 +17,36 @@ glpQ	glycerol ABC transporter, permease component 2 (GlpQ)	curated:TCDB::G3LHZ1	
 glpV	glycerol ABC transporter, substrate-binding component GlpV	curated:TCDB::G3LHZ3	curated:reanno::acidovorax_3H11:Ac3H11_796
 
 # Transporters were identified using
-# query: transporter:glycerol
+# query: transporter:glycerol and
 # glycerol-3-phosphate transporters were manually removed from the results
-transport: glpS glpT glpP glpQ glpV
+glycerol-transport: glpS glpT glpP glpQ glpV
 
 # Other transporters:
 
 # Ignore an uncharacterized homolog from Archaeoglobus
 glpF	glycerol facilitator glpF	curated:CharProtDB::CH_024677	curated:CharProtDB::CH_091207	curated:CharProtDB::CH_091783	curated:SwissProt::F9UMX3	curated:SwissProt::F9UST3	curated:SwissProt::F9USY3	curated:SwissProt::F9UTW9	curated:SwissProt::F9UUB3	curated:SwissProt::P47862	curated:TCDB::F6QEC2	curated:TCDB::P08995	curated:TCDB::P18156	curated:TCDB::P52280	curated:TCDB::Q6Q1Q6	curated:TCDB::Q8WPZ6	curated:TCDB::Q9C4Z5	ignore:TCDB::O28846
-transport: glpF
+glycerol-transport: glpF
 
 aqp-3	glycerol porter aqp-3	curated:TCDB::E3UMZ6	curated:TCDB::729057658	curated:TCDB::E3UMZ5	curated:TCDB::E3UN01
-transport: aqp-3
+glycerol-transport: aqp-3
 
 stl1	glycerol:H+ symporter Stl1p	curated:CharProtDB::CH_091379	curated:CharProtDB::CH_122745	curated:TCDB::C4QVV9
-transport: stl1
+glycerol-transport: stl1
 
 glpF'	glycerol facilitator-aquaporin	curated:CharProtDB::CH_012828
-transport: glpF'
+glycerol-transport: glpF'
 
 fps1	glycerol uptake/efflux facilitator protein	curated:CharProtDB::CH_091157
-transport: fps1
+glycerol-transport: fps1
 
 PLT5	glycerol:H+ symporter PLT5	curated:CharProtDB::CH_091483
-transport: PLT5
+glycerol-transport: PLT5
 
 YFL054C	glycrol facilitator protein	curated:CharProtDB::CH_091497
-transport: YFL054C
+glycerol-transport: YFL054C
 
 TIPa	glycerol facilitator TIPa	curated:TCDB::Q9XG70
-transport: TIPa
+glycerol-transport: TIPa
 
 # Two human HHAT-type proteins are related to glycerol transporters but it is not so clear
 # that they are characterized as transporters; ignored.
@@ -61,26 +56,26 @@ transport: TIPa
 
 glpK	glycerol kinase	EC:2.7.1.30
 
-# Glycerol 3-phosphate dehydrogenase includes EC numbers 1.1.5.3, 1.1.1.8, and  1.1.1.94
-# 1.1.5.3 is flavin- or quinone-dependent and may be heteromeric; monomeric forms are selected here
+# Fitness data identified SMc02520 (Q92LM5) as the glycerol-3-phosphate dehydrogenase in Sinorhizobium meliloti.
+glpD	glycerol 3-phosphate dehydrogenase (monomeric)	curated:SwissProt::P18158	curated:BRENDA::P13035	curated:BRENDA::P35571	curated:BRENDA::P43304	curated:BRENDA::Q06B39	curated:BRENDA::Q64521	curated:CharProtDB::CH_091834	curated:SwissProt::P32191	curated:SwissProt::Q8SR40	curated:SwissProt::Q9SS48	curated:CharProtDB::CH_122883	uniprot:Q92LM5
+
+# Glycerol 3-phosphate dehydrogenase includes EC:1.1.5.3, EC:1.1.1.8, and  EC:1.1.1.94.
+# 1.1.5.3 is flavin- or quinone-dependent and may be heteromeric.
 # 1.1.1.8/1.1.1.94 are NAD(P)H dependent and the forward reaction is thermodynamically unfavorable,
 #   so they are not included here.
-# Fitness data identified SMc02520 (Q92LM5) as the glycerol-3-phosphate dehydrogenase in Sinorhizobium meliloti
-glpD	glycerol 3-phosphate dehydrogenase (monomeric)	curated:SwissProt::P18158	curated:BRENDA::P13035	curated:BRENDA::P35571	curated:BRENDA::P43304	curated:BRENDA::Q06B39	curated:BRENDA::Q64521	curated:CharProtDB::CH_091834	curated:SwissProt::P32191	curated:SwissProt::Q8SR40	curated:SwissProt::Q9SS48	curated:CharProtDB::CH_122883	uniprot:Q92LM5
-g3p_dehydrogenase: glpD
+g3p-dehydrogenase: glpD
 
 glpA	glycerol 3-phosphate dehydrogenase subunit A	curated:SwissProt::D4GQU6	curated:SwissProt::D4GYI2	curated:ecocyc::ANGLYC3PDEHYDROGSUBUNITA-MONOMER
 glpB	glycerol 3-phosphate dehydrogenase subunit B	curated:ecocyc::ANGLYC3PDEHYDROGSUBUNITB-MONOMER
 glpC	glycerol 3-phosphate dehydrogenase subunit C	curated:ecocyc::ANGLYC3PDEHYDROGSUBUNITC-MONOMER
-g3p_dehydrogenase: glpA glpB glpC glpD
+g3p-dehydrogenase: glpA glpB glpC glpD
 
-# An alternative is glycerol-3-phosphate oxidase
 glpO	glycerol 3-phosphate oxidase	EC:1.1.3.21
-g3p_dehydrogenase: glpO
 
-# Ignore a fragmentary (allergen) sequence
-tpi	triose-phosphate isomerase	EC:5.3.1.1	ignore:SwissProt::P85814
+# An oxygen-dependent enzyme, glycerol-3-phosphate oxidase, can also form glycerone phosphate.
+g3p-dehydrogenase: glpO
 
+import fructose.steps:tpi
 
 dhaD	glycerol dehydrogenase	EC:1.1.1.6
 
@@ -106,15 +101,10 @@ dhaK'	dihydroxyacetone kinase, ATP dependent (monomeric)	curated:BRENDA::P43550	
 dhkinase: dhaK dhaL dhaM
 dhkinase: dhaK'
 
-# Pathway I
-# involves has glycerol kinase glpK and glycerol-3-phosphate dehydrogenase;
-# the glycerone 3-P can then be converted to glyceraldehyde-3-phosphate by triose-phosphate isomerase.
-all: transport glpK g3p_dehydrogenase tpi
+# Pathway I involves glycerol kinase glpK and glycerol-3-phosphate dehydrogenase;
+# the glycerone phosphate can be converted to glyceraldehyde-3-phosphate by triose-phosphate isomerase.
+all: glycerol-transport glpK g3p-dehydrogenase tpi
 
 # In pathways II or V, the dehydrogenase dhaD forms dihydroxyacetone, which is phosphorylated and isomerized
 # to glyceraldehyde 3-phosphate.
-all: transport dhaD dhkinase tpi
-
-# MetaCyc also describes glycerol degradation to butanol -- this
-# includes redox-conserving steps downstream of triose-phosphate
-# isomerase, so these are not described here
+all: glycerol-transport dhaD dhkinase tpi

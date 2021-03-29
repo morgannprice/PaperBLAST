@@ -20,23 +20,23 @@ lysP	L-lysine:H+ symporter LysP	curated:CharProtDB::CH_003129	curated:CharProtDB
 
 # Transporters were identified using
 # query: transporter:lysine:L-lysine:lys:L-lys
-transport: lysP
+lysine-transport: lysP
 
 LHT	L-lysine transporter	curated:SwissProt::Q9FKS8	curated:SwissProt::Q9LRB5	curated:SwissProt::Q9SX98	curated:TCDB::Q84WE9
-transport: LHT
+lysine-transport: LHT
 
 Slc7a1	L-lysine transporter Slc7a1	curated:CharProtDB::CH_091036	curated:CharProtDB::CH_091271	curated:CharProtDB::CH_091324
-transport: Slc7a1
+lysine-transport: Slc7a1
 
 lysL	L-lysine transporter LysL	curated:CharProtDB::CH_019644
-transport: lysL
+lysine-transport: lysL
 
 # In E. coli and Salmonella, the ABC transporter has a lysine/arginine specific binding protein (argT),
 # two permease subunits (hisQM, which are similar to each other), and an ATPase subunit (hisP).
 # Pseudomonas aeruginosa has a homologous lysine transporter, PA5152-PA5155,
 # as do various strains of Pseudomonas fluorescens.
 # In P. putida, a similar system was identified using fitness data
-#  (argT = PP_3593 = Q88GX4; hisQ = PP_3594 = Q88GX3; hisM = PP_3595 = Q88GX2; hisP = PP_3597 = Q88GX0)
+#  (argT = PP_3593 = Q88GX4; hisQ = PP_3594 = Q88GX3; hisM = PP_3595 = Q88GX2; hisP = PP_3597 = Q88GX0).
 # In S. meliloti, a similar substrate-binding protein was identified using fitness data (SMc00140 = Q92PA9),
 #  but the ATPase subunit was not found (it might be shared with other systems).
 argT	L-lysine ABC transporter, substrate-binding component ArgT	curated:CharProtDB::CH_003045	curated:TCDB::P09551	curated:TCDB::Q9HU31	curated:reanno::pseudo5_N2C3_1:AO356_05495	curated:reanno::pseudo5_N2C3_1:AO356_09900	curated:reanno::pseudo6_N2E2:Pf6N2E2_2958	uniprot:Q92PA9	uniprot:Q88GX4
@@ -47,21 +47,25 @@ hisQ	L-lysine ABC transporter, permease component 2 (HisQ)	curated:SwissProt::P0
 
 hisP	L-lysine ABC transporter, ATPase component HisP	curated:CharProtDB::CH_003210	curated:SwissProt::P02915	curated:TCDB::P73721	curated:TCDB::Q9HU32	curated:reanno::pseudo5_N2C3_1:AO356_05515	curated:reanno::pseudo5_N2C3_1:AO356_09895	curated:reanno::pseudo6_N2E2:Pf6N2E2_2962	uniprot:Q88GX0
 
-transport: argT hisM hisQ hisP
+lysine-transport: argT hisM hisQ hisP
 
 # In Synechocystis, there is just one permease component fused to the
 # substrate-binding component. The fusion protein is known as BgtB or BgtAB;
-# BgtA is the ATPase component. This system has a hisP-like ATPase component.
+# BgtA is the hisP-like ATPase component.
 bgtB	L-histidine ABC transporter, fused substrate-binding and permease components (BgtB/BgtAB)	curated:TCDB::P73544	curated:TCDB::Q8YSA2
 
-transport: bgtB hisP
+lysine-transport: bgtB hisP
 
 # Lysine exporters (LysE), porins, lysine:cadaverine antiporters
 # (cadB), vacuolar transporters, lysosomal transporters, mitochondrial
 # carrier proteins, and the schistosome amino acid transporter (TC
 # 2.A.3.8.3) were excluded.
 
+import leucine.steps:atoB # acetyl-CoA acetyltransferase is part of glutaryl-CoA degradation
+import phenylacetate.steps:glutaryl-CoA-degradation
+
 glaH	glutarate 2-hydroxylase, succinate-releasing (GlaH or CsiD)	EC:1.14.11.64
+
 # As discussed in the MetaCyc page for lhgO (G1G01-3089-MONOMER),
 # there is some controversy as to whether the E. coli enzyme (lhgD)
 # uses quinone or oxygen as its acceptor; the Pseudomonas protein
@@ -77,11 +81,6 @@ lhgD	L-2-hydroxyglutarate dehydrogenase or oxidase (LhgD or LhgO)	EC:1.1.5.13	cu
 glutarate-degradation: glaH lhgD
 
 gcdG	succinyl-CoA:glutarate CoA-transferase	EC:2.8.3.13
-# gcdH is glutaryl-CoA dehydrogenase (decarboxylating)
-# ech is (S)-3-hydroxybutanoyl-CoA hydro-lyase
-# fadB is (S)-3-hydroxybutanoyl-CoA dehydrogenase
-import phenylacetate.steps:gcdH ech fadB
-import deoxyribose.steps:atoB # acetyl-CoA C-acetyltransferase
 
 # Alternatively, as part of pathway IV (metacyc:PWY-5280),
 # glutarate can be activated to glutaryl-CoA by a
@@ -90,7 +89,7 @@ import deoxyribose.steps:atoB # acetyl-CoA C-acetyltransferase
 # (decarboxylating) to crotonyl-CoA (trans-but-2-enoyl-CoA), hydration
 # to (S)-hydroxybutanoyl-CoA, oxidization to acetoacetyl-CoA, and cleavage
 # by a C-acetyltransferase to two acetyl-CoA.
-glutarate-degradation: gcdG gcdH ech fadB atoB
+glutarate-degradation: gcdG glutaryl-CoA-degradation
 
 # Ignore some very-similar 4-aminobutyrate transaminases
 davT	5-aminovalerate aminotransferase	EC:2.6.1.48	ignore:metacyc::MONOMER-11537	ignore:BRENDA::Q0K2K2
@@ -99,6 +98,8 @@ davD	glutarate semialdehyde dehydrogenase	EC:1.2.1.20	ignore:reanno::pseudo3_N2E
 
 # 5-aminovalerate is an intermediate in L-lysine degradation (metacyc:PWY0-461, metacyc:PWY-5280).
 # It is transaminated to glutarate semialdehyde and oxidized to glutarate.
+# (A fermentative pathway via 5-hydroxyvalerate has also been reported, but
+#  does not seem to be fully linked to sequence; see pathway 5 of PMID:11759672.)
 5-aminovalerate-degradation: davT davD glutarate-degradation
 
 # Q06191 is very similar to SMc04386 (P58350), which is specifically important for lysine
@@ -112,8 +113,8 @@ lysN	2-aminoadipate transaminase	EC:2.6.1.39	ignore:SwissProt::Q06191
 hglS	D-2-hydroxyglutarate synthase	curated:reanno::Putida:PP_5260	curated:reanno::pseudo5_N2C3_1:AO356_01105	curated:reanno::Smeli:SMc04383	curated:ecocyc::G6738-MONOMER
 
 # PP_4493 was misannotated as EC 1.1.3.15, which acts on (S)-2-hydroxyglutarate.
-# The E. coli homolog (ydiJ, ecocyc:G6913-MONOMER) does not seem to be characterized
-# SMc04384 (Q92L08) was identified using fitness data
+# The E. coli homolog (ydiJ, ecocyc:G6913-MONOMER) does not seem to be characterized.
+# SMc04384 (Q92L08) was identified using fitness data.
 ydiJ	(R)-2-hydroxyglutarate dehydrogenase	EC:1.1.99.39	EC:1.1.99.40	curated:reanno::Putida:PP_4493	uniprot:Q92L08
 
 # L-2-aminoadipate is an intermediate in L-lysine degradation
@@ -135,13 +136,13 @@ cadA	lysine decarboxylase	EC:4.1.1.18	ignore:BRENDA::A0A0H3H393
 patA	cadaverine aminotransferase	curated:metacyc::G7596-MONOMER
 
 # E. coli 4-aminobutanal dehydrogenase (patD, P77674) is known to
-# carry out this reaction.  It seems likely that other members of EC
-# 1.2.1.19 (4-aminobutanal dehydrogenase) would perform it as well.
+# carry out this reaction.  It seems likely that other members of
+# EC:1.2.1.19 (4-aminobutanal dehydrogenase) would perform it as well.
 patD	5-aminopentanal dehydrogenase	curated:SwissProt::P77674	ignore_other:1.2.1.19
 
 # In pathway I, lysine is decarboxylated by cadA to cadaverine (1,5-diaminopentane), transaminated
 # to 5-aminopentanal by patA, and oxidized to 5-aminovalerate by patD.
-all: transport cadA patA patD 5-aminovalerate-degradation
+all: lysine-transport cadA patA patD 5-aminovalerate-degradation
 
 davB	L-lysine 2-monooxygenase	EC:1.13.12.2
 davA	5-aminovaleramidase	EC:3.5.1.30
@@ -149,7 +150,7 @@ davA	5-aminovaleramidase	EC:3.5.1.30
 # In pathway IV, the monooxygenase/decarboxylase davB forms
 # 5-aminopentanamide, which is hydrolyzed to 5-aminovalerate
 # (5-aminopentanoate).
-all: transport davB davA 5-aminovalerate-degradation
+all: lysine-transport davB davA 5-aminovalerate-degradation
 
 # Some lysine racemases are very similar to broad-specificity amino
 # acid racemases (EC 5.1.1.10)
@@ -159,7 +160,9 @@ alr	lysine racemase	EC:5.1.1.5	ignore_other:5.1.1.10
 amaD	D-lysine oxidase	EC:1.4.3.3	ignore:BRENDA::P80340
 
 dpkA	1-piperideine-2-carboxylate reductase	EC:1.5.1.1	EC:1.5.1.21
+
 amaA	L-pipecolate oxidase	EC:1.5.3.7
+
 # Q4L235 is misannotated in BRENDA.
 # TIGR03443 hits both amaB and the ATP-hydrolyzing L-2-aminoadipate reductase.
 # P83402 and P84463 are short sequence fragments.
@@ -172,14 +175,14 @@ amaB	L-2-aminoadipate semialdehyde dehydrogenase (AmaB/Pcd)	EC:1.2.1.31	ignore:B
 # spontaneously decarboxylates to 1-piperideine-2-carboxylate,
 # a reductase forms L-pipecolate, an oxidase forms 1-piperideine-6-carboxylate,
 # and a dehydrogenase forms L-2-aminoadipate.
-all: transport alr amaD dpkA amaA amaB L-2-aminoadipate-degradation
+all: lysine-transport alr amaD dpkA amaA amaB L-2-aminoadipate-degradation
 
 lat	L-lysine 6-aminotransferase	EC:2.6.1.36
 
 # In pathway VI, lysine 6-aminotransferase (lat) forms (S)-2-amino-6-oxohexanoate,
 # which spontaenously dehydrates to 1-piperideine 6-carboxylate,
 # and a dehydrogenase forms L-2-aminoadipate
-all: transport lat amaB L-2-aminoadipate-degradation
+all: lysine-transport lat amaB L-2-aminoadipate-degradation
 
 lysDH	L-lysine 6-dehydrogenase	EC:1.4.1.18
 
@@ -187,7 +190,7 @@ lysDH	L-lysine 6-dehydrogenase	EC:1.4.1.18
 # forms (S)-2-amino-6-oxohexanoate, which spontaenously dehydrates to
 # 1-piperideine 6-carboxylate, and a dehydrogenase forms
 # L-2-aminoadipate.
-all: transport lysDH amaB L-2-aminoadipate-degradation
+all: lysine-transport lysDH amaB L-2-aminoadipate-degradation
 
 kamA	L-lysine 2,3-aminomutase	EC:5.4.3.2
 kamD	L-beta-lysine 5,6-aminomutase, alpha subunit	curated:BRENDA::Q8RHX7	curated:SwissProt::E3PRJ5
@@ -195,15 +198,19 @@ kamE	L-beta-lysine 5,6-aminomutase, beta subunit	curated:BRENDA::Q8RHX8	curated:
 kdd	3,5-diaminohexanoate dehydrogenase	EC:1.4.1.11
 kce	(S)-5-amino-3-oxohexanoate cleavage enzyme	EC:2.3.1.247
 kal	3-aminobutyryl-CoA deaminase	EC:4.3.1.14
+
 # D9TQ00 is probably misannotated in BRENDA
 # P52042 and metacyc::MONOMER-13470 and metacyc::MONOMER-11937 were given EC 1.3.8.1
 # (which means electron transfer to etf, but no electron bifurcation expected),
 # but are probably electron bifurcating
 bcd	butanoyl-CoA dehydrogenase (NAD+, ferredoxin), dehydrogenase subunit	curated:BRENDA::D2RL84	curated:BRENDA::Q18AQ1	ignore:BRENDA::D9TQ00	curated:SwissProt::P52042	curated:metacyc::MONOMER-11937	curated:metacyc::MONOMER-13470
+
 etfA	butanoyl-CoA dehydrogenase (NAD+, ferredoxin),  etfA subunit	curated:BRENDA::D2RIQ3	curated:BRENDA::Q18AQ5
+
 etfB	butanoyl-CoA dehydrogenase (NAD+, ferredoxin),  etfB subunit	curated:BRENDA::D2RIQ2	curated:BRENDA::Q18AQ6
+
 # cftAB are described in MetaCyc but are absent from the list of curated proteins
-# (maybe they were added recently?)
+# in this version of GapMind
 ctfA	butanoyl-CoA:acetoacetate CoA-transferase, alpha subunit	uniprot:P33752
 ctfB	butanoyl-CoA:acetoacetate CoA-transferase, beta subunit	uniprot:P23673
 
@@ -216,4 +223,4 @@ ctfB	butanoyl-CoA:acetoacetate CoA-transferase, beta subunit	uniprot:P23673
 # CoA-transferase converts the butanoyl-CoA and acetoacetate to
 # butanoate (a waste product) and acetoacetyl-CoA, and a
 # C-acetyltransferase (atoB) splits acetyl-CoA to two acetyl-CoA.
-all: transport kamA kamD kamE kdd kce kal bcd etfA etfB ctfA ctfB atoB
+all: lysine-transport kamA kamD kamE kdd kce kal bcd etfA etfB ctfA ctfB atoB

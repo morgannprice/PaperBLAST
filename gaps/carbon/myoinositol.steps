@@ -11,34 +11,34 @@ PGA1_c07320	myo-inositol ABC transporter, ATPase component	curated:reanno::Phaeo
 
 # Transporters were identified using:
 # query: transporter:myo-inositol:myoinositol:m-inositol:inositol
-transport: PGA1_c07300 PGA1_c07310 PGA1_c07320
+myo-inositol-transport: PGA1_c07300 PGA1_c07310 PGA1_c07320
 
 iatP	myo-inositol ABC transporter, permease component IatP	curated:TCDB::B8H230
 iatA	myo-inositol ABC transporter, ATPase component IatA	curated:TCDB::B8H229
 ibpA	myo-inositol ABC transporter, substrate-binding component IbpA	curated:TCDB::B8H228
-transport:  iatP iatA ibpA
+myo-inositol-transport:  iatP iatA ibpA
 
 # The ortholog in P. fluorescens FW300-N2E3 (AO353_21380, A0A0N9WNI6)
 # was not reannotated but does have the phenotype
 PS417_11885	myo-inositol ABC transporter, substrate-binding component	curated:reanno::WCS417:GFF2331	uniprot:A0A0N9WNI6
 PS417_11890	myo-inositol ABC transporter, ATPase component	curated:reanno::WCS417:GFF2332	curated:reanno::pseudo3_N2E3:AO353_21385
 PS417_11895	myo-inositol ABC transporter, permease component	curated:reanno::WCS417:GFF2333	curated:reanno::pseudo3_N2E3:AO353_21390
-transport: PS417_11885 PS417_11890 PS417_11895
+myo-inositol-transport: PS417_11885 PS417_11890 PS417_11895
 
 # Homomeric transporters
 
 # Distantly related transporters with the same domain content were grouped together into iolT
 iolT	myo-inositol:H+ symporter	curated:SwissProt::Q8VZR6	curated:CharProtDB::CH_091483	curated:CharProtDB::CH_091623	curated:CharProtDB::CH_123508	curated:SwissProt::O34718	curated:SwissProt::P30606	curated:SwissProt::P87110	curated:SwissProt::Q10286	curated:TCDB::A8DCT2	curated:TCDB::AIU34725.1	curated:TCDB::Q01440	curated:TCDB::Q8NTX0	curated:TCDB::E1WAV3	curated:TCDB::E1WAV4	curated:TCDB::Q8NL90	curated:CharProtDB::CH_123411	curated:CharProtDB::CH_124311
-transport: iolT
+myo-inositol-transport: iolT
 
 SMIT1	myo-inositol:Na+ symporter	curated:SwissProt::Q28728	curated:SwissProt::Q8K0E3	curated:SwissProt::Q8WWX8	curated:SwissProt::Q9JKZ2	curated:SwissProt::Q9Z1F2	curated:TCDB::P31637	curated:TCDB::P53794
-transport: SMIT1
+myo-inositol-transport: SMIT1
 
 HMIT	myo-inositol:H+ symporter	curated:CharProtDB::CH_091598	curated:SwissProt::Q921A2	curated:SwissProt::Q96QE2	curated:SwissProt::Q9C757	curated:SwissProt::Q9ZQP6
-transport: HMIT
+myo-inositol-transport: HMIT
 
 iolF	myo-inositol:H+ symporter	curated:SwissProt::P42417
-transport: iolF
+myo-inositol-transport: iolF
 
 import glucosamine.steps:kdgK # 2-keto-3-deoxygluconate kinase
 import glucose.steps:eda # 2-keto-3-deoxygluconate 6-phosphate aldolase
@@ -50,7 +50,8 @@ iolG	myo-inositol 2-dehydrogenase	EC:1.1.1.18
 
 iolE	scyllo-inosose 2-dehydratase	EC:4.2.1.44
 
-# Erroneous annotations in SEED were "confirmed" by the fitness data
+# Erroneous annotations of epi-inositol hydrolases from SEED were "confirmed" by the fitness data and included in
+# reannotations; these are all ignored.
 iolD	3D-(3,5/4)-trihydroxycyclohexane-1,2-dione hydrolase	EC:3.7.1.22	ignore_other:epi-inositol hydrolase
 
 # The EC number is missing from the reannotations
@@ -70,8 +71,6 @@ iolJ	5-dehydro-2-deoxyphosphogluconate aldolase	EC:4.1.2.29
 # Q9I702 is annotated as doing this but as "putative" and without the EC number
 mmsA	malonate-semialdehyde dehydrogenase	EC:1.2.1.18	ignore_other:1.2.1.27	ignore:SwissProt::Q9I702
 
-# MetaCyc myo-inositol degradation I involves a 2-hydrogenase and a dehydratase, to
-
 # Both pathways begin with the 2-dehydrogenase (iolG) forming scyllo-inosose.
 # In pathway I, inosose dehydratase (iolE)  forms 3D-(3,5/4)-trihydroxycyclohexane-1,2-dione,
 # followed by a ring-cleaving hydrolase to 5-deoxy-D-glucuronate,
@@ -79,13 +78,14 @@ mmsA	malonate-semialdehyde dehydrogenase	EC:1.2.1.18	ignore_other:1.2.1.27	ignor
 # and cleavage by an aldolase to 3-oxopropionate (malonate semialdehyde) and
 # glycerone phosphate; the 3-oxopropionate is oxidized to acetyl-CoA while the
 # glycerone phosphate is converted by triose-phosphate isomerase to glyceraldehyde 3-phosphate.
-all: transport iolG iolE iolD iolB iolC iolJ mmsA tpi
+all: myo-inositol-transport iolG iolE iolD iolB iolC iolJ mmsA tpi
 
 iolM	2-inosose 4-dehydrogenase	curated:metacyc::MONOMER-17949
 iolN	2,4-diketo-inositol hydratase	curated:SwissProt::Q9WYP4
 iolO	5-dehydro-L-gluconate epimerase	curated:SwissProt::Q9WYP7
 uxaE	D-tagaturonate epimerase	EC:5.1.2.7
 uxuB	D-mannonate dehydrogenase	EC:1.1.1.57
+
 # Many proteins are annotated in SwissProt as "D-galactonate dehydratase family member" but
 # have little activity on D-mannonoate; it is probably not the physiological substrate
 uxuA	D-mannonate dehydratase	EC:4.2.1.8	ignore:SwissProt::A4WA78	ignore:SwissProt::A5KUH4	ignore:SwissProt::A6AMN2	ignore:SwissProt::A6M2W4	ignore:SwissProt::A6VRA1	ignore:SwissProt::A8RQK7	ignore:SwissProt::B1ELW6	ignore:SwissProt::B3PDB1	ignore:SwissProt::B5GCP6	ignore:SwissProt::B5QBD4	ignore:SwissProt::B5R541	ignore:SwissProt::B5RAG0	ignore:SwissProt::B8HCK2	ignore:SwissProt::C6CBG9	ignore:SwissProt::C6CVY9	ignore:SwissProt::C6D9S0	ignore:SwissProt::C6DI84	ignore:SwissProt::C7PW26	ignore:SwissProt::C8ZZN2	ignore:SwissProt::C9A1P5	ignore:SwissProt::C9CN91	ignore:SwissProt::C9NUM5	ignore:SwissProt::C9Y5D5	ignore:SwissProt::D0KC90	ignore:SwissProt::D0X4R4	ignore:SwissProt::D4GJ14	ignore:SwissProt::D7BPX0	ignore:SwissProt::D8ADB5	ignore:SwissProt::D9UNB2	ignore:SwissProt::E1V4Y0	ignore:SwissProt::Q1QT89	ignore:SwissProt::Q2CIN0	ignore:SwissProt::Q6DAR4	ignore:SwissProt::Q8FHC7
@@ -95,4 +95,4 @@ uxuA	D-mannonate dehydratase	EC:4.2.1.8	ignore:SwissProt::A4WA78	ignore:SwissPro
 # another forms to D-fructonate, a reductase forms D-mannonate, a dehydratase forms
 # 2-keto-3-deoxygluconate, a kinase forms 2-keto-3-deoxy-gluconate 6-phosphate,
 # and an aldolase forms glyceraldehyde-3-phosphate and pyruvate.
-all: transport iolG iolM iolN iolO uxaE uxuB uxuA kdgK eda
+all: myo-inositol-transport iolG iolM iolN iolO uxaE uxuB uxuA kdgK eda

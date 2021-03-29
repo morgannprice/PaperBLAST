@@ -2,25 +2,7 @@
 # L-arabinose degradation I, via xylulose 5-phosphate (metacyc:ARABCAT-PWY);
 # III, oxidation to 2-oxoglutarate (metacyc:PWY-5517);
 # and IV, via glycolaldehyde (metacyc:PWY-7295).
-# Pathway I involves isomerization
-# to L-ribulose, phosphorylation, and 4-epimerase to D-xylulose 5-phosphate,
-# which is an intermediate in the pentose phosphate pathway.
-# Pathway III involves a 1-dehydrogenase
-# (acting on the furanose form, not the usual pyranose form?)
-# to a 1,4-lactone, hydrolysis by a lactonase, two dehydration
-# reactions to 2-dehydro-3-deoxy-L-arabinonate and 2,5-dioxopentanonate (a-ketoglutarate semialdehyde),
-# and oxidation to 2-oxoglutarate, which is a central intermediate.
-# Fitness data suggests that L-arabinose 1-epimerase (mutarotase) may also be involved,
-# perhaps in creating the correct epimer for the 1-dehydrogenase, but
-# that is not represented here.
-# Pathway IV begins as in pathway III, to
-# 2-dehydro-3-deoxy-L-arabinonate, followed by KDG aldolase to
-# pyruvate and glycolaldehyde.  The glycolaldehyde is oxidized to
-# glycolate and then to glyoxylate, and combined with acetyl-CoA by
-# malate synthase (which is a TCA cycle intermediate).
-# (Other pathways for glyxoylate assimilation are known but are not
-#  represented here.)
-# Pathway II (via xylitol and xylulose) is not represented in GapMind
+# Pathway II via xylitol and xylulose is not represented in GapMind
 # because it is not reported in prokaryotes (metacyc:PWY-5515).
 
 # ABC transporters:
@@ -37,30 +19,30 @@ chvE	L-arabinose ABC transporter, substrate-binding component ChvE	curated:TCDB:
 
 # Transporters were identified using
 # query: transporter:arabinose:L-arabinose:L-arabinofuranose:L-arabinopyranose:beta-L-arabinose:CPD-12045:CPD-12046
-transport: gguA gguB chvE
+arabinose-transport: gguA gguB chvE
 
 araF	L-arabinose ABC transporter, substrate-binding component AraF	curated:SwissProt::P02924
 araG	L-arabinose ABC transporter, ATPase component AraG	curated:SwissProt::P0AAF3
 araH	L-arabinose ABC transporter, permease component AraH	curated:CharProtDB::CH_014278
-transport: araF araG araH
+arabinose-transport: araF araG araH
 
 araS	L-arabinose ABC transporter, substrate-binding component AraS	curated:TCDB::Q97UF5
 araT	L-arabinose ABC transporter, permease component 1 (AraT)	curated:TCDB::Q97UF4
 araU	L-arabinose ABC transporter, permease component 2 (AraU)	curated:TCDB::Q97UF3
 araV	L-arabinose ABC transporter, ATPase component AraV	curated:TCDB::Q97UF2
-transport: araS araT araU araV
+arabinose-transport: araS araT araU araV
 
 xacG	L-arabinose ABC transporter, substrate-binding component XacG	uniprot:D4GP35
 xacH	L-arabinose ABC transporter, permease component 1 (XacH)	uniprot:D4GP36
 xacI	L-arabinose ABC transporter, permease component 2 (XacI)	uniprot:D4GP37 
 xacJ	L-arabinose ABC transporter, ATPase component 1 (XacJ)	uniprot:D4GP38 
 xacK	L-arabinose ABC transporter, ATPase component 2 (XacK)	uniprot:D4GP39 
-transport: xacG xacH xacI xacJ xacK
+arabinose-transport: xacG xacH xacI xacJ xacK
 
 xylFsa	L-arabinose ABC transporter, substrate-binding component XylF	uniprot:Q4J710 
 xylGsa	L-arabinose ABC transporter, ATPase component XylG	uniprot:P0DTT6 
 xylHsa	L-arabinose ABC transporter, permease component XylH	uniprot:Q4J711 
-transport: xylFsa xylGsa xylHsa
+arabinose-transport: xylFsa xylGsa xylHsa
 
 # Rodionov et al proposed that the Shewanella arabinose transporter is araUVWZ; this was confirmed
 # by fitness data for Shewana3_2073:2076
@@ -68,23 +50,23 @@ araUsh	L-arabinose ABC transporter, substrate-binding component AraU(Sh)	uniprot
 araVsh	L-arabinose ABC transporter, ATPase component AraV(Sh)	uniprot:A0KWY5
 araWsh	L-arabinose ABC transporter, permease component 1 AraW(Sh)	uniprot:A0KWY6
 araZsh	L-arabinose ABC transporter, permease component 2 AraZ(Sh)	uniprot:A0KWY7
-transport: araUsh araVsh araWsh araZsh
+arabinose-transport: araUsh araVsh araWsh araZsh
 
 # homomeric transporters
 
 araE	L-arabinose:H+ symporter	curated:SwissProt::P0AE24	curated:SwissProt::P96710	curated:TCDB::C4B4V9
-transport: araE
+arabinose-transport: araE
 
 # In the RB-TnSeq data, BT0355 is very important for L-arabinose utilization, and this does
 # not seem to be a polar effect (the effect is found on both strands).
 # In contrast, PMC5061871 reported a subtle effect of deleting BT0355 on L-arabinose utilization,
 # but found that it was required for arabinobiose utilization.
 BT0355	L-arabinose:Na+ symporter	uniprot:Q8AAV7	
-transport: BT0355
+arabinose-transport: BT0355
 
 # Echvi_1880 is specifically important for L-arabinose utilization
 Echvi_1880	L-arabinose:Na+ symporter	uniprot:L0FZT5
-transport: Echvi_1880
+arabinose-transport: Echvi_1880
 
 # Ignore various arabinose exporters:
 # yhhS, yfcJ, setC, ybdA, ydeA, ynfM, kgtP from E. coli; SotA from Erwinia;
@@ -100,7 +82,13 @@ araA	L-arabinose isomerase	EC:5.3.1.4
 araB	ribulokinase	EC:2.7.1.16	uniprot:C4B4W2	uniprot:Q8AAW2
 araD	L-ribulose-5-phosphate epimerase	EC:5.1.3.4
 # araABD is pathway I.
-all: transport araA araB araD
+
+
+# In pathway I, isomerase araA forms L-ribulose, kinase
+# araB forms ribulose 5-phosphate, and epimerase araD
+# forms D-xylulose 5-phosphate,
+# which is an intermediate in the pentose phosphate pathway.
+all: arabinose-transport araA araB araD
 
 xacB	L-arabinose 1-dehydrogenase	EC:1.1.1.376	EC:1.1.1.46
 # SMc00883 (Q92RN9) is specifically important for L-arabinose utilization and does not appear polar
@@ -110,16 +98,30 @@ xacC	L-arabinono-1,4-lactonase	EC:3.1.1.15	uniprot:Q92RN9	uniprot:A0A165IRV8
 xacD	L-arabinonate dehydratase	EC:4.2.1.25	ignore:SwissProt::Q92RP0
 xacE	2-dehydro-3-deoxy-L-arabinonate dehydratase	EC:4.2.1.43
 xacF	alpha-ketoglutarate semialdehyde dehydrogenase	EC:1.2.1.26
-# xacBCDEF is pathway III.
-all: transport xacB xacC xacD xacE xacF
+
+# In pathway III, the 1-dehydrogenase xacB
+# (which acts on the furanose form, not the usual pyranose form?)
+# forms  arabino-1,4-lactone, lactonase xacC forms arbinonate, two
+# dehydratases form 2-dehydro-3-deoxy-L-arabinonate and 2,5-dioxopentanonate (&alpha;-ketoglutarate semialdehyde),
+# and dehydrogenase xacF forms 2-oxoglutarate, which is an intermediate in the TCA cycle.
+# (Fitness data suggests that L-arabinose 1-epimerase or mutarotase is also involved,
+# perhaps in creating the correct epimer for the 1-dehydrogenase, but
+# is not included in GapMind.)
+all: arabinose-transport xacB xacC xacD xacE xacF
 
 # gyaR = glyoxylate reductase / glycolate dehydrogenase
 # glcB = malate synthase
-import xylose.steps:glycolaldehyde_dehydrogenase gyaR glcB
+import xylose.steps:glycolaldehyde-dehydrogenase gyaR glcB
 
-# Q97U28 is the same protein but with 14 more N-terminal a.a., and is annotated with 4.1.2.55 only
+# Q97U28 is the same protein but with 14 more N-terminal a.a., and is annotated with 4.1.2.55 only.
 # And a similar enzyme from S. acidcaldarius is thought to perform this reaction as well (PMC2962468)
 KDG_aldolase	2-dehydro-3-deoxy-L-arabinonate aldolase	EC:4.1.2.18	ignore:BRENDA::Q97U28	curated:BRENDA::Q4JC35
 
-# Pathway IV begins with xacBCD and KDG aldolase.
-all: transport xacB xacC xacD KDG_aldolase glycolaldehyde_dehydrogenase gyaR glcB
+# Pathway IV begins as in pathway III, to
+# 2-dehydro-3-deoxy-L-arabinonate, followed by KDG aldolase to
+# pyruvate and glycolaldehyde; the glycolaldehyde is oxidized to
+# glycolate and then to glyoxylate, and combined with acetyl-CoA by
+# malate synthase, which is a TCA cycle intermediate.
+# (Other pathways for glyxoylate assimilation are known but are not
+#  represented here.)
+all: arabinose-transport xacB xacC xacD KDG_aldolase glycolaldehyde-dehydrogenase gyaR glcB

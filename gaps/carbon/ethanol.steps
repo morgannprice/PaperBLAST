@@ -6,10 +6,6 @@
 # IV (with ethanol peroxidase, metacyc:PWY66-162) are not reported to
 # occur in prokaryotes and are not included.
 
-import acetate.steps:acs # acetyl-CoA synthetase
-import acetate.steps:ackA # acetate kinase
-import acetate.steps:pta # phosphate acetyltransferase
-
 # CH_121261 seems to be a sequence fragment
 etoh-dh-nad	ethanol dehydrogenase (NAD(P))	EC:1.1.1.1	ignore:CharProtDB::CH_121261	EC:1.1.1.71
 etoh-dh-c	ethanol dehydrogenase (cytochrome c)	EC:1.1.2.8	ignore_other:1.1.2.8
@@ -33,9 +29,21 @@ etoh-dh: etoh-dh-qn
 # Q2XQZ7 is probably misannotated.
 ald-dh-CoA	acetaldehyde dehydrogenase, acylating	EC:1.2.1.10	ignore_other:1.1.1.1	ignore_other:1.1.1.71	ignore_other:1.2.1.57	ignore:BRENDA::Q2XQZ7
 
-# Oxidation to acetaldehyde and then to acetyl-CoA, or, oxidation to acetaldehyde and then to acetate, followed by activation of the acetate by acs or ackA-pta.
-all: etoh-dh ald-dh-CoA
-
 adh	acetaldehyde dehydrogenase (not acylating)	EC:1.2.1.3
-all: etoh-dh adh acs
-all: etoh-dh adh ackA pta
+
+acs	acetyl-CoA synthetase, AMP-forming	EC:6.2.1.1
+
+ackA	acetate kinase	EC:2.7.2.1	EC:2.7.2.15
+
+# BRENDA misannotates yeast's carnitine acetyltransferase with EC:2.3.1.8
+pta	phosphate acetyltransferase	EC:2.3.1.8	ignore:BRENDA::P32796
+
+# Acetaldehyde can be oxidized to acetyl-CoA, or oxidized to acetate and activated to acetyl-CoA
+# by either acetyl-CoA synthetase (acs)
+# or by acetate kinase (ackA) and phosphate acetyltransferase (pta).
+acetaldehyde-degradation: ald-dh-CoA
+acetaldehyde-degradation: adh acs
+acetaldehyde-degradation: adh ackA pta
+
+# Ethanol is consumed by oxidation to acetaldehyde
+all: etoh-dh acetaldehyde-degradation

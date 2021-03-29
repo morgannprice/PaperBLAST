@@ -8,7 +8,7 @@
 # ABC transporters:
 
 # 4-part ABC transporters include E. coli potABCD or potGHIF, which are related to each other, and a related system,
-# also named potABCD, from Streptococcus pneuomoniae
+# also named potABCD, from Streptococcus pneuomoniae.
 potA	putrescine ABC transporter, ATPase component (PotA/PotG)	curated:TCDB::P31134	curated:CharProtDB::CH_024626	curated:TCDB::Q97Q42
 potB	putrescine ABC transporter, permease component 1 (PotB/PotH)	curated:CharProtDB::CH_088338	curated:CharProtDB::CH_088337	curated:TCDB::Q97Q43
 potC	putrescine ABC transporter, permease component 2 (PotC/PotI)	curated:CharProtDB::CH_088340	curated:SwissProt::P0AFL1	curated:TCDB::Q97Q44
@@ -17,24 +17,24 @@ potD	putrescine ABC transporter, substrate-binding component (PotD/PotF)	curated
 
 # Transporters were identified using:
 # query: transporter:putrescine
-transport: potA potB potC potD
+putrescine-transport: potA potB potC potD
 
 # Homomeric transporters:
 
 puuP	putrescine:H+ symporter PuuP/PlaP	curated:SwissProt::P0AA47	curated:SwissProt::P76037
-transport: puuP
+putrescine-transport: puuP
 
 potE	putrescine:H+ symporter PotE	curated:SwissProt::P0AAF1
-transport: potE
+putrescine-transport: potE
 
 TPO1	putrescine transporter TPO1	curated:CharProtDB::CH_091011
-transport: TPO1
+putrescine-transport: TPO1
 
 UGA4	putrescine transporter UGA4	curated:CharProtDB::CH_091303
-transport: UGA4
+putrescine-transport: UGA4
 
 POT1	putrescine:H+ symporter POT1	curated:TCDB::Q5C8V6
-transport: POT1
+putrescine-transport: POT1
 
 # Ignored export systems, including sapBCDF, and the agmatine/putrescine antiporter AguD
 
@@ -48,45 +48,51 @@ gabT	gamma-aminobutyrate transaminase	EC:2.6.1.19	EC:2.6.1.96	uniprot:A1S8Y2
 # Close homologs in Pseudomonas or Klebsiella are annotated as glutarate-semialdehyde dehydrogenases (1.2.1.20)
 # or aldehyde dehydrogenases (1.2.1.3); Q9I6M5 is annotated as glutarate-semialdehyde dehydrogenase
 # but with no EC number.
-# Q8BUF0 appears to be misannotated in BRENDA
+# Q8BUF0 appears to be misannotated in BRENDA.
 gabD	succinate semialdehyde dehydrogenase	EC:1.2.1.79	EC:1.2.1.24	EC:1.2.1.16	ignore:BRENDA::Q8BUF0	ignore_other:1.2.1.20	ignore_other:1.2.1.3	ignore:SwissProt::Q9I6M5
 
 # GABA (4-aminobutanoate) is consumed by an aminotransferase (known as gabT or puuE), which forms
-# succinate semialdehyde, and the dehydrogenase gabD, which forms succinate.
-GABA_utilization: gabT gabD
+# succinate semialdehyde, and dehydrogenase gabD, which forms succinate.
+GABA-degradation: gabT gabD
 
 # Since patA and putrescine-pyruvate transaminase (spuC) perform similar reactions and
-# produce gamma-aminobutyraldehyde, they are listed together.
+# produce gamma-aminobutyraldehyde (4-aminobutanal), they are listed together.
 # Many close homologs of patA are GABA aminotransferases (EC 2.6.1.19), so ignore those.
 patA	putrescine aminotransferase (PatA/SpuC)	EC:2.6.1.82	curated:metacyc::MONOMER-17	EC:2.6.1.113	ignore_other:2.6.1.19
+
 patD	gamma-aminobutyraldehyde dehydrogenase	EC:1.2.1.19
 
 # In pathway I or pathway V, putrescine aminotransferase (patA or spuC) forms 4-aminobutanal,
 # and dehydrogenase patD forms GABA.
-to_GABA: patA patD
+putrescine-to-GABA: patA patD
 
 puuA	glutamate-putrescine ligase	EC:6.3.1.11
+
 # MetaCyc uses EC 1.4.3.M3; other resources uses 1.4.3.-
 puuB	gamma-glutamylputrescine oxidase	term:glutamylputrescine oxidase
+
 # The putative kauB (4-guanidinobutyraldehyde dehydrogenase) from P. putida (metacyc::MONOMER-11560)
-# is closely related to P. aeruginosa kauB (PA5312), which has both activities (see PMID:3141581),
-#  so it is added as well.
+# is included because it is closely related to P. aeruginosa kauB (PA5312), which acts on
+# gamma-glutamyl-gamma-aminobutyraldehyde as well (PMID:3141581).
 # Some other P. fluorescens kauB-type proteins seem to be acting in this pathway
-# but were annotated with the EC number 1.2.1.54 instead, so these were added manually.
+# but were annotated with EC:1.2.1.54 instead, so these were added manually.
 puuC	gamma-glutamyl-gamma-aminobutyraldehyde dehydrogenase	EC:1.2.1.99	curated:metacyc::MONOMER-11560	curated:reanno::pseudo13_GW456_L13:PfGW456L13_805	curated:reanno::pseudo6_N2E2:Pf6N2E2_4383	curated:reanno::pseudo5_N2C3_1:AO356_12580	curated:reanno::WCS417:GFF5420
+
 puuD	gamma-glutamyl-gamma-aminobutyrate hydrolase	EC:3.5.1.94
 
 # In pathway II, putrescine is converted to GABA with glutamylated intermedates:
 # puuA forms gamma-glutamyl-putrescine, an oxidase forms 4-(gamma-glutaminylamino)butanal,
 # a dehydrogenase forms 4-(gamma-glutamylamino)butanoate, and a hydrolase releases
 # glutamate and GABA.
-to_GABA: puuA puuB puuC puuD
+putrescine-to-GABA: puuA puuB puuC puuD
 
 puo	putrescine oxidase	EC:1.4.3.10
 
 # As part of pathway IV, putrescine oxidase (puo) forms 4-aminobutanal,
 # which is probably converted to GABA by dehydrogenase patD.
-to_GABA: puo patD
+putrescine-to-GABA: puo patD
 
 # Gamma-aminobutyrate is a common intermediate.
-all: transport to_GABA GABA_utilization
+putrescine-degradation: putrescine-to-GABA GABA-degradation
+
+all: putrescine-transport putrescine-degradation

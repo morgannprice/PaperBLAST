@@ -1,6 +1,6 @@
 # Lactose utilization in GapMind is based on
 # MetaCyc pathway lactose degradation II via 3'-ketolactose (metacyc:LACTOSEUTIL-PWY),
-# or pathway III via beta-galactosidase (metacyc:BGALACT-PWY),
+# pathway III via beta-galactosidase (metacyc:BGALACT-PWY),
 # or uptake by a PTS system followed by hydrolysis of lactose 6'-phosphate.
 # (There is no pathway I.)
 
@@ -12,11 +12,12 @@ lacE	lactose ABC transporter, substrate-binding component	curated:TCDB::P29822	c
 lacF	lactose ABC transporter, permease component 1	curated:TCDB::P29823	curated:reanno::Smeli:SM_b21653
 lacG	lactose ABC transporter, permease component 2	curated:TCDB::P29824	curated:reanno::Smeli:SM_b21654
 lacK	lactose ABC transporter, ATPase component	curated:TCDB::Q01937	curated:reanno::Smeli:SM_b20002
-# Transporters were identified using
-# query: transporter:lactose:alpha-lactose:CPD-15971
-transport: lacE lacF lacG lacK
 
-# PTS systems (forming lactose 6'-phosphate)
+# Transporters and PTS systems were identified using
+# query: transporter:lactose:alpha-lactose:CPD-15971
+lactose-transport: lacE lacF lacG lacK
+
+# PTS systems:
 
 lacIIA	lactose PTS system, EIIA component	curated:SwissProt::P0A0D6	curated:SwissProt::P11502	curated:SwissProt::P23532	curated:TCDB::Q045H4	curated:TCDB::Q045X4	curated:TCDB::U5MLJ3
 
@@ -26,24 +27,29 @@ lacIIC	lactose PTS system, EIIC component	curated:TCDB::U5MFA1
 
 lacIICB	lactose PTS system, fused EIIC and EIIB components	curated:SwissProt::P11162	curated:SwissProt::P23531	curated:SwissProt::P24400	curated:TCDB::Q045H3	curated:TCDB::Q045X3
 
-# Klebsiella pneumoniae has a EIIA,B,C in 3 separate proteins.
-# The other characterized PTS systems have EII and EIICB
-PTS: lacIIA lacIIB lacIIC
-PTS: lacIIA lacIICB
+# PTS systems forming lactose 6'-phosphate.
+# Klebsiella pneumoniae has a EIIA,B,C in three separate proteins.
+# The other characterized PTS systems have EIIA and EIICB
+lactose-PTS: lacIIA lacIIB lacIIC
+lactose-PTS: lacIIA lacIICB
+
+# Homomeric transporters
 
 lacP	lactose permease LacP	curated:CharProtDB::CH_124122	curated:CharProtDB::CH_124118	curated:CharProtDB::CH_124308	curated:CharProtDB::CH_124309	curated:TCDB::P07921
-transport: lacP
+lactose-transport: lacP
 
 lacS	lactose permease LacS	curated:SwissProt::Q7WTB2	curated:TCDB::P23936
-transport: lacS
+lactose-transport: lacS
 
 lacY	lactose:proton symporter LacY	curated:SwissProt::P02920	curated:SwissProt::P96517
-transport: lacY
+lactose-transport: lacY
 
 # Ignored sugar exporters such as setA or sotA
 
 pbgal	phospho-beta-galactosidase	EC:3.2.1.85
-import galactose.steps:lacA lacB lacC tpi tag16P_aldolase
+
+import fructose.steps:tpi # part of galactose degradation
+import galactose.steps:galactose-6-phosphate-degradation galactose-degradation
 
 # LacACB from Caulobacter is the best studied lactose 3-dehydrogenase,
 # but a related system from Pedobacter is also required for lactose utilization.
@@ -63,69 +69,40 @@ lacB'	periplasmic lactose 3-dehydrogenase, cytochrome c component (LacB)	curated
 # CCNA_01705 as the 3'-ketolactose hydrolase (PMID:33657378).
 klh	periplasmic 3'-ketolactose hydrolase	curated:reanno::Caulo:CCNA_01705
 
-import glucose.steps:MFS_glucose SSS_glucose glcU_Firmicutes PAST-A SemiSWEET SWEET1 mglA mglB mglC gtsA gtsB gtsC gtsD glcS glcT glcU glcV aglE aglF aglG aglK ptsG-crr bglF ptsG crr manX manY manZ gdh gnl gadh1 gadh2 gadh3 kguT kguK kguD edd eda glk
-
-glucose-transport: MFS_glucose
-glucose-transport: SSS_glucose
-glucose-transport: glcU_Firmicutes
-glucose-transport: PAST-A
-glucose-transport: SemiSWEET
-glucose-transport: SWEET1
-glucose-transport: mglA mglB mglC
-glucose-transport: gtsA gtsB gtsC gtsD
-glucose-transport: glcS glcT glcU glcV
-glucose-transport: aglE aglF aglG aglK
-glucose-PTS: ptsG-crr
-glucose-PTS: bglF
-glucose-PTS: ptsG crr
-glucose-PTS: manX manY manZ
-
 # glk is glucokinase
-glucose-utilization: glucose-transport glk
-glucose-utilization: glucose-PTS
-glucose-utilization: gdh gnl gadh1 gadh2 gadh3 kguT kguK kguD edd eda
-
-# MetaCyc Pathway: lactose degradation III -- beta-galactosidase,
-# forming glucose and galactose, and then galactose utilization
-# via the Leloir pathway or galactose 1-dehydrogenase.
-# glucokinase should also be required to consume the glucose
-
-# Most lactases are homomeric, but Lactobacillus have a heteromeric enzyme LacLM
-# (There is also a heteromeric beta-galactosidase in barley, BGAL_HORVU / P83252m not dealt with here;
-#  also "evolved beta-galactosidase" ebgA from E. coli is more active with its partner ebgC,
-#  but it retains activity on its own.)
+import glucose.steps:glucose-utilization glk
 
 lacL	heteromeric lactase, large subunit	curated:BRENDA::A0SWS3	curated:CAZy::AAA25267.1	curated:CAZy::AAL09167.1	curated:CAZy::ABF72116.1	curated:CAZy::ABJ65308.1	curated:CAZy::ACC38286.1	curated:CAZy::AEG39988.1	curated:CAZy::AEJ32720.1	curated:CAZy::BAA20536.1	curated:CAZy::CAA57730.1	curated:CAZy::CAD65569.1	curated:CAZy::CAZ66936.1	curated:SwissProt::Q7WTB4
 
 lacM	heteromeric lactase, small subunit	curated:BRENDA::A0SWS4	curated:BRENDA::Q19R71	curated:SwissProt::Q7WTB3
 
-# Mark the sequences for lacL or lacM as ignore, and also BGAL_HORVU / P83252
-# Also mark some similar enzymes annotated as beta-glycosidases as ignore
-
+# Mark the sequences for lacL or lacM as ignore, and also uniprot:BGAL_HORVU.
+# Also mark some similar enzymes annotated as beta-glycosidases as ignore.
 lacZ	lactase (homomeric)	EC:3.2.1.108	EC:3.2.1.23	ignore:BRENDA::A0SWS3	ignore:CAZy::AAA25267.1	ignore:CAZy::AAL09167.1	ignore:CAZy::ABF72116.1	ignore:CAZy::ABJ65308.1	ignore:CAZy::ACC38286.1	ignore:CAZy::AEG39988.1	ignore:CAZy::AEJ32720.1	ignore:CAZy::BAA20536.1	ignore:CAZy::CAA57730.1	ignore:CAZy::CAD65569.1	ignore:CAZy::CAZ66936.1	ignore:SwissProt::Q7WTB4	ignore:BRENDA::A0SWS4	ignore:BRENDA::Q19R71	ignore:SwissProt::Q7WTB3	ignore:SwissProt::P83252	ignore:CAZy::AAA79030.1	ignore:CAZy::AAN05439.1	ignore:CAZy::AAF36392.1	ignore:CAZy::AAN05441.1	ignore:CAZy::ABW87307.1	ignore:CAZy::AAO15361.1	ignore:CAZy::AAN05440.1	ignore:CAZy::ABW01253.1	ignore:CAZy::AAY81155.1	ignore:CAZy::CAA34074.1	ignore:CAZy::ADL19795.1	ignore:CAZy::AEE47485.1	ignore:CAZy::ACK41548.1	ignore:CAZy::ABX04075.1	ignore:CAZy::BAA78713.1	ignore:BRENDA::Q8DR24
 
-bgal: lacZ
-bgal: lacL lacM
+# Most lactases are homomeric, but Lactobacillus have a heteromeric enzyme LacLM.
+# (There is also a heteromeric beta-galactosidase in barley, see uniprot:BGAL_HORVU, but it is not included.
+#  Also, "evolved beta-galactosidase" ebgA from E. coli is more active with its partner ebgC,
+#  but it retains activity on its own, so it is included in step lacZ instead.)
+beta-galactosidase: lacZ
+beta-galactosidase: lacL lacM
 
-import galactose.steps:galK galT galE pgmA galdh lactonase dgoD dgoK dgoA
-galM	galactose 1-epimerase	EC:5.1.3.3
+# In pathway III, lactose is taken up and cleaved to galactose and glucose by beta-galactosidase;
+# the glucose is consumed by kinase glk.
+# (The galactose 1-epimerase galM, EC:5.1.3.3, is not included in galactose degradation;
+#  it is important for lactose utilization in E. coli (PMID:7966338), but
+#  not in Sinorhizobium meliloti or in Bacteroides thetaiotaomicron, which also
+#  use this pathway.)
+all: lactose-transport beta-galactosidase galactose-degradation glk
 
-# Galactose is utilized via galactose 1-epimerase galM and kinase galK (Leloir pathway, metacyc:PWY-6317)
-galactose_util: galM galK galT galE pgmA
-# or via oxidation to D-galactonate (metacyc:GALDEG-PWY)
-galactose_util: galdh lactonase dgoD dgoK dgoA
+# Or, a PTS forms lactose 6'-phosphate and phosphogalactosidase (pbgal)
+# forms galactose 6-phosphate and glucose.
+all: lactose-PTS pbgal galactose-6-phosphate-degradation glk
 
-# Uptake of lactose, cleavage to galactose and glucose (bgal), and usage of each.
-all: transport bgal galactose_util glk
-
-# Alternatively, PTS to lactose 6'-phosphate, phosphogalactosidase (pbgal) to galactose 6-phosphate and glucose;
-# galactose 6-phosphate is catabolized via tagatose-1,6-bisphosphate, and glucose
-# is phosphorylated by glk.
-all: PTS pbgal lacA lacB lacC tag16P_aldolase tpi
-
-# Or, oxidation of lactose to 3'-ketolactose by a periplasmic 3-component
-# dehydrogenase, hydrolysis by a periplasmic enzyme (LacACB) to
-# 3-keto-beta-D-galactose and D-glucopyranose, and hypothetical
-# reduction of the 3-ketogalactose. Liberation of glucose is probably
-# sufficient for growth.
+# Or, lactose is oxidized to 3'-ketolactose by a periplasmic
+# 3-component dehydrogenase (lacACB'), and then hydrolyzed by a
+# periplasmic enzyme (klh) to 3-keto-beta-D-galactose and
+# D-glucopyranose, and hypothetical reduction of the
+# 3-ketogalactose. Liberation of glucose is probably sufficient for
+# growth.
 all: lacA' lacC' lacB' klh glucose-utilization

@@ -19,7 +19,7 @@
 # Burkholderia phytofirmans PsJN has BPHYT_RS24000:BPHYT_RS24015
 
 # hisPMQJ from E.coli/Salmonella and PA5125-PA5155 from Pseudomona aeruginosa.
-# A similar system in Pseudomonas fluorescens FW300-N2C3 is annotated as a lysine transporte
+# A similar system in Pseudomonas fluorescens FW300-N2C3 is annotated as a lysine transporter
 # but may well transport histidine, so it is ignored.
 hisP	L-histidine ABC transporter, ATPase component HisP	curated:CharProtDB::CH_003210	curated:SwissProt::P02915	curated:TCDB::Q9HU32	ignore:reanno::pseudo5_N2C3_1:AO356_09895
 hisM	L-histidine ABC transporter, permease component 1 (HisM)	curated:SwissProt::P0A2I7	curated:SwissProt::P0AEU3	curated:TCDB::Q9HU29	ignore:reanno::pseudo5_N2C3_1:AO356_09910
@@ -28,13 +28,13 @@ hisJ	L-histidine ABC transporter, substrate-binding component HisJ	curated:CharP
 
 # Transporters were identified using
 # query: transporter:histidine:L-histidine:his
-transport: hisP hisM hisQ hisJ
+histidine-transport: hisP hisM hisQ hisJ
 
 # PA5503-PA5505 in P. aeruginosa (MetIQN in TCDB)
 PA5503	L-histidine ABC transporter, ATPase component	curated:TCDB::Q9HT70
 PA5504	L-histidine ABC transporter, permease component	curated:TCDB::Q9HT69
 PA5505	L-histidine ABC transporter, substrate-binding component	curated:TCDB::Q9HT68
-transport: PA5503 PA5504 PA5505
+histidine-transport: PA5503 PA5504 PA5505
 
 # 5-component 2-SBP system in Acidovorax sp. GW101-3H11
 Ac3H11_2562	L-histidine ABC transporter, substrate-binding component 1	curated:reanno::acidovorax_3H11:Ac3H11_2562
@@ -42,7 +42,7 @@ Ac3H11_2561	L-histidine ABC transporter, permease component 1	curated:reanno::ac
 Ac3H11_2560	L-histidine ABC transporter, ATPase component	curated:reanno::acidovorax_3H11:Ac3H11_2560
 Ac3H11_2555	L-histidine ABC transporter, substrate-binding component 2	curated:reanno::acidovorax_3H11:Ac3H11_2555 
 Ac3H11_2554	ABC transporter for L-Histidine, permease component 2	curated:reanno::acidovorax_3H11:Ac3H11_2554 
-transport: Ac3H11_2562 Ac3H11_2561 Ac3H11_2560 Ac3H11_2555 Ac3H11_2554
+histidine-transport: Ac3H11_2562 Ac3H11_2561 Ac3H11_2560 Ac3H11_2555 Ac3H11_2554
 
 # Synechocystis sp. NatABCDE; a similar system in Anabaena is not included as it appears to use
 # some other SBP for histidine (but the non-SPB components are marked ignore)
@@ -51,29 +51,29 @@ natB	L-histidine ABC transporter, substrate-binding component NatB	curated:TCDB:
 natC	L-histidine ABC transporter, permease component 1 (NatC)	curated:TCDB::P74455	ignore:TCDB::Q8YY08
 natD	L-histidine ABC transporter, permease component 2 (NatD)	curated:TCDB::P74318	ignore:TCDB::Q8YXD0
 natE	L-histidine ABC transporter, ATPase component 2 (NatE)	curated:TCDB::P73650	ignore:TCDB::Q8YT15
-transport: natA natB natC natD natE
+histidine-transport: natA natB natC natD natE
 
 # aapJQMP from Rhizobium leguminosarum and Sinorhizobium meliloti
 aapJ	L-histidine ABC transporter, substrate-binding component AapJ	curated:reanno::Smeli:SMc02118	curated:TCDB::Q52812
 aapQ	L-histidine ABC transporter, permease component 1 (AapQ)	curated:reanno::Smeli:SMc02119	curated:TCDB::Q52813
 aapM	L-histidine ABC transporter, permease component 2 (AapM)	curated:reanno::Smeli:SMc02120	curated:TCDB::Q52814
 aapP	L-histidine ABC transporter, ATPase component AapP	curated:reanno::Smeli:SMc02121	curated:TCDB::Q52815
-transport: aapJ aapQ aapM aapP
+histidine-transport: aapJ aapQ aapM aapP
 
 # braCDEFG from Rhizobium leguminosarum is described in glutamate.steps
 import glutamate.steps:braC braD braE braF braG
-transport: braC braD braE braF braG
+histidine-transport: braC braD braE braF braG
 
-# hutVWX from Sinorhizobium meliloti, Pseudomonas fluorescens FW300-N2C3
+# hutVWX from Sinorhizobium meliloti and Pseudomonas fluorescens FW300-N2C3
 hutV	L-histidine ABC transporter, ATPase component HutV	curated:TCDB::Q9KKE1	curated:reanno::pseudo5_N2C3_1:AO356_09610
 hutW	L-histidine ABC transporter, permease component HutW	curated:reanno::pseudo5_N2C3_1:AO356_09615	curated:TCDB::Q9KKE2
 hutX	L-histidine ABC transporter, substrate-binding component HutX	curated:TCDB::Q9KKE3	curated:reanno::pseudo5_N2C3_1:AO356_09620
-transport: hutV hutW hutX
+histidine-transport: hutV hutW hutX
 
 # bgtAB from Synechocystis
 bgtA	L-histidine ABC transporter, ATPase component BgtA	curated:TCDB::P73721
 bgtB	L-histidine ABC transporter, fused substrate-binding and permease components (BgtB/BgtAB)	curated:TCDB::P73544	curated:TCDB::Q8YSA2
-transport: bgtA bgtB
+histidine-transport: bgtA bgtB
 
 # BPHYT_RS24000:BPHYT_RS24015 from Burkholderia phytofirmans PsJN is specifically
 # important for histidine utilization. (There's no fitness data for _RS24015.)
@@ -81,34 +81,34 @@ BPHYT_RS24000	L-histidine ABC transporter, substrate-binding component	uniprot:B
 BPHYT_RS24005	L-histidine ABC transporter, permease component 1	uniprot:B2TBJ7
 BPHYT_RS24010	L-histidine ABC transporter, permease component 2	uniprot:B2TBJ8
 BPHYT_RS24015	L-histidine ABC transporter, ATPase component	uniprot:B2TBJ9
-transport: BPHYT_RS24000 BPHYT_RS24005 BPHYT_RS24010 BPHYT_RS24015
+histidine-transport: BPHYT_RS24000 BPHYT_RS24005 BPHYT_RS24010 BPHYT_RS24015
 
 # Homomeric transporters
+
+permease	L-histidine permease	curated:SwissProt::A2RI97	curated:CharProtDB::CH_091109	curated:CharProtDB::CH_091412	curated:TCDB::P43059	curated:TCDB::Q46065	curated:reanno::pseudo3_N2E3:AO353_12275
+histidine-transport: permease
+
+Ga0059261_1577	L-histidine transporter	curated:reanno::Korea:Ga0059261_1577
+histidine-transport: Ga0059261_1577
+
+S15A3	L-histidine transporter	curated:SwissProt::O09014	curated:SwissProt::Q8BPX9	curated:SwissProt::Q8IY34	curated:SwissProt::Q8N697	curated:SwissProt::Q924V4
+histidine-transport: S15A3
+
+LAT2	L-histidine transporter	curated:SwissProt::Q9WVR6	curated:SwissProt::O34739	curated:TCDB::Q26594	curated:TCDB::Q9NA91
+histidine-transport: LAT2
+
+LHT	L-histidine transporter	curated:SwissProt::Q9FKS8	curated:SwissProt::Q9LRB5	curated:SwissProt::Q9SX98	curated:TCDB::Q84WE9
+histidine-transport: LHT
+
+SLC38A3	L-histidine:Na+ symporter	curated:CharProtDB::CH_091437	curated:CharProtDB::CH_091510
+histidine-transport: SLC38A3
+
+PTR2	L-histidine:H+ symporter	curated:SwissProt::P46032	curated:TCDB::Q43390
+histidine-transport: PTR2
 
 # Ignored exporters and porins, and vacuolar transporters, and mitochondrial amino acid carriers
 # MctP (TC 2.A.21.4.1) is described as a potential histidine transporter, but the evidence is weak, and homologs
 #   with fitness data do not have a relevant phenotype, so do not include.
-
-permease	L-histidine permease	curated:SwissProt::A2RI97	curated:CharProtDB::CH_091109	curated:CharProtDB::CH_091412	curated:TCDB::P43059	curated:TCDB::Q46065	curated:reanno::pseudo3_N2E3:AO353_12275
-transport: permease
-
-Ga0059261_1577	L-histidine transporter	curated:reanno::Korea:Ga0059261_1577
-transport: Ga0059261_1577
-
-S15A3	L-histidine transporter	curated:SwissProt::O09014	curated:SwissProt::Q8BPX9	curated:SwissProt::Q8IY34	curated:SwissProt::Q8N697	curated:SwissProt::Q924V4
-transport: S15A3
-
-LAT2	L-histidine transporter	curated:SwissProt::Q9WVR6	curated:SwissProt::O34739	curated:TCDB::Q26594	curated:TCDB::Q9NA91
-transport: LAT2
-
-LHT	L-histidine transporter	curated:SwissProt::Q9FKS8	curated:SwissProt::Q9LRB5	curated:SwissProt::Q9SX98	curated:TCDB::Q84WE9
-transport: LHT
-
-SLC38A3	L-histidine:Na+ symporter	curated:CharProtDB::CH_091437	curated:CharProtDB::CH_091510
-transport: SLC38A3
-
-PTR2	L-histidine:H+ symporter	curated:SwissProt::P46032	curated:TCDB::Q43390
-transport: PTR2
 
 hutH	histidine ammonia-lyase	EC:4.3.1.3
 hutU	urocanase	EC:4.2.1.49
@@ -116,12 +116,12 @@ hutI	imidazole-5-propionate hydrolase	EC:3.5.2.7
 hutG	N-formiminoglutamate formiminohydrolase	EC:3.5.3.8
 
 # In pathway I, hutH deaminates histidine to urocanate,
-# hutU hydrates it to 4-imidazolone-5-propanoate, hitI hydrolyzes it
+# hutU hydrates it to 4-imidazolone-5-propanoate, hutI hydrolyzes it
 # to N-formiminoglutamate, and hutG hydrolyzes it to formamide and
 # glutamate. Formamide can be cleaved to formate and ammonia, but it
 # could also be secreted, so this is not described. Similarly, formate
 # may be oxidized to CO2 or secreted.
-all: transport hutH hutU hutI hutG
+all: histidine-transport hutH hutU hutI hutG
 
 hutF	N-formiminoglutamate deiminase	EC:3.5.3.13
 hutG'	N-formylglutamate amidohydrolase	EC:3.5.1.68
@@ -129,4 +129,4 @@ hutG'	N-formylglutamate amidohydrolase	EC:3.5.1.68
 # Pathway II also involves conversion
 # to N-formiminoglutamate, but then it is deaminated to
 # N-formylglutamate by hutF, and hydrolyzed to formate and glutamate by hutG'.
-all: transport hutH hutU hutI hutH hutF hutG'
+all: histidine-transport hutH hutU hutI hutH hutF hutG'

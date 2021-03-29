@@ -6,24 +6,19 @@
 # and is not included in GapMind.
 
 
-
-
-
-
 # BT4105 (Q8A0B6), CA265_RS19855 (A0A1X9Z948), Pf1N1B4_5129 (A0A166QG26), and HSERO_RS23010 (D8IX31) are related
 # proteins with specific phenotypes on D-galacturonate
 exuT	D-galacturonate transporter ExuT	curated:SwissProt::P0AA78	curated:TCDB::P0AA78	curated:TCDB::P94774	uniprot:Q8A0B6	uniprot:A0A1X9Z948	uniprot:A0A166QG26	uniprot:D8IX31
 
 # Transporters were identified using
 # query: transporter:galacturonate:D-galacturonate:galaturonate:D-galaturonate:D-galactopyranuronate:CPD-12523:CPD-12524:CPD-15633
-transport: exuT
+galacturonate-transport: exuT
 
 gatA	D-galacturonate transporter gatA	curated:TCDB::A2R3H2
-transport: gatA
+galacturonate-transport: gatA
 
 PS417_04205	D-galacturonate transporter	curated:reanno::WCS417:GFF828
-transport: PS417_04205
-
+galacturonate-transport: PS417_04205
 
 
 uxaC	D-galacturonate isomerase	EC:5.3.1.12
@@ -35,7 +30,7 @@ import glucose.steps:eda
 
 # Pathway I begins with isomerization to 
 # tagaturonate (a keto sugar) by uxaC.
-all: transport uxaC uxaB uxaA kdgK eda
+all: galacturonate-transport uxaC uxaB uxaA kdgK eda
 
 udh	D-galacturonate dehydrogenase	EC:1.1.1.203
 gli	D-galactarolactone isomerase	EC:5.4.1.4
@@ -46,7 +41,7 @@ import xylose.steps:dopDH # 2,5-dioxopentanonate dehydrogenase
 
 # Pathway II begins with oxidation to galactaro-1,5-lactone by udh, isomerization to the 1,4-lactone by gli,
 # and isomerization to 5-keto-4-deoxyglucarate by gci.
-all: transport udh gli gci kdgD dopDH
+all: galacturonate-transport udh gli gci kdgD dopDH
 
 # Two families of D-galactaro-1,5-lactonase were described, uxuL and uxuF.
 # All of these proteins are active on D-glucaro-1,5-lactone as well,
@@ -63,5 +58,5 @@ garD	meso-galactarate dehydratase (L-threo-forming) GarD	EC:4.2.1.42	ignore:BREN
 # and then a dehydratase (garD) forms 5-keto-4-deoxyglucarate.
 # In both oxidative pathways, this is decarboxylated/dehydrated
 # to 2,5-dioxopentanonate and oxidized to 2-oxoglutarate.
-all: transport udh uxuL garD kdgD dopDH
+all: galacturonate-transport udh uxuL garD kdgD dopDH
  

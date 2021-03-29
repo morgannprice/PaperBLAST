@@ -1,40 +1,40 @@
 # Since fumarate is a TCA cycle intermediate, GapMind represent its uptake only.
 
 dctA	fumarate:H+ symporter DctA	curated:CharProtDB::CH_014038	curated:TCDB::P96603	curated:TCDB::Q01857	curated:TCDB::Q1J1H5	curated:TCDB::Q848I3	curated:reanno::pseudo5_N2C3_1:AO356_18980	curated:SwissProt::Q9I4F5
+
 # Transporters were identified using
 # query: transporter:fumarate.
 # Fumarate:succinate antiporters or fumarate:proton antiporters (probably for efflux) were not included.
 # Subunits of succinate dehdydrogenase/fumarate reductase were also excluded.
-transport: dctA
+fumarate-transport: dctA
 
 sdcL	fumarate:Na+ symporter SdcL	curated:TCDB::A4QAL6	curated:SwissProt::Q21339	curated:TCDB::Q2FFH9	curated:TCDB::Q65NC0	curated:TCDB::Q9KNE0	curated:SwissProt::Q99SX1	curated:SwissProt::Q93655
-transport: sdcL
+fumarate-transport: sdcL
 
 # Could not find experimental evidence for the specificity of A1JRS3, annotated in TCDB as a sulfate transporter
 dauA	fumarate transporter DauA	curated:SwissProt::P0AFR2	ignore:TCDB::A1JRS3
-transport: dauA
+fumarate-transport: dauA
 
 # Three-part TRAP transporter DctMPQ
 # In Phaeobacter inhibens, the system is important for fumarate utilization:
-# PGA1_c20660 = dctM = I7DRS6
-# PGA1_c20680 = dctP = I7END8
-# PGA1_c20670 = dctQ = I7EY26
+# PGA1_c20660 = dctM = I7DRS6,
+# PGA1_c20680 = dctP = I7END8,
+# PGA1_c20670 = dctQ = I7EY26.
 # A closely related system in SB2B transports another dicarboxylate, 2-oxoglutarate,
 # so its components are marked ignore
-
 dctM	fumarate TRAP transporter, large permease component DctM	curated:SwissProt::O07838	curated:reanno::PV4:5208943	curated:SwissProt::Q9HU16	uniprot:I7DRS6	ignore:reanno::SB2B:6938090
 
 dctP	fumarate TRAP transporter, substrate-binding component DctP	curated:SwissProt::A3QCW5	curated:SwissProt::P37735	ignore:reanno::SB2B:6938088	curated:SwissProt::Q9HU18	curated:SwissProt::Q9KQR9	uniprot:I7END8
 
 dctQ	fumarate TRAP transporter, small permease component DctQ	curated:SwissProt::O07837	curated:reanno::PV4:5208944	ignore:reanno::SB2B:6938089	uniprot:I7EY26
 
-transport: dctM dctP dctQ
+fumarate-transport: dctM dctP dctQ
 
 # O07488 is annotated in TCDB as a sulfate permease, but I did not find any data supporting this annotation
 SLC26dg	fumarate transporter SLC26dg	curated:TCDB::Q1J2S8	ignore:TCDB::O07488
-transport: SLC26dg
+fumarate-transport: SLC26dg
 
 import succinate.steps:Dshi_1194 Dshi_1195 # TRAP dicarboxylate transporter
-transport: Dshi_1194 Dshi_1195
+fumarate-transport: Dshi_1194 Dshi_1195
 
-all: transport
+all: fumarate-transport

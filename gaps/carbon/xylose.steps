@@ -54,13 +54,13 @@ araS	component of Arabinose, fructose, xylose porter	curated:TCDB::Q97UF5
 
 # Transporters were identified using
 # query: transporter:D-xylose:xylose:CPD-15377
-transport: xylT
-transport: gal2
-transport: glcP
+xylose-transport: xylT
+xylose-transport: gal2
+xylose-transport: glcP
 
-transport: xylF xylG xylH
-transport: xylF_Tm xylE_Tm xylK_Tm
-transport: araV araU araT araS
+xylose-transport: xylF xylG xylH
+xylose-transport: xylF_Tm xylE_Tm xylK_Tm
+xylose-transport: araV araU araT araS
 
 # There are also reports of xylose uptake by the mannose PTS system in Lactobacillus
 # (S. Chaillou et al, J. Bact. 1999) but with poor affinity.
@@ -107,48 +107,48 @@ dopDH	2,5-dioxopentanonate dehydrogenase	EC:1.2.1.26
 # A number of EC:4.1.2.55 enzymes are similar but are promiscuous and are likely
 # to have this activity as well. This includes uniprot:Q97U28 which is nearly identical to the
 # promiscuous uniprot:KDGA_SACSO (O54288), but is not annotated with this activity.
-DKDP_aldolase	2-dehydro-3-deoxy-D-arabinonate aldolase	EC:4.1.2.28	ignore_other:4.1.2.55
+DKDP-aldolase	2-dehydro-3-deoxy-D-arabinonate aldolase	EC:4.1.2.28	ignore_other:4.1.2.55
 
 # glycolaldehyde oxidoreductase has multiple subunits and no EC number (uniprot:Q97VI4, uniprot:Q97VI7, uniprot:Q97VI6).
 # This is an inference from close homologs from S. acidocaldarius, which
 # have demonstrated activity on glyceraldehyde-3-phosphate, glyceraldehyde, and acetaldehyde, but not
 # on glycolaldehyde itself, so there's no proof that these genes provide the activity.
 # Related enzymes in EC:1.2.99.8 are promiscuous, may well have this activity, so ignore.
-aldox_large	(glycol)aldehyde oxidoreductase, large subunit	curated:metacyc::MONOMER-18071	curated:SwissProt::Q4J6M3	ignore_other:1.2.99.8
-aldox_med	(glycol)aldehyde oxidoreductase, medium subunit	curated:metacyc::MONOMER-18072	curated:SwissProt::Q4J6M6	ignore_other:1.2.99.8
-aldox_small	(glycol)aldehyde oxidoreductase, small subunit	curated:metacyc::MONOMER-18073	curated:SwissProt::Q4J6M5	ignore_other:1.2.99.8
+aldox-large	(glycol)aldehyde oxidoreductase, large subunit	curated:metacyc::MONOMER-18071	curated:SwissProt::Q4J6M3	ignore_other:1.2.99.8
+aldox-med	(glycol)aldehyde oxidoreductase, medium subunit	curated:metacyc::MONOMER-18072	curated:SwissProt::Q4J6M6	ignore_other:1.2.99.8
+aldox-small	(glycol)aldehyde oxidoreductase, small subunit	curated:metacyc::MONOMER-18073	curated:SwissProt::Q4J6M5	ignore_other:1.2.99.8
 
-# There's also glycolaldehyde dehydrogenase, 1.2.1.21 (aldA), with a single subunit
+# There's also glycolaldehyde dehydrogenase, EC:1.2.1.21 (aldA), with a single subunit
 aldA	(glycol)aldehyde dehydrogenase	EC:1.2.1.21
 
 # The NADP based glyoxylate reductase (EC:1.1.1.79) is probably biased in the wrong direction
-# so do not include, but ignore homology to it.
+# for glycolate oxidation, so do not include, but ignore homology to it.
 gyaR	glyoxylate reductase	EC:1.1.1.26	ignore_other:1.1.1.79
 
-glycolaldehyde_dehydrogenase: aldA
-glycolaldehyde_dehydrogenase: aldox_large aldox_med aldox_small
+glycolaldehyde-dehydrogenase: aldA
+glycolaldehyde-dehydrogenase: aldox-large aldox-med aldox-small
 
 # Besides the standard enzyme, there's an archaeal enzyme that is sometimes annotated as EC:4.1.3.24,
 # but that only includes the formation of malyl-CoA, not the cleavage to malate.
 glcB	malate synthase	EC:2.3.3.9	ignore_other:4.1.3.24
 
 # C785_RS13675 = WP_039786858.1 = A0A4P7ABK7 is the DKDP 4-dehydrogenase (PMC6336799).
-DKDP_dehydrog	D-2-keto-3-deoxypentoate dehydrogenase	uniprot:A0A4P7ABK7
+DKDP-dehydrog	D-2-keto-3-deoxypentoate dehydrogenase	uniprot:A0A4P7ABK7
 
 # C785_RS20550 = WP_039788920.1 = A0A2E7P912 is the HDOP hydrolase (PMC6336799).
 # This enzyme is also similar to SM_b21112, thought to be L-2,4-diketo-3-deoxyrhamnonate hydrolase
 # and 2,4-dioxopentanoate hydrolase; it is plausible that SM_b21112 acts on HDOP as well.
 # Similarly for BPHYT_RS34210 (thought to act on 2,4-diketo-3-deoxy-L-fuconate = L-2,4-diketo-3-deoxyrhamnonate).
 # Both of these homologs are ignored.
-HDOP_hydrol	5-hydroxy-2,4-dioxopentanonate hydrolase	uniprot:A0A2E7P912	ignore:reanno::BFirm:BPHYT_RS34210	ignore:reanno::Smeli:SM_b21112
+HDOP-hydrol	5-hydroxy-2,4-dioxopentanonate hydrolase	uniprot:A0A2E7P912	ignore:reanno::BFirm:BPHYT_RS34210	ignore:reanno::Smeli:SM_b21112
 
 # In pathway I, isomerase xylA forms D-xylulose and kinase
 # xylB forms D-xylulose 5-phosphate, an intermediate in the pentose phosphate pathway.
-all: transport xylA xylB
+all: xylose-transport xylA xylB
 
 # In pathway II, the reductase xyrA forms xylitol, the dehydrogenase xdhA forms xylitol,
 # and the kinase xylB forms D-xylulose 5-phosphate. (This pathway is only reported in fungi.)
-all: transport xyrA xdhA xylB
+all: xylose-transport xyrA xdhA xylB
 
 # In pathway III or V, dehydrogenase xdh forms xylonolactone, lactonase xylC forms D-xylonate,
 # dehydratase xad forms 2-dehydro-3-deoxy-D-arabinonate,
@@ -156,15 +156,15 @@ all: transport xyrA xdhA xylB
 # dopDH forms 2-oxoglutarate, an intermediate in the TCA cycle.
 # (Pathway III has a 1,4-lactone intermediate, while pathway V has a 1,5-lactone intermediate;
 #  GapMind does not distinguish these.)
-all: transport xdh xylC xad kdaD dopDH
+all: xylose-transport xdh xylC xad kdaD dopDH
 
 # In pathway IV, xdh and xylC form D-xylonate, dehydratase xad forms 2-dehydro-3-deoxy-D-arabinonate (DKDP),
 # and an aldolase forms pyruvate and glycolaldehyde; glycolaldehyde is oxidized to glycolate and to glyoxylate,
 # and assimilated by malate synthase (glcB).
-all: transport xdh xylC xad DKDP_aldolase glycolaldehyde_dehydrogenase gyaR glcB
+all: xylose-transport xdh xylC xad DKDP-aldolase glycolaldehyde-dehydrogenase gyaR glcB
 
 # Alternatively, after DKDP is formed,
 # a dehydrogenase forms 5-hydroxy,2-4-dioxopentanonate (HDOP),
 # and a hydrolase forms pyruvate and glycolate (PMC6336799);
 # the glycolate is oxidized to glyoxylate and converted to malate.
-all: transport xdh xylC xad DKDP_dehydrog HDOP_hydrol gyaR glcB
+all: xylose-transport xdh xylC xad DKDP-dehydrog HDOP-hydrol gyaR glcB
