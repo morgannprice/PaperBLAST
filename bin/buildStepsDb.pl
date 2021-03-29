@@ -129,8 +129,52 @@ foreach my $pathwayId (sort keys %pathways) {
   my @stepList = sort { $a->{i} <=> $b->{i} } values(%$stepHash);
   my $ruleHash = $stepsObj->{rules};
   my $ruleOrder = $stepsObj->{ruleOrder};
+  my %isTransport = (); # ruleId or stepId => 1 if it is a transport reaction
+
+  # First, set isTransport for rules based on the name.
   foreach my $ruleId (@$ruleOrder) {
-    push @rules, [ $pathwayId, $ruleId ];
+    foreach my $namePart (split /-/, $ruleId) {
+      $isTransport{$ruleId} = 1
+        if $namePart eq "PTS" || $namePart eq "transport";
+    }
+  }
+
+  # Then set isTransport for children of those rules (either steps or rules)
+  my $nRound;
+  my $maxRounds = 1000;
+  for($nRound = 0; $nRound < $maxRounds; $nRound++) {
+    my $nAdd = 0;
+    foreach my $ruleId (@$ruleOrder) {
+      if (exists $isTransport{$ruleId}) {
+        foreach my $instance (@{ $ruleHash->{$ruleId} }) {
+          foreach my $component (@$instance) {
+            if (!exists $isTransport{$component}) {
+              $nAdd++;
+              $isTransport{$component} = 1;
+            }
+          }
+        }
+      }
+    }
+    last if $nAdd == 0;
+  }
+  die "Too many rounds of identifying transport reactions"
+    if $nRound >= $maxRounds;
+
+  # Also set isTransport for steps with certain words in their description.
+  # (phosphotransferase might split through, but, there are not-transporter phosphotransferases.)
+  my @transporterWords = qw{transporter PTS permease symporter antiporter uniporter porter};
+  my %transporterWords = map { $_ => 1 } @transporterWords;
+  foreach my $stepObj (@stepList) {
+    my $stepId = $stepObj->{name};
+    foreach my $word (split / /, $stepObj->{desc}) {
+      $word =~ s/,$//;
+      $isTransport{ $stepId } = 1 if exists $transporterWords{$word};
+    }
+  }
+
+  foreach my $ruleId (@$ruleOrder) {
+    push @rules, [ $pathwayId, $ruleId, $isTransport{$ruleId} || 0 ];
     my $instanceList = $ruleHash->{$ruleId};
     foreach my $instance (@$instanceList) {
       push @ruleInstances, [ $pathwayId, $ruleId, $instanceId ];
@@ -153,7 +197,7 @@ foreach my $pathwayId (sort keys %pathways) {
 
   foreach my $stepObj (@stepList) {
     my $stepId = $stepObj->{name};
-    push @steps, [ $pathwayId, $stepId, $stepObj->{desc} ];
+    push @steps, [ $pathwayId, $stepId, $stepObj->{desc}, $isTransport{$stepId} || 0 ];
     foreach my $part (@{ $stepObj->{search} }) {
       my ($type, $value) = @$part;
       push @stepParts, [ $pathwayId, $stepId, $partId, $type, $value ];
