@@ -141,6 +141,8 @@ my %markerSim = (); # orgId to list of rows
 my %knownGaps = (); # orgId => pathwayId => stepId => row (with orgId filled in)
 my %stepDesc = (); # pathwayId => stepId => desc
 
+my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-radius: 0.75em;";
+
 {
   FetchAssembly::SetFitnessBrowserPath("../fbrowse_data");
   FetchAssembly::SetPrivDir("../private");
@@ -862,9 +864,7 @@ my %stepDesc = (); # pathwayId => stepId => desc
         $alternativeShown = 1;
       }
       my ($show1, $show2) = ShowCandidatesForStep($stepScore);
-      my @td = ( a({ -style => ScoreToStyle($stepScore->{score}),
-                     -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$stepId"},
-                   i($stepId)),
+      my @td = ( StepToShortHTML($stepId, $stepScore),
                  $stepDesc{$pathSpec}{$stepId},
                  $show1, $show2 );
       if ($hasCurated) {
@@ -1683,11 +1683,16 @@ sub LegendForColorCoding() {
                 "High confidence candidates match an HMM or are over 40% similar to a characterized protein; and the alignment covers 80% of the characterized protein or the HMM; and the candidate is less similar to characterized proteins that have other functions.");
   my @showScores = map span({ -style => ScoreToStyle($_), -title => $titles[$_] },
                             ScoreToLabel($_)), (2,1,0);
-  return p("Confidence:", @showScores, br(),
-           "?", "&ndash;", "known gap:",
-           "despite the lack of a good candidate for this step,",
-           "this organism (or a related organism) performs the pathway"
-          )."\n";
+  my @parts = ("Confidence:", @showScores, br(),
+               "?", "&ndash;", "known gap:",
+               "despite the lack of a good candidate for this step,",
+               "this organism (or a related organism) performs the pathway"
+              );
+  push @parts, (br(), span({-style => $transporterStyle}, "transporter"),
+                "&ndash;", "transporters and PTS systems are shaded because",
+                "predicting their specificity is particularly challenging.")
+    if $set eq "carbon";
+  return p(@parts)."\n";
 }
 
 sub ShowWarnings($$) {
@@ -1768,8 +1773,12 @@ sub StepToShortHTML($$) {
     $showSplit = a({ -title => "In this organism, $stepId may be split across two proteins: $ids",
                      -style => "font-weight: bold;" }, "*")
   }
+  my $style = ScoreToStyle($score);
+  my ($isTransport) = $dbhS->selectrow_array("SELECT isTransport FROM Step WHERE pathwayId = ? AND stepId = ?",
+                                             {}, $pathwayId, $stepId);
+  $style .= $transporterStyle if $isTransport;
   return a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathwayId&step=$stepId",
-             -style => ScoreToStyle($score),
+             -style => $style,
              -title => $title },
            $stepId) . $showMaybe . $showSplit;
 }
@@ -1795,7 +1804,7 @@ sub SplitLoci(@) {
 sub CuratedToLink($$$) {
   my ($curatedIds, $pathwayId, $stepId) = @_;
   die "Undefined curatedIds" unless defined $curatedIds;
-  my $stepDefURL = "gapView.cgi?orgs=$orgsSpec&set=$set&showdef=1&path=$pathwayId";
+  my $stepDefURL = "gapView.cgi?orgs=$orgsSpec&set=$set&showdef=1&path=$pathwayId#$stepId";
   my $curatedDesc;
   if ($curatedIds =~ m/^curated2:(.*)$/) {
     my $protId = $1;

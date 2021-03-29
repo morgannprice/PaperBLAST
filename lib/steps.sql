@@ -18,6 +18,7 @@ CREATE TABLE Rule(
   /* Each pathway defines the rule all to achieve the entire pathway.
      Another common ruleId is "transport", for uptake of a catabolized compound */
   ruleId TEXT NOT NULL,
+  isTransport TINYINT NOT NULL,
   PRIMARY KEY (pathwayId, ruleId)
 );
 
@@ -47,6 +48,7 @@ CREATE TABLE Step(
   pathwayId TEXT NOT NULL,
   stepId TEXT NOT NULL,
   desc TEXT NOT NULL,
+  isTransport TINYINT NOT NULL,
   PRIMARY KEY (pathwayId, stepId)
 );
 
