@@ -1691,7 +1691,7 @@ sub LegendForColorCoding() {
   push @parts, (br(), span({-style => $transporterStyle}, "transporter"),
                 "&ndash;", "transporters and PTS systems are shaded because",
                 "predicting their specificity is particularly challenging.")
-    if $set eq "carbon";
+    if $set eq "carbon" && ! param('gaps');
   return p(@parts)."\n";
 }
 
