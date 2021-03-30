@@ -126,3 +126,8 @@ CREATE TABLE KnownGapMarker(
   markerSeq TEXT NOT NULL, /* amino acid sequence of that marker gene */
   PRIMARY KEY (gdb, gid, markerId)
 );
+
+CREATE TABLE Version(
+  /* An arbitrary string used to verify that a gaps database is compatible with the steps database */
+  stepsVersion TEXT NOT NULL
+);

@@ -310,6 +310,10 @@ foreach my $gdb (sort keys %markerSeq) {
 }
 SqliteImport($tmpDbFile, "KnownGapMarker", \@markerSeq);
 
+my $date = `date`;
+chomp $date;
+SqliteImport($tmpDbFile, "Version", [ [ $date ] ]);
+
 # Build the HMM table
 my $dbhS = DBI->connect("dbi:SQLite:dbname=$tmpDbFile","","",{ RaiseError => 1 }) || die $DBI::errstr;
 my $hmmInsertStatement = $dbhS->prepare(qq{ INSERT INTO HMM VALUES(?,?) });

@@ -141,7 +141,7 @@ my %markerSim = (); # orgId to list of rows
 my %knownGaps = (); # orgId => pathwayId => stepId => row (with orgId filled in)
 my %stepDesc = (); # pathwayId => stepId => desc
 
-my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-radius: 0.75em;";
+my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-radius: 0.25em;";
 
 {
   FetchAssembly::SetFitnessBrowserPath("../fbrowse_data");
@@ -155,6 +155,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
     unless NewerThan("$stepsDir/steps.db", "$stepsDir/curated.db");
   $dbhC = DBI->connect("dbi:SQLite:dbname=${stepsDir}/curated.db","","",{ RaiseError => 1 }) || die $DBI::errstr;
   $dbhS = DBI->connect("dbi:SQLite:dbname=${stepsDir}/steps.db","","",{ RaiseError => 1 }) || die $DBI::errstr;
+  my ($stepsVersion) = $dbhS->selectrow_array("SELECT stepsVersion FROM Version");
 
   ($setDesc) = $dbhS->selectrow_array("SELECT desc FROM Pathway WHERE pathwayId = 'all'");
   die "No pathway named all" unless defined $setDesc;
@@ -270,6 +271,16 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
   my $sumPre = "../tmp/$orgsSpec/$set.sum";
 
   my $alreadyBuilt = NewerThan("$sumPre.db", "$stepsDir/steps.db");
+  if ($alreadyBuilt) {
+    # Check that the gaps database is based on the correct version
+    $dbhG = DBI->connect("dbi:SQLite:dbname=${sumPre}.db","","",{ RaiseError => 1 }) || die $DBI::errstr;
+    my ($gapsVersion) = $dbhG->selectrow_array("SELECT stepsVersion FROM Version");
+    if ($gapsVersion ne $stepsVersion) {
+      $alreadyBuilt = 0;
+      $dbhG->disconnect();
+    }
+  }
+
   my $orgSetsFile = "../tmp/path.$set/orgSets.tsv";
   if (! $alreadyBuilt && -e $orgSetsFile
       && ! param("orgId")
@@ -363,6 +374,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
     }
     my $buildCmd = ["../bin/buildGapsDb.pl", "-gaps", $sumPre,
                     "-requirements", $gapReqFile,
+                    "-steps", "$stepsDir/steps.db",
                     "-out", "$sumPre.db"];
     push @$buildCmd, ("-markersim", $knownSimFile) if -e $markerFaa;
     push @cmds, $buildCmd;
@@ -390,7 +402,6 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
   %orgs = map { $_->{orgId} => $_ } @orgs;
   my $faafile = "$orgPre.faa";
   die "No such file: $faafile" unless -e $faafile;
-  $dbhG = DBI->connect("dbi:SQLite:dbname=${sumPre}.db","","",{ RaiseError => 1 }) || die $DBI::errstr;
 
   my $pathSpec = param("path");
   $pathSpec = "" if !defined $pathSpec;

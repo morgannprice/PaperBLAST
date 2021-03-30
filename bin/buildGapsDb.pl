@@ -9,22 +9,26 @@ use lib "$RealBin/../lib";
 use pbutils qw{ReadTable SqliteImport};
 
 my $usage = <<END
-buildGapsDb.pl -gaps aa.sum -requirements warningsFile -markersim aa.known.sim -out gaps.db
+buildGapsDb.pl -gaps aa.sum -requirements warningsFile -markersim aa.known.sim -steps steps.db -out gaps.db
   Given the output files from gapsummary.pl, checkGapRequirements.pl,
-  and orgsVsMarkers.pl, build a sqlite3 gaps database.
+  and orgsVsMarkers.pl, and the steps database, build a sqlite3 gaps database.
   The markersim argument is optional.
 END
 ;
 
 {
-  my ($gapsPre, $warningsFile, $markerSimFile, $outDb);
+  my ($gapsPre, $warningsFile, $markerSimFile, $stepsDb, $outDb);
   die $usage
     unless GetOptions('gaps=s' => \$gapsPre,
                       'requirements=s' => \$warningsFile,
                       'markersim=s' => \$markerSimFile,
+                      'steps=s' => \$stepsDb,
                       'out=s' => \$outDb)
       && @ARGV == 0
-      && defined $gapsPre && defined $warningsFile && defined $outDb;
+      && defined $gapsPre && defined $warningsFile && defined $stepsDb && defined $outDb;
+
+  my $dbhS = DBI->connect("dbi:SQLite:dbname=$stepsDb","","",{ RaiseError => 1 }) || die $DBI::errstr;
+  my ($stepsVersion) = $dbhS->selectrow_array("SELECT stepsVersion from Version");
 
   my $schemaFile = "$RealBin/../lib/gaps.sql";
   foreach my $file ("$gapsPre.cand", "$gapsPre.steps", "$gapsPre.rules",
@@ -92,6 +96,7 @@ END
   SqliteImport($tmpDbFile, "RuleScore", \@ruleOut);
   SqliteImport($tmpDbFile, "RequirementNotMet", \@warningOut);
   SqliteImport($tmpDbFile, "MarkerSimilarity", \@markerSimOut);
+  SqliteImport($tmpDbFile, "Version", [ [ $stepsVersion ] ]);
 
   system("cp $tmpDbFile $outDb") == 0 || die "Copying $tmpDbFile to $outDb failed: $!";
   unlink($tmpDbFile);

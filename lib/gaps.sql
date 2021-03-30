@@ -86,3 +86,8 @@ CREATE TABLE MarkerSimilarity(
   nMarkers INT NOT NULL,
   PRIMARY KEY (orgId, hitOrgId)
 );
+
+CREATE TABLE Version(
+  /* An arbitrary string used to verify that a gaps database is compatible with the steps database */
+  stepsVersion TEXT NOT NULL
+);
