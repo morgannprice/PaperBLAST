@@ -131,7 +131,7 @@ foreach my $org (@orgDir) {
     foreach my $stepObj (@{ $sumSteps{$gdb}{$gid} }) {
       my $pathwayId = $stepObj->{pathway};
       my $step = $stepObj->{step};
-      print STDERR "Curated gap $pathwayId $step for $gdb $gid ($org->{genomeName}) has score=2\n"
+      print STDERR "Curated/known gap $pathwayId $step for $gdb $gid ($org->{genomeName}) has score=2\n"
         if $stepObj->{score} eq "2"
           && exists $cgap{$gdb}{$gid}{$pathwayId}{$step};
       print STDERR "Curated gap $pathwayId $step for $gdb $gid ($org->{genomeName}) is not on the best path\n"
@@ -140,7 +140,7 @@ foreach my $org (@orgDir) {
     foreach my $ruleObj (@{ $sumRules{$gdb}{$gid} }) {
       my $pathwayId = $ruleObj->{pathway};
       next unless $ruleObj->{rule} eq "all";
-      print STDERR "Curated gap $pathwayId (no step) for $gdb $gid ($org->{genomeName}) has a high-confidence path\n"
+      print STDERR "Curated/known gap $pathwayId (no step) for $gdb $gid ($org->{genomeName}) has a high-confidence path\n"
         if $ruleObj->{nLo} == 0 && $ruleObj->{nMed} == 0
           && exists $cgap{$gdb}{$gid}{$pathwayId}{""};
     }
@@ -152,7 +152,7 @@ foreach my $cgap (@cgaps) {
   my $gdb = $cgap->{gdb};
   my $gid = $cgap->{gid};
   if (!exists $orgSeen{$gdb}{$gid}) {
-    print STDERR "Curated organism $gdb $gid ($cgap->{genomeName}) not checked\n";
+    print STDERR "Organism $gdb $gid ($cgap->{genomeName}) not checked\n";
     $orgSeen{$gdb}{$gid} = "";
   } elsif ($orgSeen{$gdb}{$gid} ne $cgap->{genomeName} && $orgSeen{$gdb}{$gid} ne "") {
     print STDERR "Inconsistent genome name for $gdb $gid\n"
