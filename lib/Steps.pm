@@ -134,7 +134,7 @@ sub ReadSteps2($$) {
             die "$importName is a step in $importFileName and a rule in $stepsFile\n"
               if exists $stepsImport->{steps}{$importName}
                 && exists $stepsImport->{steps}{$importName}{name};
-            print STDERR "Skipped redundant import of rule $importName from $importFileName\n";
+            # print STDERR "Skipped redundant import of rule $importName from $importFileName\n";
           } elsif (exists $steps->{$importName}) {
             if (exists $steps->{$importName}{imported}) {
               # Ignore potential clashes for steps that were already imported
