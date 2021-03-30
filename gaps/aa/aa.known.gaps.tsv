@@ -32,11 +32,11 @@ Chlorobaculum tepidum TLS	NCBI	GCF_000006985.1	2245	his	hisI	d__Bacteria;p__Bact
 Chlorobaculum tepidum TLS	NCBI	GCF_000006985.1	2245	ser	serA	d__Bacteria;p__Bacteroidota;c__Chlorobia;o__Chlorobiales;f__Chlorobiaceae;g__Chlorobaculum;s__Chlorobaculum tepidum
 Methanosarcina mazei Go1	NCBI	GCF_000007065.1	3317	his	hisN	d__Archaea;p__Halobacterota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina mazei
 Methanosarcina mazei Go1	NCBI	GCF_000007065.1	3317	lys	dapF	d__Archaea;p__Halobacterota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina mazei
-Methanosarcina mazei Go1	NCBI	GCF_000007065.1	3317	met	mesA	d__Archaea;p__Halobacterota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina mazei
+Methanosarcina mazei Go1	NCBI	GCF_000007065.1	3317	met	metE	d__Archaea;p__Halobacterota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina mazei
 Methanosarcina mazei Go1	NCBI	GCF_000007065.1	3317	thr	thrB	d__Archaea;p__Halobacterota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina mazei
 Methanosarcina acetivorans C2A	NCBI	GCF_000007345.1	4492	his	hisN	d__Archaea;p__Halobacterota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina acetivorans
 Methanosarcina acetivorans C2A	NCBI	GCF_000007345.1	4492	lys	dapF	d__Archaea;p__Halobacterota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina acetivorans
-Methanosarcina acetivorans C2A	NCBI	GCF_000007345.1	4492	met	mesA	d__Archaea;p__Halobacterota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina acetivorans
+Methanosarcina acetivorans C2A	NCBI	GCF_000007345.1	4492	met	metE	d__Archaea;p__Halobacterota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina acetivorans
 Methanosarcina acetivorans C2A	NCBI	GCF_000007345.1	4492	thr	thrB	d__Archaea;p__Halobacterota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina acetivorans
 Methylococcus capsulatus Bath	NCBI	GCF_000008325.1	2926	thr	thrB	d__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Methylococcales;f__Methylococcaceae;g__Methylococcus;s__Methylococcus capsulatus
 Methanothermobacter thermautotrophicus Delta H	NCBI	GCF_000008645.1	1756	his	hisN	d__Archaea;p__Euryarchaeota;c__Methanobacteria;o__Methanobacteriales;f__Methanothermobacteriaceae;g__Methanothermobacter;s__Methanothermobacter thermautotrophicus
@@ -135,7 +135,7 @@ Nitratifractor salsuginis DSM 16511	NCBI	GCF_000186245.1	2075	ser	serC	d__Bacter
 Methanobacterium lacus AL-21	NCBI	GCF_000191585.1	2451	his	hisN	d__Archaea;p__Euryarchaeota;c__Methanobacteria;o__Methanobacteriales;f__Methanobacteriaceae;g__Methanobacterium_B;s__Methanobacterium_B lacus
 Methanobacterium lacus AL-21	NCBI	GCF_000191585.1	2451	thr	thrB	d__Archaea;p__Euryarchaeota;c__Methanobacteria;o__Methanobacteriales;f__Methanobacteriaceae;g__Methanobacterium_B;s__Methanobacterium_B lacus
 Archaeoglobus veneficus SNP6	NCBI	GCF_000194625.1	2055	his	hisN	d__Archaea;p__Halobacterota;c__Archaeoglobi;o__Archaeoglobales;f__Archaeoglobaceae;g__Archaeoglobus_C;s__Archaeoglobus_C veneficus
-Archaeoglobus veneficus SNP6	NCBI	GCF_000194625.1	2055	met	mesA	d__Archaea;p__Halobacterota;c__Archaeoglobi;o__Archaeoglobales;f__Archaeoglobaceae;g__Archaeoglobus_C;s__Archaeoglobus_C veneficus
+Archaeoglobus veneficus SNP6	NCBI	GCF_000194625.1	2055	met	metE	d__Archaea;p__Halobacterota;c__Archaeoglobi;o__Archaeoglobales;f__Archaeoglobaceae;g__Archaeoglobus_C;s__Archaeoglobus_C veneficus
 Archaeoglobus veneficus SNP6	NCBI	GCF_000194625.1	2055	pro	cyclodeaminase	d__Archaea;p__Halobacterota;c__Archaeoglobi;o__Archaeoglobales;f__Archaeoglobaceae;g__Archaeoglobus_C;s__Archaeoglobus_C veneficus
 Archaeoglobus veneficus SNP6	NCBI	GCF_000194625.1	2055	thr	thrB	d__Archaea;p__Halobacterota;c__Archaeoglobi;o__Archaeoglobales;f__Archaeoglobaceae;g__Archaeoglobus_C;s__Archaeoglobus_C veneficus
 Desulfobacca acetoxidans DSM 11109	NCBI	GCF_000195295.1	2882	cys	cysE	d__Bacteria;p__Desulfobacterota;c__Desulfobaccia;o__Desulfobaccales;f__Desulfobaccaceae;g__Desulfobacca;s__Desulfobacca acetoxidans
@@ -144,7 +144,7 @@ Desulfobacca acetoxidans DSM 11109	NCBI	GCF_000195295.1	2882	his	hisN	d__Bacteri
 Desulfobacca acetoxidans DSM 11109	NCBI	GCF_000195295.1	2882	thr	thrB	d__Bacteria;p__Desulfobacterota;c__Desulfobaccia;o__Desulfobaccales;f__Desulfobaccaceae;g__Desulfobacca;s__Desulfobacca acetoxidans
 Methanosarcina barkeri Fusaro	NCBI	GCF_000195895.1	3748	his	hisN	d__Archaea;p__Halobacterota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina barkeri_B
 Methanosarcina barkeri Fusaro	NCBI	GCF_000195895.1	3748	lys	dapF	d__Archaea;p__Halobacterota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina barkeri_B
-Methanosarcina barkeri Fusaro	NCBI	GCF_000195895.1	3748	met	mesA	d__Archaea;p__Halobacterota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina barkeri_B
+Methanosarcina barkeri Fusaro	NCBI	GCF_000195895.1	3748	met	metE	d__Archaea;p__Halobacterota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina barkeri_B
 Methanosarcina barkeri Fusaro	NCBI	GCF_000195895.1	3748	thr	thrB	d__Archaea;p__Halobacterota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina barkeri_B
 Trichormus variabilis ATCC 29413	NCBI	GCF_000204075.1	5604	his	hisN	d__Bacteria;p__Cyanobacteria;c__Cyanobacteriia;o__Cyanobacteriales;f__Nostocaceae;g__Trichormus;s__Trichormus variabilis
 Trichormus variabilis ATCC 29413	NCBI	GCF_000204075.1	5604	ile	ilvE	d__Bacteria;p__Cyanobacteria;c__Cyanobacteriia;o__Cyanobacteriales;f__Nostocaceae;g__Trichormus;s__Trichormus variabilis
@@ -157,7 +157,7 @@ Pyrolobus fumarii 1A	NCBI	GCF_000223395.1	1906	his	hisN	d__Archaea;p__Crenarchae
 Pyrolobus fumarii 1A	NCBI	GCF_000223395.1	1906	ile	ilvI	d__Archaea;p__Crenarchaeota;c__Thermoprotei;o__Desulfurococcales;f__Pyrodictiaceae;g__Pyrolobus;s__Pyrolobus fumarii
 Pyrolobus fumarii 1A	NCBI	GCF_000223395.1	1906	leu	ilvI	d__Archaea;p__Crenarchaeota;c__Thermoprotei;o__Desulfurococcales;f__Pyrodictiaceae;g__Pyrolobus;s__Pyrolobus fumarii
 Pyrolobus fumarii 1A	NCBI	GCF_000223395.1	1906	met	hom	d__Archaea;p__Crenarchaeota;c__Thermoprotei;o__Desulfurococcales;f__Pyrodictiaceae;g__Pyrolobus;s__Pyrolobus fumarii
-Pyrolobus fumarii 1A	NCBI	GCF_000223395.1	1906	met	mesA	d__Archaea;p__Crenarchaeota;c__Thermoprotei;o__Desulfurococcales;f__Pyrodictiaceae;g__Pyrolobus;s__Pyrolobus fumarii
+Pyrolobus fumarii 1A	NCBI	GCF_000223395.1	1906	met	metE	d__Archaea;p__Crenarchaeota;c__Thermoprotei;o__Desulfurococcales;f__Pyrodictiaceae;g__Pyrolobus;s__Pyrolobus fumarii
 Pyrolobus fumarii 1A	NCBI	GCF_000223395.1	1906	pro	cyclodeaminase	d__Archaea;p__Crenarchaeota;c__Thermoprotei;o__Desulfurococcales;f__Pyrodictiaceae;g__Pyrolobus;s__Pyrolobus fumarii
 Pyrolobus fumarii 1A	NCBI	GCF_000223395.1	1906	ser	serB	d__Archaea;p__Crenarchaeota;c__Thermoprotei;o__Desulfurococcales;f__Pyrodictiaceae;g__Pyrolobus;s__Pyrolobus fumarii
 Pyrolobus fumarii 1A	NCBI	GCF_000223395.1	1906	thr	hom	d__Archaea;p__Crenarchaeota;c__Thermoprotei;o__Desulfurococcales;f__Pyrodictiaceae;g__Pyrolobus;s__Pyrolobus fumarii
