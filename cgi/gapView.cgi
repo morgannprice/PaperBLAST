@@ -489,7 +489,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
   my @ruleScoreLabels = ("has a gap", "may have a gap", "all steps were found");
 
   my @links = ();     # a list of items to put inside li at the bottom
-  if ($pathSpec ne "" && param("showdef") eq "literal") {
+  if ($pathSpec ne "" && param("showdef") && param("showdef") eq "literal") {
     # mode: Show the definition of this pathway, as literal raw contents
     print p("As text, or see",
             a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=$pathSpec&showdef=1" },
@@ -765,6 +765,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
       my $all = $pathwayScore{$pathwayId}
         || die "Missing result for rule = all, $pathwayId, orgId = $orgId";
       $all->{minScore} = RuleToMinScore($all); # 0, 1, or 2
+      $all->{n} = $all->{nHi} + $all->{nMed} + $all->{nLo};
       push @allSorted, $all;
     }
     my $baseURL = "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId";
