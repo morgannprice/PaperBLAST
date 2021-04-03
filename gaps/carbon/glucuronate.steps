@@ -58,6 +58,7 @@ all: glucuronate-transport udh gci 5-dehydro-4-deoxyglucarate-degradation
 # This lactonase is similar to galactaro-1,5-lactonases
 # (i.e., PS417_17365), so it probably acts on the 1,5-lactone, but this is not proven.
 PP_1170	D-glucaro-1,5-lactonase	uniprot:Q88NN7	ignore:reanno::WCS417:GFF3393
+
 gudD	D-glucarate dehydratase	EC:4.2.1.40
 
 # In P. putida, genetic data suggests that the lactone is hydrolyzed
