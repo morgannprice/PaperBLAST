@@ -271,15 +271,6 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
   my $sumPre = "../tmp/$orgsSpec/$set.sum";
 
   my $alreadyBuilt = NewerThan("$sumPre.db", "$stepsDir/steps.db");
-  if ($alreadyBuilt) {
-    # Check that the gaps database is based on the correct version
-    $dbhG = DBI->connect("dbi:SQLite:dbname=${sumPre}.db","","",{ RaiseError => 1 }) || die $DBI::errstr;
-    my ($gapsVersion) = $dbhG->selectrow_array("SELECT stepsVersion FROM Version");
-    if ($gapsVersion ne $stepsVersion) {
-      $alreadyBuilt = 0;
-      $dbhG->disconnect();
-    }
-  }
 
   my $orgSetsFile = "../tmp/path.$set/orgSets.tsv";
   if (! $alreadyBuilt && -e $orgSetsFile
@@ -301,6 +292,16 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
         $alreadyBuilt = 1;
         param("orgId", $orgId); # orgId is initialized below
       }
+    }
+  }
+
+  if ($alreadyBuilt) {
+    # Verify that the gaps database is based on the correct version
+    $dbhG = DBI->connect("dbi:SQLite:dbname=${sumPre}.db","","",{ RaiseError => 1 }) || die $DBI::errstr;
+    my ($gapsVersion) = $dbhG->selectrow_array("SELECT stepsVersion FROM Version");
+    if ($gapsVersion ne $stepsVersion) {
+      $alreadyBuilt = 0;
+      $dbhG->disconnect();
     }
   }
 
