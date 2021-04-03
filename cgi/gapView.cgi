@@ -1321,6 +1321,11 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
   }
   push @links, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set"}, "All $nOrgs genomes and all pathways")
     unless ($orgId eq "" && $pathSpec eq "" && !param('gaps')) || @orgs == 1;
+  my $otherSet = $set eq "aa" ? "carbon" : "aa";
+  my $otherSetDesc = $otherSet eq "aa" ? "amino acid biosynthesis" : "catabolism of small carbon sources";
+  my $otherSetURL = "gapView.cgi?orgs=$orgsSpec&set=$otherSet";
+  $otherSetURL .= "&orgId=$orgId" if $orgId ne "";
+  push @links, a({ -href => $otherSetURL  }, "GapMind for $otherSetDesc");
 
   print h3("Links"), start_ul(), li(\@links), end_ul
     if @links > 0;
@@ -1532,11 +1537,12 @@ sub OrgIdToURL($) {
 sub Finish() {
   my $set = param("set") || "aa";
   my $otherSet = $set eq "aa" ? "carbon" : "aa";
-  my $otherDesc = $otherSet eq "aa" ? "GapMind for amino acid biosynthesis" : "GapMind for catabolism of small carbon sources (beta)";
+  my $otherDesc = $otherSet eq "aa" ? "GapMind for amino acid biosynthesis" : "GapMind for catabolism of small carbon sources";
   print
     h3("Related tools"),
-    start_ul(),
-    li(a{ -href => "gapView.cgi?set=$otherSet" }, $otherDesc),
+    start_ul();
+  print li(a{ -href => "gapView.cgi?set=$otherSet" }, $otherDesc) if $orgsSpec eq "";
+  print
     li(a({ -href => "litSearch.cgi" }, "PaperBLAST: Find papers about a protein or its homologs")),
     li(a({ -href => "genomeSearch.cgi", -title => "Search a genome for proteins that are related to a query term" },
          "Curated BLAST for Genomes")),
