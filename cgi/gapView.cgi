@@ -1203,7 +1203,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
                                              AND (locusId = ? OR locusId2 = ?) },
                                          { Slice => {} }, $pathSpec, $stepSpec, $orgId, $locusSpec, $locusSpec);
     foreach my $cand (@$cand) {
-      if ($cand->{blastBits} > 0) {
+      if ($cand->{blastBits} ne "" && $cand->{blastBits} > 0) {
         my $curatedIds = $cand->{curatedIds};
         my @loci = (); # locusId, sysName, desc
         push @loci, [ $cand->{locusId}, $cand->{sysName}, $cand->{desc} ];
