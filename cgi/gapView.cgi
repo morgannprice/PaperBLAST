@@ -1542,7 +1542,7 @@ sub Finish() {
   print
     h3("Related tools"),
     start_ul();
-  print li(a{ -href => "gapView.cgi?set=$otherSet" }, $otherDesc) if $orgsSpec eq "";
+  print li(a{ -href => "gapView.cgi?set=$otherSet" }, $otherDesc) if !defined $orgsSpec || $orgsSpec eq "";
   print
     li(a({ -href => "litSearch.cgi" }, "PaperBLAST: Find papers about a protein or its homologs")),
     li(a({ -href => "genomeSearch.cgi", -title => "Search a genome for proteins that are related to a query term" },
