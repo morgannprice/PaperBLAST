@@ -8,7 +8,6 @@ There are two phases for running GapMind: converting the pathway
 descriptions to a list of queries (which you need not do yourself),
 and using the queries files to analyze genomes.
 
-
 To analyze genomes:
 
 Put the blast executables (formatdb, blastall, and fastacmd) in the
@@ -23,9 +22,11 @@ subdirectory. I am currently using HMMER 3.1b2.
 Make sure the steps files are up to date (i.e. from the gaps/aa/
 subdirectory in github).
 
-Download the queries and database files from
-http://papers.genomics.lbl.gov/tmp/path.aa/aa.resources.tar.gz
-or compute them yourself as described in the next section.
+Download the curated and steps databases, i.e. from
+  https://papers.genomics.lbl.gov/tmp/path.aa/curated.db
+  https://papers.genomics.lbl.gov/tmp/path.aa/steps.db
+for amino acid biosynthesis, and put them into tmp/path.aa
+or tmp/path.carbon
 
 Format the database of characterized proteins for BLAST and
 usearch:
@@ -52,7 +53,6 @@ each step.
 Optionally, use bin/checkGapRequirements.pl to check dependencies
 between pathways.
 
-
 To run the analysis using the CGI scripts:
 
 Make sure the perl module DB_File is installed. (This depends on BerkeleyDB)
@@ -68,26 +68,13 @@ proteins (from the characterized subset of PaperBLAST), and a
 supplementary set of curated mostly-uncharacterized proteins (from
 Swiss-Prot).
 
-If you have the PaperBLAST database and the ind/uniprot_sprot.dat.gz
-file from downloading Swiss-Prot, then you can set up the various
-databases that are needed by running:
+If you have the PaperBLAST database (usually in data/) and the
+ind/uniprot_sprot.dat.gz file from downloading Swiss-Prot, then you
+can set up the various databases that are needed by running:
 
-nice bin/setupGaps.pl  -ind ind -data paperblast_data_directory -out tmp/path.setname
+nice bin/setupGaps.pl  -ind ind -set setname -data data
 
-where setname would be aa for the amino acid biosynthesis pathways and
-tmp/ is relative to the code base.
-
-Alternatively, you can download curated.faa and curated.faa.info as described
-above and build BLAST and usearch
-databases with formatdb and usearch -makeudb_ublast as described
-above. Then download the Swiss-Prot data file and use
-
-zcat ind/uniprot_sprot.dat.gz | bin/sprotCuratedEc.pl > curated2.tmp
-bin/usearch -cluster_fast curated2.tmp -id 0.6 -uc curated2.tmp.uc
-bin/clusterEc.pl curated2.tmp curated2.tmp.uc > tmp/path.aa/curated2.faa
-
-sprotCuratedEc.pl relies on the swissknife perl library, which must be
-available via lib/SWISS/SWISS/*.pm.
+where setname would be aa for the amino acid biosynthesis pathways
 
 Converting steps to queries also requires two databases of HMMs: PFam
 and TIGRFam. Put these in the hmm/ directory (relative to the code
@@ -103,27 +90,17 @@ For PFam, use this command to make the table:
 
 perl -e 'print "acc\tname\n"; while(<STDIN>) { chomp; $name = $1 if m/^NAME\s+(.*)$/; $acc = $1 if m/^ACC\s+(.*)$/; next unless $_ eq "//"; print "$acc\t$name\n" if $name && $acc; $name = undef; $acc = undef; }' < hmm/Pfam-A.hmm > hmm/pfam.tab
 
-
 Once you have setup curated.faa*, curated2.faa, pfam, and tigrfam, you
-can run gapquery.pl for each pathway, i.e. for met synthesis run
+can compute the queries and build the steps database, i.e.
 
-bin/gapquery.pl -hmmdir hmm -steps gaps/aa/met.steps -outdir tmp/path.aa
+bin/buildStepsDb.pl -set carbon -doquery
 
-You should now be ready to run gapsearch.pl. If you are using CGI scripts to run the analysis, also use
-
-touch path.setname/date
-
-to indicate that the pathway definition has been compiled. If using the CGI scripts, you should also run
-
-(cd tmp/path.setname && tar czf aa.resources.tar.gz *.query *.hmm curated.faa curated.faa.info)
-
-so that others can download the database versions you used.
-
+You should now be ready to run gapsearch.pl or gapView.cgi.
 
 To define your own set of pathways:
 
 Choose a new setname ("aa" is the existing setname for amino acid
-biosynthesis) and create a new gaps/setname directory in the suorce
+biosynthesis) and create a new gaps/setname directory in the source
 code base.
 
 For each pathway, create a pathway.steps file. There is some
@@ -135,8 +112,7 @@ pathwayId and desc. It should include a row for each pathwayId that
 has a pathwayId.steps file and for pathwayId = all. For an example,
 see gaps/aa/aa.table
 
-If you will be using gapView.cgi to view the results, create a
-tab-delimited file of curated gaps in
+Optional -- create a tab-delimited file of curated gaps in
 gaps/setname/setname.curated.gaps.tsv. It must have a header line the
 fields gdb gid pathway step class comment. (gdb is the genome
 database, such as "NCBI", and gid is the genome identifier.) There
