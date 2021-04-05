@@ -7,7 +7,7 @@
 #    this pathway
 #
 # Optional arguments:
-# path -- which pathway is under consideration
+# path -- which pathway is under consideration (required if any ids are from UniProt)
 
 use strict;
 use CGI qw(:standard Vars start_ul end_ul);
@@ -37,34 +37,15 @@ die "Invalid set $set: no $queryPath directory" unless -d $queryPath;
 my @ids = param('ids');
 die "Must specify at least two identifiers" unless @ids > 1;
 
-my $curatedFaa = "$queryPath/curated.faa";
-die "No such file: $curatedFaa" unless -e $curatedFaa;
-my @curatedInfo = ReadTable("$curatedFaa.info", ["ids","length","descs"]);
-my %curatedInfo = map { $_->{ids} => $_ } @curatedInfo;
+my $curatedDb = "$queryPath/curated.db";
+die "No such file: $curatedDb" unless -e $curatedDb;
+my $dbhC = DBI->connect("dbi:SQLite:dbname=$curatedDb","","",{ RaiseError => 1 }) || die $DBI::errstr;
+my $stepsDb = "$queryPath/steps.db";
+my $dbhS = DBI->connect("dbi:SQLite:dbname=$stepsDb","","",{ RaiseError => 1 }) || die $DBI::errstr;
 
 my $pathSpec = param('path') || "";
 die "Invalid pathspec $pathSpec" unless $pathSpec =~ m/^[a-zA-Z_0-9-]*$/;
-my ($steps, $banner, $bannerURL);
-my %uniprot = (); # UniProt::id => hash that includes desc and sequence
-if ($pathSpec ne "") {
-  $steps = ReadSteps("../gaps/$set/$pathSpec.steps");
-  my @pathInfo = ReadTable("$stepPath/$set.table", ["pathwayId","desc"]);
-  my %pathInfo = map { $_->{pathwayId} => $_ } @pathInfo;
-  $banner = "GapMind for " . ($pathInfo{all}{desc} || "pathways");
-  $bannerURL = "gapView.cgi";
-  my @querycol = qw{step type query desc file sequence};
-  my @queries = ReadTable("$queryPath/$pathSpec.query", \@querycol);
-  foreach my $q (grep { $_->{type} eq 'uniprot' } @queries) {
-    my $id = "UniProt::" . $q->{query};
-    $uniprot{$id} = $q;
-    $curatedInfo{$id} = { 'ids' => $id, 'descs' => $q->{desc}, 'length' => length($q->{sequence}) };
-  }
-}
-
-my $hetFile = "$queryPath/hetero.tab";
-die "No such file: $hetFile" unless -e $hetFile;
-my @het = ReadTable($hetFile, ["db","protId","comment"]);
-my %hetComment = map { $_->{db} . "::" . $_->{protId} => $_->{comment} } @het;
+my ($banner, $bannerURL);
 
 my $blastall = "../bin/blast/blastall";
 my $formatdb = "../bin/blast/formatdb";
@@ -74,31 +55,39 @@ foreach my $x ($blastall,$formatdb) {
 
 my $tmpPre = "/tmp/curatedSim.$$";
 
+my ($setDesc) = $dbhS->selectrow_array("SELECT desc FROM Pathway WHERE pathwayId = 'all'");
+
 start_page('title' => 'Similarities of Characterized Proteins',
            'banner' => $banner, 'bannerURL' => $bannerURL);
 autoflush STDOUT 1; # show preliminary results
 
-die "$curatedFaa.db is not up to date"
-  unless NewerThan("$curatedFaa.db", $curatedFaa);
-
-# Fetch curated sequences
-my %seqsAll;
-tie %seqsAll, "DB_File", "$curatedFaa.db", O_RDONLY, 0666, $DB_HASH
-  || die "Cannot open file $curatedFaa.db -- $!";
-# Some sequences are in the query file, and not from curated.faa
-my %uniprotSeq = ();
-
 my %seqs = ();
+my %curatedInfo = ();
 foreach my $ids (@ids) {
-  if (exists $seqsAll{$ids}) {
-    $seqs{$ids} = $seqsAll{$ids};
-  } elsif (exists $uniprot{$ids}) {
-    $seqs{$ids} = $uniprot{$ids}{sequence};
+  if ($ids =~ m/^UniProt::(.*)$/) {
+    my $uniprotId = $1;
+    die "Cannot handle uniprot inputs unless path is set" if $pathSpec eq "";
+    my $row = $dbhS->selectrow_hashref(qq{ SELECT * FROM StepQuery
+                                        WHERE pathwayId = ?
+                                        AND queryType = "uniprot"
+                                        AND uniprotId = ? },
+                                       {}, $pathSpec, $uniprotId);
+    die "Unknown uniprotId $uniprotId in pathway $pathSpec" unless defined $row;
+    $seqs{$ids} = $row->{seq};
+    # Fake a row from CuratedInfo
+    $curatedInfo{$ids} = { 'curatedIds' => $ids, 'seqLength' => length($row->{seq}),
+                           'descs' => $row->{desc}, 'ids2s' => $uniprotId, 'orgs' => "" };
   } else {
-    die "Unknown ids $ids";
+    my ($seq) = $dbhC->selectrow_array("SELECT seq FROM CuratedSeq WHERE curatedIds = ?",
+                                       {}, $ids);
+    die "No sequence for $ids" unless defined $seq;
+    $seqs{$ids} = $seq;
+    my $row = $dbhC->selectrow_hashref("SELECT * FROM CuratedInfo WHERE curatedIds = ?",
+                                       {}, $ids);
+    die "Unknown curated ids $ids" unless defined $row;
+    $curatedInfo{$ids} = $row;
   }
 }
-untie %seqs;
 
 print p("Comparing", scalar(keys %seqs), "sequences");
 
@@ -211,10 +200,13 @@ sub CompoundInfoToHtml($$$) {
   my @descs = split /;; /, $info->{descs};
   my @orgs = split /;; /, $info->{orgs} if defined $info->{orgs};
   my @id2s = split /;; /, $info->{id2s} if defined $info->{id2s};
-
   die "Mismatched length of ids and descs" unless scalar(@ids) == scalar(@descs);
-  my $len = $info->{length};
+  my $len = $info->{seqLength};
   die unless $len;
+  my ($hetComment) = $dbhC->selectrow_array("SELECT comment FROM Hetero WHERE curatedIds = ?",
+                                            {}, $compoundId);
+
+
   my @genes;
   for (my $i = 0; $i < @ids; $i++) {
     my $id = $ids[$i];
@@ -228,8 +220,8 @@ sub CompoundInfoToHtml($$$) {
     $gene->{organism} = $orgs[$i] if @orgs > 0;
     AddCuratedInfo($gene);
     $gene->{HTML} = GeneToHtmlLine($gene);
-    $gene->{HTML} .= " (" . a({ -title => $hetComment{$id} }, "heteromeric") . ")"
-      if exists $hetComment{$id};
+    $gene->{HTML} .= " (" . a({ -title => $hetComment }, "heteromeric") . ")"
+      if defined $hetComment;
     push @genes, $gene;
   }
   @genes = sort { $a->{priority} <=> $b->{priority} } @genes;
