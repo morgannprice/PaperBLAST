@@ -50,7 +50,7 @@ paaZ2	3-oxo-5,6-didehydrosuberyl-CoA semialdehyde dehydrogenase	EC:1.2.1.91	igno
 
 # PaaJ is a thiolase with two activities that are linked to two different EC numbers, so it is
 # listed twice, as paaJ1 and paaJ2.
-# The product of the first thiolase reaction should be 3,4-dihydroadipyl-CoA, not 2,3-dihydro-,
+# The product of the first thiolase reaction should be 3,4-dehydroadipyl-CoA, not 2,3-dehydro-,
 # so there is probably a second isomerization step, which might be catalyzed by paaG or by paaJ itself.
 # In Burkholderia phytofirmans PsJN, this enzyme is BPHYT_RS17345 (uniprot:B2SYZ2).
 # In Paraburkholderia bryophila 376MFSha3.1, it is H281DRAFT_05723 (uniprot:A0A2Z5MFE9).
@@ -64,7 +64,7 @@ paaJ1	3-oxo-5,6-dehydrosuberyl-CoA thiolase	EC:2.3.1.223	ignore_other:2.3.1.174	
 # BPHYT_RS17335 was misannotated, it is ech.
 # H281DRAFT_04594 (A0A2Z5MCI7) from Paraburkholderia bryophila 376MFSha3.1 is required for phenylacetate utilization
 # and is distantly related to E. coli paaF.
-paaF	2,3-dihydroadipyl-CoA hydratase	curated:BRENDA::P76082	curated:metacyc::MONOMER-15953	ignore:reanno::BFirm:BPHYT_RS17335	uniprot:A0A2Z5MCI7
+paaF	2,3-dehydroadipyl-CoA hydratase	curated:BRENDA::P76082	curated:metacyc::MONOMER-15953	ignore:reanno::BFirm:BPHYT_RS17335	uniprot:A0A2Z5MCI7
 
 # This step is described by 1.1.1.35, a broader term for 3-hydroxyacyl-CoA dehydrogenases
 # HP15_2693 (GFF2749) is involved in phenylalanine degradation via phenylacetyl-CoA and
@@ -205,7 +205,7 @@ benzoyl-CoA-degradation: benzoyl-CoA-reductase Ch1CoA badK badH badI pimD pimC p
 # Benzoyl-CoA degradation can be degraded aerobically (metacyc:PWY-1361)
 # by an epoxidase (boxAB) that forms 2,3-epoxy-2-3-dihydrobenzoyl-CoA; a
 # dihydrolase forms cis-3,4-dihydroadipyl-CoA semialdehyde and
-# formate; a dehydrogenaes forms cis-3,4-dehydroadipyl-CoA; and an
+# formate; a dehydrogenase forms cis-3,4-dehydroadipyl-CoA; and an
 # unknown isomerase forms trans-2,3-dehydroadipyl-CoA. This is
 # converted to succinyl-CoA as in the anaerobic pathway (paaF,
 # paaH, and paaJ2).
@@ -217,7 +217,7 @@ benzoyl-CoA-degradation: boxA boxB boxC boxD paaF paaH paaJ2
 # 3-oxo-5,6-didehydrosuberyl-CoA semialdehyde, a dehydrogenase forms
 # 3-oxo-5,6-didehydrosuberyl-CoA, a thiolase forms
 # trans-2,3-dehydroadipyl-CoA and acetyl-CoA, a hydratase forms
-# (3S)-hydroxyadipyl-CoA, a dehydrogenaes forms 3-oxoadipyl-CoA, and a
+# (3S)-hydroxyadipyl-CoA, a dehydrogenase forms 3-oxoadipyl-CoA, and a
 # thiolase forms succinyl-CoA and acetyl-CoA.
 phenylacetyl-CoA-degradation: paaA paaB paaC paaE paaG paaZ1 paaZ2 paaJ1 paaF paaH paaJ2
 

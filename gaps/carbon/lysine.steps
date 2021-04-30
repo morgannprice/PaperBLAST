@@ -186,7 +186,7 @@ all: lysine-transport lat amaB L-2-aminoadipate-degradation
 
 lysDH	L-lysine 6-dehydrogenase	EC:1.4.1.18
 
-# In pathway VIII, L-lysine 6-dehydroganse (lysDH)
+# In pathway VIII, L-lysine 6-dehydrogenase (lysDH)
 # forms (S)-2-amino-6-oxohexanoate, which spontaenously dehydrates to
 # 1-piperideine 6-carboxylate, and a dehydrogenase forms
 # L-2-aminoadipate.
