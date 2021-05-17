@@ -4,10 +4,12 @@
 # from the BioLip web site
 use strict;
 
-chdir "BioLiP_updated_set" || die;
+chdir "BioLiP_updated_set" || die "No such subdirectory: BioLiP_updated_set";
 
 my $head= "http://zhanglab.ccmb.med.umich.edu/BioLiP/weekly";
 my $address="http://zhanglab.ccmb.med.umich.edu/BioLiP/weekly.html";
+unlink("log");
+unlink("weekly.html");
 system("wget -o log -c $address") == 0 or die "System call failed: $!";
 
 
