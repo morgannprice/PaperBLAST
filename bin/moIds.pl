@@ -8,9 +8,9 @@ die "Usage: moIds.pl < words > words.filtered\n"
 
 {
     GenomicsUtils::connect('-host' => $ENV{MO_HOST} || 'pub.microbesonline.org',
-                           '-user' => 'guest',
-                           '-pass' => 'guest',
-                           '-dbname' => 'genomics')
+                           '-user' => 'test',
+                           '-pass' => 'test',
+                           '-dbname' => 'genomics_test')
         || die "Cannot connect to pub.microbesonline.org";
     my $rows;
     # type 1 for standard locus tag
