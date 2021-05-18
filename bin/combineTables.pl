@@ -3,6 +3,7 @@ use strict;
 use Getopt::Long;
 
 my $usage = <<END
+combineTables.pl -in table1 ... tableN -out tableCombined
 combineTables.pl -in table1 ... tableN > tableCombined
   Combines one or more tables with headers.
   Requires that all input table have identical header lines.
@@ -10,9 +11,12 @@ END
 ;
 
 my @infiles;
+my $outFile = "/dev/stdout";
 die $usage
-  unless GetOptions('in=s{1,}' => \@infiles)
+  unless GetOptions('in=s{1,}' => \@infiles, 'out=s' => \$outFile)
   && @ARGV == 0;
+
+open(my $fhOut, ">", $outFile) || die "Cannot write to $outFile\n";
 
 my $headerFirst;
 foreach my $file (@infiles) {
@@ -24,11 +28,13 @@ foreach my $file (@infiles) {
     die "Header line for $file does not match $infiles[0]\n"
       unless $headerThis eq $headerFirst;
   } else {
-    print $headerThis;
+    print $fhOut $headerThis;
     $headerFirst = $headerThis;
   }
   while(my $line = <$fh>) {
-    print $line;
+    print $fhOut $line;
   }
   close($fh) || die "Error reading $file";
 }
+close($fhOut) || die "Error writing to $outFile";
+
