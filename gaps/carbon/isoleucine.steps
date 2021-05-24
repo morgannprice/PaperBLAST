@@ -3,29 +3,32 @@
 # The other pathways are fermentative and do not lead to carbon incorporation
 # (metacyc:PWY-5078, metacyc:PWY-8184).
 
-# E. coli livFGHMJ or livFGHMK (livK and livJ are alternate SBPs);
-#   and the related system livJFGHM from Streptococcus pneumoniae;
-#   and the related system braCDEFG from Pseudomonas aeruginosa (braC is the SBP);
-#   and the related system braDEFG/braC3 from R. leguminosarum; braC3 (RL3540; Q1MDE9) is a secondary
-#     SBP that transports leucine/isoleucine/valine/alanine (PMID:19597156); the
-#     proximal braC might also transport isoleucine, not sure if this is known, so exclude it (Q9L3M3)
+# E. coli livFGHMJ or livFGHMK (livK and livJ are alternate SBPs).
+# LivJFGHM from Streptococcus pneumoniae.
+# BraCDEFG from Pseudomonas aeruginosa (braC is the SBP).
+# BraDEFG/braC3 from R. leguminosarum; braC3 (RL3540; Q1MDE9) is a secondary
+#   SBP that transports leucine/isoleucine/valine/alanine (PMID:19597156); the
+#   proximal braC might also transport isoleucine, not sure if this is known, so exclude it (Q9L3M3);
 #   LivH/BraD = RL3750/Q1MCU0; LivM/BraE = RL3749/Q1MCU1;
 #   LivG/BraF = RL3748/Q1MCU2; LivF/BraG = RL3747/Q1MCU3;
-#   and the related system in Acidovorax sp. GW101-3H11
-#   LivF = Ac3H11_1692 (A0A165KC78), LivG = Ac3H11_1693 (A0A165KC86),
-#   LivJ = Ac3H11_2396 (A0A165KTD4; not near the other components, but cofit and has the phenotype on isoleucine),
-#   LivH = Ac3H11_1695 (A0A165KC95), LivM = Ac3H11_1694 (A0A165KER0).
-livF	L-isoleucine ABC transporter, ATPase component 1 (LivF/BraG)	curated:CharProtDB::CH_003736	curated:TCDB::P21630	curated:TCDB::Q8DQH7	uniprot:Q1MCU3	uniprot:A0A165KC78
+# LivFGJHM from Acidovorax sp. GW101-3H11:
+#     LivF = Ac3H11_1692 (A0A165KC78), LivG = Ac3H11_1693 (A0A165KC86),
+#     LivJ = Ac3H11_2396 (A0A165KTD4; not near the other components, but cofit and has the phenotype on isoleucine),
+#     LivH = Ac3H11_1695 (A0A165KC95), LivM = Ac3H11_1694 (A0A165KER0);
+# LivKHMGF from Pseudomonas fluorescens FW300-N2E2:
+#   LivF = Pf6N2E2_2926 = A0A159ZWL6, LivG = Pf6N2E2_2925 = A0A159ZWS6, LivK = Pf6N2E2_2921 = A0A160A0J6,
+#   LivH = Pf6N2E2_2923 = A0A0D9B2B6, LivM = Pf6N2E2_2924 = A0A159ZYE0
+livF	L-isoleucine ABC transporter, ATPase component 1 (LivF/BraG)	curated:CharProtDB::CH_003736	curated:TCDB::P21630	curated:TCDB::Q8DQH7	uniprot:Q1MCU3	uniprot:A0A165KC78	uniprot:A0A159ZWL6
 
-livG	L-isoleucine ABC transporter, ATPase component 2 (LivG/BraF)	curated:TCDB::P0A9S7	curated:TCDB::P21629	curated:TCDB::Q8DQH8	uniprot:Q1MCU2	uniprot:A0A165KC86
+livG	L-isoleucine ABC transporter, ATPase component 2 (LivG/BraF)	curated:TCDB::P0A9S7	curated:TCDB::P21629	curated:TCDB::Q8DQH8	uniprot:Q1MCU2	uniprot:A0A165KC86	uniprot:A0A159ZWS6
 
-livJ	L-isoleucine ABC transporter, substrate-binding component (LivJ/LivK/BraC/BraC3)	curated:SwissProt::P21175	curated:CharProtDB::CH_107418	curated:TCDB::P0AD96	curated:TCDB::Q8DQI1	uniprot:Q1MDE9	ignore:TCDB::Q9L3M3	uniprot:A0A165KTD4
+livJ	L-isoleucine ABC transporter, substrate-binding component (LivJ/LivK/BraC/BraC3)	curated:SwissProt::P21175	curated:CharProtDB::CH_107418	curated:TCDB::P0AD96	curated:TCDB::Q8DQI1	uniprot:Q1MDE9	ignore:TCDB::Q9L3M3	uniprot:A0A165KTD4	uniprot:A0A160A0J6
 
-livH	L-isoleucine ABC transporter, permease component 1 (LivH/BraD)	curated:TCDB::P21627	curated:TCDB::Q8DQI0	curated:ecocyc::LIVH-MONOMER	uniprot:Q1MCU0	uniprot:A0A165KC95
+livH	L-isoleucine ABC transporter, permease component 1 (LivH/BraD)	curated:TCDB::P21627	curated:TCDB::Q8DQI0	curated:ecocyc::LIVH-MONOMER	uniprot:Q1MCU0	uniprot:A0A165KC95	uniprot:A0A0D9B2B6
 
 # LivM from Streptococcus pneumoniae lacks an N-terminal domain of unknown
 # function (DUF3382) that is found in E.coli and P. aeruginosa
-livM	L-isoleucine ABC transporter, permease component 2 (LivM/BraE)	curated:SwissProt::P22729	curated:TCDB::P21628	curated:TCDB::Q8DQH9	uniprot:Q1MCU1	uniprot:A0A165KER0
+livM	L-isoleucine ABC transporter, permease component 2 (LivM/BraE)	curated:SwissProt::P22729	curated:TCDB::P21628	curated:TCDB::Q8DQH9	uniprot:Q1MCU1	uniprot:A0A165KER0	uniprot:A0A159ZYE0
 
 # Transporters were identified using
 # query: transporter:isoleucine:L-isoleucine:ile

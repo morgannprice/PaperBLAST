@@ -7,29 +7,40 @@
 # WCS417:GFF1743 = A0A1N7U9G2,
 # azobra:AZOBR_RS02940 = G8AHY6,
 # pseudo1_N1B4:Pf1N1B4_3673 = A0A166PH03,
-# pseudo6_N2E2:Pf6N2E2_5849 = A0A165ZRB0.
+# pseudo6_N2E2:Pf6N2E2_5849 = A0A165ZRB0,
+# and psRCH2:Psest_0347 (GFF346)
 # Closely related to E. coli actP = P32705, so ignore that.
 # Added Marinobacter HP15_1251 (E4PHQ0) because it has a specific phenotype (if mild) and fills the gap.
-# And it is closely related to the D-alanine uptake system Psest_0347 (GFF346), so ignore that.
-actP	large subunit of pyruvate transporter (actP-like)	uniprot:A0A1N7U9G2	uniprot:G8AHY6	uniprot:A0A166PH03	uniprot:A0A165ZRB0	ignore:SwissProt::P32705	uniprot:E4PHQ0	ignore:reanno::psRCH2:GFF346
+# And it is closely related to the D-alanine uptake system , so ignore that.
+actP	large subunit of pyruvate transporter (actP-like)	uniprot:A0A1N7U9G2	uniprot:G8AHY6	uniprot:A0A166PH03	uniprot:A0A165ZRB0	ignore:SwissProt::P32705	uniprot:E4PHQ0	curated:reanno::psRCH2:GFF346
 
 # This is the yjcH-like small subunit.
 # These are similar to E. coli b4068/yjcH/18096, involved in glycolate & acetate transport, so ignore that.
 # Added Marinobacter HP15_1252 (E4PHQ1) because it has a specific phenotype (if mild) and fills the gap.
-# It is closely related to the D-alanine uptake system Psset_0346 (GFF345), so ignore that.
-yjcH	putative small subunit of pyruvate transporter (yjcH-like)	curated:reanno::WCS417:GFF1742	curated:reanno::azobra:AZOBR_RS02935	curated:reanno::pseudo1_N1B4:Pf1N1B4_3672	curated:reanno::pseudo6_N2E2:Pf6N2E2_5848	ignore:reanno::Keio:18096	uniprot:E4PHQ1	ignore:reanno::psRCH2:GFF345
+yjcH	putative small subunit of pyruvate transporter (yjcH-like)	curated:reanno::WCS417:GFF1742	curated:reanno::azobra:AZOBR_RS02935	curated:reanno::pseudo1_N1B4:Pf1N1B4_3672	curated:reanno::pseudo6_N2E2:Pf6N2E2_5848	ignore:reanno::Keio:18096	uniprot:E4PHQ1	curated:reanno::psRCH2:GFF345
 
 # Most of these transporters were identified using curated clusters and
-# query: transporter:pyruvate. YjcH-actP and cstA-yjiX were identified from mutant fitness data.
+# query: transporter:pyruvate. ActP-yjcH and cstA-ybdD were identified from mutant fitness data.
 pyruvate-transport: yjcH actP
 
-# Cup4G11:RR42_RS20515 = A0A0C4Y7X7.
-# E. coli cstA (uniprot:P15078) might be a pyruvate transporter, and bstT (uniprot:P39396) is, so ignore
-cstA	putative large subunit of pyruvate transporter (cstA-like)	uniprot:A0A0C4Y7X7	ignore:SwissProt::P15078	ignore:SwissProt::P39396
+# E. coli cstA (P15078) was originally thought to be a peptide transporter, but
+# is involved in pyruvate transport along with ybdD (PMID:29358499).
+# The related protein btsT (P39396, formerly yjiY) is also a pyruvate transporter.
+# And a similar protein from Cupriavidus basilensis, RR42_RS20515 = A0A0C4Y7X7, is important for pyruvate utilization.
+# As is AO353_25255 (A0A0N9VZ52) from Pseudomonas fluorescens FW300-N2E3.
+# CstA and RR42_RS20515 seem to operate together with ybdD or similar proteins, but purified BtsT is reported to
+# transport pyruvate (PMID:29061664), so it may not require a ybdD-like component.
+# It is not clear if AO353_25255 functions with a ybdD-like component: the downstream gene, AO353_25260,
+# is ybD-like and has subtle defects during growth on pyruvate.
+# Q0P9Y2 (CSTA_CAMJE) was proposed to be a peptide transporter in Campylobacter jejuni, but
+# is suspiciously similar to pyruvate transporters, so is ignored.
+cstA	large subunit of pyruvate transporter (CstA)	uniprot:A0A0C4Y7X7	curated:SwissProt::P15078	curated:SwissProt::P39396	uniprot:A0A0N9VZ52	ignore:SwissProt::Q0P9Y2
 
-yjiX	putative small subunit of pyruvate transporter (yjiX-like)	curated:reanno::Cup4G11:RR42_RS20510
+# E. coli ybdD (P0AAS9) is involved in pyruvate transport with cstA (PMID:29358499).
+# And a similar protein from Cupriavidus basilensis, RR42_RS20510, is important for pyruvate utilization.
+ybdD	small subunit of pyruvate transporter (YbdD)	uniprot:P0AAS9	curated:reanno::Cup4G11:RR42_RS20510
 
-pyruvate-transport: cstA yjiX
+pyruvate-transport: cstA ybdD
 
 SLC5A8	sodium-coupled pyruvate transporter	curated:SwissProt::Q3ZMH1	curated:SwissProt::Q7T384	curated:SwissProt::Q8N695
 

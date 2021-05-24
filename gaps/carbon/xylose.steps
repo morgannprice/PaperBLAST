@@ -16,6 +16,9 @@ gal2	galactose/glucose/xylose uniporter	curated:CharProtDB::CH_091029
 
 glcP	glucose/mannose/xylose:H+ symporter	curated:SwissProt::O07563
 
+# Echvi_1871 (L0FZF3) seems to be a xylose transporter as well as a glucose/galactose transporter.
+Echvi_1871	sodium/xylose cotransporter	uniprot:L0FZF3
+
 # ABC transporters include xylFGH from several organisms (T. maritima has a diverged SBP),
 # another system from T. maritima (xylE_Tm xylF_Tm XylK_Tm),
 # and araVUTS from Sulfolobus solfataricus
@@ -52,15 +55,36 @@ araU	component of Arabinose, fructose, xylose porter	curated:TCDB::Q97UF3
 araT	component of Arabinose, fructose, xylose porter	curated:TCDB::Q97UF4
 araS	component of Arabinose, fructose, xylose porter	curated:TCDB::Q97UF5
 
+# GtsABCD from P. fluorescens WCS417 (PS417_22130:PS417_22145) is very important for utilization
+# of both glycose and xylose.
+# Similar systems in other Pseudomonas have been reported as glucose transporters.
+# In P. putida, after enzymes for xylose catabolism were introduced and the strain was
+# evolved for growth on xylose, GtsABCD were required for xylose utilization, although there were
+# two point mutations in GtsA, so it is not certain if the wild-type P. putida GtsA binds xylose
+# efficiently (see PMC3340264). The P. putida system is marked ignore.
+# GtsA = PS417_22145 = GFF4324
+gtsA	xylose ABC transporter, periplasmic substrate-binding component GtsA	curated:reanno::WCS417:GFF4324	ignore:TCDB::Q88P38
+
+# GtsB = PS417_22140 = GFF4323
+gtsB	xylose ABC transporter, permease component 1 GtsB	curated:reanno::WCS417:GFF4323	ignore:TCDB::Q88P37
+
+# GtsC = PS417_22135 = GFF4322
+gtsC	xylose ABC transporter, permease component 2 GtsC	curated:reanno::WCS417:GFF4322	ignore:TCDB::Q88P36
+
+# GtsD = PS417_22130 = GFF4321
+gtsD	xylose ABC transporter, ATPase component GtsD	curated:reanno::WCS417:GFF4321	ignore:TCDB::Q88P35
+
 # Transporters were identified using
 # query: transporter:D-xylose:xylose:CPD-15377
 xylose-transport: xylT
 xylose-transport: gal2
 xylose-transport: glcP
+xylose-transport: Echvi_1871
 
 xylose-transport: xylF xylG xylH
 xylose-transport: xylF_Tm xylE_Tm xylK_Tm
 xylose-transport: araV araU araT araS
+xylose-transport: gtsA gtsB gtsC gtsD
 
 # There are also reports of xylose uptake by the mannose PTS system in Lactobacillus
 # (S. Chaillou et al, J. Bact. 1999) but with poor affinity.

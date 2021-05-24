@@ -9,20 +9,27 @@
 # In E. coli, the ABC transporter livFGHMJ or livFGHMK transports phenylalanine.
 # livJ and livK are alternate substrate binding proteins that are similar to each other.
 #
-# A related system in Pseudomonas fluorescens FW300-N2E2 is also important for phenylalanine utlization
-# (Pf6N2E2_2921 = livK = A0A160A0J6; Pf6N2E2_2923 = livH = A0A0D9B2B6; Pf6N2E2_2924 = livM = A0A159ZYE0;
-#  Pf6N2E2_2925 = livG = A0A159ZWS6; Pf6N2E2_2926 = livF = A0A159ZWL6).
+# A related system in Pseudomonas fluorescens FW300-N2E2 is also important for phenylalanine utlization:
+#   Pf6N2E2_2921 = livK = A0A160A0J6; Pf6N2E2_2923 = livH = A0A0D9B2B6; Pf6N2E2_2924 = livM = A0A159ZYE0;
+#    Pf6N2E2_2925 = livG = A0A159ZWS6; Pf6N2E2_2926 = livF = A0A159ZWL6).
+#
 # Ignored the orthologs in Pseudomonas aeruginosa (the bra system), which transports various
-# amino acids and might transport phenylalanine.
-livF	L-phenylalanine ABC transporter, ATPase component 1 (LivF)	curated:CharProtDB::CH_003736	uniprot:A0A159ZWL6	ignore:TCDB::P21630
+#   amino acids and might transport phenylalanine.
+#
+# A related system in Acidovorax sp. GW101-3H11 also transports phenylalanine:
+#   LivF = Ac3H11_1692 (A0A165KC78), LivG = Ac3H11_1693 (A0A165KC86),
+#   LivJ = Ac3H11_2396 (A0A165KTD4; not near the other components, but cofit),
+#   LivH = Ac3H11_1695 (A0A165KC95), LivM = Ac3H11_1694 (A0A165KER0).
 
-livG	L-phenylalanine ABC transporter, ATPase component 2 (LivG)	curated:TCDB::P0A9S7	uniprot:A0A159ZWS6	ignore:TCDB::P21629
+livF	L-phenylalanine ABC transporter, ATPase component 1 (LivF)	curated:CharProtDB::CH_003736	uniprot:A0A159ZWL6	ignore:TCDB::P21630	uniprot:A0A165KC78
 
-livH	L-phenylalanine ABC transporter, permease component 1 (LivH)	curated:ecocyc::LIVH-MONOMER	uniprot:A0A0D9B2B6	ignore:TCDB::P21627
+livG	L-phenylalanine ABC transporter, ATPase component 2 (LivG)	curated:TCDB::P0A9S7	uniprot:A0A159ZWS6	ignore:TCDB::P21629	uniprot:A0A165KC86
 
-livM	L-phenylalanine ABC transporter, permease component 2 (LivM)	curated:SwissProt::P22729	uniprot:A0A159ZYE0	ignore:TCDB::P21628
+livH	L-phenylalanine ABC transporter, permease component 1 (LivH)	curated:ecocyc::LIVH-MONOMER	uniprot:A0A0D9B2B6	ignore:TCDB::P21627	uniprot:A0A165KC95
 
-livJ	L-phenylalanine ABC transporter, substrate-binding component LivJ/LivK	curated:CharProtDB::CH_107418	curated:TCDB::P0AD96	uniprot:A0A160A0J6	ignore:SwissProt::P21175
+livM	L-phenylalanine ABC transporter, permease component 2 (LivM)	curated:SwissProt::P22729	uniprot:A0A159ZYE0	ignore:TCDB::P21628	uniprot:A0A165KER0
+
+livJ	L-phenylalanine ABC transporter, substrate-binding component LivJ/LivK	curated:CharProtDB::CH_107418	curated:TCDB::P0AD96	uniprot:A0A160A0J6	ignore:SwissProt::P21175	uniprot:A0A165KTD4
 
 # Transporters were identified using
 # query: transporter:phenylalanine:L-phenylalanine:phe

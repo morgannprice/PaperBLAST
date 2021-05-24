@@ -72,8 +72,8 @@ import mannose.steps:manA # mannose 6-phosphate isomerase
 all: mannitol-transport mt1d mak manA
 
 # SwissProt P33216 was shown to have this activity (PMID:2789134; PMID:8254318)
-# and a homolog PGA1_c13160 (I7EW69) from Phaeobacter inhibens has a specific phenotype on mannitol.
-mt2d	mannitol 2-dehydrogenase	EC:1.1.1.67	EC:1.1.1.138	uniprot:P33216	uniprot:I7EW69
+mt2d	mannitol 2-dehydrogenase	EC:1.1.1.67	EC:1.1.1.138	uniprot:P33216
+
 import fructose.steps:scrK # fructokinase
 
 # Alternatively, mannitol 2-dehydrogenase (mt2d) forms fructose, and fructokinase (scrK)

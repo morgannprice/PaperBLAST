@@ -72,17 +72,16 @@ mglC	glucose ABC transporter, permease component (MglC)	curated:TCDB::G4FGN4	cur
 # (Some components cluster with glcSTUV from Saccharolobus, which is described separately;
 #  those are marked ignore here.)
 # The system in P. fluorescens is very similar (~90% a.a. identity) to PS417_22145:PS417_22130 (GFF4324:GFF4321),
-# which genetic data suggest are a glucose-6-phosphate transporter. Could they be a glucose transporter
-# instead? Not sure, so ignore those.
+# which is involved in glucose-6-phosphate utilization, probably as a glucose transporter.
 # Fitness data also identified a gtsABCD-like glucose transporter in Acidovorax sp. GW101-3H11
 # (Ac3H11_2062:Ac3H11_2064:Ac3H11_2065:Ac3H11_2066; A0A165KPY4, A0A165KPZ4, A0A165KQ00, A0A165KQ08).
-gtsA	glucose ABC transporter, substrate-binding component (GtsA)	curated:TCDB::Q88P38	curated:TCDB::Q72KX2	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1894	ignore:reanno::WCS417:GFF4324	uniprot:A0A165KPY4
+gtsA	glucose ABC transporter, substrate-binding component (GtsA)	curated:TCDB::Q88P38	curated:TCDB::Q72KX2	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1894	curated:reanno::WCS417:GFF4324	uniprot:A0A165KPY4
 
-gtsB	glucose ABC transporter, permease component 1 (GtsB)	curated:TCDB::Q88P37	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1895	curated:TCDB::Q72KX3	ignore:reanno::WCS417:GFF4323	uniprot:A0A165KPZ4
+gtsB	glucose ABC transporter, permease component 1 (GtsB)	curated:TCDB::Q88P37	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1895	curated:TCDB::Q72KX3	curated:reanno::WCS417:GFF4323	uniprot:A0A165KPZ4
 
-gtsC	glucose ABC transporter, permease component 2 (GtsC)	curated:TCDB::Q72KX4	curated:TCDB::Q88P36	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1896	ignore:reanno::WCS417:GFF4322	uniprot:A0A165KQ00
+gtsC	glucose ABC transporter, permease component 2 (GtsC)	curated:TCDB::Q72KX4	curated:TCDB::Q88P36	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1896	curated:reanno::WCS417:GFF4322	uniprot:A0A165KQ00
 
-gtsD	glucose ABC transporter, ATPase component (GtsD)	curated:TCDB::Q72L52	ignore:BRENDA::Q97UY8	curated:TCDB::Q88P35	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1897	ignore:reanno::WCS417:GFF4321	uniprot:A0A165KQ08
+gtsD	glucose ABC transporter, ATPase component (GtsD)	curated:TCDB::Q72L52	ignore:BRENDA::Q97UY8	curated:TCDB::Q88P35	curated:reanno::pseudo13_GW456_L13:PfGW456L13_1897	curated:reanno::WCS417:GFF4321	uniprot:A0A165KQ08
 
 # ABC transporter glcSTUV from Saccharolobus/Sulfolobus
 glcS	glucose ABC transporter, substrate-binding component (GlcS)	curated:SwissProt::Q97UZ1
@@ -92,20 +91,20 @@ glcV	glucose ABC transporter, ATPase component (GclV)	curated:BRENDA::Q97UY8
 
 # ABC transporter aglEFGK (Dshi_1652:Dshi_1648) from Dinoroseobacter shibae.
 # The gene names are from the related system aglEFGK of Sinorhizobium meliloti,
-#  which are involved in uptake of sucrose
-# and some other disaccharides (PMID:10400573); in fitness data, they are important for maltose & trehalose
-# (i.e. see SMc03061 = aglE); not important on glucose but S. meliloti also has SM_b20894, close to gguA/mglA O05176.
+#  which are involved in uptake of sucrose and some other disaccharides (PMID:10400573).
+# In fitness data, S. meliloti aglEFGK are important for maltose & trehalose utilization (see SMc03061 = aglE);
+# they are not important on glucose but S. meliloti also has SM_b20894, which is similar to gguA/mglA O05176.
 # It is uncertain whether aglEFGK from S. meliloti can transport glucose or not, so it is ignored.
-# Dshi_1652 = A8LLL6
+# Dshi_1652 = A8LLL6.
 aglE'	glucose ABC transporter, substrate-binding component (AglE)	uniprot:A8LLL6	ignore:reanno::Smeli:SMc03061
 
-# Dshi_1651 = A8LLL5
+# Dshi_1651 = A8LLL5.
 aglF'	glucose ABC transporter, permease component 1 (AglF)	uniprot:A8LLL5	ignore:reanno::Smeli:SMc03062
 
-# Dshi_1650 = A8LLL4
+# Dshi_1650 = A8LLL4.
 aglG'	glucose ABC transporter, permease component 2 (AglG)	uniprot:A8LLL4	ignore:reanno::Smeli:SMc03063
 
-# Dshi_1648 = A8LLL2
+# Dshi_1648 = A8LLL2.
 aglK'	glucose ABC transporter, ATPase component (AglK)	uniprot:A8LLL2	ignore:reanno::Smeli:SMc03065
 
 # Transporters and PTS systems were analyzed uzing

@@ -450,7 +450,8 @@ if ($assembly) {
 
 my $xfile = "$fnafile.aa6";
 if (! -e $xfile) {
-  system("$usearch -fastx_findorfs $fnafile -aaout $xfile -orfstyle 7 -mincodons $minCodons >& /dev/null") == 0
+  my $cmd = "$usearch -fastx_findorfs $fnafile -aaout $xfile -orfstyle 7 -mincodons $minCodons";
+  system("$cmd >& /dev/null") == 0
     || die "usearch findorfs failed: $!";
 }
 unlink($seqFile) if $upfile;

@@ -11,10 +11,9 @@
 # ABC transporters
 
 # ThuEFGK in Sinorhizobium meliloti and TTC1627:TTC1629 + MalK1 in Thermus thermophilus.
-# Also, a thuEFGK homolog in various Pseudomonas is important or detrimental for fitness on sucrose,
+# Also, a thuEFGK homolog in various Pseudomonas is important for fitness on sucrose,
 # i.e., Pf1N1B4_5112:5116 or Psyr_0762:Psyr_0759, and is presumably a sucrose transporter.
 # The N1B4 system is A0A166QFS3 A0A166QFV1 A0A161ZE72 A0A166QFW2.
-# (The detrimental phenotypes might indicate toxicity from too-rapid uptake of ~10 mM sucrose.)
 thuE	sucrose ABC transporter, substrate-binding component ThuE	curated:TCDB::Q72H68	curated:TCDB::Q9R9Q7	uniprot:A0A166QFS3
 thuF	sucrose ABC transporter, permease component 1 (ThuF)	curated:TCDB::Q72H67	curated:reanno::Smeli:SM_b20326	uniprot:A0A166QFV1
 thuG	sucrose ABC transporter, permease component 2 (ThuG)	curated:TCDB::Q72H66	curated:reanno::Smeli:SM_b20327	uniprot:A0A161ZE72
@@ -25,11 +24,20 @@ thuK	sucrose ABC transporter, ATPase component ThuK	curated:TCDB::Q72L52	curated
 # query: transporter:sucrose
 sucrose-transport: thuE thuF thuG thuK
 
-# AglEFGK in Sinorhizobium meliloti
-aglE	sucrose ABC transporter, substrate-binding component AglK	curated:TCDB::Q9Z3R5
-aglF	sucrose ABC transporter, permease component 1 (AglF)	curated:reanno::Smeli:SMc03062
-aglG	sucrose ABC transporter, permease component 2 (AglG)	curated:reanno::Smeli:SMc03063
-aglK	sucrose ABC transporter, ATPase component AglK	curated:reanno::Smeli:SMc03065
+# AglEFGK in Sinorhizobium meliloti.
+# A similar system from Dinoroseobacter shibae, Dshi_1652:Dshi_1648, is involved in sucrose uptake.
+# Dinoroseobacter shibae aglE = Dshi_1652 = A8LLL6.
+aglE	sucrose ABC transporter, substrate-binding component AglK	curated:TCDB::Q9Z3R5	uniprot:A8LLL6
+
+# Dinoroseobacter shibae aglF = Dshi_1651 = A8LLL5.
+aglF	sucrose ABC transporter, permease component 1 (AglF)	curated:reanno::Smeli:SMc03062	uniprot:A8LLL5
+
+# Dinoroseobacter shibae aglG = Dshi_1650 = A8LLL4.
+aglG	sucrose ABC transporter, permease component 2 (AglG)	curated:reanno::Smeli:SMc03063	uniprot:A8LLL4
+
+# Dinoroseobacter shibae aglK = Dshi_1648 = A8LLL2.
+aglK	sucrose ABC transporter, ATPase component AglK	curated:reanno::Smeli:SMc03065	uniprot:A8LLL2
+
 sucrose-transport: aglE aglF aglG aglK
 
 # phosphotransferase systems
@@ -83,7 +91,7 @@ sucrose-transport: SLC45A4
 # This reaction does not match an EC number.
 # Many invertases (EC 3.2.1.26) also have this activity, so allow matches to those as well.
 # And the original reannotation of AO356_28590 as sucrose-6-phosphate hydrolase is questionable.
-scrB	sucrose-6-phosphate hydrolase	curated:CAZy::CAG25843.1	curated:CAZy::S68598	curated:SwissProt::P27217	curated:reanno::pseudo5_N2C3_1:AO356_28590	curated:SwissProt::Q09122	ignore_other:3.2.1.26	ignore:reanno::pseudo5_N2C3_1:AO356_28590
+scrB	sucrose-6-phosphate hydrolase	curated:CAZy::CAG25843.1	curated:CAZy::S68598	curated:SwissProt::P27217	curated:SwissProt::Q09122	ignore_other:3.2.1.26	ignore:reanno::pseudo5_N2C3_1:AO356_28590
 
 # Because sucrose can be hydrolyzed in the periplasm, need
 # to represent glucose and fructose uptake

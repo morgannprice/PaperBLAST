@@ -74,11 +74,20 @@ treV	trehalose ABC transporter, ATPase component TreV	curated:TCDB::Q97ZC0
 trehalose-transport: treS treT treU treV
 
 # S. meliloti aglEFGK.
+# A similar system from Dinoroseobacter shibae, Dshi_1652:Dshi_1648, is involved in maltose uptake.
+# Dinoroseobacter shibae aglE = Dshi_1652 = A8LLL6.
 # Ignore similarity to Slr0529, which may also transport trehalose
-aglE	trehalose ABC transporter, substrate-binding component AglE	curated:TCDB::Q9Z3R5	ignore:TCDB::Q55471
-aglF	trehalose ABC transporter, permease component 1 (AglF)	curated:reanno::Smeli:SMc03062
-aglG	trehalose ABC transporter, permease component 2 (AglG)	curated:reanno::Smeli:SMc03063
-aglK	trehalose ABC trehalose, ATPase component AglK	curated:reanno::Smeli:SMc03065
+aglE	trehalose ABC transporter, substrate-binding component AglE	curated:TCDB::Q9Z3R5	uniprot:A8LLL6	ignore:TCDB::Q55471
+
+# Dinoroseobacter shibae aglF = Dshi_1651 = A8LLL5.
+aglF	trehalose ABC transporter, permease component 1 (AglF)	curated:reanno::Smeli:SMc03062	uniprot:A8LLL5
+
+# Dinoroseobacter shibae aglG = Dshi_1650 = A8LLL4.
+aglG	trehalose ABC transporter, permease component 2 (AglG)	curated:reanno::Smeli:SMc03063	uniprot:A8LLL4
+
+# Dinoroseobacter shibae aglK = Dshi_1648 = A8LLL2.
+aglK	trehalose ABC trehalose, ATPase component AglK	curated:reanno::Smeli:SMc03065	uniprot:A8LLL2
+
 trehalose-transport: aglE aglF aglG aglK
 
 # For the system in Bdellovibrio bacteriovorus, just one protein (fused MalEF) seems to have been studied,

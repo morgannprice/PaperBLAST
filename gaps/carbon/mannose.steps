@@ -17,7 +17,7 @@
 # Closely related to some systems with unclear specificity, ignore those.
 manX	mannose PTS system, EII-AB component ManX/ManL	curated:CharProtDB::CH_088329	curated:TCDB::D2BKY7	curated:TCDB::E1UCI0	ignore:TCDB::Q5M5W6	ignore:BRENDA::Q9S4L5	ignore:TCDB::Q04GK1	ignore:TCDB::Q2QKM4
 manY	mannose PTS system, EII-C component ManY/ManM	curated:CharProtDB::CH_088330	curated:TCDB::D2BKY8	curated:TCDB::E1UCI1	ignore:TCDB::Q5M5W7	ignore:TCDB::Q8Y8W0	ignore:TCDB::Q04GK0	ignore:TCDB::Q2QKM3
-manZ	mannot PTS system, EII-D component ManZ/ManN	curated:SwissProt::P69805	curated:TCDB::D2BKY9	curated:TCDB::E1UCI2	curated:TCDB::P69805	ignore:TCDB::Q5M5W8	ignore:TCDB::Q04GJ9	ignore:TCDB::Q2QKM2	ignore:BRENDA::Q5IRC0	ignore:TCDB::Q8Y8W1
+manZ	mannose PTS system, EII-D component ManZ/ManN	curated:SwissProt::P69805	curated:TCDB::D2BKY9	curated:TCDB::E1UCI2	curated:TCDB::P69805	ignore:TCDB::Q5M5W8	ignore:TCDB::Q04GJ9	ignore:TCDB::Q2QKM2	ignore:BRENDA::Q5IRC0	ignore:TCDB::Q8Y8W1
 
 # PTS systems form D-mannose 6-phosphate
 mannose-PTS: manX manY manZ

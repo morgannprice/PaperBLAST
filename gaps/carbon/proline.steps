@@ -45,12 +45,15 @@ AZOBR_RS08260	proline ABC transporter, substrate-binding component	uniprot:G8ALJ
 proline-transport: AZOBR_RS08235 AZOBR_RS08240 AZOBR_RS08245 AZOBR_RS08250 AZOBR_RS08260
 
 # 5-part ABC transporter in Herbaspirillum brasilense, identified using fitness data.
-# This system is distantly related to AZOBR_RS08235:RS08260
-HSERO_RS00870	proline ABC transporter, substrate-binding component	uniprot:D8IUY1
-HSERO_RS00885	proline ABC transporter, permease component 1	uniprot:D8IUY4
-HSERO_RS00890	proline ABC transporter, permease component 2	uniprot:D8IUY5
-HSERO_RS00895	proline ABC transporter, ATPase component 1	uniprot:D8J1T6
-HSERO_RS00900	proline ABC transporter, ATPase component 2	uniprot:D8IUY7
+# (This system is distantly related to AZOBR_RS08235:RS08260.)
+# A related system from Acidovorax sp. GW101-3H11 is also important for proline utilization:
+# Ac3H11_2396 (A0A165KTD4), Ac3H11_1695 (A0A165KC95), Ac3H11_1694 (A0A165KER0),
+# Ac3H11_1693 (A0A165KC86), Ac3H11_1692 (A0A165KC78).
+HSERO_RS00870	proline ABC transporter, substrate-binding component	uniprot:D8IUY1	uniprot:A0A165KTD4
+HSERO_RS00885	proline ABC transporter, permease component 1	uniprot:D8IUY4	uniprot:A0A165KC95
+HSERO_RS00890	proline ABC transporter, permease component 2	uniprot:D8IUY5	uniprot:A0A165KER0
+HSERO_RS00895	proline ABC transporter, ATPase component 1	uniprot:D8J1T6	uniprot:A0A165KC86
+HSERO_RS00900	proline ABC transporter, ATPase component 2	uniprot:D8IUY7	uniprot:A0A165KC78
 proline-transport: HSERO_RS00870 HSERO_RS00885 HSERO_RS00890 HSERO_RS00895 HSERO_RS00900
 
 # AapJQMP from Rhizobium leguminosarum is described in glutamate.steps

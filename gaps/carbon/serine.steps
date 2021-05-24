@@ -16,6 +16,17 @@ import alanine.steps:braC braD braE braF braG
 #   (D-serine transporters and serine protease autotransporters were removed).
 serine-transport: braC braD braE braF braG
 
+# A 5-part ABC transporter for serine and other amino acids was identified in Acidovorax sp. GW101-3H11.
+# It is related to branched-amino-acid transporters.
+# The substrate-binding component (Ac3H11_2396) is not nearby but is cofit.
+Ac3H11_2396	L-tyrosine ABC transporter, substrate-binding component component	uniprot:A0A165KTD4
+Ac3H11_1695	L-tyrosine ABC transporter, permease component 1	uniprot:A0A165KC95
+Ac3H11_1694	L-tyrosine ABC transporter, permease component 2	uniprot:A0A165KER0
+Ac3H11_1693	L-tyrosine ABC transporter, ATPase component 1	uniprot:A0A165KC86
+Ac3H11_1692	L-tyrosine ABC transporter, ATPase component 2	uniprot:A0A165KC78
+
+serine-transport: Ac3H11_2396 Ac3H11_1695 Ac3H11_1694 Ac3H11_1693 Ac3H11_1692
+
 # This cluster also includes cycA (P0AAE0 or A0A0H2VDI7), but that may only transport D-serine.
 # A close homolog of SerP2, A2RI87, is annotated as a D,L-alanine permease
 # and is reported to have weak affinity for L-serine (see SwissProt); it is also marked ignore.

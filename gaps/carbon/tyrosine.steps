@@ -14,6 +14,17 @@ aroP	L-tyrosine transporter (AroP/FywP)	curated:TCDB::F2HN33	curated:TCDB::P1599
 # (PMC305776), so it is not included.
 tyrosine-transport: aroP
 
+# A 5-part ABC transporter for tyrosine and other amino acids was identified in Acidovorax sp. GW101-3H11.
+# It is related to branched-amino-acid transporters.
+# The substrate-binding component (Ac3H11_2396) is not nearby but is cofit.
+Ac3H11_2396	L-tyrosine ABC transporter, substrate-binding component component	uniprot:A0A165KTD4
+Ac3H11_1695	L-tyrosine ABC transporter, permease component 1	uniprot:A0A165KC95
+Ac3H11_1694	L-tyrosine ABC transporter, permease component 2	uniprot:A0A165KER0
+Ac3H11_1693	L-tyrosine ABC transporter, ATPase component 1	uniprot:A0A165KC86
+Ac3H11_1692	L-tyrosine ABC transporter, ATPase component 2	uniprot:A0A165KC78
+
+tyrosine-transport: Ac3H11_2396 Ac3H11_1695 Ac3H11_1694 Ac3H11_1693 Ac3H11_1692
+
 tyrP	Tyrosine permease	curated:TCDB::P0AAD4
 tyrosine-transport: tyrP
 

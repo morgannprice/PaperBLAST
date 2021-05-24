@@ -58,12 +58,20 @@ malK_Aa	maltose ABC transporter, ATPase component	curated:BRENDA::Q70HW1
 maltose-transport: malE_Aa malF_Aa malG_Aa malK_Aa
 
 # Sinorhizobium meliloti has a second system, algEFGK.
-# Use .Sm names to avoid confusion with the glucose transporter algEFGK.
-aglE.Sm	maltose ABC transporter, substrate-binding component AglK	curated:TCDB::Q9Z3R5
-aglF.Sm	maltose ABC transporter, permease component 1 (AglF)	curated:reanno::Smeli:SMc03062
-aglG.Sm	maltose ABC transporter, permease component 2 (AglG)	curated:reanno::Smeli:SMc03063
-aglK.Sm	maltose ABC transporter, ATPase component AglK	curated:reanno::Smeli:SMc03065
-maltose-transport: aglE.Sm aglF.Sm aglG.Sm aglK.Sm
+# A similar system from Dinoroseobacter shibae, Dshi_1652:Dshi_1648, is involved in maltose uptake.
+# Dinoroseobacter shibae aglE = Dshi_1652 = A8LLL6.
+aglE	maltose ABC transporter, substrate-binding component AglK	curated:TCDB::Q9Z3R5	uniprot:A8LLL6
+
+# Dinoroseobacter shibae aglF = Dshi_1651 = A8LLL5.
+aglF	maltose ABC transporter, permease component 1 (AglF)	curated:reanno::Smeli:SMc03062	uniprot:A8LLL5
+
+# Dinoroseobacter shibae aglG = Dshi_1650 = A8LLL4.
+aglG	maltose ABC transporter, permease component 2 (AglG)	curated:reanno::Smeli:SMc03063	uniprot:A8LLL4
+
+# Dinoroseobacter shibae aglK = Dshi_1648 = A8LLL2.
+aglK	maltose ABC transporter, ATPase component AglK	curated:reanno::Smeli:SMc03065	uniprot:A8LLL2
+
+maltose-transport: aglE aglF aglG aglK
 
 # Bdellovibrio bacteriovorus has fused malEF (Bd1227, uniprot:Q6MNM0)
 # and also malG, malK.
