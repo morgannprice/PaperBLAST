@@ -284,7 +284,7 @@ if ($query ne "" && $query !~ m/\n/ && $query !~ m/ / && $query =~ m/[^A-Z*]/) {
     $query = &VIMSSToFasta($short);
   }
 
-  # is it in RefSeq?
+  # is it in Nucleotide/RefSeq? (Locus tags not in refseq may not be indexed)
   if (!defined $query) {
     $query = &RefSeqToFasta($short);
   }
