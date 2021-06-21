@@ -5,7 +5,10 @@ use CGI qw(:standard Vars);
 use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
 use Time::HiRes qw{gettimeofday};
 use LWP::Simple qw{get};
+use JSON;
 use DBI;
+use IO::String;
+use Bio::SeqIO;
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
@@ -632,13 +635,41 @@ sub VIMSSToFasta($) {
   return ">$short\n$aaseq\n" if $desc;
 }
 
+sub GetGenbankTranslation($$) {
+  my ($lines, $locusTag) = @_;
+
+}
+
 sub RefSeqToFasta($) {
   my ($short) = @_;
   die unless defined $short;
-  return undef unless $short =~ m/_/;
-  my $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.cgi?db=Protein&rettype=fasta&id=$short";
-  my $results = get($url);
-  return $results if defined $results && $results =~ m/^>/;
+  return undef unless $short =~ m/^[A-Za-z][A-Za-z0-9]+_[A-Za-z0-9]+[.]?\d?/;
+
+  my $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.cgi?db=Nucleotide&retmode=json&term=$short";
+  my $json = from_json(get($url));
+  return undef unless defined $json;
+  my $id = $json->{esearchresult}{idlist}[0];
+  return undef unless $id;
+
+  # Fetch genbank format for entry $id
+  $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=Nucleotide&rettype=gb&id=$id";
+  my $gb = get($url);
+  my $seqio = Bio::SeqIO->new(-fh => IO::String->new($gb), -format => "genbank");
+  while (my $seq = $seqio->next_seq) {
+    foreach my $ft ($seq->get_SeqFeatures) {
+      next unless $ft->primary_tag eq "CDS"
+        && $ft->has_tag("translation")
+        && (($ft->has_tag("locus_tag") && ($ft->get_tag_values("locus_tag"))[0] eq $short)
+            || ($ft->has_tag("old_locus_tag") && ($ft->get_tag_values("old_locus_tag"))[0] eq $short));
+      my ($aaseq) = $ft->get_tag_values("translation");
+      my $defline = $short;
+      $defline .= " " . ($ft->get_tag_values("protein_id"))[0] if $ft->has_tag("protein_id");
+      $defline .= " " . ($ft->get_tag_values("product"))[0] if $ft->has_tag("product");
+      $defline .= " [" . $seq->desc . "]";
+      $defline =~ s/[\t\r\n]+/ /g; # not sure if this can ever occur
+      return ">$defline\n$aaseq";
+    }
+  }
   return undef;
 }
 

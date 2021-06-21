@@ -2,7 +2,8 @@ Requirements for setting up the web site:
 
 Various perl libraries: CGI, DBI, File::stat, HTTP::Request,
 IO::Handle, JSON, LWP::Simple, LWP::UserAgent, Digest::MD5,
-Time::HiRes, URI::Escape, XML::LibXML
+Time::HiRes, URI::Escape, XML::LibXML, IO::String, and BioPerl (for
+Bio::SeqIO).
 
 sqlite3 must be installed
 
