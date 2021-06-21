@@ -256,6 +256,8 @@ $query =~ s/\s+$//;
 # a single word query is assumed to be a gene id if it contains any non-sequence character
 # But, putting a protein sequence on a line is allowed (if all uppercase)
 
+autoflush STDOUT 1; # show preliminary results
+
 if ($query ne "" && $query !~ m/\n/ && $query !~ m/ / && $query =~ m/[^A-Z*]/) {
   my $short = $query;
   $query = undef;
@@ -403,7 +405,6 @@ if (!defined $seq && ! $more_subjectId) {
              };
     }
 
-    autoflush STDOUT 1; # show preliminary results
     print "\n";
 
     my @hits = ();
