@@ -643,7 +643,7 @@ sub GetGenbankTranslation($$) {
 sub RefSeqToFasta($) {
   my ($short) = @_;
   die unless defined $short;
-  return undef unless $short =~ m/^[A-Za-z][A-Za-z0-9]+_[A-Za-z0-9]+[.]?\d?/;
+  return undef unless $short =~ m/^[A-Za-z][A-Za-z0-9]+_[A-Za-z0-9]+[.]?\d?$/;
 
   my $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.cgi?db=Nucleotide&retmode=json&term=$short";
   my $json = from_json(get($url));
@@ -652,6 +652,7 @@ sub RefSeqToFasta($) {
   return undef unless $id;
 
   # Fetch genbank format for entry $id
+  print "<P>Looking for $short in genbank entry $id\n";
   $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=Nucleotide&rettype=gb&id=$id";
   my $gb = get($url);
   my $seqio = Bio::SeqIO->new(-fh => IO::String->new($gb), -format => "genbank");
