@@ -635,14 +635,16 @@ sub VIMSSToFasta($) {
   return ">$short\n$aaseq\n" if $desc;
 }
 
-sub GetGenbankTranslation($$) {
-  my ($lines, $locusTag) = @_;
-
-}
-
 sub RefSeqToFasta($) {
   my ($short) = @_;
   die unless defined $short;
+  if ($short =~ m/^[A-Z]P_\d+[.]?\d*$/ || $short =~ m/^[A-Z][A-Z][A-Z]\d+[.]?\d*$/) {
+    # Potentially an NCBI protein identifier like WP_093840703.1 or AAC76544.1
+    # (the version number like .1 is optional)
+    my $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.cgi?db=Protein&rettype=fasta&id=$short";
+    my $results = get($url);
+    return $results if defined $results && $results =~ m/^>/;
+  }
   return undef unless $short =~ m/^[A-Za-z][A-Za-z0-9]+_[A-Za-z0-9]+[.]?\d?$/;
 
   my $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.cgi?db=Nucleotide&retmode=json&term=$short";
