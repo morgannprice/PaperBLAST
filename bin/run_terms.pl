@@ -171,13 +171,19 @@ if (exists $dosteps{"am"}) {
     push @{ $sets[$i % 200] }, $files[$i];
   }
   my $cmdsfile = "$workdir/amwords.cmds";
-  my $listfile = "$workdir/amwords.list";
+  my $listfile = "$workdir/amwords.list"; # list of output files
   open(CMDS, ">", $cmdsfile) || die "Cannot write to $cmdsfile";
   open(LIST, ">", $listfile) || die "Cannot write to $listfile";
   foreach my $i (0..(scalar(@sets)-1)) {
     my $out = "$workdir/am_$i.words";
     my @in = map "$indir/am/$_", @{ $sets[$i] };
-    print CMDS "$Bin/words.pl -in " . join(" ", @in) . " > $out\n";
+    my $listFile2 = "$workdir/am_$i.list"; # list of input files for this set
+    open(my $fhList, ">", $listFile2) || die "Cannot write to $listFile2\n";
+    foreach my $file (@in) {
+      print $fhList $file."\n";
+    }
+    close($fhList) || die "Error writing $listFile2";
+    print CMDS "$Bin/words.pl -list $listFile2 > $out\n";
     print LIST "$out\n";
   }
   close(CMDS) || die "Error writing to $cmdsfile";

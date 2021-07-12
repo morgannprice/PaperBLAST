@@ -12,8 +12,19 @@ sub ProcessArticle($);
 
 {
   my @files = ();
-  GetOptions('in=s{1,}' => \@files)
+  my $listFile;
+  GetOptions('in=s{1,}' => \@files, 'list=s' => \$listFile)
     || die "Run as a filter, or with -in file1 ... flieN\n";
+  if (defined $listFile) {
+    die "Cannot use -in and -list\n" if @files > 0;
+    open(my $fh, "<", $listFile) || die "Cannot read $listFile\n";
+    while (my $line = <$fh>) {
+      chomp $line;
+      die "No such file: $line\n" unless -e $line;
+      push @files, $line;
+    }
+    close($fh) || die "Error reading $listFile\n";
+  }
   my $n = 0;
   if (@files > 0) {
     print STDERR "Processing " . scalar(@files) . " files\n";
