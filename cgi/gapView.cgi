@@ -1702,16 +1702,19 @@ sub LegendForColorCoding() {
                 "High confidence candidates match an HMM or are over 40% similar to a characterized protein; and the alignment covers 80% of the characterized protein or the HMM; and the candidate is less similar to characterized proteins that have other functions.");
   my @showScores = map span({ -style => ScoreToStyle($_), -title => $titles[$_] },
                             ScoreToLabel($_)), (2,1,0);
-  my @parts = ("Confidence:", @showScores, br(),
-               "?", "&ndash;", "known gap:",
-               "despite the lack of a good candidate for this step,",
-               "this organism (or a related organism) performs the pathway"
-              );
-  push @parts, (br(), span({-style => $transporterStyle}, "transporter"),
-                "&ndash;", "transporters and PTS systems are shaded because",
-                "predicting their specificity is particularly challenging.")
+  my @parts = ();
+  push @parts, join(" ", "Confidence:", @showScores);
+  push @parts, join(" ",
+                    "?", "&ndash;", "known gap:",
+                    "despite the lack of a good candidate for this step,",
+                    "this organism (or a related organism) performs the pathway")
+    unless $set eq "carbon";
+  push @parts, join(" ",
+                    span({-style => $transporterStyle}, "transporter"),
+                    "&ndash;", "transporters and PTS systems are shaded because",
+                    "predicting their specificity is particularly challenging.")
     if $set eq "carbon" && ! param('gaps');
-  return p(@parts)."\n";
+  return p(join(br(), @parts))."\n";
 }
 
 sub ShowWarnings($$) {
