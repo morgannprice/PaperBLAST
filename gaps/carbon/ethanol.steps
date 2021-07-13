@@ -10,7 +10,7 @@
 etoh-dh-nad	ethanol dehydrogenase (NAD(P))	EC:1.1.1.1	ignore:CharProtDB::CH_121261	EC:1.1.1.71
 etoh-dh-c	ethanol dehydrogenase (cytochrome c)	EC:1.1.2.8	ignore_other:1.1.2.8
 
-# (The enzyme from Zyomomona is NAD-dependent, but is misannotated as quinone-dependent in MetaCyc.)
+# (The enzyme from Zymomonas is NAD-dependent, but is misannotated as quinone-dependent in MetaCyc.)
 adhAqn	ethanol dehydrogenase (quinone), subunit I	curated:BRENDA::Q44002	curated:BRENDA::P18278	curated:BRENDA::Q93RE9	curated:SwissProt::O05542	curated:SwissProt::P28036	ignore_other:1.1.2.8
 adhBqn	ethanol dehydrogenase (quinone), subunit II	curated:SwissProt::P0A388	curated:SwissProt::Q47945	ignore_other:1.1.2.8
 adhSqn	ethanol dehydrogenase (quinone), subunit III	curated:SwissProt::O05544
