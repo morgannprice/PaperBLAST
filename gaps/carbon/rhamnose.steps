@@ -86,12 +86,11 @@ all: rhamnose-transport LRA1 LRA2 LRA3 LRA4 lactaldehyde-conversion
 LRA5	2-keto-3-deoxy-L-rhamnonate 4-dehydrogenase	EC:1.1.1.401	ignore:metacyc::MONOMER-16233
 
 # EC:3.7.1.26 has been assigned but not linked to the characterized protein, which is
-# EAT09363.1 or Q1NEI7 (PMID:19187228).
-# A related protein from S. meliloti was assigned from fitness data.
-# Ignore the metacyc entry which confuses this with LRA5.
+# EAT09363.1 or metacyc:MONOMER-16233 (PMID:19187228) -- but MONOMER-16233 is misannotated as
+# a dehydrogenase.
 # And, ignore uniprot:Q39BA7, which is very similar to LRA6 from Burkholderia phytofirmans PsJN
 # but is reported to be a ureidoglycolate lyase (PMID:14506266).
-LRA6	2,4-diketo-3-deoxyrhamnonate hydrolase	uniprot:Q1NEI7	term:L-2,4-diketo-3-deoxyrhamnonate hydrolase	term:2,4-diketo-3-deoxy-L-rhamnonate hydrolase	EC:3.7.1.26	ignore:metacyc::MONOMER-16233	ignore:SwissProt::Q39BA7
+LRA6	2,4-diketo-3-deoxyrhamnonate hydrolase	curated:metacyc::MONOMER-16233	term:L-2,4-diketo-3-deoxyrhamnonate hydrolase	term:2,4-diketo-3-deoxy-L-rhamnonate hydrolase	EC:3.7.1.26	ignore:SwissProt::Q39BA7
 
 # In pathway III, rhamnose is also oxidized and dehydrated to
 # 2-dehydro-3-deoxy-L-rhamnonate, but then, dehydrogenase LRA5 forms

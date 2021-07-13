@@ -31,7 +31,7 @@ pyruvate-transport: yjcH actP
 # CstA and RR42_RS20515 seem to operate together with ybdD or similar proteins, but purified BtsT is reported to
 # transport pyruvate (PMID:29061664), so it may not require a ybdD-like component.
 # It is not clear if AO353_25255 functions with a ybdD-like component: the downstream gene, AO353_25260,
-# is ybD-like and has subtle defects during growth on pyruvate.
+# is ybdD-like and has subtle defects during growth on pyruvate.
 # Q0P9Y2 (CSTA_CAMJE) was proposed to be a peptide transporter in Campylobacter jejuni, but
 # is suspiciously similar to pyruvate transporters, so is ignored.
 cstA	large subunit of pyruvate transporter (CstA)	uniprot:A0A0C4Y7X7	curated:SwissProt::P15078	curated:SwissProt::P39396	uniprot:A0A0N9VZ52	ignore:SwissProt::Q0P9Y2

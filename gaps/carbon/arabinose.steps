@@ -91,9 +91,10 @@ araD	L-ribulose-5-phosphate epimerase	EC:5.1.3.4
 all: arabinose-transport araA araB araD
 
 xacB	L-arabinose 1-dehydrogenase	EC:1.1.1.376	EC:1.1.1.46
-# SMc00883 (Q92RN9) is specifically important for L-arabinose utilization and does not appear polar
+# SMc00883 (Q92RN9) is specifically important for L-arabinose utilization and does not appear polar.
+# (It has a vague annotation in SwissProt.)
 # Similarly for Ac3H11_615 (A0A165IRV8)
-xacC	L-arabinono-1,4-lactonase	EC:3.1.1.15	uniprot:Q92RN9	uniprot:A0A165IRV8
+xacC	L-arabinono-1,4-lactonase	EC:3.1.1.15	uniprot:Q92RN9	uniprot:A0A165IRV8	ignore:SwissProt::Q92RN9
 # The function of Q92RP0 seems to be unknown so ignore it
 xacD	L-arabinonate dehydratase	EC:4.2.1.25	ignore:SwissProt::Q92RP0
 xacE	2-dehydro-3-deoxy-L-arabinonate dehydratase	EC:4.2.1.43

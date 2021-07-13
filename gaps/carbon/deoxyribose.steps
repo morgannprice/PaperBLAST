@@ -2,12 +2,12 @@
 # 2-deoxy-D-ribose degradation I via deoxyribose 5-phosphate aldolase (metacyc:PWY-8060) 
 # and pathway II via oxidation to 2-deoxy-3-dehydro-D-ribonate (metacyc:PWY-8058).
 
-# Salmonella deoP is near deoK and can enhance growth of E. coli on deoxyribose, even
-# though it is not essential for deoxyribose utilization in Salmonella, see PMC94358
-deoP	deoxyribose transporter	uniprot:A0A5K1UX94
+# Salmonella deoP (Q8XEV7) is near deoK and can enhance growth of E. coli on deoxyribose, even
+# though it is not essential for deoxyribose utilization in Salmonella, see PMC94358.
+deoP	deoxyribose transporter	curated:TCDB::Q8XEV7
 deoxyribose-transport: deoP
 
-# The best-known pathway for deoxyribose utilizatoin involves a
+# The best-known pathway for deoxyribose utilization involves a
 # kinase forming deoxyribose-5-phosphate, an aldolase, forming
 # glyceraldehyde 3-phosphate (an intermediate in glycolysis)
 # and acetaldehyde, and acetaldehyde dehydrogenase to acetyl-CoA.

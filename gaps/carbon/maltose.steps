@@ -160,9 +160,9 @@ all: maltose-PTS mapP malP pgmB glk
 # or isomaltase (which should not; that refers to hydrolyzing an alpha-1,6 linkage,
 # whereas maltose has an alpha-1,4 linkage).
 # BRENDA::Q2PCE2 seems surprising but is supported by the underlying paper.
-# susB from Bacteroides thetaiotaomicron (G8JZS4) is a periplasmic maltase
+# susB from Bacteroides thetaiotaomicron (G8JZS4, CAZy::AAC44671.1) is a periplasmic maltase (PMID:18981178)
 #   (it also active on longer substrates) and is important for maltose utilization.
-susB	alpha-glucosidase (maltase)	EC:3.2.1.20	uniprot:G8JZS4	ignore_other:maltase
+susB	alpha-glucosidase (maltase)	EC:3.2.1.20	curated:CAZy::AAC44671.1	ignore_other:maltase
 
 # Alternatively, maltose can be hydrolyzed by alpha-glucosidase (EC:3.2.1.20) in the cytoplasm.
 all: maltose-transport susB glk

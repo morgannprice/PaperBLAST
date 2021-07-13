@@ -27,7 +27,7 @@ ecfA1	energy-coupling factor transporter, ATPase 1 (A1) component	uniprot:P40735
 ecfA2	energy-coupling factor transporter, ATPase 2 (A2) component	uniprot:P70970	ignore:TCDB::Q839D4	ignore:SwissProt::Q5M244	ignore:SwissProt::A2RI02	ignore:SwissProt::Q035B3	ignore:TCDB::Q03PY6	ignore:metacyc::G12WB-159-MONOMER	ignore:SwissProt::Q03ZL5
 
 # Ignore EcfT proteins from other bacteria
-ecfT	energy-coupling factor transporter, transmembrane (T) component	uniprot:P70972	ignore:TCDB::I7BV49	ignore:SwissProt::Q5M245	ignore:SwissProt::A2RI03	ignore:SwissProt::Q035B4	ignore:metacyc::G12WB-160-MONOMER	ignore:TCDB::Q03PY7	ignore:SwissProt::Q03ZL4
+ecfT	energy-coupling factor transporter, transmembrane (T) component	curated:SwissProt::P70972	ignore:TCDB::I7BV49	ignore:SwissProt::Q5M245	ignore:SwissProt::A2RI03	ignore:SwissProt::Q035B4	ignore:metacyc::G12WB-160-MONOMER	ignore:TCDB::Q03PY7	ignore:SwissProt::Q03ZL4
 
 # Transporters were identified using
 # query: transporter:tryptophan:L-tryptophan:trp

@@ -2,7 +2,7 @@
 # D-glucuronate degradation II (oxidation of 5-keto-4-deoxyglucarate, metacyc:PWY-6501),
 # a related pathway via 5-keto-4-deoxyglucarate aldolase (metacyc:PWY-6516),
 # or degradation via fructuronate (metacyc:PWY-7247).
-# GapMind also includes a variation on the oxidative pathway from Pseudomonas putida.
+# GapMind also includes a variation on the oxidative pathway with a glucarolactonase, as in Pseudomonas putida.
 # MetaCyc pathway I (via L-gulonate and xylitol, metacyc:PWY-5525) is not reported in prokaryotes
 # and is not described here.
 
@@ -38,13 +38,16 @@ import xylose.steps:dopDH # 2,5-dioxopentanonate dehydrogenase
 
 garL	5-dehydro-4-deoxy-D-glucarate aldolase	EC:4.1.2.20
 
-# glxR (G6278-MONOMER) is linked to this reaction but not this EC in ecocyc and metacyc
-garR	tatronate semialdehyde dehydrogenase	EC:1.1.1.60	curated:ecocyc::G6278-MONOMER
+# glxR (G6278-MONOMER) is linked to this reaction (but not this EC) in ecocyc and metacyc.
+# PGA1_c14880 (Phaeo:GFF1469) had been reannotated as a tartronate semialdehyde reductase but
+# this is questionable.
+garR	tartronate semialdehyde reductase	EC:1.1.1.60	curated:ecocyc::G6278-MONOMER	ignore:reanno::Phaeo:GFF1469
 
 import deoxyribonate.steps:garK # glycerate 2-kinase
 
 # Alternatively, 5-dehydro-4-deoxy-D-glucarate can be consumed by aldolase garL,
-# which forms pyruvate and tartronate; tartronate is reduced to D-glycerate and phosphorylated
+# which forms pyruvate and tartronate semialdehyde (2-hydroxy-3-oxopropionate);
+# tartronate semialdehyde is reduced to D-glycerate and phosphorylated
 # to enter glycolysis.
 5-dehydro-4-deoxyglucarate-degradation: garL garR garK
 
@@ -55,15 +58,25 @@ gci	D-glucaro-1,4-lactone cycloisomerase	EC:5.5.1.27
 # D-glucaro-1,4-lactone, and the cycloisomerase gci forms 5-dehydro-4-deoxy-D-glucarate.
 all: glucuronate-transport udh gci 5-dehydro-4-deoxyglucarate-degradation
 
-# This lactonase is similar to galactaro-1,5-lactonases
-# (i.e., PS417_17365), so it probably acts on the 1,5-lactone, but this is not proven.
-PP_1170	D-glucaro-1,5-lactonase	uniprot:Q88NN7	ignore:reanno::WCS417:GFF3393
+# Biochemical studies showed that lactonases uxuL and uxuF act on
+# D-glucaro-1,5-lactone (PMC6304669). These include
+# Rpic_4446 = B2UIY8,
+# PSPTO_1052 = Q888H2,
+# Bcep1808_2255 = A4JG52,
+# BMULJ_02167 = A0A0H3KPX2,
+# Bcep18194_A5499 = Q39EM3,
+# and PSPTO_2765 = Q881W7,
+# Genetic data from P. putida KT2440
+# shows that a uxuL-like protein (PP_1170 = Q88NN7) is involved in glucuronate
+# utilization. UxuL/uxuF are also active on galactaro-1,5-lactone,
+# and PS417_17365 from WCS417 may well act on both substrates, but this is not proven.
+uxuL	D-glucaro-1,5-lactonase UxuL or UxuF	uniprot:B2UIY8	uniprot:Q888H2	uniprot:A4JG52	uniprot:A0A0H3KPX2	uniprot:Q39EM3	uniprot:Q881W7	uniprot:Q88NN7	ignore:reanno::WCS417:GFF3393
 
 gudD	D-glucarate dehydratase	EC:4.2.1.40
 
 # In P. putida, genetic data suggests that the lactone is hydrolyzed
-# to D-glucarate and a dehydratase forms 5-dehydro-4-deoxy-D-glucarate.
-all: glucuronate-transport udh PP_1170 gudD 5-dehydro-4-deoxyglucarate-degradation
+# to D-glucarate by uxuL and the dehydratase gudD forms 5-dehydro-4-deoxy-D-glucarate.
+all: glucuronate-transport udh uxuL gudD 5-dehydro-4-deoxyglucarate-degradation
 
 uxaC	D-glucuronate isomerase	EC:5.3.1.12
 # uxuB is D-mannonate oxidoreductase

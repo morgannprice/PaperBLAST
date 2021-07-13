@@ -150,14 +150,16 @@ galactose-degradation: galK galT galE pgmA
 # but was not given this EC number.
 galdh	D-galactose 1-dehydrogenase (forming 1,4- or 1,5-lactones)	EC:1.1.1.48	EC:1.1.1.360	ignore_other:1.1.1.46	curated:SwissProt::Q92RN6
 
-# This step includes both galactono-1,4-lactonases (EC:3.1.1.25) and galactono,1-5-lactonases.
+# This step includes both galactono-1,4-lactonases (EC:3.1.1.25) and galactono-1-5-lactonases.
 # Some galactonolactonases are also L-arabinolactonases (EC 3.1.1.15), so those are ignored.
 # BRENDA annotates uniprot:A3FJ64 (from Bacillus thuringensis) as this, which seems questionable.
-# Fitness data confirms diverged lactonases N515DRAFT_1229 (A0A1I2AUG6) and BPHYT_RS16915 (B2SYR2).
+# Fitness data confirms diverged lactonases N515DRAFT_1229 (A0A1I2AUG6) and BPHYT_RS16915.
 # PS417_17365 from P. simiae WCS417 (GFF3393) is a galactono-1,5-lactonase, so is not given the EC number.
 # Similarly for PfGW456L13_3314.
 # In Acidovorax sp. GW101-3H11, fitness data suggests that the lactonase is Ac3H11_615 (A0A165IRV8).
-galactonolactonase	galactonolactonase (either 1,4- or 1,5-lactone)	EC:3.1.1.25	ignore_other:3.1.1.15	ignore:BRENDA::A3FJ64	uniprot:B2SYR2	uniprot:A0A1I2AUG6	curated:reanno::WCS417:GFF3393	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3314	uniprot:A0A165IRV8
+# And fitness data suggests that SMc00883 (Q92RN9) is a galactonolactonase and an arabinonolaconase
+# (it has a vague annotation in SwissProt).
+galactonolactonase	galactonolactonase (either 1,4- or 1,5-lactone)	EC:3.1.1.25	ignore:BRENDA::A3FJ64	curated:reanno::BFirm:BPHYT_RS16915	uniprot:A0A1I2AUG6	curated:reanno::WCS417:GFF3393	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3314	uniprot:A0A165IRV8	uniprot:Q92RN9	ignore:SwissProt::Q92RN9	ignore_other:3.1.1.15
 
 dgoD	D-galactonate dehydratase	EC:4.2.1.6	EC:4.2.1.140
 

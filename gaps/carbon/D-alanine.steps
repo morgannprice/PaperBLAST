@@ -18,12 +18,12 @@ Pf6N2E2_5405	ABC transporter for D-Alanine, ATPase component	curated:reanno::pse
 D-alanine-transport: Pf6N2E2_5402 Pf6N2E2_5403 Pf6N2E2_5404 Pf6N2E2_5405
 
 # Spore germination proteins and B. subtilis ygqE, which is not really characterized, were ignored.
+
 # An ABC transporter from Azospirillum brasilense, with 5
 # components, was identified in the fitness data. (Just one component was in the reannotations.)
 # MctP was missed by the clustering tool, but is annotated as transporting D-alanine
 # (see PMC135354, Figure 4A, showing that D-alanine inhibits transport).
 # A related protein, BPHYT_RS22245 (uniprot:B2T7V3), is involved in D-alanine utilization.
-
 AZOBR_RS08235	D-alanine ABC transporter, permease component 1	curated:reanno::azobra:AZOBR_RS08235
 AZOBR_RS08240	D-alanine ABC transporter, permease component 2	uniprot:G8ALI9
 AZOBR_RS08245	D-alanine ABC transporter, ATPase component 1	uniprot:G8ALJ0

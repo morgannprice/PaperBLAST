@@ -66,10 +66,10 @@ paaJ1	3-oxo-5,6-dehydrosuberyl-CoA thiolase	EC:2.3.1.223	ignore_other:2.3.1.174	
 # are required for phenylacetate utilization and are distantly related to E. coli paaF.
 paaF	2,3-dehydroadipyl-CoA hydratase	curated:BRENDA::P76082	curated:metacyc::MONOMER-15953	curated:reanno::BFirm:BPHYT_RS17335	uniprot:A0A2Z5MEB0
 
-# This step is described by 1.1.1.35, a broader term for 3-hydroxyacyl-CoA dehydrogenases
+# This step is described by 1.1.1.35, a broader term for 3-hydroxyacyl-CoA dehydrogenases.
 # HP15_2693 (GFF2749) is involved in phenylalanine degradation via phenylacetyl-CoA and
 # likely has this activity.
-# HP15_1512 (GFF1550) is annotated as enoyl-CoA hydratase but likely as 3-hydroxyacyl-CoA dehydrogenase
+# HP15_1512 (GFF1550) is annotated as enoyl-CoA hydratase but likely has 3-hydroxyacyl-CoA dehydrogenase
 # activity as well.
 paaH	3-hydroxyadipyl-CoA dehydrogenase	EC:1.1.1.35	curated:reanno::Marino:GFF2749	ignore:reanno::Marino:GFF1550
 

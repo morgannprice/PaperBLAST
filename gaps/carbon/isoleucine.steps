@@ -88,7 +88,8 @@ acdH	(2S)-2-methylbutanoyl-CoA dehydrogenase	EC:1.3.8.5	curated:reanno::pseudo13
 # 69% identical to the hydrolase from Arabidopsis (uniprot:Q9LKJ1).  And
 # MetaCyc linked uniprot:Q51969 (MONOMER-11695) from P. putida to ech, but the
 # sequence shown in the paper (PMID:12115060, Fig. 3) is different.
-ech	2-methyl-3-hydroxybutyryl-CoA hydro-lyase	EC:4.2.1.17	curated:reanno::psRCH2:GFF2389	ignore_other:4.2.1.150	ignore:BRENDA::Q9SE41	ignore:metacyc::MONOMER-11695
+# And PP_3358 (hydroxycinnamoyl-CoA hydratase-lyase) was incorrectly given this EC number.
+ech	2-methyl-3-hydroxybutyryl-CoA hydro-lyase	EC:4.2.1.17	curated:reanno::psRCH2:GFF2389	ignore_other:4.2.1.150	ignore:BRENDA::Q9SE41	ignore:metacyc::MONOMER-11695	ignore:reanno::Putida:PP_3358
 
 # SO1683 (Q8EGC1) was proposed to have this activity (PMC2612455; PMC3219624) and is important for
 # isoleucine utilization.

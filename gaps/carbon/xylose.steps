@@ -114,9 +114,9 @@ xdh	D-xylose dehydrogenase	EC:1.1.1.179	EC:1.1.1.175	uniprot:A0A4R8NY47
 
 # EC:3.1.1.110 is the 1,5-lactonase; EC:3.1.1.68 is the 1,4-lactonase;
 # both are included in "xylC."
-# uniprot:D4GP31 (HVO_B0030) has both activities (PMID:28854683).
-# xylono-1,4-lactonase is sometimes given EC:3.1.1.15 (L-arabinino-1,4-lactonase) so ignore those.
-xylC	xylonolactonase	EC:3.1.1.110	EC:3.1.1.68	uniprot:D4GP31	ignore_other:3.1.1.15
+# xylono-1,4-lactonase is sometimes given EC:3.1.1.15 (L-arabinino-1,4-lactonase) so ignore those;
+# indeed HVO_B0030 = metacyc::MONOMER-20630 has both 1,4-lactonase activities (PMID:28854683).
+xylC	xylonolactonase	EC:3.1.1.110	EC:3.1.1.68	ignore_other:3.1.1.15
 
 # Watanabe et al (PMC6336799) show that
 # C785_RS00855 = WP_039783171.1 = UPI0004007277 is D-xylonate dehydratase (xad);
@@ -124,8 +124,8 @@ xylC	xylonolactonase	EC:3.1.1.110	EC:3.1.1.68	uniprot:D4GP31	ignore_other:3.1.1.
 xad	D-xylonate dehydratase	EC:4.2.1.82	uniprot:D8IWS7_HERSS
 # Watanabe et al (PMC6336799) show that
 # C785_RS13680 = WP_039786859.1 = UPI00041852D2 is DKDP dehydratase (kdaD).
-#   Is 98% identical to D8IS12 so use that identifier.
-kdaD	2-keto-3-deoxy-D-arabinonate dehydratase	EC:4.2.1.141	uniprot:D8IS12
+#   Is 98% identical to HSERO_RS19360, which is included via reannotations.
+kdaD	2-keto-3-deoxy-D-arabinonate dehydratase	EC:4.2.1.141
 dopDH	2,5-dioxopentanonate dehydrogenase	EC:1.2.1.26
 
 # A number of EC:4.1.2.55 enzymes are similar but are promiscuous and are likely
