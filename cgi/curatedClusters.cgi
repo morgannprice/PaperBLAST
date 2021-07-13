@@ -45,7 +45,7 @@ sub CuratedToHtml($$); # curatedIds, sequence
 sub TransporterSearch($$);
 sub TSVPrint($$$);
 sub TransporterMatch($$);
-sub FormatClose($$$$$);
+sub FormatClose($$$$);
 
 my $maxHits = 250;
 my $nCPU = 8;
@@ -391,7 +391,18 @@ if ($closeMode && $pathSpec && $step) {
   close($fhClose) || die "Error reading $tmpPre.close";
   unlink("$tmpPre.faa");
   unlink("$tmpPre.close");
-  @close = sort { $b->{bits} <=> $a->{bits} } @close;
+
+  # Add queryInfo, score to the close objects
+  foreach my $close (@close) {
+    my $query = $close->{query};
+    my $queryInfo = $hitInfo{$query} || die;
+    $close->{queryInfo} = $queryInfo;
+    my $cov = ($close->{qend} - $close->{qbeg} + 1) / $queryInfo->{seqLength};
+    die "Invalid coverage $cov for $query subject $close->{subject}" unless $cov > 0 && $cov <= 1;
+    $close->{score} = $cov * $close->{identity};
+  }
+
+  @close = sort { $b->{score} <=> $a->{score} } @close;
   my %subjectSeen = ();
   @close = grep { my $subject = $_->{subject};
                   my $seen = exists $subjectSeen{$subject};
@@ -419,7 +430,7 @@ if ($closeMode && $pathSpec && $step) {
     print p("(Sequences that are similar to these will not be high-confidence candidates for", i($step).".)");
   }
   foreach my $close (@close) {
-    print FormatClose($dbhC, $close, \%hitInfo, \%seqs, "black");
+    print FormatClose($dbhC, $close, \%seqs, "black");
 
   }
   if (@hitHmmGoodOnly > 0) {
@@ -435,7 +446,7 @@ if ($closeMode && $pathSpec && $step) {
     print h3("Close but ignored sequences");
     print p("(Sequences that are similar to these will still be high-confidence candidates for", i($step).".)");
     foreach my $close (@ignore) {
-      print FormatClose($dbhC, $close, \%hitInfo, \%seqs, "darkgrey");
+      print FormatClose($dbhC, $close, \%seqs, "darkgrey");
     }
   }
 
@@ -900,17 +911,17 @@ sub TSVPrint($$$) {
   }
 }
 
-sub FormatClose($$$$$) {
-  my ($dbhC, $close, $queryInfos, $seqs, $color) = @_;
-  my $subject = $close->{subject};
-  my $query = $close->{query};
+sub FormatClose($$$$) {
+  my ($dbhC, $close, $seqs, $color) = @_;
+  my $query = $close->{query} || die;
+  my $queryInfo = $close->{queryInfo} || die;
+  my $subject = $close->{subject} || die;
   my $subjectInfo = $dbhC->selectrow_hashref("SELECT * FROM CuratedInfo WHERE curatedIds = ?",
                                              {}, $subject);
   die "Unknown close hit $subject" unless defined $subjectInfo;
   my ($subjectSeq) = $dbhC->selectrow_array("SELECT seq FROM CuratedSeq WHERE curatedIds = ?",
                                            {}, $subject);
   die "Unknown close hit $subject" unless defined $subjectSeq;
-  my $queryInfo = $queryInfos->{$query} || die;
 
   my $idString = int($close->{identity})."%";
   my $covString =   "Amino acids $close->{sbeg}:$close->{send}/$subjectInfo->{seqLength}"
