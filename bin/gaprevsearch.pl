@@ -13,6 +13,10 @@ use Steps qw{ReadOrgTable ReadOrgProtein};
 {
   my $nCPU = $ENV{MC_CORES} || 4;
   my $maxKeep = 8;
+  # By default, use the (more sensitive) seg qmask to avoid slow performance on some queries, such as
+  # S layer protein IFHOHEBM_00707. (In rare cases this causes some moderately-strong alignments
+  # to other hits to be missed.)
+  my $qmask = "seg";
   my @infields = qw{locusId type queryId bits locusBegin locusEnd qBegin qEnd qLength identity};
   my @outfields = qw{locusId otherId bits locusBegin locusEnd otherBegin otherEnd otherIdentity};
 
@@ -31,7 +35,10 @@ The curated file (in fasta or udb format) should be from
 
 Optional arguments:
 -maxKeep $maxKeep -- maximum number of curated hits to retain
- -nCPU $nCPU -- number of CPUs to use (defaults to the MC_CORES
+-qmask $qmask -- qmask option for usearch
+  (older versions of gaprevsearch did not set this option when running
+   usearch/ublast, which is equivalent to -qmask fastamino)
+-nCPU $nCPU -- number of CPUs to use (defaults to the MC_CORES
                 environment variable, or 4)
 END
 ;
@@ -42,6 +49,7 @@ END
                       'orgs=s' => \$orgprefix,
                       'curated=s' => \$curatedFile,
                       'out=s' => \$outFile,
+                      'qmask=s' => \$qmask,
                       'nCPU=i' => \$nCPU)
       && @ARGV == 0
       && defined $hitsFile && defined $orgprefix && defined $outFile;
@@ -82,7 +90,7 @@ END
     close($fhIn) || die "Error reading $aaIn\n";
     close($fhCand) || die "Error writing to $faaCand\n";
 
-    my $cmd = "$usearch -ublast $faaCand -db $curatedFile -id 0.3 -evalue 0.01 -blast6out $rhitsFile -threads $nCPU >& /dev/null";
+    my $cmd = "$usearch -ublast $faaCand -db $curatedFile -id 0.3 -evalue 0.01 -blast6out $rhitsFile -qmask $qmask -threads $nCPU >& /dev/null";
 
     system($cmd) == 0 || die "Error running $cmd: $!\n";
     unlink($faaCand);
