@@ -23,6 +23,14 @@ serC	3-phosphoserine aminotransferase	EC:2.6.1.52	uniprot:Y959_METJA
 # rescued by serine.
 # It is fused to serA and probably provides that activity as well.
 # Hits to serA are ignored because of serAB fusions.
-serB	phosphoserine phosphatase	EC:3.1.3.3	uniprot:A0A1X9ZBA8_9SPHI	uniprot:L0G228_ECHVK	ignore_other:EC 1.1.1.95
+# Some curated resources link this EC number to protein phosphatases, or to
+# non-specific periplasmic phosphatases, that are unlikely to play a role in serine biosynthesis.
+# These are all marked ignore (P60487, Q96GD0, Q3ZBF9, P00634, P0AE22, Q9P376).
+# Also, Swiss-Prot annotates RsbX (P17906) and RsbU (P40399) with this EC number, but
+# they probably act on proteins.
+# I was not able to find evidence that AraL (P94526) is a phosphoserine phosphatase
+# (the cited paper PMID:25848029 does not seem to discuss this protein.)
+# PMID:25848029 does show that Q9K8N3 and X3MFA4 (A0A1R2PVY2) have this activity.
+serB	phosphoserine phosphatase	EC:3.1.3.3	uniprot:A0A1X9ZBA8_9SPHI	uniprot:L0G228_ECHVK	ignore_other:EC 1.1.1.95	ignore:SwissProt::P60487	ignore:SwissProt::Q96GD0	ignore:SwissProt::Q9P376	ignore:SwissProt::Q3ZBF9	ignore:BRENDA::P00634	ignore:SwissProt::P0AE22	ignore:SwissProt::Q9P376	ignore:SwissProt::P17906	ignore:SwissProt::P40399	ignore:SwissProt::P94526	uniprot:Q9K8N3	uniprot:A0A1R2PVY2
 
 all: serA serC serB

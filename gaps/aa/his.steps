@@ -9,7 +9,10 @@ hisE	phosphoribosyl-AMP cyclohydrolase	EC:3.5.4.19	hmm:PF01502	ignore:CharProtDB
 hisA	isomerase HisA	EC:5.3.1.16
 hisF	IGP synthase, cyclase subunit	term:hisF	hmm:TIGR00735	ignore_other:imidazole glycerol phosphate synthase
 hisH	IGP synthase, amidotransferase subunit	term:hisH	hmm:TIGR01855	ignore_other:imidazole glycerol phosphate synthase
-hisB	IGP dehydratase	EC:4.2.1.19
+# Fitness data showed that BPHYT_RS17700 (B2SZ63) from Burkholderia phytofirmans is required for histidine biosynthesis.
+# PA5143 (Q9HU41) from Pseudomonas aeruginosa is required for histidine biosynthesis (PMC7028973).
+# as 
+hisB	IGP dehydratase	EC:4.2.1.19	uniprot:B2SZ63	uniprot:Q9HU41
 
 # In Bacillus subtilis, the histidinol-phosphate aminotransferase activity is provided by a gene that is in a cluster of
 # genes for tyrosine and phenylalanine biosynthesis (PMID:4431). Homology suggests that this
