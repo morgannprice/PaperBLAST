@@ -202,6 +202,10 @@ END
         die "Unknown curated id $value" unless defined $curatedIds;
         my $info = CuratedIdsToInfo($dbhC, $curatedIds);
         $stepCurated{$step}{$curatedIds} = $info;
+        # Warn if the item has already been ignored (it will be skipped later on)
+        if (exists $stepIgnore{$step}{$curatedIds}) {
+          print STDERR "Warning: for step $step, $curatedIds was ignored and then added -- it is still ignored\n";
+        }
       } elsif ($type eq "hmm") {
         $stepHmm{$step}{$value} = 1;
       } elsif ($type eq "uniprot") {
