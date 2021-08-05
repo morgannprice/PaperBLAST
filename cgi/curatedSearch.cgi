@@ -38,7 +38,7 @@ my $staticDir = "../static";
 my $cgi=CGI->new;
 my $query = $cgi->param('query');
 my $queryShow = $query;
-my $wordMode = $cgi->param('word');
+my $wordMode = $cgi->param('word') || 0;
 my $transporterMode;
 my $faa_mode = $cgi->param('faa');
 my $table_mode = ! $faa_mode;
@@ -85,7 +85,7 @@ if ($query) {
   $wordStatement = " as transporters" if $transporterMode;
   print p("Found", scalar(@$chits),
           qq{curated entries in PaperBLAST's database that match '$quotedquery'${wordStatement}.},
-          "Try",
+          "Or try",
           a({-href => "curatedSearch.cgi"}, "another search"))
     if $table_mode;
 
@@ -130,7 +130,11 @@ if ($query) {
             a({-href => join("&", "curatedSearch.cgi?faa=1",
                              "query=" . uri_escape($query),
                              "word=" . ($wordMode ? 1 : 0)) },
-              "sequences") . ".");
+              "sequences") . ".",
+              a({-href => "curatedClusters.cgi?query=$quotedquery&word=$wordMode"},
+                "Cluster these sequences"),
+              "(recent entries may not be included in clustering results).");
+
     my %uniqDesc = map { $_ => $idToChit{$_}[0]{desc} } @uniqids;
     my @sorted = sort { $uniqDesc{$a} cmp $uniqDesc{$b} } @uniqids;
     foreach my $uniqid (@sorted) {

@@ -155,9 +155,10 @@ if ($query eq "" && $pathSpec eq "") {
       checkbox(-name => "byorg", -label => "Sort by organism?", -checked => 0)),
     p(submit(-name => 'Search')),
     end_form,
-    p(a("Or",
-        a({-href => "curatedClusters.cgi?set=$set&path=all"}, "cluster proteins"),
-        "for steps in", a({-href => "gapView.cgi?set=$set"}, "GapMind"))),
+    p("Or cluster proteins for steps in GapMind for",
+      a({-href => "curatedClusters.cgi?set=aa&path=all"}, "amino acid biosynthesis"),
+      "or",
+      a({-href => "curatedClusters.cgi?set=carbon&path=all"}, "carbon catabolism")),
     end_html;
   exit(0);
 }
@@ -246,7 +247,9 @@ if ($query =~ m/^transporter:(.+)$/) {
               "other characterized proteins similar to $step")) unless $format;
   }
   print p("Or see all steps for",
-          a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec"}, $pathInfo{$pathSpec}{desc}))
+          a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec"}, $pathInfo{$pathSpec}{desc})),
+        p("Or",
+          a({-href => "curatedClusters.cgi?set=$set"}, "search by keyword"))
     unless $format;
 
   # Show step description
