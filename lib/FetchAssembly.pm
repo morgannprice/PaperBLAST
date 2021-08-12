@@ -109,7 +109,10 @@ sub FetchNCBIInfo($) {
     }
     push @out, $out;
   }
-  return @out;
+  # Put the refseq assemblies (GCF...) first
+  my @outRefSeq = grep { $_->{id} =~ m/^GCF/ } @out;
+  my @outOther = grep { $_->{id} !~ m/^GCF/ } @out;
+  return (@outRefSeq,@outOther);
 }
 
 # Given the assembly hash, fetch protein fasta, uncompress it, and write it to the given file
