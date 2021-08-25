@@ -149,8 +149,10 @@ sub FetchNCBIFileGz($$$) {
   return 0 unless $URL =~ m!/([^/]+)$!;
   my $prefix = $1;
   $URL = join("", $URL, "/", $prefix, "_", $suffix, ".gz");
-   system("wget", "-nv", "-O", $tmpfilegz, $URL) == 0
-    || return 0;
+  unless(system("wget", "-nv", "-O", $tmpfilegz, $URL) == 0) {
+    print qq{<P style="color:red;">Failed to fetch $URL</P>\n};
+    return 0;
+  }
   system("gunzip", $tmpfilegz) == 0 || return 0;
   return rename($tmpfile, $outfile) || return 0;
 }
