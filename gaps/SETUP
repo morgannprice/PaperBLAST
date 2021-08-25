@@ -4,64 +4,188 @@ These scripts should work on any Linux system, and would probably work
 on other Unix or MacOS as well. All of the code is written in perl
 5. (I am using perl v5.10.1 or perl v5.16.3.)
 
-There are two phases for running GapMind: converting the pathway
-descriptions to a list of queries (which you need not do yourself),
-and using the queries files to analyze genomes.
+There are three phases for running GapMind: 
 
-To analyze genomes:
+1. Building a "curated" database of proteins of known function
+2. Converting the pathway descriptions to a steps database
+3. Using the curated and steps databases to analyze genomes.
 
-Put the blast executables (formatdb, blastall, and fastacmd) in the
-bin/blast/ subdirectory. I am currently using NCBI BLAST 2.2.18.
+If you just want to use the existing definitions of pathways and steps
+to analyze your genomes, then you only need to run the 3rd phase, so
+setting up phase 3 is described first.
+
+ANALYZE GENOMES (PHASE 3)
+
+Make sure you have the following perl libraries installed:
+DBI FindBin Getopt::Long List::Util
+
+If you want to use gapView.cgi, you will also need
+CGI HTML::Entities IO::Handle DB_File File::stat Time::HiRes
+LWP::Simple JSON IO::String Bio::SeqIO
+(Bio::SeqIO is part of bioperl; DB_File depends on the BerkeleyDB
+software library)
+
+Make sure sqlite3 is on your path and supported by DBI (this may
+require installing the DBI::SQLite perl library). I am currently using
+sqlite version 3.7.17.
 
 Put the usearch executable in the bin/ subdirectory. I am
-currently using usearch 10.0.
+currently using usearch 10.0, which is available at
+https://www.drive5.com/usearch/download.html
 
 Put the hmmsearch and hmmfetch executables in the bin/
-subdirectory. I am currently using HMMER 3.1b2.
+subdirectory. I am currently using HMMER 3.3.1, which is available at
+http://eddylab.org/software/hmmer/hmmer-3.3.1.tar.gz
+
+Put the BLAST executables (formatdb, blastall, and fastacmd)
+in the bin/blast/ subdirectory. I am currently using NCBI BLAST
+2.2.18 (not BLAST+), which is available at
+ftp://ftp.ncbi.nlm.nih.gov/blast/executables/legacy.NOTSUPPORTED/2.2.18/
 
 Make sure the steps files are up to date (i.e. from the gaps/aa/
-subdirectory in github).
+or gaps/carbon/ subdirectory in github).
+
+Create some subdirectories:
+
+mkdir fbrowse_data
+mkdir private
+mkdir tmp
 
 Download the curated and steps databases, i.e. from
+  https://papers.genomics.lbl.gov/tmp/path.aa/curated.faa
   https://papers.genomics.lbl.gov/tmp/path.aa/curated.db
   https://papers.genomics.lbl.gov/tmp/path.aa/steps.db
-for amino acid biosynthesis, and put them into tmp/path.aa
-or tmp/path.carbon
+for amino acid biosynthesis, or from
+  https://papers.genomics.lbl.gov/tmp/path.carbon/curated.faa
+  https://papers.genomics.lbl.gov/tmp/path.carbon/curated.db
+  https://papers.genomics.lbl.gov/tmp/path.carbon/steps.db
+for carbon catabolism, and put them into
+tmp/path.aa or tmp/path.carbon
+(You will need to create the tmp/path.aa and tmp/path.carbon
+directories first.)
 
-Format the database of characterized proteins for BLAST and
-usearch:
-bin/blast/formatdb -p T -o T -i tmp/path.aa/curated.faa
+Extract the HMM files from the steps database, i.e.
+# for amino acid biosynthesis
+bin/extractHmms.pl tmp/path.aa/steps.db tmp/path.aa
+# for cabon
+bin/extractHmms.pl tmp/path.carbon/steps.db tmp/path.carbon
+
+Format the database of characterized proteins for usearch and BLAST,
+i.e. for amino acid biosynthesis do:
+
 bin/usearch -makeudb_ublast tmp/path.aa/curated.faa -output tmp/path.aa/curated.faa.udb
+bin/blast/formatdb -p T -o T -i tmp/path.aa/curated.faa
 
-To run the analysis from the command line:
-
-Use bin/buildorgs.pl to convert the genome(s) of interest to a table
-of organisms and their proteins.
-
-Use bin/gapsearch.pl to compare the queries (one file per pathway) to
-the proteins.
-
-Use bin/gaprevsearch.pl to see if the candidates are similar to
-characterized proteins tha thave other functions.
-
-Use bin/gapsummary.pl to score all the candidates and steps and to
-find the best-scoring path for each pathway. This produces three
-tables: one for each pathway and rule (including the rule "all" for
-the entire pathway); one for each step; and one for each candidate for
-each step.
-
-Optionally, use bin/checkGapRequirements.pl to check dependencies
-between pathways.
-
-To run the analysis using the CGI scripts:
-
-Make sure the perl module DB_File is installed. (This depends on BerkeleyDB)
+To run the analysis using the CGI scripts and your web server:
 
 Make sure that the tmp directory is writable by apache (or by
-everyone). Then visit cgi/gapView.cgi
+everyone). Then visit cgi/gapView.cgi to run the analysis and view the
+results.
+
+To run the analysis using the CGI scripts from the command line:
+
+The key script is gapView.cgi. The key arguments are the set (aa or
+carbon), gdb (which genome database), and gid (which genome
+identifier). For example, to analyze assembly GCF_902167245.1 of
+Desulfovibrio vulgaris Hildenborough from NCBI, do
+
+cd cgi
+./gapView.cgi 'force=1&set=aa&gdb=NCBI&gid=GCF_902167245.1'
+
+You can use the CPU_USE environment variable to control how many
+threads gapView.cgi uses.
+
+The results will be in tmp/NCBI__GCF_902167245.1/aa.sum.* --
+aa.sum.rules, aa.sum.steps, and aa.sum.cand are tab-delimited tables
+with one row per rule, per step, or per candidate for a step, and
+aa.sum.db is a sqlite3 database. The first thing I usually look at is
+the results for rule=all for each pathway.
+
+To analyze your own genomes, use bin/buildorgs.pl to convert the
+genome(s) of interest to a table of organisms and their proteins, in
+the format expected by gapView.cgi. For example:
+
+# Download a protein fasta file
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/902/167/245/GCF_902167245.1_DSV_KAUST_v1/GCF_902167245.1_DSV_KAUST_v1_protein.faa.gz
+gunzip GCF_902167245.1_DSV_KAUST_v1_protein.faa.gz
+
+# Convert it to the form GapMind is set up, with orgs=DvH, so
+# that the results will be in tmp/DvH/
+mkdir tmp/DvH
+bin/buildorgs.pl -out tmp/DvH/orgs -orgs 'file:GCF_902167245.1_DSV_KAUST_v1_protein.faa:Desulfovibrio vulgaris downloaded'
+
+# Run gapView with the orgs argument instead of the gdb/gid arguments
+(cd cgi; ./gapView.cgi 'force=1&set=aa&orgs=DvH')
+
+You can also use buildorgs.pl to set up many genomes at once (all in
+one directory). The out.org file will have a resulting table of
+genomes and the out.faa file will have the combined fasta protein
+sequences. But, analyzing more than ~100 genomes at a time will cause
+usearch to run out of memory unless you have the 64-bit version. If
+you want to analyze a larger number of genomes, split them into groups
+and use bin/combineOrgs.pl and bin/combineGaps.pl to combine the
+results.
+
+To run the analysis from the command line, step by step:
+
+# First set up tmp/DvH/orgs as described above, then
+
+# Use bin/gapsearch.pl to compare the queries (one file per pathway) to
+# the proteins.
+bin/gapsearch.pl -orgs tmp/DvH/orgs -set aa -out tmp/DvH/aa.hits -nCPU 4
+
+# Use bin/gaprevsearch.pl to see if the candidates are similar to
+# characterized proteins that have other functions.
+bin/gaprevsearch.pl -orgs tmp/DvH/orgs -hits tmp/DvH/aa.hits -curated tmp/path.aa/curated.faa.udb -out tmp/DvH/aa.revhits -nCPU 4
+
+# Use bin/gapsummary.pl to score all the candidates and steps and to
+# find the best-scoring path for each pathway. This produces three
+# tables: one for each pathway and rule (including the rule "all" for
+# the entire pathway); one for each step; and one for each candidate for
+# each step.
+bin/gapsummary.pl -orgs tmp/DvH/orgs -set aa -hits tmp/DvH/aa.hits -rev tmp/DvH/aa.revhits -out tmp/DvH/aa.sum
+
+# Optionally, use bin/checkGapRequirements.pl to check dependencies
+# between pathways. The output table will list any warnings.
+bin/checkGapRequirements.pl -org DvH -set aa -out tmp/DvH/aa.sum.warn
+
+# Optionally, use orgsVsMarkers.pl to compare the genome to organisms
+# with known gaps (for amino acid biosynthesis only).
+bin/orgsVsMarkers.pl -orgs tmp/DvH/orgs -vs gaps/aa/aa.known.gaps.markers.faa -out tmp/DvH/aa.sum.knownsim
+
+# Optionally, use buildGapsDb.pl to combine the results into a sqlite3
+# database.
+bin/buildGapsDb.pl -gaps tmp/DvH/aa.sum -requirements tmp/DvH/aa.sum.warn -steps tmp/path.aa/steps.db -out tmp/DvH/aa.sum.db -markersim tmp/DvH/aa.sum.knownsim
 
 
-To convert steps to queries:
+CONVERT PATHWAY DESCRIPTIONS TO A STEPS DATABASE (PHASE 2)
+
+This requires the curated.db and curated.faa files to be in
+tmp/path.setName, where setName is aa or carbon.
+
+It also requires two databases of HMMs: PFam and TIGRFam. Put these in
+the hmm/ directory (relative to the code base) and set it up to
+include Pfam-A.hmm and TIGRFAMs.hmm (in our case, a symbolic link to
+TIGRFAMs_15.0_HMM.LIB).  You'll need to run hmmpress on both of these
+files. Finally, you'll need tab-delimited tables with metadata about
+the HMMs. For TIGRFam, which is no longer updated, you can use the
+table in the PaperBLAST code base:
+
+cp gaps/tigrinfo hmm/
+
+For PFam, use this command to make the table:
+
+perl -e 'print "acc\tname\n"; while(<STDIN>) { chomp; $name = $1 if m/^NAME\s+(.*)$/; $acc = $1 if m/^ACC\s+(.*)$/; next unless $_ eq "//"; print "$acc\t$name\n" if $name && $acc; $name = undef; $acc = undef; }' < hmm/Pfam-A.hmm > hmm/pfam.tab
+
+Once you have set up curated.faa*, curated2.faa, pfam, and tigrfam, you
+can compute the queries and build the steps database, i.e.
+
+bin/buildStepsDb.pl -set carbon -doquery
+
+You should now be ready to run gapsearch.pl or gapView.cgi.
+
+
+BUILD THE CURATED DATABASE (PHASE 1)
 
 This requires two protein databases: a list of characterized and curated
 proteins (from the characterized subset of PaperBLAST), and a
@@ -72,48 +196,26 @@ If you have the PaperBLAST database (usually in data/) and the
 ind/uniprot_sprot.dat.gz file from downloading Swiss-Prot, then you
 can set up the various databases that are needed by running:
 
-nice bin/setupGaps.pl  -ind ind -set setname -data data
+bin/setupGaps.pl  -ind ind -set setName -data data
 
-where setname would be aa for the amino acid biosynthesis pathways
+where setName would be aa for the amino acid biosynthesis pathways
 
-Converting steps to queries also requires two databases of HMMs: PFam
-and TIGRFam. Put these in the hmm/ directory (relative to the code
-base) and set it up to include Pfam-A.hmm and TIGRFAMs.hmm (in our
-case, a symbolic link to TIGRFAMs_15.0_HMM.LIB).  You'll need to run
-hmmpress on both of these files. Finally, you'll need to tab-delimited
-tables with metadata about the HMMs. For TIGRFam, which is no longer
-updated, you can use the table in the PaperBLAST code base:
+DEFINE YOUR OWN SET OF PATHWAYS
 
-cp gaps/tigrinfo hmm/
-
-For PFam, use this command to make the table:
-
-perl -e 'print "acc\tname\n"; while(<STDIN>) { chomp; $name = $1 if m/^NAME\s+(.*)$/; $acc = $1 if m/^ACC\s+(.*)$/; next unless $_ eq "//"; print "$acc\t$name\n" if $name && $acc; $name = undef; $acc = undef; }' < hmm/Pfam-A.hmm > hmm/pfam.tab
-
-Once you have setup curated.faa*, curated2.faa, pfam, and tigrfam, you
-can compute the queries and build the steps database, i.e.
-
-bin/buildStepsDb.pl -set carbon -doquery
-
-You should now be ready to run gapsearch.pl or gapView.cgi.
-
-To define your own set of pathways:
-
-Choose a new setname ("aa" is the existing setname for amino acid
-biosynthesis) and create a new gaps/setname directory in the source
-code base.
+Choose a new setName and create a new gaps/setName directory in the
+source code base.
 
 For each pathway, create a pathway.steps file. There is some
 documentation of the file format in bin/gapquery.pl, or see examples
 in gaps/aa/*.steps.
 
-Create a tab-delimited file setname/setname.table, with the fields
+Create a tab-delimited file setName/setName.table, with the fields
 pathwayId and desc. It should include a row for each pathwayId that
 has a pathwayId.steps file and for pathwayId = all. For an example,
 see gaps/aa/aa.table
 
 Optional -- create a tab-delimited file of curated gaps in
-gaps/setname/setname.curated.gaps.tsv. It must have a header line the
+gaps/setName/setName.curated.gaps.tsv. It must have a header line the
 fields gdb gid pathway step class comment. (gdb is the genome
 database, such as "NCBI", and gid is the genome identifier.) There
 need not be any other rows. For an example, see
