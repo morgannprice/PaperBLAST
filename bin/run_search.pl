@@ -45,12 +45,12 @@ unless (-e $infile) {
 }
 
 &maybe_run("$Bin/queryEuropePMCBatch.pl -in $infile -out $workdir/epmc.part1 -dir $workdir");
-if (defined $test || ! -z "$infile.fail") {
-  &maybe_run("$Bin/join.pl -header 0 -match 1.1=2.3 -ignore 1.1 $workdir/epmc.part1.fail $infile > $infile.fail");
-  &maybe_run("$Bin/queryEuropePMCBatch.pl -in $infile.fail -out $workdir/epmc.part2 -dir $workdir");
-} else {
+if (-z "$workdir/epmc.part1.fail") {
   &maybe_run("echo -n > $infile.fail");
   &maybe_run("echo -n > $workdir/epmc.part2");
+} else {
+  &maybe_run("$Bin/join.pl -header 0 -match 1.1=2.3 -ignore 1.1 $workdir/epmc.part1.fail $infile > $infile.fail");
+  &maybe_run("$Bin/queryEuropePMCBatch.pl -in $infile.fail -out $workdir/epmc.part2 -dir $workdir");
 }
 &maybe_run("cat $workdir/epmc.part1 $workdir/epmc.part2 > $workdir/epmc");
 print STDERR "Success\n" if ! defined $test;
