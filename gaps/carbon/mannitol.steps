@@ -35,7 +35,7 @@ mannitol-PTS: gutB gutE gutA
 
 # ABC transporters
 
-# MtlEFGK in 4 strains of Pseudomonas fluorescens or Pseudomonas simiae, or smoEFGK in Rhodopseudomonas sphaeroides.
+# MtlEFGK in several strains of Pseudomonas fluorescens or Pseudomonas simiae, or smoEFGK in Rhodopseudomonas sphaeroides.
 # (The Rhodopseudomonas system was missed by the query; it is annotated as a hexitol transporter.)
 # For all components, ignore simlarity to close homologs in FW300-N2C3 or FW300-N2E2, annotated as transporting sorbitol only.
 mtlE	polyol ABC transporter, substrate-binding component MtlE/SmoE	curated:TCDB::O30491	curated:reanno::WCS417:GFF2493	curated:reanno::pseudo13_GW456_L13:PfGW456L13_3042	curated:reanno::pseudo3_N2E3:AO353_25880	ignore:reanno::pseudo5_N2C3_1:AO356_00025	ignore:reanno::pseudo6_N2E2:Pf6N2E2_1963	curated:TCDB::O30831
@@ -49,9 +49,6 @@ mannitol-transport: mtlE mtlF mtlG mtlK
 
 PLT5	polyol transporter PLT5	curated:CharProtDB::CH_091483
 mannitol-transport: PLT5
-
-mtlP	mannitol transporter, MFS type	curated:reanno::SB2B:6936374	curated:reanno::pseudo5_N2C3_1:AO356_28540
-mannitol-transport: mtlP
 
 # Ignore erroneous annotation of the TRAP transporter component Q3J1R2 from Rhodobacter sphaeroides as SmoM
 # Ignore a porin from Pseudomonas aeruginosa
