@@ -38,15 +38,32 @@ paaB	phenylacetyl-CoA 1,2-epoxidase, subunit B	curated:SwissProt::P76078	curated
 paaC	phenylacetyl-CoA 1,2-epoxidase, subunit C	curated:BRENDA::P76079	curated:metacyc::MONOMER-15949
 paaE	phenylacetyl-CoA 1,2-epoxidase, subunit E	curated:SwissProt::P76081	curated:metacyc::MONOMER-15950
 
-paaG	1,2-epoxyphenylacetyl-CoA isomerase	EC:5.3.3.18
+# In MetaCyc, PaaG is described as a 1,2-epoxyphenylacetyl-CoA isomerase, but
+# it is now thought to isomerize  2-(oxepinyl)acetyl-CoA to oxepin-CoA
+# as well as cis-3,4-didehydroadiyplCoA to trans-2,3-didehydroadiypl-CoA (see PMID:31689071).
+paaG	1,2-epoxyphenylacetyl-CoA isomerase / 2-(oxepinyl)acetyl-CoA isomerase / didehydroadipyl-CoA isomerase 	EC:5.3.3.18
 
-# paaZ is a fusion protein of a hydrolsae and aldehyde dehydrogenase domains
-paaZ1	oxepin-CoA hydrolase	EC:3.3.2.12
+# PaaZ is a fusion protein of hydrolase and aldehyde dehydrogenase domains.
+# However, in many bacteria that use this pathway, the 3-oxo-5,6-didehydrosuberyl-CoA
+# dehydrogenase is a separate protein (PMC3064157).
+# That study identified a single-domain protein (CAI08632.1) with oxepin-CoA hydrolase activity, but
+# it was ~1,000x more active as a crotonyl-CoA hydrolase; since we are not sure if its
+# oxepin-CoA hydrolase activity is physiologically relevant, we did not include it.
+# In Paraburkholderia bryophila 376MFSha3.1, which has a single-domain 3-oxo-5,6-didehydrosuberyl-CoA
+# dehydrogenase, the putative enoyl-CoA hydrolase H281DRAFT_04594 (A0A2Z5MCI7) is very important for
+# phenylacetate utilization, and we predict that it is the missing oxepin-CoA hydrolase.
+# (H281DRAFT_04594 is related to enoyl-CoA hydratases that form (S)-3-hydroxylacyl-CoA,
+# while the hydrolase domain of PaaZ is related to enoyl-CoA hydratases that form (R)-3-hydroxylacyl-CoA.
+# In fact, PaaZ can dehydrate (R)-3-hydroxybutyryl-CoA (PMC3064157).)
+paaZ1	oxepin-CoA hydrolase	EC:3.3.2.12	uniprot:A0A2Z5MCI7
 
+# PaaZ is a fusion protein of hydrolase and aldehyde dehydrogenase domains.
+# However, a single-domain dehydrogenase has also been characterized
+# (PacL = CAI08120 = Q5P3J4; see PMC3064157).
 # Some of these dehydrogenases are closely related to
 # 3,4-dehydroadipyl-CoA semialdehyde dehydrogenases (EC:1.2.1.77),
-# which perform a similar reaction.
-paaZ2	3-oxo-5,6-didehydrosuberyl-CoA semialdehyde dehydrogenase	EC:1.2.1.91	ignore_other:1.2.1.77
+# which perform a similar reaction, so similarity to those are ignored.
+paaZ2	3-oxo-5,6-didehydrosuberyl-CoA semialdehyde dehydrogenase	EC:1.2.1.91	uniprot:Q5P3J4	ignore_other:1.2.1.77
 
 # PaaJ is a thiolase with two activities that are linked to two different EC numbers, so it is
 # listed twice, as paaJ1 and paaJ2.
@@ -211,19 +228,23 @@ benzoyl-CoA-degradation: benzoyl-CoA-reductase Ch1CoA badK badH badI pimD pimC p
 # paaH, and paaJ2).
 benzoyl-CoA-degradation: boxA boxB boxC boxD paaF paaH paaJ2
 
-# In the aerobic pathway, an oxygen-dependent 1,2-epoxidase paaABCE) converts
-# phenylacetyl-CoA to 1,2-epoxyphenylacetyl-CoA, an isomerase forms
-# 2-oxepin-2(3H)-ylideneacetyl-CoA, a ring-opening hydrolase forms
-# 3-oxo-5,6-didehydrosuberyl-CoA semialdehyde, a dehydrogenase forms
-# 3-oxo-5,6-didehydrosuberyl-CoA, a thiolase forms
-# trans-2,3-dehydroadipyl-CoA and acetyl-CoA, a hydratase forms
-# (3S)-hydroxyadipyl-CoA, a dehydrogenase forms 3-oxoadipyl-CoA, and a
-# thiolase forms succinyl-CoA and acetyl-CoA.
+# In the aerobic pathway, oxygen-dependent 1,2-epoxidase (PaaABCE) converts
+# phenylacetyl-CoA to 1,2-epoxyphenylacetyl-CoA, which spontaenously
+# rearranges to 2-(oxepinyl)acetyl-CoA; isomerase PaaG forms
+# 2-oxepin-2(3H)-ylideneacetyl-CoA ("oxepin-CoA"); a ring-opening hydrolase forms
+# 3-oxo-5,6-didehydrosuberyl-CoA semialdehyde; a dehydrogenase forms
+# 3-oxo-5,6-didehydrosuberyl-CoA; thiolase PaaJ forms
+# cis-3,4-didehydroadipyl-CoA (and acetyl-CoA); isomerase PaaG forms
+# trans-2,3-didehydroadipyl-CoA; hydratase PaaF forms
+# (3S)-hydroxyadipyl-CoA; dehydrogenase PaaH forms 3-oxoadipyl-CoA, and
+# thiolase PaaJ forms succinyl-CoA and acetyl-CoA.
+# (The role of PaaG is described in PMID:31689071 and differs slightly from
+# MetaCyc.)
 phenylacetyl-CoA-degradation: paaA paaB paaC paaE paaG paaZ1 paaZ2 paaJ1 paaF paaH paaJ2
 
 # In the anaerobic pathway, a dehydrogenase forms
 # phenylglyoxyl-CoA, a hydrolase forms phenylglyoxylate (this step is
-# not linked to sequence but is likelly provided by the phenylglyoxylyl-CoA dehydrogenase,
+# not linked to sequence but is likely provided by the phenylglyoxylyl-CoA dehydrogenase,
 # see PMID:10336636), and another dehydrogenase forms benzoyl-CoA and
 # CO2. In principle, this pathway could occur aerobically, so GapMind
 # includes aerobic pathways for degrading the benzoyl-CoA.
