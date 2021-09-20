@@ -19,6 +19,20 @@ AO353_03040	ABC transporter for L-Citrulline, ATPase component	curated:reanno::p
 # query: transporter:citrulline:L-citrulline
 citrulline-transport: AO353_03055 AO353_03050 AO353_03045 AO353_03040
 
+# Another ABC transporter for citrulline (and ornithine) was identified in
+# Pseudomonas simiae WCS417. It is distantly related to
+# AO353_0355:AO353_03040 (for instance, the substrate-binding components are only 43% identical).
+# (PS417_17590 = A0A1N7UK26; PS417_17595 = A0A1N7UBU2; PS417_17600 = A0A1N7U128; PS417_17605 = A0A1N7U8S3.)
+PS417_17590	ABC transporter for L-Citrulline, periplasmic substrate-binding component	uniprot:A0A1N7UK26
+
+PS417_17595	ABC transporter for L-Citrulline, permease component 1	uniprot:A0A1N7UBU2
+
+PS417_17600	ABC transporter for L-Citrulline, permease component 2	uniprot:A0A1N7U128
+
+PS417_17605	ABC transporter for L-Citrulline, ATPase component	uniprot:A0A1N7U8S3
+
+citrulline-transport: PS417_17590 PS417_17595 PS417_17600 PS417_17605
+
 # Mitochondrial ornithine/citrulline exchangers were ignored.
 
 # GABA (gamma-aminobutyrate) is a common intermediate
