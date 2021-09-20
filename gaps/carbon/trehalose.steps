@@ -127,8 +127,9 @@ klh	3-ketotrehalose hydrolase	curated:reanno::Btheta:351685	curated:reanno::Pedo
 # the fate of the 3-ketoglucose is not well understood, but its utilization might not be necessary.
 all: trehalose-3-dehydrogenase klh glucose-utilization
 
-# PGA1_c07890 (I7EUW4) is important for trehalose and cellobiose utilization, probably cytoplasmic
-treF	trehalase	EC:3.2.1.28	uniprot:I7EUW4
+# PGA1_c07890 (I7EUW4) is important for trehalose and cellobiose utilization (it is probably cytoplasmic).
+# Dshi_1649 from Dinoroseobacter shibae (A8LLL3) is important for trehalose utilization.
+treF	trehalase	EC:3.2.1.28	uniprot:I7EUW4	uniprot:A8LLL3
 
 # In pathway VI, a periplasmic trehalase forms glucose, which is utilized.
 all: treF glucose-utilization

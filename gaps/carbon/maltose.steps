@@ -162,7 +162,9 @@ all: maltose-PTS mapP malP pgmB glk
 # BRENDA::Q2PCE2 seems surprising but is supported by the underlying paper.
 # susB from Bacteroides thetaiotaomicron (G8JZS4, CAZy::AAC44671.1) is a periplasmic maltase (PMID:18981178)
 #   (it also active on longer substrates) and is important for maltose utilization.
-susB	alpha-glucosidase (maltase)	EC:3.2.1.20	curated:CAZy::AAC44671.1	ignore_other:maltase
+# Dshi_1649 from Dinoroseobacter shibae (A8LLL3) is important for maltose utilization and is 60% identical to
+# the alpha-glucosidase HaG from Halomonas (PMC3298133).
+susB	alpha-glucosidase (maltase)	EC:3.2.1.20	curated:CAZy::AAC44671.1	uniprot:A8LLL3	ignore_other:maltase
 
 # Alternatively, maltose can be hydrolyzed by alpha-glucosidase (EC:3.2.1.20) in the cytoplasm.
 all: maltose-transport susB glk

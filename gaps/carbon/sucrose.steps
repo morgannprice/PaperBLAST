@@ -89,7 +89,7 @@ sucrose-transport: SLC45A4
 # Ignore porin ScrY, involved in movement through the outer membrane
 
 # This reaction does not match an EC number.
-# Many invertases (EC 3.2.1.26) also have this activity, so allow matches to those as well.
+# Many invertases (EC 3.2.1.26) also have this activity, so ignore similarity to those.
 # And the original reannotation of AO356_28590 as sucrose-6-phosphate hydrolase is questionable.
 scrB	sucrose-6-phosphate hydrolase	curated:CAZy::CAG25843.1	curated:CAZy::S68598	curated:SwissProt::P27217	curated:SwissProt::Q09122	ignore_other:3.2.1.26	ignore:reanno::pseudo5_N2C3_1:AO356_28590
 
@@ -131,8 +131,10 @@ all: sucrose-transport SUS scrK galU pgmA
 # And the original reannotation of AO356_28590 was as sucrose 6-phosphate hydrolase,
 # but it is probably a sucrose hydrolase. Also, PMID:29808622 has evidence that
 # the related protein PFL_3237 (cscA, Q4KBP1) is a sucrose hydrolase.
-# Inulinases (3.2.1.7) often cleave sucrose and so are ignored.
-ams	sucrose hydrolase (invertase)	EC:3.2.1.26	EC:3.2.1.48	EC:3.2.1.80	term:sucrose hydrolase	ignore:BRENDA::P93291	curated:reanno::pseudo5_N2C3_1:AO356_28590	uniprot:Q4KBP1	ignore_other:3.2.1.7
+# HaG from Halomonas (H3K096) hydrolyzes sucrose (PMC3298133).
+# Dshi_1649 from Dinoroseobacter shibae (A8LLL3) is important for sucrose utilization and is 60% identical to HaG.
+# Inulinases (3.2.1.7) often cleave sucrose and so similarity to them is ignored.
+ams	sucrose hydrolase (invertase)	EC:3.2.1.26	EC:3.2.1.48	EC:3.2.1.80	term:sucrose hydrolase	ignore:BRENDA::P93291	curated:reanno::pseudo5_N2C3_1:AO356_28590	uniprot:Q4KBP1	uniprot:H3K096	uniprot:A8LLL3	ignore_other:3.2.1.7
 
 # In pathway III, transport is followed by cleavage to glucose and fructose
 # and phosphorylation of each.
