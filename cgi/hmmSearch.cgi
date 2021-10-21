@@ -140,8 +140,12 @@ unless (-e $resultsFile
   die "No such executable: $hmmsearch" unless -x $hmmsearch;
   my $tmpResultsFile = "$resultsFile.$$.tmp";
   print p("Running HMMer for $showId") . "\n";
-  system($hmmsearch, "--cut_tc", "-o", "/dev/null", "--domtblout", $tmpResultsFile, $hmmfile, $blastdb) == 0
+  # If it has no trusted cutoff line, try running it with -E 0.001
+  if (system($hmmsearch, "--cut_tc", "-o", "/dev/null", "--domtblout", $tmpResultsFile, $hmmfile, $blastdb) != 0) {
+    print p("Rerunning HMMer with -E 0.001 instead of trying to use the trusted cutoff")."\n";
+    system($hmmsearch, "-E", 0.001, "-o", "/dev/null", "--domtblout", $tmpResultsFile, $hmmfile, $blastdb) == 0
     || die "Error running hmmsearch: $!";
+  }
   rename($tmpResultsFile, $resultsFile)
     || die "Error renaming to $resultsFile";
 }
