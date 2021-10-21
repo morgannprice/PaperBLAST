@@ -1,5 +1,5 @@
 # Leucine biosynthesis in GapMind is based on MetaCyc pathway L-leucine biosynthesis (metacyc:LEUSYN-PWY).
-# This begins with begins with the initial steps of
+# This begins with the initial steps of
 # valine biosynthesis (see metacyc:VALSYN-PWY), up to 3-methyloxobutanoate.
 
 import val.steps:ilvH ilvI ilvC ilvD
