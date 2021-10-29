@@ -14,7 +14,8 @@ our (@ISA,@EXPORT);
              CuratedMatch CuratedWordMatch
              IdToUniqId FetchSeqs UniqIdToSeq
              FetchCuratedInfo
-             SQLiteLine SqliteImport!;
+             SQLiteLine SqliteImport
+             reverseComplement!;
 
 sub read_list($) {
   my ($file) = @_;
@@ -432,5 +433,19 @@ sub SqliteImport($$$) {
   DoSqliteCmd($dbFile, ".import $tmpFile $tableName");
   unlink($tmpFile);
 }
+
+sub reverseComplement($) {
+    my $seq = shift;
+    chomp $seq;
+	my $origSeq=$seq;
+
+    die "Invalid sequence \"$origSeq\" in reverseComplement" if ( ($seq =~ 
+tr/RYKMSWBDHVNATCGXrykmswbdhvnatcg-/YRMKWSVHDBNTAGCXyrmkwsvhdbntagc-/) != 
+length($seq) );
+    $seq = reverse $seq;
+    return $seq;
+}
+
+
 
 1;
