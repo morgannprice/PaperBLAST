@@ -96,13 +96,9 @@ print
         -title => "Find similar proteins with known structures (PDBsum)"},
       "Search structures")),
 
-  p("Predict transmembrane helices:",
-    a({-href => "http://www.cbs.dtu.dk/cgi-bin/webface2.fcgi?"
-             . join("&",
-                    "configfile=/usr/opt/www/pub/CBS/services/TMHMM-2.0/TMHMM2.cf",
-                    "outform=-noshort",
-                    "SEQ=>${name}$newline$seq")},
-        "TMHMM")),
+  p("Predict transmembrane helices and signal peptides:",
+    a({-href => "https://fit.genomics.lbl.gov/cgi-bin/myPhobius.cgi?name=${name}&seq=$seq"},
+      "Phobius")),
 
   p("Check the current SEED with",
     # %0A encodes "\n" so that it looks like fasta input.
