@@ -258,7 +258,7 @@ unless ($query) {
     }
     my @pmIds = sort { $b <=> $a } keys %pmIds;
     my $paperLink = "";
-    $paperLink = "(" . a({ -href => "http://www.ncbi.nlm.nih.gov/pubmed/" . join(",",@pmIds),
+    $paperLink = "(" . a({ -href => "http://pubmed.ncbi.nlm.nih.gov/pubmed/?term=" . join(",",@pmIds) . "&sort=pubdate",
                           -onmousedown => loggerjs($db eq "PDB" ? "PDB" : "curatedsite", $hitId) },
                          "see",
                          @pmIds > 1 ? scalar(@pmIds) . " papers" : "paper")
