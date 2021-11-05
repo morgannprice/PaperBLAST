@@ -237,7 +237,7 @@ sub GeneToHtmlLine($) {
     @pmIds = grep { my $keep = !exists $seen{$_}; $seen{$_} = 1; $keep; } @pmIds;
     my $note = @pmIds > 1 ? scalar(@pmIds) . " papers" : "paper";
     push @pieces, "(see " .
-      a({ -href => "http://www.ncbi.nlm.nih.gov/pubmed/" . join(",",@pmIds),
+      a({ -href => "http://pubmed.ncbi.nlm.nih.gov/pubmed/?term=" . join(",",@pmIds). "&sort=pubdate",,
           -onmousedown => loggerjs("curatedpaper", $gene->{showName})},
         $note)
         . ")";
