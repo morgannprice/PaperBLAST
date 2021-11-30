@@ -113,7 +113,8 @@ while (my $prot = ParsePTools($fhProt)) {
     $pmIds{$pmId} = 1 if $pmId;
   }
   my $comment = $prot->{"COMMENT"}[0]{"value"} || "";
-  while ($comment =~ m/[|]CITS: ([\[\]0-9 ]+)[|]/g) {
+  # CITS: is occasionally missing the space
+  while ($comment =~ m/[|]CITS:\s*([\[\]0-9 ]+)[|]/g) {
     # this should extract a field like [8801422] or [10501935][11872485] or [6706930] [7142155]
     my $ids = $1;
     $ids =~ s/[\[\]]/ /g;
