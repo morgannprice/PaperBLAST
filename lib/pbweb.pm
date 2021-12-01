@@ -16,7 +16,8 @@ our (@ISA,@EXPORT);
              GeneToHtmlLine GenesToHtml
              GetMotd FetchFasta HmmToFile loggerjs start_page finish_page
              VIMSSToFasta RefSeqToFasta UniProtToFasta FBrowseToFasta DBToFasta
- commify
+             commify
+             LinkifyComment FormatStepPart DataForStepParts HMMToURL
 );
 
 # Returns a list of entries from SubjectToGene, 1 for each duplicate (if any),
@@ -795,5 +796,159 @@ sub commify($) {
     local $_  = shift;
     1 while s/^(-?\d+)(\d{3})/$1,$2/;
     return $_;
+}
+
+# Given text string, such as the comment in a GapMind steps file, replace terms
+# with links. Examples of terms that are replaced:
+# pfam:PF14574
+# uniprot:Q8AAD7_BACTN
+# PMID:7523119
+# PMC179677
+# metacyc:PHENOLDEG-PWY
+# URL:https://mspace.lib.umanitoba.ca/handle/1993/30289
+# EC:2.8.3.6
+sub LinkifyComment($) {
+  my ($comment) = @_;
+  my @words = split /\s/, $comment;
+  my @out = ();
+  foreach my $word (@words) {
+    # Pull of leading brackets or parentheses
+    my $pre = "";
+    $pre = $1 if $word =~ m/^([\[({]+)/;
+    $word =~ s/^([\[({]+)//;
+    if ($word =~ m/^pfam:(PF\d+)/i) {
+      my $pfam = $1;
+      $word =~ s/^pfam:PF\d+//i;
+      push @out, $pre . a({ -href => "hmmSearch.cgi?hmmId=$pfam" }, $pfam) . $word;
+    } elsif ($word =~ m/^uniprot:([A-Z][A-Z0-9_]+)/i) {
+      my $uniprotId = $1;
+      $word =~ s/^uniprot:[A-Z][A-Z0-9_]+//i;
+      push @out, $pre . a({ -href => "https://www.uniprot.org/uniprot/$uniprotId" }, $uniprotId) . $word;
+    } elsif ($word =~ m/^pmid:(\d+)/i) {
+      my $pmId = $1;
+      $word =~ s/^pmid:\d+//i;
+      push @out, $pre . a({ -href => "https://pubmed.ncbi.nlm.nih.gov/$pmId/" }, "PMID:$pmId") . $word;
+    } elsif ($word =~ m/^(PMC\d+)/) {
+      my $pmcId = $1;
+      $word =~ s/^PMC\d+//;
+      push @out, $pre . a({ -href => "http://www.ncbi.nlm.nih.gov/pmc/articles/" . lc($pmcId) . "/" },
+                   $pmcId) . $word;
+    } elsif ($word =~ m/^metacyc:([0-9A-Z][A-Z0-9-]+)/i) {
+      my $metacycId = $1;
+      $word =~ s/^metacyc:([0-9A-Z][A-Z0-9-]+)//i;
+      push @out, $pre. a({ -href => "https://metacyc.org/META/NEW-IMAGE?object=$metacycId" },
+                         "link") . $word;
+    } elsif ($word =~ m!^URL:(http[A-Za-z0-9_,:./?&-]+)!i) {
+      my $URL = $1;
+      $word =~ s!^URL:(http[A-Za-z0-9_,:./?&-]+)!!;
+      push @out, $pre. a({ -href => $URL }, "link") . $word;
+    } elsif ($word =~ m/^EC:([0-9][.][0-9.]+[0-9])/i) {
+      my $ec = $1;
+      $word =~ s/^EC:([0-9][.][0-9.]+[0-9])//i;
+      push @out, $pre . "EC " . a({ -href => "https://enzyme.expasy.org/EC/$ec" }, $ec) . $word;
+    } else {
+      push @out, $pre . $word;
+    }
+  }
+  return join(" ", @out);
+}
+
+# Fetch the sequence queries (uniprotQuery and curatedQuery) for a step
+sub DataForStepParts($$$) {
+  my ($dbhS, $pathwayId, $stepId) = @_;
+  my $stepParts = $dbhS->selectall_arrayref("SELECT * from StepPart WHERE pathwayId = ? AND stepId = ?",
+                                            { Slice => {} }, $pathwayId, $stepId);
+  my $stepQueries = $dbhS->selectall_arrayref("SELECT * from StepQuery WHERE pathwayId = ? AND stepId = ?",
+                                              { Slice => {} }, $pathwayId, $stepId);
+  my %curatedQuery = (); # curatedId (not ids -- a single compoennt) to stepquery row
+  # (Includes entries of type curated or ignore)
+  my %uniprotQuery = (); # uniprotId to stepquery row
+  foreach my $sq (@$stepQueries) {
+    if ($sq->{queryType} eq "curated" || $sq->{queryType} eq "ignore") {
+      $sq->{desc} =~ s/;;/. /g;
+      foreach my $id (split /,/, $sq->{curatedIds}) {
+        $curatedQuery{$id} = $sq;
+      }
+    } elsif ($sq->{queryType} eq "uniprot") {
+      $uniprotQuery{$sq->{uniprotId}} = $sq;
+    }
+  }
+  return { 'uniprotQuery' => \%uniprotQuery,
+           'curatedQuery' => \%curatedQuery };
+}
+
+# Given the data, the step part row (from the database), the set, and the orgId (or ""),
+# and the hash of organisms, return HTML for the step part
+sub FormatStepPart($$$$$) {
+  my ($data, $stepPart, $set, $orgId, $orgs) = @_;
+  die unless defined $data->{curatedQuery} && defined $data->{uniprotQuery};
+  my $type = $stepPart->{partType};
+  my $value = $stepPart->{value};
+
+  if ($type eq "EC") {
+    # Use local URLs for Curated BLAST links, instead of using the official papers.genomics.lbl.gov
+    # site, because the genome may not exist at the public site
+    my $out = "Curated proteins or TIGRFams with EC "
+      . a({-href => "https://enzyme.expasy.org/EC/$value" }, $value);
+    $out .= " (" . a({ -href => "genomeSearch.cgi?gdb="
+                       . $orgs->{$orgId}{gdb}
+                       . "&gid=" . $orgs->{$orgId}{gid}
+                       . "&query=$value",
+                       -title => "Run Curated BLAST" },
+                     "search")
+      . ")" if $orgId ne "";
+    return $out;
+  } elsif ($type eq "hmm") {
+    return "HMM " . a({-href => HMMToURL($value) }, $value);
+  } elsif ($type eq "term") {
+    # nead to uri_escape the query because it may contain %
+    my $URL = "curatedClusters.cgi?set=$set&word=1&query=" . uri_escape($value);
+    $URL = "genomeSearch.cgi?gdb=" . $orgs->{$orgId}{gdb}
+          . "&gid=" . $orgs->{$orgId}{gid}
+          . "&word=1"
+          . "&query=" . uri_escape($value)
+            if $orgId ne "";
+    return "Curated proteins matching "
+      . a({ -href => $URL,
+            -title => $orgId eq "" ? "" : "Run Curated BLAST" }, $value);
+  } elsif ($type eq "curated") {
+    my $URL = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=".$value;
+    my $show_id = $value; $show_id =~ s/^.*://;
+    # Find the relevant step query
+    return "Curated sequence " . a({-href => $URL, -title => "View in PaperBLAST"}, $show_id)
+      . ": " . $data->{curatedQuery}{$value}{desc};
+  } elsif ($type eq "uniprot") {
+    my $URL = "https://www.uniprot.org/uniprot/".$value;
+    return "UniProt sequence " . a({-href => $URL, -title => "View in UniProt"}, $value)
+      . ": " . $data->{uniprotQuery}{$value}{desc};
+  } elsif ($type eq "ignore_other") {
+    my $URL = "http://papers.genomics.lbl.gov/cgi-bin/curatedSearch.cgi?word=1"
+      . "&query=" . uri_escape($value); # value could contain %
+    return "Ignore hits to items matching "
+      . a({-href => $URL}, $value)
+      . " when looking for 'other' hits";
+  } elsif ($type eq "ignore") {
+    my $URL = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=$value";
+    my $showId = $value; $showId =~ s/^.*://;
+    return  "Ignore hits to "
+      . a({-href => $URL, -title => "View in PaperBLAST"}, $showId)
+      . " when looking for 'other' hits"
+      . " (" . $data->{curatedQuery}{$value}{desc} . ")";
+  } elsif ($type eq "ignore_hmm") {
+    return "Do not include HMM " . a({ -href => HMMToURL($value) }, $value)
+      . " (when considering EC numbers)";
+  }
+  die "Unknown StepPart type $type";
+}
+
+sub HMMToURL($) {
+  my ($hmmId) = @_;
+  if ($hmmId =~ m/^TIGR/) {
+    return "https://www.ncbi.nlm.nih.gov/Structure/cdd/".$hmmId;
+  } elsif ($hmmId =~ m/^PF/) {
+    my $hmmIdShort = $hmmId; $hmmIdShort =~ s/[.]\d+$//;
+    return "http://pfam.xfam.org/family/".$hmmIdShort;
+  }
+  return "";
 }
 
