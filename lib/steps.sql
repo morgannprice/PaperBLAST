@@ -15,8 +15,7 @@ CREATE TABLE Pathway(
 
 CREATE TABLE Rule(
   pathwayId TEXT NOT NULL,
-  /* Each pathway defines the rule all to achieve the entire pathway.
-     Another common ruleId is "transport", for uptake of a catabolized compound */
+  /* Each pathway defines the rule all to achieve the entire pathway */
   ruleId TEXT NOT NULL,
   isTransport TINYINT NOT NULL,
   PRIMARY KEY (pathwayId, ruleId)
