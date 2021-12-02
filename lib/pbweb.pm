@@ -9,6 +9,7 @@ use JSON;
 use DBI;
 use IO::String;
 use Bio::SeqIO;
+use URI::Escape;
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
