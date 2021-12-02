@@ -1530,6 +1530,7 @@ sub Finish() {
     start_ul();
   print li(a{ -href => "gapView.cgi?set=$otherSet" }, $otherDesc) if !defined $orgsSpec || $orgsSpec eq "";
   print
+    li(a({ -href => "curatedClusters.cgi?set=$set&path=all" }, "Clusters of characterized proteins")),
     li(a({ -href => "litSearch.cgi" }, "PaperBLAST: Find papers about a protein or its homologs")),
     li(a({ -href => "genomeSearch.cgi", -title => "Search a genome for proteins that are related to a query term" },
          "Curated BLAST for Genomes")),
