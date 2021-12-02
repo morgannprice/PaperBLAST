@@ -16,6 +16,7 @@
 #	can also sort by organism (byorg)
 # Alternatively, browse the pathways or steps, use
 #	path=all to list the pathways, or
+#       stepSpec to search for matching steps, or
 #	set path but not step to list the steps in a pathway
 # Can also find similar but non-matching characterized proteins, using
 #	path, step, and close=1
@@ -81,6 +82,10 @@ $minCoverage = 75 unless defined $minCoverage && $minCoverage =~ m/^\d+$/;
 $minCoverage = 100 if $minCoverage > 100;
 $minCoverage = 0 if $minCoverage < 0;
 
+my $stepSpec = param('stepSpec') || "";
+$stepSpec =~ s/^\s*//;
+$stepSpec =~ s/\s*$//;
+
 my $stepPath = "../gaps/$set";
 die "Invalid set $set: no $stepPath directory" unless -d $stepPath;
 my $queryPath = "../tmp/path.$set"; # intermediate files
@@ -90,10 +95,10 @@ my ($banner, $bannerURL);
 my $pathInfo = (); # rows from Pathway table, in order
 my %pathInfo; # pathwayId => row from Pathway table
 my $dbhS; # database handle for steps.db; used only if pathSpec is set
-if ($pathSpec ne "") {
+
+if ($pathSpec ne "" || $stepSpec ne "") {
   my $stepsDb = "$queryPath/steps.db";
   $dbhS = DBI->connect("dbi:SQLite:dbname=$stepsDb","","",{ RaiseError => 1 }) || die $DBI::errstr;
-
   $pathInfo = $dbhS->selectall_arrayref("SELECT * FROM Pathway",
                                        { Slice => {} });
   %pathInfo = map { $_->{pathwayId} => $_ } @$pathInfo;
@@ -138,6 +143,38 @@ if ($format eq "") {
 }
 
 autoflush STDOUT 1; # show preliminary results
+
+if ($stepSpec) {
+  my $stepObjs = $dbhS->selectall_arrayref("SELECT * FROM Step WHERE stepId LIKE ?",
+                                           { Slice => {} }, $stepSpec);
+  if (@$stepObjs == 0) {
+    print p("Sorry, no steps in $pathInfo{all}{desc} matched");
+    # fall through to the all-pathways page
+    $pathSpec = "all";
+    $stepSpec = "";
+  } elsif (@$stepObjs == 1) {
+    # fall through to the 1-step page
+    $pathSpec = $stepObjs->[0]{pathwayId};
+    $step = $stepObjs->[0]{stepId};
+  } else {
+    # Show list of steps to click through to
+    print p("Multiple steps matched:"), start_ul();
+    foreach my $stepObj (@$stepObjs) {
+      my $URL = join("&",
+                     "curatedClusters.cgi?set=$set",
+                     "path=$stepObj->{pathwayId}",
+                     "step=$stepObj->{stepId}",
+                     "identity=$minIdentity",
+                     "coverage=$minCoverage");
+      print li(a({ -href => $URL }, $stepObj->{stepId}),
+               "from", $pathInfo{ $stepObj->{pathwayId} }{desc});
+    }
+    print end_ul(),
+      p("Or see", a({ -href => "curatedClusters.cgi?set=$set&path=all"}, "all pathways")),
+      end_html;
+    exit(0);
+  }
+}
 
 if ($query eq "" && $pathSpec eq "") {
   print
@@ -216,7 +253,20 @@ if ($query =~ m/^transporter:(.+)$/) {
   @hits = @$chits;
 } elsif ($pathSpec eq "all") { # show list of pathways
   die if $step ne "";
-  print p("Pathways for", $pathInfo{all}{desc}),
+  print
+    h3("Cluster curated proteins for", $pathInfo{all}{desc}),
+    start_form(-method => 'get', -action => 'curatedClusters.cgi'),
+    hidden(-name => 'set', -value => $set, -override => 1),
+    p("Search for step:", textfield(-name => 'stepSpec', -value => '', -size => 25, -maxLength => 200),
+      small("&nbsp;Use % as a wild card character")),
+    p("Cluster at",
+      textfield(-name => "identity", -value => $minIdentity, -size => 3, -maxlength => 3),
+      "%identity and",
+      textfield(-name => "coverage", -value => $minCoverage, -size => 3, -maxlemgth => 3),
+      "%coverage"),
+    p(submit(-name => 'Search')),
+    end_form,
+    p("Or browse pathways:"),
     start_ul();
   foreach my $pathObj (@$pathInfo) {
     if ($pathObj->{pathwayId} ne "all") {
@@ -224,8 +274,12 @@ if ($query =~ m/^transporter:(.+)$/) {
                  $pathObj->{desc}));
     }
   }
+  my $otherSet = $set eq "aa" ? "carbon" : "aa";
+  my $otherSetDesc = $otherSet eq "aa" ? "amino acid biosynthesis" : "carbon catabolism";
   print end_ul(),
-    p("Or",a({-href => "curatedClusters.cgi?set=$set"}, "search by keyword"));
+    p("Or", a({-href => "curatedClusters.cgi?set=$otherSet&path=all"},
+              "cluster proteins for $otherSetDesc")),
+    p("Or", a({-href => "curatedClusters.cgi?set=$set"}, "search for curated proteins by keyword"));
 } elsif ($pathSpec ne "" && $step ne "") { # find proteins for this step
   my ($stepDesc) = $dbhS->selectrow_array("SELECT desc FROM Step WHERE pathwayId = ? AND stepId = ?",
                                           {}, $pathSpec, $step);
