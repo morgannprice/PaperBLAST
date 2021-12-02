@@ -154,7 +154,7 @@ sub AddCuratedInfo($) {
     @ids = map { "TC $_" } @tcids;
     push @ids, $protId;
   }
-  @ids = grep { $_ ne "" } @ids;
+  @ids = grep { defined $_ && $_ ne "" } @ids;
   $gene->{showName} = join(" / ", @ids) || $protId;
   $gene->{showName} = $protId if $db eq "REBASE";
 }
@@ -931,10 +931,11 @@ sub FormatStepPart($$$$$) {
   } elsif ($type eq "ignore") {
     my $URL = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=$value";
     my $showId = $value; $showId =~ s/^.*://;
-    return  "Ignore hits to "
-      . a({-href => $URL, -title => "View in PaperBLAST"}, $showId)
-      . " when looking for 'other' hits"
-      . " (" . $data->{curatedQuery}{$value}{desc} . ")";
+    my $desc = $data->{curatedQuery}{$value}{desc} || "entry not in GapMind's database";
+    return  join(" ",
+                 "Ignore hits to ",
+                 a({-href => $URL, -title => "View in PaperBLAST"}, $showId),
+                 "when looking for 'other' hits ($desc)");
   } elsif ($type eq "ignore_hmm") {
     return "Do not include HMM " . a({ -href => HMMToURL($value) }, $value)
       . " (when considering EC numbers)";
