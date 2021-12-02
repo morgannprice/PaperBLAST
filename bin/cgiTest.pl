@@ -67,6 +67,7 @@ foreach my $set (qw{aa carbon}) {
   }
   $dbhS->disconnect || die $DBI::errstr;
 }
+print STDERR "cgiTest.pl done\n";
 
 sub Test($$) {
   my ($cgi, $arg) = @_;
