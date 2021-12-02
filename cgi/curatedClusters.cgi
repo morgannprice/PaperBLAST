@@ -31,7 +31,8 @@ use Time::HiRes qw{gettimeofday};
 use DBI;
 use lib "../lib";
 use pbutils qw{ReadTable NewerThan CuratedWordMatch ReadFastaEntry};
-use pbweb qw{start_page AddCuratedInfo GeneToHtmlLine};
+use pbweb qw{start_page AddCuratedInfo GeneToHtmlLine DataForStepParts FormatStepPart LinkifyComment};
+use Steps qw{ReadSteps};
 use DB_File;
 use URI::Escape;
 use HTML::Entities;
@@ -231,6 +232,7 @@ if ($query =~ m/^transporter:(.+)$/) {
   die "Unknown step $step in pathway $pathSpec" unless defined $stepDesc;
   my $stepParts = $dbhS->selectall_arrayref("SELECT * from StepPart WHERE pathwayId = ? AND stepId = ?",
                                             { Slice => {} }, $pathSpec, $step);
+  my $stepPartData = DataForStepParts($dbhS, $pathSpec, $step);
   my $queries = $dbhS->selectall_arrayref("SELECT * from StepQuery WHERE pathwayId = ? AND stepId = ?",
                                           { Slice => {} }, $pathSpec, $step);
   print p($closeMode ? "Finding" : "Clustering",
@@ -249,16 +251,20 @@ if ($query =~ m/^transporter:(.+)$/) {
   print p("Or see all steps for",
           a({-href => "curatedClusters.cgi?set=$set&path=$pathSpec"}, $pathInfo{$pathSpec}{desc})),
         p("Or",
-          a({-href => "curatedClusters.cgi?set=$set"}, "search by keyword"))
+          a({-href => "curatedClusters.cgi?set=$set"}, "cluster curated proteins matching a keyword"))
     unless $format;
 
   # Show step description
   if ($format eq "") {
     print p(b("Definition of", i($step))) if $format eq "";
     print start_ul();
-    foreach my $part (@$stepParts) {
-      print li($part->{partType},$part->{value})."\n";
+    foreach my $row (@$stepParts) {
+      print li(FormatStepPart($stepPartData, $row, $set, "", undef));
     }
+    my $stepsObj = Steps::ReadSteps("../gaps/$set/$pathSpec.steps"); # for the comment
+    my $stepObj = $stepsObj->{steps}{$step} || die;
+    print li("Comment:", LinkifyComment($stepObj->{comment}))
+      if $stepObj->{comment} ne "";
     print end_ul(), "\n";
   }
 
@@ -336,7 +342,11 @@ if ($query =~ m/^transporter:(.+)$/) {
             $stepObj->{stepId}) . ":", $stepObj->{desc});
   }
   print end_ul(),
-    p("Or see all", a({-href => "curatedClusters.cgi?set=$set&path=all"}, "pathways"));
+    p("Or see an",
+      a({ -href => "gapView.cgi?set=$set&orgs=orgsFit&path=$pathSpec&showdef=1" },
+        "overview of $pathInfo{$pathSpec}{desc}")),
+    p("Or see",
+      a({-href => "curatedClusters.cgi?set=$set&path=all"}, "all pathways"));
 } else {
   die "Invalid mode for curatedClusters.cgi";
 }
@@ -730,8 +740,8 @@ sub CuratedToHtml($$) {
   my @ids = split /,/, $curatedIds;
   die unless @ids > 0;
   my @descs = split /;; /, $info->{descs};
-  my @orgs = split /;; /, $info->{orgs} if $info->{orgs} ne "";
-  my @id2s = split /;; /, $info->{id2s} if $info->{id2s} ne "";
+  my @orgs = split /;; /, $info->{orgs} if defined $info->{orgs} && $info->{orgs} ne "";
+  my @id2s = split /;; /, $info->{id2s} if defined $info->{id2s} && $info->{id2s} ne "";
 
   die "Mismatched length of ids and descs" unless scalar(@ids) == scalar(@descs);
   my $len = $info->{seqLength};
