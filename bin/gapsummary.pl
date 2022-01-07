@@ -410,7 +410,7 @@ sub MergeHits($$$$$$);
     my $nRound;
     for($nRound = 0; $nRound < $maxRounds; $nRound++) {
       my $nHeightsOld = scalar(keys %ruleToHeight);
-      foreach my $ruleId (sort keys $rulePaths) {
+      foreach my $ruleId (sort keys %$rulePaths) {
         my $maxHeight = 0;
         my $paths = $rulePaths->{$ruleId} || die "Unknown $pathwayId $ruleId";
         foreach my $path (@$paths) {
