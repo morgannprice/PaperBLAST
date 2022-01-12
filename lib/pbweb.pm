@@ -112,7 +112,7 @@ sub AddCuratedInfo($) {
     $gene->{priority} = 5;
     my ($orgId, $locusId) = split /:/, $protId;
     die "Invalid protId $protId" unless $locusId;
-    $gene->{URL} = "http://fit.genomics.lbl.gov/cgi-bin/singleFit.cgi?orgId=$orgId&locusId=$locusId";
+    $gene->{URL} = "http://fit.genomics.lbl.gov/cgi-bin/domains.cgi?orgId=$orgId&locusId=$locusId";
   } elsif ($db eq "REBASE") {
     $gene->{priority} = 4;
     $gene->{URL} = "http://rebase.neb.com/rebase/enz/$protId.html";
