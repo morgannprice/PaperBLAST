@@ -15,7 +15,8 @@ our (@ISA,@EXPORT);
              IdToUniqId FetchSeqs UniqIdToSeq
              FetchCuratedInfo
              SQLiteLine SqliteImport
-             reverseComplement!;
+             reverseComplement
+             ParseClustal!;
 
 sub read_list($) {
   my ($file) = @_;
@@ -446,6 +447,26 @@ length($seq) );
     return $seq;
 }
 
+# Given  a collection of lines, returns a hash of id to aligned sequence
+# Does not check if sequences are the correct length or if an identifier is repeated
+# On an error, returns undef
+sub ParseClustal(@) {
+  my (@lines) = @_;
+  my $header = shift @lines;
+  return undef unless $header =~ m/^CLUSTAL / || $header =~ m/^MUSCLE/;
 
+  my %seqs =();
+  foreach my $line (@lines) {
+    $line =~ s/[\r\n]+$//;
+    next if $line =~ m/^\s*$/;
+    $line =~ m/^(\S+)\s+(\S+)$/ || die "A".$line."A";
+    my ($id, $part) = ($1,$2);
+    die $line unless $part =~ m/^[a-zA-Z.*-]+$/;
+    return undef unless $part =~ m/^[a-zA-Z.*-]+$/;
+    $seqs{$id} .= $part;
+  }
+  return undef if keys(%seqs) == 0;
+  return \%seqs;
+}
 
 1;
