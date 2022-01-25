@@ -5,9 +5,9 @@ use CGI qw(:standard Vars start_ul);
 use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
 use URI::Escape;
 use HTML::Entities;
-use List::Util qw{sum max};
+use List::Util qw{sum min max};
 use lib "../lib";
-use pbutils qw{ReadFastaEntry};
+use pbutils qw{ReadFastaEntry ParseClustal};
 use MOTree;
 
 # In rendering mode, these options are required:
@@ -45,7 +45,7 @@ if (!$alnSet || !$treeSet) {
   # show the form
   print
     start_form(-name => 'input', -method => 'POST', -action => 'treeSites.cgi'),
-    p("Alignment in multi-fasta format:",
+    p("Alignment in multi-fasta or clustal format:",
       br(),
       textarea(-name => 'aln', -value => '', -cols => 70, -rows => 10),
       br(),
@@ -66,31 +66,39 @@ if (!$alnSet || !$treeSet) {
 }
 
 # else rendering mode
-my $fhAln;
+my @alnLines = ();
 if (defined param('aln') && param('aln') ne "") {
-  my $aln = param('aln');
-  open $fhAln, "<", \$aln;
+  @alnLines = split '\n', param('aln');
 } elsif (defined param('alnFile') && ref param('alnFile')) {
-  $fhAln = param('alnFile')->handle;
+  my $fhAln = param('alnFile')->handle;
   die unless $fhAln;
+  @alnLines = <$fhAln>;
 } else {
   fail("No alignment specified");
 }
 
-my %alnSeq = ();
-my %alnDesc = ();
-my $state = {};
-while (my ($id, $seq) = ReadFastaEntry($fhAln, $state)) {
-  if ($id =~ m/^(\S+)\s(.*)/) {
-    $id = $1;
-    $alnDesc{$id} = $2;
+my %alnSeq;
+my %alnDesc;
+
+if (my $hash = ParseClustal(@alnLines)) {
+  %alnSeq = %$hash;
+} else {
+  my $alnString = join("\n", @alnLines);
+  open (my $fh, "<", \$alnString);
+  my $state = {};
+  while (my ($id, $seq) = ReadFastaEntry($fh, $state, 1)) {
+    if ($id =~ m/^(\S+)\s(.*)/) {
+      $id = $1;
+      $alnDesc{$id} = $2;
+    }
+    fail("Duplicate sequence for " . encode_entities($id))
+      if exists $alnSeq{$id};
+    $seq =~ s/[.]/-/g;
+    $seq = uc($seq);
+    $seq =~ m/^[A-Z-]+$/ || fail("Invalid sequence for " . encode_entities($id));
+    $alnSeq{$id} = $seq;
   }
-  fail("Duplicate sequence for " . encode_entities($id))
-    if exists $alnSeq{$id};
-  $seq =~ s/[.]/-/g;
-  $seq = uc($seq);
-  $seq =~ m/^[A-Z-]+$/ || fail("Invalid characters in sequence for " . encode_entities($id));
-  $alnSeq{$id} = $seq;
+  fail($state->{error}) if defined $state->{error};
 }
 fail("No sequences in the alignment")
   if (scalar(keys %alnSeq) == 0);
@@ -151,7 +159,7 @@ warning("Missing branch lengths were set to 1") if $missingLen;
 
 my $anchorId = param('anchor');
 $anchorId = "" if !defined $anchorId;
-fail("Unknown anchor id " . $anchorId)
+fail("Unknown anchor id " . encode_entities($anchorId))
   if $anchorId ne "" && !exists $alnSeq{$anchorId};
 my ($anchorAln, $anchorSeq, $anchorLen);
 if ($anchorId ne "") {
@@ -191,7 +199,7 @@ if ($anchorId eq "") {
 
 my @lines = ("Drawing the tree for", scalar(keys %idToLeaf), "proteins");
 if (@alnPos > 0) {
-  push @lines, ("with", scalar(@alnPos), "aligned positions");
+  push @lines, ("with aligned positions");
   push @lines, ("numbered as in", encode_entities($anchorId))
     if $anchorId ne "";
 }
@@ -206,15 +214,18 @@ print p(@lines);
 # x axis: $padLeft to $padLeft + $treeWidth has the tree
 # spacer of width $pdMiddle
 # then 1 column for each position
+# and padRight
 my $padTop = 45;
 my $rowHeight = 8;
+my $minShowHeight = 15; # minimum height of a character to draw
 my $padBottom = 25;
 my $padLeft = 10;
 my $treeWidth = 150;
 my $padMiddle = 10;
+my $padRight = 24;
 my $posWidth = 30;
 my $svgHeight = $padTop + scalar(@leaves) * $rowHeight + $padBottom;
-my $svgWidth = $padLeft + $treeWidth + $padMiddle + scalar(@alnPos) * $posWidth;
+my $svgWidth = $padLeft + $treeWidth + $padMiddle + scalar(@alnPos) * $posWidth + $padRight;
 
 my %rawY; # Unscaled y for each node (0 to nLeaves-1)
 for (my $i = 0; $i < scalar(@leaves); $i++) {
@@ -266,14 +277,14 @@ foreach my $node (@$nodes) {
   push @svg, qq{<circle cx="$nodeX{$node}" cy="$nodeY{$node}" r="$radius">};
   my $title = $id;
   if ($moTree->is_Leaf($node) && @alnPos > 0) {
-    my $longDesc = $id;
-    $longDesc = "${id}: $alnDesc{$id}" if exists $alnDesc{$id};
+    my $longDesc = encode_entities($id);
+    $longDesc .= ": $alnDesc{$id}" if exists $alnDesc{$id};
     my $seq = $alnSeq{$id} || die;
     my @val = map substr($seq, $_, 1), @alnPos;
     $title = "$longDesc (has " . join("", @val) . ")";
   }
   $title = "(no label)" if $title eq "";
-  push @svg, "<title>" . encode_entities($title) . "</title>"
+  push @svg, "<TITLE>$title</TITLE>"
     if defined $title  && $title ne "";
   push @svg, "</circle>";
 }
@@ -306,26 +317,80 @@ my %taylor = split /\s+/,
 # Show selected alignment positions (if any)
 my $pos0X = $padLeft + $treeWidth + $padMiddle;
 for (my $i = 0; $i < @alnPos; $i++) {
+  my $pos = $alnPos[$i];
   my $left = $pos0X + $posWidth * $i;
   my $x = $left + $posWidth/2;
-  my $labelY = $padTop - 8;
+  my $labelY = $padTop - 3;
   my $labelChar = "#";
-  $labelChar = substr($anchorAln, $alnPos[$i], 1) if $anchorId ne "";
+  $labelChar = substr($anchorAln, $pos, 1) if $anchorId ne "";
   my $colLabel = $labelChar . $anchorPos[$i];
   push @svg, qq{<text text-anchor="left" transform="translate($x,$labelY) rotate(-45)">$colLabel</text>"};
 
+  # draw boxes for every position
   foreach my $leaf (@leaves) {
     my $id = $moTree->id($leaf);
     my $seq = $alnSeq{$id} || die;
-    my $char = substr($seq, $alnPos[$i], 1);
-    my $top = $nodeY{$leaf} - $rowHeight/2 - 0.5;
-    my $heightUse = $rowHeight + 1; # slight overlap to avoid subtle white lines
+    my $char = substr($seq, $pos, 1);
+    my $top = $nodeY{$leaf} - $rowHeight/2 - 0.1;
+    my $heightUse = $rowHeight + 0.2; # slight overlap to avoid subtle white lines
     my $color = exists $taylor{$char} ? $taylor{$char} : "black";
-    push @svg, qq{<rect x="$left" y="$top" width="$posWidth" height="$heightUse" style="fill:$color; stroke-width: 0;" />};
-    # text-anchor centers horizontally, dominant-baseline centers vertically
-    push @svg, qq{<text text-anchor="middle" dominant-baseline="middle" x="$x" y="$nodeY{$leaf}">$char</text>};
+    my $encodedId = encode_entities($id);
+    my $boxLeft = $left + $posWidth * 0.1;
+    my $boxWidth = $posWidth * 0.8;
+    push @svg, qq{<rect x="$boxLeft" y="$top" width="$boxWidth" height="$heightUse" style="fill:$color; stroke-width: 0;">};
+    push @svg, qq{<TITLE>$encodedId has $char</TITLE>};
+    push @svg, qq{</rect>};
   }
-}
+
+  # compute conservation of the position up the tree
+  my %conservedAt = (); # node => value if it is conserved within this subtree, or ""
+  foreach my $node (reverse @$nodes) {
+    if ($moTree->is_Leaf($node)) {
+      my $id = $moTree->id($node);
+      die unless exists $alnSeq{$id};
+      $conservedAt{$node} = substr($alnSeq{$id}, $pos, 1);
+    } else {
+      my @children = $moTree->children($node);
+      my $char;
+      foreach my $child (@children) {
+        die unless exists $conservedAt{$child};
+        if ($conservedAt{$child} eq "") {
+          $char = "";
+          last;
+        } elsif (!defined $char) {
+          $char = $conservedAt{$child};
+        }  elsif ($char ne $conservedAt{$child}) {
+          $char = "";
+          last;
+        }
+      }
+      $conservedAt{$node} = $char;
+    }
+  }
+
+  # draw text for each clade at best location (if there is space)
+  foreach my $node (@$nodes) {
+    my $ancestor = $moTree->ancestor($node);
+    if ($conservedAt{$node} ne "" && ($node == $root || $conservedAt{$ancestor} eq "")) {
+      # Check if the height of this subtree is at least $minShowHeight
+      my @leavesBelow;
+      if ($moTree->is_Leaf($node)) {
+        @leavesBelow = ($node);
+      } else {
+        @leavesBelow = @{ $moTree->all_leaves_below($node) };
+      }
+      my @leavesBelowY = map $nodeY{$_}, @leavesBelow;
+      my $height = $rowHeight + max(@leavesBelowY) - min(@leavesBelowY);
+      next unless $height >= $minShowHeight;
+      my $title = "";
+      if ($moTree->is_Leaf($node)) {
+        my $id = encode_entities($moTree->id($node));
+        $title = "<TITLE>$id has $conservedAt{$node}</TITLE>";
+      }
+      push @svg, qq{<text text-anchor="middle" dominant-baseline="middle" x="$x" y="$nodeY{$node}">$title$conservedAt{$node}</text>};
+    }
+  }
+} # End loop over positions
 
 print join("\n",
   "<DIV>",
@@ -352,3 +417,4 @@ sub warning($) {
   my ($notice) = @_;
   print p({-style => "color: red;"}, "Warning:", $notice), "\n";
 }
+
