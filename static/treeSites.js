@@ -1,5 +1,6 @@
 
 function leafSearch() {
+  var nMatch = 0;
   var query = document.getElementById("query").value;
   if (query == "") return false;
   var gs = document.getElementsByTagName("g");
@@ -10,9 +11,11 @@ function leafSearch() {
       if (textObject.textContent.match(query)) {
         textObject.style.display = "inline";
         textObject.style.fill = "blue";
+        nMatch++;
       }
     }
   }
+  document.getElementById("searchStatement").textContent = nMatch + " " + "matched";
   return false;
 }
 
@@ -26,11 +29,12 @@ function leafClear() {
     }
   }
   document.getElementById("query").value = "";
+  document.getElementById("searchStatement").textContent = "";
   return false;
 }
 
 function leafClick(o) {
   var textObject = o.parentNode.children[1];
   textObject.style.display = "inline";
-  textObject.style.fill = "red";
+  textObject.style.fill = "#AA0000";
 }

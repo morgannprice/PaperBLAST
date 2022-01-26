@@ -208,6 +208,8 @@ print p(start_form( -onsubmit => "return leafSearch();" ),
         textfield(-name => 'query', -id => 'query', -size => 20),
         button(-name => 'Search', -onClick => "leafSearch()"),
         button(-name => 'Clear', -onClick => "leafClear()"),
+        br(),
+        span({-style => "font-size: 80%;", -id => "searchStatement"}, ""),
         end_form);
 
 # Build an svg
@@ -287,10 +289,19 @@ foreach my $node (@$nodes) {
   $nodeTitle{$node} = $title;
 }
 
-my @svg = ();
+# The "taylor" color scheme is based on
+# "Residual colours: a proposal for aminochromography" (Taylor 1997)
+# and https://github.com/omarwagih/ggseqlogo/blob/master/R/col_schemes.r
+# I added a dark-ish grey for gaps.
+my %taylor = split /\s+/,
+  qq{D #FF0000 S #FF3300 T #FF6600 G #FF9900 P #FFCC00 C #FFFF00 A #CCFF00 V #99FF00
+     I #66FF00 L #33FF00 M #00FF00 F #00FF66 Y #00FFCC W #00CCFF H #0066FF R #0000FF
+     K #6600FF N #CC00FF Q #FF00CC E #FF0066 - #555555};
+
+my @svg = (); # lines in the svg
 
 # For leaves, add an invisible horizontal bar with more opportunities for popup text
-# These need to be output firs tto ensure they are behind everything else
+# These need to be output first to ensure they are behind everything else
 for (my $i = 0; $i < @leaves; $i++) {
   my $leaf = $leaves[$i];
   my $x1 = 0; # $nodeX{$leaf} - 2;
@@ -300,61 +311,6 @@ for (my $i = 0; $i < @leaves; $i++) {
   push @svg, qq{<rect x="$x1" y="$y1" width="$x2" height="$rowHeight" fill="white" stroke="none" >};
   push @svg, "<TITLE>$nodeTitle{$leaf}</TITLE>\n</rect>";
 }
-
-foreach my $node (@$nodes) {
-  my $radius = $renderSmall ? 1.25 : 2;
-  my $style = "";
-  if ($moTree->is_Leaf($node) && $moTree->id($node) eq $anchorId) {
-    $radius = $renderSmall ? 2.5 : 4;
-    $style = qq{fill="red"};
-  }
-
-  if ($node != $root) {
-    # draw lines left and then up or down to ancestor
-    my $parent = $moTree->ancestor($node);
-    die unless defined $parent;
-    push @svg, qq{<line x1="$nodeX{$node}" y1="$nodeY{$node}" x2="$nodeX{$parent}" y2="$nodeY{$node}" stroke="black" />};
-    push @svg, qq{<line x1="$nodeX{$parent}" y1="$nodeY{$node}" x2="$nodeX{$parent}" y2="$nodeY{$parent}" stroke="black" />};
-  }
-
-  # draw node with popup info, if any
-  # If it is a leaf, also make an (invisible) label; the group is to join these together
-  push @svg, "<g>";
-  push @svg, qq{<circle cx="$nodeX{$node}" cy="$nodeY{$node}" r="$radius" $style onclick="leafClick(this)">};
-  push @svg, "<TITLE>$nodeTitle{$node}</TITLE>" if $nodeTitle{$node} ne "";
-  push @svg, "</circle>";
-  if ($moTree->is_Leaf($node)) {
-    my $xLabel = $nodeX{$node} + $radius + 2;
-    my $id = $moTree->id($node);
-    push @svg, qq{<text dominant-baseline="middle" x="$xLabel" y="$nodeY{$node}" text-anchor="left" style="display:none; font-size:80%;">$id<TITLE>$nodeTitle{$node}</TITLE></text>};
-  }
-  push @svg, "</g>";
-}
-
-# Scale bar
-if (! $missingLen) {
-  my @scales = reverse qw{0.001 0.002 0.005 0.01 0.02 0.05 0.1 0.2 0.5 1};
-  while ($scales[0] > 0.8 * $maxX && @scales > 1) {
-    shift @scales;
-  }
-  my $scaleSize = $scales[0];
-  my $scaleLeft = $padLeft;
-  my $scaleRight = $padLeft + $treeWidth * $scaleSize/$maxX;
-  my $scaleY = $padTop + scalar(@leaves) * $rowHeight + $padBottom * 0.8;
-  push @svg, qq{<line x1="$scaleLeft" y1="$scaleY" x2="$scaleRight" y2="$scaleY" stroke="black" />};
-  my $scaleMid = ($scaleLeft+$scaleRight)/2;
-  my $scaleY2 = $scaleY - 4;
-  push @svg, qq{<text text-anchor="middle" x="$scaleMid" y="$scaleY2">$scaleSize /site</text>};
-}
-
-# The "taylor" color scheme is based on
-# "Residual colours: a proposal for aminochromography" (Taylor 1997)
-# and https://github.com/omarwagih/ggseqlogo/blob/master/R/col_schemes.r
-# I added a dark-ish grey for gaps.
-my %taylor = split /\s+/,
-  qq{D #FF0000 S #FF3300 T #FF6600 G #FF9900 P #FFCC00 C #FFFF00 A #CCFF00 V #99FF00
-     I #66FF00 L #33FF00 M #00FF00 F #00FF66 Y #00FFCC W #00CCFF H #0066FF R #0000FF
-     K #6600FF N #CC00FF Q #FF00CC E #FF0066 - #555555};
 
 # Show selected alignment positions (if any)
 my $pos0X = $padLeft + $treeWidth + $padMiddle;
@@ -439,6 +395,54 @@ for (my $i = 0; $i < @alnPos; $i++) {
     }
   }
 } # End loop over positions
+
+# Draw the tree after drawing the positions, so that text for leaf names (if displayed)
+# goes on top of the color bars
+foreach my $node (@$nodes) {
+  my $radius = $renderSmall ? 2 : 3;
+  my $style = "";
+  if ($moTree->is_Leaf($node) && $moTree->id($node) eq $anchorId) {
+    $radius = $renderSmall ? 2.5 : 4;
+    $style = qq{fill="red"};
+  }
+
+  if ($node != $root) {
+    # draw lines left and then up or down to ancestor
+    my $parent = $moTree->ancestor($node);
+    die unless defined $parent;
+    push @svg, qq{<line x1="$nodeX{$node}" y1="$nodeY{$node}" x2="$nodeX{$parent}" y2="$nodeY{$node}" stroke="black" />};
+    push @svg, qq{<line x1="$nodeX{$parent}" y1="$nodeY{$node}" x2="$nodeX{$parent}" y2="$nodeY{$parent}" stroke="black" />};
+  }
+
+  # draw node with popup info, if any
+  # If it is a leaf, also make an (invisible) label; the group is to join these together
+  push @svg, "<g>";
+  push @svg, qq{<circle cx="$nodeX{$node}" cy="$nodeY{$node}" r="$radius" $style onclick="leafClick(this)">};
+  push @svg, "<TITLE>$nodeTitle{$node}</TITLE>" if $nodeTitle{$node} ne "";
+  push @svg, "</circle>";
+  if ($moTree->is_Leaf($node)) {
+    my $xLabel = $nodeX{$node} + $radius + 2;
+    my $id = $moTree->id($node);
+    push @svg, qq{<text dominant-baseline="middle" x="$xLabel" y="$nodeY{$node}" text-anchor="left" style="display:none; font-size:80%;">$id<TITLE>$nodeTitle{$node}</TITLE></text>};
+  }
+  push @svg, "</g>";
+}
+
+# Scale bar
+if (! $missingLen) {
+  my @scales = reverse qw{0.001 0.002 0.005 0.01 0.02 0.05 0.1 0.2 0.5 1};
+  while ($scales[0] > 0.8 * $maxX && @scales > 1) {
+    shift @scales;
+  }
+  my $scaleSize = $scales[0];
+  my $scaleLeft = $padLeft;
+  my $scaleRight = $padLeft + $treeWidth * $scaleSize/$maxX;
+  my $scaleY = $padTop + scalar(@leaves) * $rowHeight + $padBottom * 0.8;
+  push @svg, qq{<line x1="$scaleLeft" y1="$scaleY" x2="$scaleRight" y2="$scaleY" stroke="black" />};
+  my $scaleMid = ($scaleLeft+$scaleRight)/2;
+  my $scaleY2 = $scaleY - 4;
+  push @svg, qq{<text text-anchor="middle" x="$scaleMid" y="$scaleY2">$scaleSize /site</text>};
+}
 
 print join("\n",
   "<DIV>",
