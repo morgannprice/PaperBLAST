@@ -32,7 +32,8 @@ $CGI::POST_MAX = $maxMB*1024*1024;
 
 print
   header(-charset => 'utf-8'),
-  start_html(-title => "Sites on a Tree"),
+  start_html(-title => "Sites on a Tree",
+             -script => [{ -type => "text/javascript", -src => "../static/treeSites.js"}]),
   h2("Sites on a Tree"),
   "\n";
 
@@ -202,6 +203,12 @@ if (@alnPos > 0 && $anchorId ne "") {
   push @drawing, "Position numbering is from " . encode_entities($anchorId) . ".";
 }
 print p(@drawing);
+print p(start_form( -onsubmit => "return leafSearch();" ),
+        "Search for sequences to highlight:",
+        textfield(-name => 'query', -id => 'query', -size => 20),
+        button(-name => 'Search', -onClick => "leafSearch()"),
+        button(-name => 'Clear', -onClick => "leafClear()"),
+        end_form);
 
 # Build an svg
 # Layout:
@@ -219,8 +226,8 @@ my $rowHeight = $renderSmall ? 3 : 8;
 my $minShowHeight = 20; # minimum height of a character to draw
 my $padBottom = 45;
 my $padLeft = 10;
-my $treeWidth = 300;
-my $padMiddle = 10;
+my $treeWidth = 250;
+my $padMiddle = 50;
 my $padRight = 24;
 my $posWidth = 30;
 my $svgHeight = $padTop + scalar(@leaves) * $rowHeight + $padBottom;
@@ -269,29 +276,37 @@ foreach my $leaf (@leaves) {
   $leafHas{$leaf} = join("", @val);
 }
 
-my @svg = ();
+my %nodeTitle = ();
 foreach my $node (@$nodes) {
   my $id = $moTree->id($node);
-  my $radius = $renderSmall ? 1.25 : 2;
-  my $style = "";
-  if ($moTree->is_Leaf($node) && $id eq $anchorId) {
-    $radius = $renderSmall ? 2.5 : 4;
-    $style = qq{fill="red"};
-  }
   my $title = encode_entities($id);
   if ($moTree->is_Leaf($node)) {
     $title .= ": " . encode_entities($alnDesc{$id}) if exists $alnDesc{$id};
     $title .= " (has $leafHas{$node})" if @alnPos > 0;
   }
+  $nodeTitle{$node} = $title;
+}
 
-  if ($moTree->is_Leaf($node)) {
-    # For leaves, add an invisible horizontal bar with more opportunities for popup text
-    my $x1 = $nodeX{$node} - $radius - 1;
-    my $x2 = $svgWidth - $padRight;
-    my $width = $x2 - $x1;
-    my $y1 = $nodeY{$node} - $rowHeight/2;
-    push @svg, qq{<rect x="$x1" y="$y1" width="$x2" height="$rowHeight" fill="white" stroke="none" >};
-    push @svg, "<TITLE>$title</TITLE>\n</rect>";
+my @svg = ();
+
+# For leaves, add an invisible horizontal bar with more opportunities for popup text
+# These need to be output firs tto ensure they are behind everything else
+for (my $i = 0; $i < @leaves; $i++) {
+  my $leaf = $leaves[$i];
+  my $x1 = 0; # $nodeX{$leaf} - 2;
+  my $x2 = $svgWidth;
+  my $width = $x2 - $x1;
+  my $y1 = $nodeY{$leaf} - $rowHeight/2;
+  push @svg, qq{<rect x="$x1" y="$y1" width="$x2" height="$rowHeight" fill="white" stroke="none" >};
+  push @svg, "<TITLE>$nodeTitle{$leaf}</TITLE>\n</rect>";
+}
+
+foreach my $node (@$nodes) {
+  my $radius = $renderSmall ? 1.25 : 2;
+  my $style = "";
+  if ($moTree->is_Leaf($node) && $moTree->id($node) eq $anchorId) {
+    $radius = $renderSmall ? 2.5 : 4;
+    $style = qq{fill="red"};
   }
 
   if ($node != $root) {
@@ -303,9 +318,17 @@ foreach my $node (@$nodes) {
   }
 
   # draw node with popup info, if any
+  # If it is a leaf, also make an (invisible) label; the group is to join these together
+  push @svg, "<g>";
   push @svg, qq{<circle cx="$nodeX{$node}" cy="$nodeY{$node}" r="$radius" $style>};
-  push @svg, "<TITLE>$title</TITLE>" if $title ne "";
+  push @svg, "<TITLE>$nodeTitle{$node}</TITLE>" if $nodeTitle{$node} ne "";
   push @svg, "</circle>";
+  if ($moTree->is_Leaf($node)) {
+    my $xLabel = $nodeX{$node} + $radius + 2;
+    my $id = $moTree->id($node);
+    push @svg, qq{<text dominant-baseline="middle" x="$xLabel" y="$nodeY{$node}" text-anchor="left" style="display:none; font-size:80%;">$id<TITLE>$nodeTitle{$node}</TITLE></text>};
+  }
+  push @svg, "</g>";
 }
 
 # Scale bar
