@@ -197,13 +197,11 @@ if ($anchorId eq "") {
   @alnPos = map $anchorToAln{$_}, @anchorPos;
 }
 
-my @lines = ("Drawing the tree for", scalar(keys %idToLeaf), "proteins");
-if (@alnPos > 0) {
-  push @lines, ("with aligned positions");
-  push @lines, ("numbered as in", encode_entities($anchorId))
-    if $anchorId ne "";
+my @drawing = ("Drawing a tree for " . scalar(keys %idToLeaf) . " proteins.");
+if (@alnPos > 0 && $anchorId ne "") {
+  push @drawing, "Position numbering is from " . encode_entities($anchorId) . ".";
 }
-print p(@lines);
+print p(@drawing);
 
 # Build an svg
 # Layout:
@@ -216,11 +214,12 @@ print p(@lines);
 # then 1 column for each position
 # and padRight
 my $padTop = 45;
-my $rowHeight = 8;
-my $minShowHeight = 15; # minimum height of a character to draw
-my $padBottom = 25;
+my $renderSmall = scalar(@leaves) > 100;
+my $rowHeight = $renderSmall ? 3 : 8;
+my $minShowHeight = 20; # minimum height of a character to draw
+my $padBottom = 45;
 my $padLeft = 10;
-my $treeWidth = 150;
+my $treeWidth = 300;
 my $padMiddle = 10;
 my $padRight = 24;
 my $posWidth = 30;
@@ -262,30 +261,50 @@ while (my ($node, $rawX) = each %rawX) {
   $nodeX{$node} = $padLeft + $treeWidth * $rawX / $maxX;
 }
 
+my %leafHas = (); # all the shown positions for that leaf
+foreach my $leaf (@leaves) {
+  my $id = $moTree->id($leaf);
+  my $seq = $alnSeq{$id} || die;
+  my @val = map substr($seq, $_, 1), @alnPos;
+  $leafHas{$leaf} = join("", @val);
+}
+
 my @svg = ();
 foreach my $node (@$nodes) {
+  my $id = $moTree->id($node);
+  my $radius = $renderSmall ? 1.25 : 2;
+  my $style = "";
+  if ($moTree->is_Leaf($node) && $id eq $anchorId) {
+    $radius = $renderSmall ? 2.5 : 4;
+    $style = qq{fill="red"};
+  }
+  my $title = encode_entities($id);
+  if ($moTree->is_Leaf($node)) {
+    $title .= ": " . encode_entities($alnDesc{$id}) if exists $alnDesc{$id};
+    $title .= " (has $leafHas{$node})" if @alnPos > 0;
+  }
+
+  if ($moTree->is_Leaf($node)) {
+    # For leaves, add an invisible horizontal bar with more opportunities for popup text
+    my $x1 = $nodeX{$node} - $radius - 1;
+    my $x2 = $svgWidth - $padRight;
+    my $width = $x2 - $x1;
+    my $y1 = $nodeY{$node} - $rowHeight/2;
+    push @svg, qq{<rect x="$x1" y="$y1" width="$x2" height="$rowHeight" fill="white" stroke="none" >};
+    push @svg, "<TITLE>$title</TITLE>\n</rect>";
+  }
+
   if ($node != $root) {
-    # draw line to ancestor
+    # draw lines left and then up or down to ancestor
     my $parent = $moTree->ancestor($node);
     die unless defined $parent;
-    push @svg, qq{<line x1="$nodeX{$node}" y1="$nodeY{$node}" x2="$nodeX{$parent}" y2="$nodeY{$parent}" stroke="black" />};
+    push @svg, qq{<line x1="$nodeX{$node}" y1="$nodeY{$node}" x2="$nodeX{$parent}" y2="$nodeY{$node}" stroke="black" />};
+    push @svg, qq{<line x1="$nodeX{$parent}" y1="$nodeY{$node}" x2="$nodeX{$parent}" y2="$nodeY{$parent}" stroke="black" />};
   }
+
   # draw node with popup info, if any
-  my $id = $moTree->id($node);
-  my $radius = 1.5;
-  $radius = 3 if $moTree->is_Leaf($node) && $id eq $anchorId;
-  push @svg, qq{<circle cx="$nodeX{$node}" cy="$nodeY{$node}" r="$radius">};
-  my $title = $id;
-  if ($moTree->is_Leaf($node) && @alnPos > 0) {
-    my $longDesc = encode_entities($id);
-    $longDesc .= ": $alnDesc{$id}" if exists $alnDesc{$id};
-    my $seq = $alnSeq{$id} || die;
-    my @val = map substr($seq, $_, 1), @alnPos;
-    $title = "$longDesc (has " . join("", @val) . ")";
-  }
-  $title = "(no label)" if $title eq "";
-  push @svg, "<TITLE>$title</TITLE>"
-    if defined $title  && $title ne "";
+  push @svg, qq{<circle cx="$nodeX{$node}" cy="$nodeY{$node}" r="$radius" $style>};
+  push @svg, "<TITLE>$title</TITLE>" if $title ne "";
   push @svg, "</circle>";
 }
 
@@ -324,21 +343,25 @@ for (my $i = 0; $i < @alnPos; $i++) {
   my $labelChar = "#";
   $labelChar = substr($anchorAln, $pos, 1) if $anchorId ne "";
   my $colLabel = $labelChar . $anchorPos[$i];
-  push @svg, qq{<text text-anchor="left" transform="translate($x,$labelY) rotate(-45)">$colLabel</text>"};
+  push @svg, qq{<text text-anchor="left" transform="translate($x,$labelY) rotate(-45)">$colLabel</text>};
+  if (@leaves >= 20) {
+    my $labelY2 = $svgHeight - $padBottom + 3;
+    push @svg, qq{<text transform="translate($x,$labelY2) rotate(90)">$colLabel</text>"};
+  }
 
   # draw boxes for every position
   foreach my $leaf (@leaves) {
     my $id = $moTree->id($leaf);
     my $seq = $alnSeq{$id} || die;
     my $char = substr($seq, $pos, 1);
-    my $top = $nodeY{$leaf} - $rowHeight/2 - 0.1;
-    my $heightUse = $rowHeight + 0.2; # slight overlap to avoid subtle white lines
-    my $color = exists $taylor{$char} ? $taylor{$char} : "black";
+    my $top = $nodeY{$leaf} - $rowHeight/2;
+    my $heightUse = $rowHeight + 0.2; # extra height to prevent thin white lines
+    my $color = exists $taylor{$char} ? $taylor{$char} : "grey";
     my $encodedId = encode_entities($id);
     my $boxLeft = $left + $posWidth * 0.1;
     my $boxWidth = $posWidth * 0.8;
-    push @svg, qq{<rect x="$boxLeft" y="$top" width="$boxWidth" height="$heightUse" style="fill:$color; stroke-width: 0;">};
-    push @svg, qq{<TITLE>$encodedId has $char</TITLE>};
+    push @svg, qq{<rect x="$boxLeft" y="$top" width="$boxWidth" height="$heightUse" style="fill:$color; stroke-width: 0;" >};
+    push @svg, qq{<TITLE>$encodedId has $leafHas{$leaf}</TITLE>};
     push @svg, qq{</rect>};
   }
 
@@ -379,15 +402,17 @@ for (my $i = 0; $i < @alnPos; $i++) {
       } else {
         @leavesBelow = @{ $moTree->all_leaves_below($node) };
       }
+      # XXX show range of nodes, or number?? Or remove it?
       my @leavesBelowY = map $nodeY{$_}, @leavesBelow;
       my $height = $rowHeight + max(@leavesBelowY) - min(@leavesBelowY);
       next unless $height >= $minShowHeight;
       my $title = "";
-      if ($moTree->is_Leaf($node)) {
-        my $id = encode_entities($moTree->id($node));
-        $title = "<TITLE>$id has $conservedAt{$node}</TITLE>";
-      }
-      push @svg, qq{<text text-anchor="middle" dominant-baseline="middle" x="$x" y="$nodeY{$node}">$title$conservedAt{$node}</text>};
+      my $leafUse = $leavesBelow[0];
+      my $id = encode_entities($moTree->id($leafUse));
+      my $n1 = scalar(@leavesBelow) - 1;
+      $title = ($n1 > 0 ? "$id and related $n1 proteins have" : "$id has") . " " . $conservedAt{$leafUse}
+        . " at " . $anchorPos[$i];
+      push @svg, qq{<text text-anchor="middle" dominant-baseline="middle" x="$x" y="$nodeY{$node}"><TITLE>$title</TITLE>$conservedAt{$node}</text>};
     }
   }
 } # End loop over positions
@@ -395,7 +420,7 @@ for (my $i = 0; $i < @alnPos; $i++) {
 print join("\n",
   "<DIV>",
   qq{<SVG width="$svgWidth" height="$svgHeight" style="position: relative; left: 1em;">},
-  qq{<g transform scale(1)>},
+  qq{<g transform="scale(1)">},
   @svg,
   "</g>",
   "</SVG>",
