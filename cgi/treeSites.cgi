@@ -320,7 +320,7 @@ foreach my $node (@$nodes) {
   # draw node with popup info, if any
   # If it is a leaf, also make an (invisible) label; the group is to join these together
   push @svg, "<g>";
-  push @svg, qq{<circle cx="$nodeX{$node}" cy="$nodeY{$node}" r="$radius" $style>};
+  push @svg, qq{<circle cx="$nodeX{$node}" cy="$nodeY{$node}" r="$radius" $style onclick="leafClick(this)">};
   push @svg, "<TITLE>$nodeTitle{$node}</TITLE>" if $nodeTitle{$node} ne "";
   push @svg, "</circle>";
   if ($moTree->is_Leaf($node)) {
