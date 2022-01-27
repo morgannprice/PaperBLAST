@@ -18,16 +18,18 @@ use MOTree;
 # tree or treeFile or treeMD5 -- tree in newick format, or the md5 hash
 #   Labels on internal nodes are ignored.
 #   Multi-furcations are allowed. It is treated as rooted.
-# (This tool automatically saves uploads using alnMD5 or treeMD5, and creates links using
-#  the MD5 arguments.)
 # Optional arguments:
 # anchor -- sequence to choose positiosn from
 # pos -- comma-delimited list of positions (in anchor if set, or else, in alignment)
+# tsvFile or tsvMD5 -- descriptions for the ids
+# (This tool automatically saves uploads using alnMD5, treeMD5, or tsvMD5, and creates links using
+#  the MD5 arguments.)
 #
 # If alignment or tree is missing, it shows an input form.
 
-sub fail($);
-sub warning($);
+sub fail($); # print error to HTML and exit
+sub warning($); # print warning to HTML
+sub HandleTsvLines; # handle tab-delimited description lines
 
 # maximum size of posted data, in bytes
 my $maxMB = 100;
@@ -193,8 +195,44 @@ if (!defined $treeMD5) {
   }
 }
 
-my %branchLen = ();             # node to branch length
+# Try to parse the table to get descriptions
+my $tsvMD5;
+if (param('tsvFile')) {
+  my $fh = param('tsvFile')->handle;
+  fail("tsvFile is not a file") unless $fh;
+  my @lines = <$fh>;
+  my $n = HandleTsvLines(@lines);
+  if ($n == 0) {
+    warn("No descriptions found for matching ids in the uploaded table");
+  } else {
+    print p("Found $n descriptions in the uploaded table"),"\n";
+    $tsvMD5 = md5_hex(@lines);
+    my $file = "$tmpDir/$tsvMD5.tsv";
+    if (! -e $file) {
+      open (my $fh, ">", $file) || die "Cannot write to $file";
+      foreach my $line (@lines) {
+        $line =~ s/[\r\n]+$//;
+        print $fh $line."\n";
+      }
+      close($fh) || die "Error writing to $file";
+    }
+  }
+} elsif (param('tsvMD5')) {
+  $tsvMD5 = param('tsvMD5');
+  fail("Invalid tsvMD5") unless $tsvMD5 =~ m/^[0-9a-f]+$/;
+  my $file = "$tmpDir/$tsvMD5.tsv";
+  open(my $fh, "<", $file) || fail("Unknown tsvMD5 $tsvMD5");
+  my @lines = <$fh>;
+  close($fh) || die "Error reading $file";
+  my $n = HandleTsvLines(@lines);
+  warn("No descriptions found for matching ids in the table") if $n == 0;
+}
+
+# Finished loading input
+
+my %branchLen = (); # node to branch length
 my $missingLen = 0; # set if any leaf or internal node had no branch length
+
 # Convert any negative branch lengths to 0
 # Convert any missing branch lengths to 1
 foreach my $node (@$nodes) {
@@ -264,7 +302,8 @@ print p("Download",
                           "treeSites.cgi?anchor=", uri_escape($anchorId),
                           "&pos=", join(",",@anchorPos),
                           "&treeMD5=", $treeMD5,
-                          "&alnMD5=", $alnMD5) },
+                          "&alnMD5=", $alnMD5,
+                          "&tsvMD5=", $tsvMD5 || "") },
           "permanent link"),
         "to this page, or",
         a({ -href => "treeSites.cgi" }, "upload new data").".");
@@ -272,6 +311,7 @@ print p("Download",
 print p(start_form(-method => 'GET', -action => 'treeSites.cgi'),
         hidden( -name => 'alnMD5', -default => $alnMD5, -override => 1),
         hidden( -name => 'treeMD5', -default => $treeMD5, -override => 1),
+        hidden( -name => 'tsvMD5', -default => $tsvMD5, -override => 1),
         "Select positions",
         textfield(-name => "pos", -default => join(",",@anchorPos), -size => 30, -maxlength => 200),
         "in",
@@ -279,6 +319,16 @@ print p(start_form(-method => 'GET', -action => 'treeSites.cgi'),
         submit(),
         end_form);
 
+print p(start_form(-method => 'POST', -action => 'treeSites.cgi'),
+        hidden( -name => 'alnMD5', -default => $alnMD5, -override => 1),
+        hidden( -name => 'treeMD5', -default => $treeMD5, -override => 1),
+        hidden( -name => 'anchor', -default => $anchorId, -override => 1),
+        hidden( -name => 'pos', -default => join(",",@anchorPos), -override => 1),
+        "Upload descriptions:", filefield(-name => 'tsvFile', -size => 50),
+        submit(),
+        br(),
+        small("Descriptions should be tab-delimited with the sequence id in the 1st column and the description in the 2nd column"),
+        end_form);
 
 print p(start_form( -onsubmit => "return leafSearch();" ),
         "Search for sequences to highlight:",
@@ -538,6 +588,7 @@ sub fail($) {
   my $URL = "treeSites.cgi";
   my $URL = "treeSites.cgi?alnMD5=$alnMD5&treeMD5=$treeMD5"
     if defined $alnMD5 && defined $treeMD5;
+  $URL .= "&tsvMD5=$tsvMD5" if defined $tsvMD5;
   print
     p(b($notice)),
       p(a({-href => $URL}, "Try again")),
@@ -548,5 +599,19 @@ sub fail($) {
 sub warning($) {
   my ($notice) = @_;
   print p({-style => "color: red;"}, "Warning:", $notice), "\n";
+}
+
+sub HandleTsvLines {
+  my @lines = @_;
+  my $n = 0;
+  foreach my $line (@lines) {
+    $line =~ s/[\r\n]+$//;
+    my ($id, $desc) = split /\t/, $line;
+    if (exists $alnSeq{$id} && defined $desc && $desc =~ m/\S/) {
+      $alnDesc{$id} = $desc;
+      $n++;
+    }
+  }
+  return $n;
 }
 
