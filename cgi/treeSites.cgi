@@ -32,8 +32,9 @@ sub warning($); # print warning to HTML
 sub HandleTsvLines; # handle tab-delimited description lines
 
 # maximum size of posted data, in bytes
-my $maxMB = 100;
+my $maxMB = 25;
 $CGI::POST_MAX = $maxMB*1024*1024;
+my $maxN = 2000; # maximum number of sequences in alignment or leaves in tree
 
 print
   header(-charset => 'utf-8'),
@@ -53,7 +54,7 @@ if (!$alnSet || !$treeSet) {
   print
     p("This tool will show a phylogenetic tree along with selected sites from a protein alignment."),
     start_form(-name => 'input', -method => 'POST', -action => 'treeSites.cgi'),
-    p("Alignment in multi-fasta or clustal format:",
+    p("Alignment in multi-fasta or clustal format (up to $maxN sequences or $maxMB megabytes):",
       br(),
       textarea(-name => 'aln', -value => '', -cols => 70, -rows => 10),
       br(),
@@ -121,6 +122,8 @@ if (my $hash = ParseClustal(@alnLines)) {
 }
 fail("No sequences in the alignment")
   if (scalar(keys %alnSeq) == 0);
+
+fail("Too many sequences in the alignment") if scalar(keys %alnSeq) > $maxN;
 
 my $alnLen;
 while (my ($id, $seq) = each %alnSeq) {
@@ -351,7 +354,7 @@ print p(start_form( -onsubmit => "return leafSearch();" ),
 # and padRight
 my $padTop = 45;
 my $renderSmall = scalar(@leaves) > 100;
-my $rowHeight = $renderSmall ? 3 : 8;
+my $rowHeight = $renderSmall ? 3 : (scalar(@leaves) <= 20 ? 20 : 8);
 my $minShowHeight = 20; # minimum height of a character to draw
 my $padBottom = 45;
 my $padLeft = 10;
