@@ -5,23 +5,26 @@ use CGI qw(:standard Vars start_ul);
 use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
 use URI::Escape;
 use HTML::Entities;
+use Digest::MD5 qw{md5_hex};
 use List::Util qw{sum min max};
 use lib "../lib";
 use pbutils qw{ReadFastaEntry ParseClustal};
 use MOTree;
 
 # In rendering mode, these options are required:
-# aln or alnFile -- alignment in multi-fasta format
+# aln or alnFile or alnMD5 -- alignment in multi-fasta format, or the md5 hash
 #   In header lines, anything after the initial space is assumed to be a description.
 #   Either "." or "-" are gap characters.
-# tree or treeFile -- tree in newick format.
+# tree or treeFile or treeMD5 -- tree in newick format, or the md5 hash
 #   Labels on internal nodes are ignored.
 #   Multi-furcations are allowed. It is treated as rooted.
+# (This tool automatically saves uploads using alnMD5 or treeMD5, and creates links using
+#  the MD5 arguments.)
 # Optional arguments:
 # anchor -- sequence to choose positiosn from
 # pos -- comma-delimited list of positions (in anchor if set, or else, in alignment)
 #
-# If alnFile or treeFile is missing, it shows an input form.
+# If alignment or tree is missing, it shows an input form.
 
 sub fail($);
 sub warning($);
@@ -37,14 +40,16 @@ print
   h2("Sites on a Tree"),
   "\n";
 
-my $alnSet = (defined param('aln') && param('aln') ne "")
-  || (defined param('alnFile') && ref param('alnFile'));
-my $treeSet = (defined param('tree') && param('tree') ne "")
-  || (defined param('treeFile') && ref param('treeFile'));
+my $alnSet = param('aln') || param('alnFile') || param('alnMD5');
+my $treeSet = param('tree') || param('treeFile') || param('treeMD5');
 
+my $tmpDir = "../tmp/aln";
 if (!$alnSet || !$treeSet) {
   # show the form
+  warning("Please give an alignment and a tree")
+    if $alnSet xor $treeSet;
   print
+    p("This tool will show a phylogenetic tree along with selected sites from a protein alignment."),
     start_form(-name => 'input', -method => 'POST', -action => 'treeSites.cgi'),
     p("Alignment in multi-fasta or clustal format:",
       br(),
@@ -56,24 +61,35 @@ if (!$alnSet || !$treeSet) {
       textarea(-name => 'tree', -value => '', -cols => 70, -rows => 4),
       br(),
       "Or upload:", filefield(-name => 'treeFile', -size => 50)),
-    p("Select positions to show:",
+    p("Positions to show (optional):",
       textfield(-name => 'pos', -size => 50),
       br(), br(),
-      "from sequence:", textfield(-name => 'anchor', -size => 25)),
+      "Positions are relative to sequence (optional):", textfield(-name => 'anchor', -size => 25)),
     p(submit()),
-    end_form;
+    end_form,
+    p("Or try",
+      a({-href => "sites.cgi" }, "SitesBLAST").":",
+      "find homologs with known functional residues and see if they are conserved");
   print end_html;
   exit(0);
 }
 
 # else rendering mode
 my @alnLines = ();
-if (defined param('aln') && param('aln') ne "") {
+my $alnMD5;
+if (param('aln')) {
   @alnLines = split '\n', param('aln');
-} elsif (defined param('alnFile') && ref param('alnFile')) {
+} elsif (param('alnFile')) {
   my $fhAln = param('alnFile')->handle;
-  die unless $fhAln;
+  fail("alnFile not a file") unless $fhAln;
   @alnLines = <$fhAln>;
+} elsif (param('alnMD5')) {
+  $alnMD5 = param('alnMD5');
+  fail("Invalid alnMD5") unless $alnMD5 =~ m/^[a-f0-9]+$/;
+  my $alnFile = "$tmpDir/$alnMD5.aln";
+  open(my $fhAln, "<", $alnFile) || fail("Unknown alnMD5 $alnMD5");
+  @alnLines = <$fhAln>;
+  close($fhAln) || die "Error reading $alnFile";
 } else {
   fail("No alignment specified");
 }
@@ -111,13 +127,21 @@ while (my ($id, $seq) = each %alnSeq) {
     unless length($seq) == $alnLen;
 }
 
-my $moTree;
-if (defined param('tree') && param('tree') ne "") {
+my ($moTree, $treeMD5);
+
+if (param('tree')) {
   eval { $moTree = MOTree::new('newick' => param('tree')) };
-} elsif (defined param('treeFile') && ref param('treeFile')) {
+} elsif (param('treeFile')) {
   my $fh = param('treeFile')->handle;
-  die unless $fh;
+  fail("treeFile not a file") unless $fh;
   eval { $moTree = MOTree::new('fh' => $fh) };
+} elsif (param('treeMD5')) {
+  $treeMD5 = param('treeMD5');
+  fail("Invalid treeMD5") unless $treeMD5 =~ m/^[a-f0-9]+$/;
+  my $file = "$tmpDir/$treeMD5.tree";
+  open(my $fh, "<", $file) || fail ("Unknown treeMD5 $treeMD5");
+  eval { $moTree = MOTree::new('fh' => $fh) };
+  close($fh) || die "Error reading $file";
 } else {
   fail("No tree specified");
 }
@@ -135,10 +159,38 @@ foreach my $leaf (@leaves) {
     unless exists $alnSeq{$id};
 }
 
-# Issue a warning error for any sequences not in the tree
-foreach my $id (keys %alnSeq) {
-  warning("Sequence " . encode_entities($id) . " is not in the tree")
-    unless exists $idToLeaf{$id};
+# Issue a warning error for any sequences not in the tree, if this
+# is the first time they were used together
+if (!defined $alnMD5 || !defined $treeMD5) {
+  foreach my $id (keys %alnSeq) {
+    warning("Sequence " . encode_entities($id) . " is not in the tree")
+      unless exists $idToLeaf{$id};
+  }
+}
+
+# Save the tree and alignment, if necessary
+if (!defined $alnMD5) {
+  $alnMD5 = md5_hex(@alnLines);
+  my $file = "$tmpDir/$alnMD5.aln";
+  if (! -e $file) {
+    open(my $fh, ">", $file) || die "Cannot write to $file";
+    foreach my $line (@alnLines) {
+      $line =~ s/[\r\n]+$//;
+      print $fh $line."\n";
+    }
+    close($fh) || die "Error writing to $file";
+  }
+}
+
+if (!defined $treeMD5) {
+  my $newick = $moTree->toNewick();
+  $treeMD5 = md5_hex($newick);
+  my $file = "$tmpDir/$treeMD5.tree";
+  if (! -e $file) {
+    open (my $fh, ">", $file) || die "Cannot write to $file";
+    print $fh $newick."\n";
+    close($fh) || die "Error writing to $file";
+  }
 }
 
 my %branchLen = ();             # node to branch length
@@ -203,6 +255,31 @@ if (@alnPos > 0 && $anchorId ne "") {
   push @drawing, "Position numbering is from " . encode_entities($anchorId) . ".";
 }
 print p(@drawing);
+print p("Download",
+        a({ -href => "$tmpDir/$treeMD5.tree" }, "tree"),
+        "or",
+        a({ -href => "$tmpDir/$alnMD5.aln" }, "alignment").",",
+        "or see",
+        a({ -href => join("",
+                          "treeSites.cgi?anchor=", uri_escape($anchorId),
+                          "&pos=", join(",",@anchorPos),
+                          "&treeMD5=", $treeMD5,
+                          "&alnMD5=", $alnMD5) },
+          "permanent link"),
+        "to this page, or",
+        a({ -href => "treeSites.cgi" }, "upload new data").".");
+
+print p(start_form(-method => 'GET', -action => 'treeSites.cgi'),
+        hidden( -name => 'alnMD5', -default => $alnMD5, -override => 1),
+        hidden( -name => 'treeMD5', -default => $treeMD5, -override => 1),
+        "Select positions",
+        textfield(-name => "pos", -default => join(",",@anchorPos), -size => 30, -maxlength => 200),
+        "in",
+        textfield(-name => "anchor", -default => $anchorId, -size => 20, -maxlength => 200),
+        submit(),
+        end_form);
+
+
 print p(start_form( -onsubmit => "return leafSearch();" ),
         "Search for sequences to highlight:",
         textfield(-name => 'query', -id => 'query', -size => 20),
@@ -389,7 +466,7 @@ for (my $i = 0; $i < @alnPos; $i++) {
       my $leafUse = $leavesBelow[0];
       my $id = encode_entities($moTree->id($leafUse));
       my $n1 = scalar(@leavesBelow) - 1;
-      $title = ($n1 > 0 ? "$id and related $n1 proteins have" : "$id has") . " " . $conservedAt{$leafUse}
+      $title = ($n1 > 0 ? "$id and $n1 similar proteins have" : "$id has") . " " . $conservedAt{$leafUse}
         . " at " . $anchorPos[$i];
       push @svg, qq{<text text-anchor="middle" dominant-baseline="middle" x="$x" y="$nodeY{$node}"><TITLE>$title</TITLE>$conservedAt{$node}</text>};
     }
@@ -458,9 +535,12 @@ exit(0);
 
 sub fail($) {
   my ($notice) = @_;
+  my $URL = "treeSites.cgi";
+  my $URL = "treeSites.cgi?alnMD5=$alnMD5&treeMD5=$treeMD5"
+    if defined $alnMD5 && defined $treeMD5;
   print
     p(b($notice)),
-      p(a({-href => "treeSites.cgi"}, "Try again")),
+      p(a({-href => $URL}, "Try again")),
         end_html;
   exit(0);
 }
