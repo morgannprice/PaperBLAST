@@ -403,9 +403,24 @@ if (!defined $seq && ! $more_subjectId) {
                 </SCRIPT>
                 </DIV>
              };
-    }
 
-    print "\n";
+      print join("\n",
+                 "<SCRIPT>",
+                 qq(ShowQuery = function() {
+                    document.getElementById("showSequenceLink").style.display = "none";
+                    document.getElementById("querySequence").style.display = "block";
+                    return false;
+                 }),
+                 "</SCRIPT>"), "\n";
+      my @pieces = $seq =~ /.{1,60}/g;
+      print p({ -id => 'showSequenceLink', -style => "font-size:90%;" },
+              a({ -href => "#", -onclick => "return ShowQuery()" },
+                "Show query sequence"));
+      print p({ -id => 'querySequence',
+                -style => "font-family: monospace; display:none; font-size:90%; padding-left: 2em;"},
+              join(br(), ">" . HTML::Entities::encode($def), @pieces));
+      print "\n";
+    } # end else $more_subjectId
 
     my @hits = ();
     if ($more_subjectId) {
@@ -415,8 +430,13 @@ if (!defined $seq && ! $more_subjectId) {
       print SEQ ">$def\n$seq\n";
       close(SEQ) || die "Error writing to $seqFile";
       my $hitsFile = "$tmpDir/$filename.hits";
+      print p({ -id => "searching" }, "Running BLASTp..."), "\n";
       system($blastall, "-p", "blastp", "-d", $blastdb, "-i", $seqFile, "-o", $hitsFile,
              "-e", 0.001, "-m", 8, "-a", $nCPU, "-F", "m S") == 0 || die "Error running blastall: $!";
+      print join("\n",
+                 "<SCRIPT>",
+                 qq{document.getElementById("searching").style.display = "none";},
+                 "</SCRIPT>"), "\n";
       open(HITS, "<", $hitsFile) || die "Cannot read $hitsFile";
       while(<HITS>) {
         chomp;
@@ -453,11 +473,6 @@ if (!defined $seq && ! $more_subjectId) {
       }
     }
 
-    if (! $more_subjectId) {
-      my @pieces = $seq =~ /.{1,60}/g;
-      print h3("Query Sequence"),
-        p({-style => "font-family: monospace;"}, small(join(br(), ">" . HTML::Entities::encode($def), @pieces)));
-    }
     print h3(a({-href => "litSearch.cgi"}, "New Search")),
       $documentation;
     finish_page();
