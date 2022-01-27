@@ -12,17 +12,17 @@ use pbutils qw{ReadFastaEntry ParseClustal};
 use MOTree;
 
 # In rendering mode, these options are required:
-# aln or alnFile or alnMD5 -- alignment in multi-fasta format, or the md5 hash
+# aln or alnFile or alnMD5 -- alignment in multi-fasta format, or the file name (usually, md5 hash)
 #   In header lines, anything after the initial space is assumed to be a description.
 #   Either "." or "-" are gap characters.
-# tree or treeFile or treeMD5 -- tree in newick format, or the md5 hash
+# tree or treeFile or treeMD5 -- tree in newick format, or the file name (usually, md5 hash)
 #   Labels on internal nodes are ignored.
 #   Multi-furcations are allowed. It is treated as rooted.
 # Optional arguments:
 # anchor -- sequence to choose positiosn from
 # pos -- comma-delimited list of positions (in anchor if set, or else, in alignment)
-# tsvFile or tsvMD5 -- descriptions for the ids
-# (This tool automatically saves uploads using alnMD5, treeMD5, or tsvMD5, and creates links using
+# tsvFile or tsvId -- descriptions for the ids (as uploaded file or file name)
+# (This tool automatically saves uploads using alnId, treeId, or tsvId, and creates links using
 #  the MD5 arguments.)
 #
 # If alignment or tree is missing, it shows an input form.
@@ -42,8 +42,8 @@ print
   h2("Sites on a Tree"),
   "\n";
 
-my $alnSet = param('aln') || param('alnFile') || param('alnMD5');
-my $treeSet = param('tree') || param('treeFile') || param('treeMD5');
+my $alnSet = param('aln') || param('alnFile') || param('alnId');
+my $treeSet = param('tree') || param('treeFile') || param('treeId');
 
 my $tmpDir = "../tmp/aln";
 if (!$alnSet || !$treeSet) {
@@ -78,18 +78,18 @@ if (!$alnSet || !$treeSet) {
 
 # else rendering mode
 my @alnLines = ();
-my $alnMD5;
+my $alnId;
 if (param('aln')) {
   @alnLines = split '\n', param('aln');
 } elsif (param('alnFile')) {
   my $fhAln = param('alnFile')->handle;
   fail("alnFile not a file") unless $fhAln;
   @alnLines = <$fhAln>;
-} elsif (param('alnMD5')) {
-  $alnMD5 = param('alnMD5');
-  fail("Invalid alnMD5") unless $alnMD5 =~ m/^[a-f0-9]+$/;
-  my $alnFile = "$tmpDir/$alnMD5.aln";
-  open(my $fhAln, "<", $alnFile) || fail("Unknown alnMD5 $alnMD5");
+} elsif (param('alnId')) {
+  $alnId = param('alnId');
+  fail("Invalid alnId") unless $alnId =~ m/^[a-zA-Z0-9]+$/;
+  my $alnFile = "$tmpDir/$alnId.aln";
+  open(my $fhAln, "<", $alnFile) || fail("Unknown alnId $alnId");
   @alnLines = <$fhAln>;
   close($fhAln) || die "Error reading $alnFile";
 } else {
@@ -129,7 +129,7 @@ while (my ($id, $seq) = each %alnSeq) {
     unless length($seq) == $alnLen;
 }
 
-my ($moTree, $treeMD5);
+my ($moTree, $treeId);
 
 if (param('tree')) {
   eval { $moTree = MOTree::new('newick' => param('tree')) };
@@ -137,11 +137,11 @@ if (param('tree')) {
   my $fh = param('treeFile')->handle;
   fail("treeFile not a file") unless $fh;
   eval { $moTree = MOTree::new('fh' => $fh) };
-} elsif (param('treeMD5')) {
-  $treeMD5 = param('treeMD5');
-  fail("Invalid treeMD5") unless $treeMD5 =~ m/^[a-f0-9]+$/;
-  my $file = "$tmpDir/$treeMD5.tree";
-  open(my $fh, "<", $file) || fail ("Unknown treeMD5 $treeMD5");
+} elsif (param('treeId')) {
+  $treeId = param('treeId');
+  fail("Invalid treeId") unless $treeId =~ m/^[a-zA-Z0-9]+$/;
+  my $file = "$tmpDir/$treeId.tree";
+  open(my $fh, "<", $file) || fail ("Unknown treeId $treeId");
   eval { $moTree = MOTree::new('fh' => $fh) };
   close($fh) || die "Error reading $file";
 } else {
@@ -163,7 +163,7 @@ foreach my $leaf (@leaves) {
 
 # Issue a warning error for any sequences not in the tree, if this
 # is the first time they were used together
-if (!defined $alnMD5 || !defined $treeMD5) {
+if (!defined $alnId || !defined $treeId) {
   foreach my $id (keys %alnSeq) {
     warning("Sequence " . encode_entities($id) . " is not in the tree")
       unless exists $idToLeaf{$id};
@@ -171,9 +171,9 @@ if (!defined $alnMD5 || !defined $treeMD5) {
 }
 
 # Save the tree and alignment, if necessary
-if (!defined $alnMD5) {
-  $alnMD5 = md5_hex(@alnLines);
-  my $file = "$tmpDir/$alnMD5.aln";
+if (!defined $alnId) {
+  $alnId = md5_hex(@alnLines);
+  my $file = "$tmpDir/$alnId.aln";
   if (! -e $file) {
     open(my $fh, ">", $file) || die "Cannot write to $file";
     foreach my $line (@alnLines) {
@@ -184,10 +184,10 @@ if (!defined $alnMD5) {
   }
 }
 
-if (!defined $treeMD5) {
+if (!defined $treeId) {
   my $newick = $moTree->toNewick();
-  $treeMD5 = md5_hex($newick);
-  my $file = "$tmpDir/$treeMD5.tree";
+  $treeId = md5_hex($newick);
+  my $file = "$tmpDir/$treeId.tree";
   if (! -e $file) {
     open (my $fh, ">", $file) || die "Cannot write to $file";
     print $fh $newick."\n";
@@ -196,7 +196,7 @@ if (!defined $treeMD5) {
 }
 
 # Try to parse the table to get descriptions
-my $tsvMD5;
+my $tsvId;
 if (param('tsvFile')) {
   my $fh = param('tsvFile')->handle;
   fail("tsvFile is not a file") unless $fh;
@@ -206,8 +206,8 @@ if (param('tsvFile')) {
     warn("No descriptions found for matching ids in the uploaded table");
   } else {
     print p("Found $n descriptions in the uploaded table"),"\n";
-    $tsvMD5 = md5_hex(@lines);
-    my $file = "$tmpDir/$tsvMD5.tsv";
+    $tsvId = md5_hex(@lines);
+    my $file = "$tmpDir/$tsvId.tsv";
     if (! -e $file) {
       open (my $fh, ">", $file) || die "Cannot write to $file";
       foreach my $line (@lines) {
@@ -217,11 +217,11 @@ if (param('tsvFile')) {
       close($fh) || die "Error writing to $file";
     }
   }
-} elsif (param('tsvMD5')) {
-  $tsvMD5 = param('tsvMD5');
-  fail("Invalid tsvMD5") unless $tsvMD5 =~ m/^[0-9a-f]+$/;
-  my $file = "$tmpDir/$tsvMD5.tsv";
-  open(my $fh, "<", $file) || fail("Unknown tsvMD5 $tsvMD5");
+} elsif (param('tsvId')) {
+  $tsvId = param('tsvId');
+  fail("Invalid tsvId") unless $tsvId =~ m/^[a-zA-Z0-9]+$/;
+  my $file = "$tmpDir/$tsvId.tsv";
+  open(my $fh, "<", $file) || fail("Unknown tsvId $tsvId");
   my @lines = <$fh>;
   close($fh) || die "Error reading $file";
   my $n = HandleTsvLines(@lines);
@@ -294,24 +294,24 @@ if (@alnPos > 0 && $anchorId ne "") {
 }
 print p(@drawing);
 print p("Download",
-        a({ -href => "$tmpDir/$treeMD5.tree" }, "tree"),
+        a({ -href => "$tmpDir/$treeId.tree" }, "tree"),
         "or",
-        a({ -href => "$tmpDir/$alnMD5.aln" }, "alignment").",",
+        a({ -href => "$tmpDir/$alnId.aln" }, "alignment").",",
         "or see",
         a({ -href => join("",
                           "treeSites.cgi?anchor=", uri_escape($anchorId),
                           "&pos=", join(",",@anchorPos),
-                          "&treeMD5=", $treeMD5,
-                          "&alnMD5=", $alnMD5,
-                          "&tsvMD5=", $tsvMD5 || "") },
+                          "&treeId=", $treeId,
+                          "&alnId=", $alnId,
+                          "&tsvId=", $tsvId || "") },
           "permanent link"),
         "to this page, or",
         a({ -href => "treeSites.cgi" }, "upload new data").".");
 
 print p(start_form(-method => 'GET', -action => 'treeSites.cgi'),
-        hidden( -name => 'alnMD5', -default => $alnMD5, -override => 1),
-        hidden( -name => 'treeMD5', -default => $treeMD5, -override => 1),
-        hidden( -name => 'tsvMD5', -default => $tsvMD5, -override => 1),
+        hidden( -name => 'alnId', -default => $alnId, -override => 1),
+        hidden( -name => 'treeId', -default => $treeId, -override => 1),
+        hidden( -name => 'tsvId', -default => $tsvId, -override => 1),
         "Select positions",
         textfield(-name => "pos", -default => join(",",@anchorPos), -size => 30, -maxlength => 200),
         "in",
@@ -320,8 +320,8 @@ print p(start_form(-method => 'GET', -action => 'treeSites.cgi'),
         end_form);
 
 print p(start_form(-method => 'POST', -action => 'treeSites.cgi'),
-        hidden( -name => 'alnMD5', -default => $alnMD5, -override => 1),
-        hidden( -name => 'treeMD5', -default => $treeMD5, -override => 1),
+        hidden( -name => 'alnId', -default => $alnId, -override => 1),
+        hidden( -name => 'treeId', -default => $treeId, -override => 1),
         hidden( -name => 'anchor', -default => $anchorId, -override => 1),
         hidden( -name => 'pos', -default => join(",",@anchorPos), -override => 1),
         "Upload descriptions:", filefield(-name => 'tsvFile', -size => 50),
@@ -586,9 +586,9 @@ exit(0);
 sub fail($) {
   my ($notice) = @_;
   my $URL = "treeSites.cgi";
-  my $URL = "treeSites.cgi?alnMD5=$alnMD5&treeMD5=$treeMD5"
-    if defined $alnMD5 && defined $treeMD5;
-  $URL .= "&tsvMD5=$tsvMD5" if defined $tsvMD5;
+  my $URL = "treeSites.cgi?alnId=$alnId&treeId=$treeId"
+    if defined $alnId && defined $treeId;
+  $URL .= "&tsvId=$tsvId" if defined $tsvId;
   print
     p(b($notice)),
       p(a({-href => $URL}, "Try again")),
