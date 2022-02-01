@@ -955,6 +955,11 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
                                          { Slice => {} }, $orgId, $pathSpec, $stepSpec);
     if (@$cand == 0) {
       print h3("No candidates for $stepSpec: $stepDesc{$pathSpec}{$stepSpec}"), "\n";
+      print p("GapMind classifies a step as low confidence even if it does not find any candidates.",
+              "You can still try to find candidates by using Curated BLAST (which searches the 6-frame translation)",
+              "or by text search of the annotations (which may indicate weak homology,",
+              "under 30% identity or 50% coverage, that",
+              "GapMind does not consider). See the links below.");
     } else {
       my @sorted = sort { ($b->{score} || 0) <=> ($a->{score} || 0)
                             || max($b->{blastBits} || 0, $b->{hmmBits} || 0)
@@ -1012,6 +1017,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
       }
       print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
       print LegendForColorCoding();
+      print p(small("Sequence similarity scores of 44 bits correspond to E &asymp; 0.001."));
       if ($orgs{$orgId}{gdb} eq "FitnessBrowser") {
         # link to candidates in the fitness browser
         my @loci = UniqueLoci(grep { $_ ne "" } map { $_->{locusId}, $_->{locusId2} } @sorted);
