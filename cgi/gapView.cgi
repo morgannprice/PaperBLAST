@@ -965,12 +965,19 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
                             || max($b->{blastBits} || 0, $b->{hmmBits} || 0)
                               <=> max($a->{blastBits} || 0, $a->{hmmBits} || 0 ) } @$cand;
       print h3(scalar(@sorted), "candidates for $stepSpec:", $stepDesc{$pathSpec}{$stepSpec}), "\n";
-      my @header = qw{Score Gene Description Similar-to Id. Cov. Bits  Other-hit Other-id. Other-bits};
-      $header[-1] = span({-title => "A characterized protein that is similar to the gene but is not associated with step $stepSpec"},
-                         $header[-1]);
-      foreach (@header) {
-        s/-/ /;
-      }
+      my @header = (span({-title => "The confidence level for this candidate. If a candidate was found by both ublast and HMMer, it will be listed twice."}, "Score"),
+                    span({-title => "The identifier of the candidate"}, "Gene"),
+                    span({-title => "How this this candidate was annotated in the genome"}, "Description"),
+                    span({-title => "The characterized protein or the protein family that this candidate is similar to"},
+                         "Similar to"),
+                    span({-title => "%identity (for alignments to characterized proteins)"}, "Id."),
+                    span({-title => "% of the characterized protein or of the HMM that is covered by the alignment"},
+                         "Cov."),
+                    span({-title => "Bit score of the alignment"}, "Bits"),
+                    span({-title => "The characterized protein *not* associated with step $stepSpec that is most similar to this candidate"},
+                         "Other hit"),
+                    span({-title => "%identity of the 'other' hit"}, "Other id."),
+                    span({-title => "Bit score of the alignment to the 'other' hit"}, "Other bits"));
       my @tr = Tr(th({-valign => "bottom"}, \@header));
 
       foreach my $cand (@sorted) {
@@ -1017,7 +1024,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
       }
       print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
       print LegendForColorCoding();
-      print p(small("Sequence similarity scores of 44 bits correspond to E &asymp; 0.001."));
+      print p(small("For alignments to characterized proteins, scores of 44 bits correspond to E &asymp; 0.001."));
       if ($orgs{$orgId}{gdb} eq "FitnessBrowser") {
         # link to candidates in the fitness browser
         my @loci = UniqueLoci(grep { $_ ne "" } map { $_->{locusId}, $_->{locusId2} } @sorted);
@@ -1545,7 +1552,11 @@ sub Finish() {
   my $email = 'funwithwords26@gmail.com';
   print <<END
 <h3>About GapMind</h3>
-<P>Each pathway is defined by a set of rules based on individual steps or genes. Candidates for each step are identified by using ublast against a database of manually-curated proteins (most of which are experimentally characterized) or by using HMMer. Ublast hits may be split across two different proteins.
+<P>Each pathway is defined by a set of rules based on individual steps or genes. Candidates for each step are identified by using
+<A HREF="https://pubmed.ncbi.nlm.nih.gov/20709691/">ublast</A> (a fast alternative to protein BLAST)
+against a database of manually-curated proteins (most of which are experimentally characterized) or by using
+<A HREF="http://hmmer.org/">HMMer</A> with enzyme models (usually from
+<A HREF="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3531188/">TIGRFam</A>). Ublast hits may be split across two different proteins.
 
 <P>A candidate for a step is "high confidence" if either:
 <UL>
