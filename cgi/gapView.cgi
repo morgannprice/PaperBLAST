@@ -1024,7 +1024,15 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
       }
       print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
       print LegendForColorCoding();
-      print p(small("For alignments to characterized proteins, scores of 44 bits correspond to E &asymp; 0.001."));
+      print p(small("GapMind searches the predicted proteins for candidates by using",
+                    a({-href => "https://pubmed.ncbi.nlm.nih.gov/20709691/" }, "ublast"),
+                    "(a fast alternative to protein BLAST) to find similarities to characterized proteins",
+                    "or by using",
+                    a({-href => "http://hmmer.org/"}, "HMMer"),
+                    "to find similarities to enzyme models (usually from",
+                    a({-href => "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3531188/"}, "TIGRFams").").",
+                    "For alignments to characterized proteins (from ublast), scores of 44 bits correspond to",
+                    "an expectation value (E) of about 0.001."));
       if ($orgs{$orgId}{gdb} eq "FitnessBrowser") {
         # link to candidates in the fitness browser
         my @loci = UniqueLoci(grep { $_ ne "" } map { $_->{locusId}, $_->{locusId2} } @sorted);
@@ -1576,6 +1584,9 @@ where "other" refers to the best ublast hit to a sequence that is not annotated 
 <P>Other blast hits with at least 50% coverage are "low confidence."
 <P>Steps with no high- or medium-confidence candidates may be considered "gaps."
 For the typical bacterium that can make all 20 amino acids, there are 1-2 gaps in amino acid biosynthesis pathways.
+For diverse bacteria and archaea that can utilize a carbon source, there is a complete
+high-confidence catabolic pathway (including a transporter) just 38% of the time, and
+there is a complete medium-confidence pathway 63% of the time.
 Gaps may be due to:
 <UL>
 <LI>our ignorance of proteins' functions,
