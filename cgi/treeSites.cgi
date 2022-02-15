@@ -462,7 +462,7 @@ for (my $i = 0; $i < @alnPos; $i++) {
   foreach my $leaf (@leaves) {
     my $id = $moTree->id($leaf);
     my $seq = $alnSeq{$id} || die;
-    my $char = substr($seq, $pos, 1);
+    my $char = uc(substr($seq, $pos, 1));
     my $top = $nodeY{$leaf} - $rowHeight/2;
     my $heightUse = $rowHeight + 0.2; # extra height to prevent thin white lines
     my $color = exists $taylor{$char} ? $taylor{$char} : "grey";
