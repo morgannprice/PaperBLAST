@@ -7,6 +7,7 @@ use URI::Escape;
 use HTML::Entities;
 use Digest::MD5 qw{md5_hex};
 use List::Util qw{sum min max};
+use IO::Handle; # for autoflush
 use lib "../lib";
 use pbutils qw{ReadFastaEntry ParseClustal};
 use MOTree;
@@ -25,7 +26,10 @@ use MOTree;
 # (This tool automatically saves uploads using alnId, treeId, or tsvId, and creates links using
 #  the MD5 arguments.)
 #
-# If alignment or tree is missing, it shows an input form.
+# If alignment is missing, it shows an input form.
+#
+# If tree is missing, it shows a form to choose trimming options (for running FastTree)
+# or to upload a tree.
 
 sub fail($); # print error to HTML and exit
 sub warning($); # print warning to HTML
@@ -35,6 +39,12 @@ sub handleTsvLines; # handle tab-delimited description lines
 # but it also looks in ../static/
 # Also it verifies that the id is harmless (alphanumeric, _, or - characters only)
 sub openFile($$);
+sub findFile($$); # similar but returns the filename
+
+my $tmpDir = "../tmp/aln";
+# Given a list of lines and a type, saves it to a file in $tmpDir, if necessary,
+# and returns the hash id
+sub savedHash($$);
 
 # maximum size of posted data, in bytes
 my $maxMB = 25;
@@ -51,32 +61,19 @@ print
 my $alnSet = param('aln') || param('alnFile') || param('alnId');
 my $treeSet = param('tree') || param('treeFile') || param('treeId');
 
-my $tmpDir = "../tmp/aln";
-if (!$alnSet || !$treeSet) {
-  # show the form
-  warning("Please give an alignment and a tree")
-    if $alnSet xor $treeSet;
+if (!$alnSet) {
   print
     p("View a phylogenetic tree along with selected sites from a protein alignment.",
       a({-href => "treeSites.cgi?alnId=DUF1080&treeId=DUF1080&tsvId=DUF1080&anchor=BT2157&pos=134,164,166",
          -title => "putative active site of the 3-ketoglycoside hydrolase family (formerly DUF1080)" },
         "See example.")),
     start_form(-name => 'input', -method => 'POST', -action => 'treeSites.cgi'),
-    p("Alignment in multi-fasta or clustal format (up to $maxN sequences or $maxMB megabytes):",
+    p("First, enter an alignment in multi-fasta or clustal format (up to $maxN sequences or $maxMB megabytes):",
       br(),
       textarea(-name => 'aln', -value => '', -cols => 70, -rows => 10),
       br(),
       "Or upload:", filefield(-name => 'alnFile', -size => 50)),
-    p("Rooted tree in newick format:",
-      br(),
-      textarea(-name => 'tree', -value => '', -cols => 70, -rows => 4),
-      br(),
-      "Or upload:", filefield(-name => 'treeFile', -size => 50)),
-    p("Positions to show (optional):",
-      textfield(-name => 'pos', -size => 50),
-      br(), br(),
-      "Positions are relative to sequence (optional):", textfield(-name => 'anchor', -size => 25)),
-    p(submit()),
+    p(submit(-value => 'Go')),
     end_form,
     p("Or try",
       a({-href => "sites.cgi" }, "SitesBLAST").":",
@@ -85,7 +82,7 @@ if (!$alnSet || !$treeSet) {
   exit(0);
 }
 
-# else rendering mode
+# else load the alignment
 my @alnLines = ();
 my $alnId;
 if (param('aln')) {
@@ -123,6 +120,8 @@ if (my $hash = ParseClustal(@alnLines)) {
     $seq = uc($seq);
     $seq =~ m/^[A-Z-]+$/ || fail("Invalid sequence for " . encode_entities($id));
     $alnSeq{$id} = $seq;
+    fail("Sequence identifier $id in the alignment contains an invalid character, one of  :(),")
+      if $id =~ m/[:(),]/;
   }
   fail($state->{error}) if defined $state->{error};
 }
@@ -138,7 +137,105 @@ while (my ($id, $seq) = each %alnSeq) {
     unless length($seq) == $alnLen;
 }
 
+# Save the alignment, if necessary
+if (!defined $alnId) {
+  $alnId = savedHash(\@alnLines, "aln");
+}
+
 my ($moTree, $treeId);
+
+if (! $treeSet && param('buildTree')) {
+  my $trimGaps = param('trimGaps') ? 1 : 0;
+  my $trimLower = param('trimLower') ? 1 : 0;
+  my $ft = "../bin/FastTree";
+  die "No such executable: $ft" unless -x $ft;
+
+  # Trim the alignment
+  my @keep = (); # positions to keep
+  my $nSeq = scalar(keys %alnSeq);
+  for (my $i = 0; $i < $alnLen; $i++) {
+    my $nGaps = 0;
+    my $nLower = 0;
+    foreach my $seq (values %alnSeq) {
+      my $char = substr($seq, $i, 1);
+      if ($char eq '-') {
+        $nGaps++;
+      } elsif ($char eq lc($char)) {
+        $nLower++;
+      }
+    }
+    my $nUpper = $nSeq - $nGaps - $nLower;
+    push @keep, $i
+      unless ($trimGaps && $nGaps >= $nSeq/2)
+        || ($trimLower && $nLower >= $nUpper);
+  }
+
+  if (scalar(@keep) < 10) {
+    fail("Sorry: less than 10 alignment positions remained after trimming");
+  }
+
+  my $tmpTrim = "$tmpDir/treeSites.$$.trim";
+  open (my $fhTrim, ">", $tmpTrim) || die "Cannot write to $tmpTrim";
+  foreach my $id (sort keys %alnSeq) {
+    my $seq = $alnSeq{$id};
+    my $trimmed = join("", map substr($seq, $_, 1), @keep);
+    print $fhTrim ">", $id, "\n", $trimmed, "\n";
+  }
+  close($fhTrim) || die "Error writing to $tmpTrim";
+
+  my $tmpTreeFile = "$tmpDir/treeSites.$$.tree";
+  autoflush STDOUT 1; # show preliminary results
+  print p("Running",
+          a({ -href => "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2835736/" },
+            "FastTree 2"),
+          "on an alignment with",
+          scalar(@keep), "positions and $nSeq sequences.",
+          "This could take a few minutes."), "\n";
+  system("$ft -quiet $tmpTrim > $tmpTreeFile") == 0
+    || die "FastTree failed on $tmpTrim : $!";
+
+  $moTree = MOTree::new('file' => $tmpTreeFile)
+    || die "Error parsing $tmpTreeFile";
+  $moTree->rerootMidpoint();
+  unlink($tmpTrim);
+  unlink($tmpTreeFile);
+  my $newick = $moTree->toNewick();
+  $treeId = savedHash([$newick], "tree");
+  print
+    p("FastTree succeeded."),
+    p("Rerooted the tree to minimize its depth (midpoint rooting)."),
+    p(a{ -href => "treeSites.cgi?alnId=$alnId&treeId=$treeId"},
+      "View the tree");
+  print end_html;
+  exit(0);
+}
+
+if (! $treeSet) {
+  print p("The alignment has", scalar(keys %alnSeq), "sequences of length $alnLen");
+
+  # Form to compute a tree
+  print
+    start_form(-name => 'buildTree', -method => 'POST', -action => 'treeSites.cgi'),
+    hidden(-name => 'alnId', -default => $alnId, -override => 1),
+    p("Compute a tree:"),
+    p(checkbox(-name => 'trimGaps', -checked => 1, -value => 1, -label => ''),
+      "Trim columns that are &ge;50% gaps"),
+    p(checkbox(-name => 'trimLower', -checked => 1, -value => 1, -label => ''),
+      "Trim columns with more lowercase than uppercase"),
+    p(submit(-name => "buildTree", -value => "Run FastTree")),
+    end_form;
+
+  print
+    start_form(-name => 'inputTree', -method => 'POST', -action => 'treeSites.cgi'),
+    hidden(-name => 'alnId', -default => $alnId, -override => 1),
+    p("Or upload a rooted tree in newick format:", filefield(-name => 'treeFile', -size => 50)),
+    p(submit(-name => "input", -value => "Upload")),
+    end_form;
+  print end_html;
+  exit(0);
+}
+
+# else rendering mode
 
 if (param('tree')) {
   eval { $moTree = MOTree::new('newick' => param('tree')) };
@@ -152,7 +249,7 @@ if (param('tree')) {
   eval { $moTree = MOTree::new('fh' => $fh) };
   close($fh) || die "Error reading $treeId.tree";
 } else {
-  fail("No tree specified");
+  fail("No tree specified") unless defined $treeId;
 }
 fail("Could not parse tree") unless $moTree;
 
@@ -177,29 +274,10 @@ if (!defined $alnId || !defined $treeId) {
   }
 }
 
-# Save the tree and alignment, if necessary
-if (!defined $alnId) {
-  $alnId = md5_hex(@alnLines);
-  my $file = "$tmpDir/$alnId.aln";
-  if (! -e $file) {
-    open(my $fh, ">", $file) || die "Cannot write to $file";
-    foreach my $line (@alnLines) {
-      $line =~ s/[\r\n]+$//;
-      print $fh $line."\n";
-    }
-    close($fh) || die "Error writing to $file";
-  }
-}
-
+# Save the tree, if necessary
 if (!defined $treeId) {
   my $newick = $moTree->toNewick();
-  $treeId = md5_hex($newick);
-  my $file = "$tmpDir/$treeId.tree";
-  if (! -e $file) {
-    open (my $fh, ">", $file) || die "Cannot write to $file";
-    print $fh $newick."\n";
-    close($fh) || die "Error writing to $file";
-  }
+  $treeId = savedHash([$newick], "tree");
 }
 
 # Try to parse the table to get descriptions
@@ -213,16 +291,7 @@ if (param('tsvFile')) {
     warn("No descriptions found for matching ids in the uploaded table");
   } else {
     print p("Found $n descriptions in the uploaded table"),"\n";
-    $tsvId = md5_hex(@lines);
-    my $file = "$tmpDir/$tsvId.tsv";
-    if (! -e $file) {
-      open (my $fh, ">", $file) || die "Cannot write to $file";
-      foreach my $line (@lines) {
-        $line =~ s/[\r\n]+$//;
-        print $fh $line."\n";
-      }
-      close($fh) || die "Error writing to $file";
-    }
+    $tsvId = savedHash(\@lines, "tsv");
   }
 } elsif (param('tsvId')) {
   $tsvId = param('tsvId');
@@ -321,7 +390,7 @@ print p(start_form(-method => 'GET', -action => 'treeSites.cgi'),
         textfield(-name => "pos", -default => join(",",@anchorPos), -size => 30, -maxlength => 200),
         "in",
         textfield(-name => "anchor", -default => $anchorId, -size => 20, -maxlength => 200),
-        submit(),
+        submit(-value => "Go"),
         end_form);
 
 print p(start_form(-method => 'POST', -action => 'treeSites.cgi'),
@@ -330,7 +399,7 @@ print p(start_form(-method => 'POST', -action => 'treeSites.cgi'),
         hidden( -name => 'anchor', -default => $anchorId, -override => 1),
         hidden( -name => 'pos', -default => join(",",@anchorPos), -override => 1),
         "Upload descriptions:", filefield(-name => 'tsvFile', -size => 50),
-        submit(),
+        submit(-value => "Go"),
         br(),
         small("Descriptions should be tab-delimited with the sequence id in the 1st column and the description in the 2nd column"),
         end_form);
@@ -596,7 +665,7 @@ sub fail($) {
   $URL .= "&tsvId=$tsvId" if defined $tsvId;
   print
     p(b($notice)),
-      p(a({-href => $URL}, "Try again")),
+      p(a({-href => $URL}, "Start over")),
         end_html;
   exit(0);
 }
@@ -620,14 +689,38 @@ sub handleTsvLines {
   return $n;
 }
 
-sub openFile($$) {
+sub findFile($$) {
   my ($id, $type) = @_;
   die "Undefined input to openFile()" unless defined $id && defined $type;
   die "Invalid type" unless $type=~ m/^[a-zA-Z_]+$/;
   die "Invalid id of type $type" unless $id =~ m/^[a-zA-Z0-9_-]+$/;
   my $file = "../static/$id.$type";
   $file = "$tmpDir/$id.$type" unless -e $file;
+  die "No such file: $file" unless -e $file;
+  return $file;
+}
+
+sub openFile($$) {
+  my ($id, $type) = @_;
+  my $file = findFile($id, $type);
   my $fh;
   open($fh, "<", $file) || die "Cannot read $file";
   return $fh;
+}
+
+sub savedHash($$) {
+  my ($lines, $type) = @_;
+  die unless defined $lines && defined $type;
+  my $id = md5_hex(@$lines);
+  my $file = "$tmpDir/$id.$type";
+
+  if (! -e $file) {
+    open(my $fh, ">", $file) || die "Cannot write to $file";
+    foreach my $line (@$lines) {
+      $line =~ s/[\r\n]+$//;
+      print $fh $line."\n";
+    }
+    close($fh) || die "Error writing to $file";
+  }
+  return $id;
 }

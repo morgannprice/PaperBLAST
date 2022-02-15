@@ -51,3 +51,7 @@ directory.  If using apache, the private/.htaccess sile hould read
 
 Several of the fetching tools (as used within Curated BLAST) require
 LWP::Protocol::https.
+
+For treeSites.cgi, put the FastTree executable, from
+  http://www.microbesonline.org/fasttree/FastTree
+in bin/
