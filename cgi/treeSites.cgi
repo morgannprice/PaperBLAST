@@ -29,7 +29,12 @@ use MOTree;
 
 sub fail($); # print error to HTML and exit
 sub warning($); # print warning to HTML
-sub HandleTsvLines; # handle tab-delimited description lines
+sub handleTsvLines; # handle tab-delimited description lines
+
+# id and type to an open filehandle, usually from ../tmp/aln/id.type,
+# but it also looks in ../static/
+# Also it verifies that the id is harmless (alphanumeric, _, or - characters only)
+sub openFile($$);
 
 # maximum size of posted data, in bytes
 my $maxMB = 25;
@@ -52,7 +57,10 @@ if (!$alnSet || !$treeSet) {
   warning("Please give an alignment and a tree")
     if $alnSet xor $treeSet;
   print
-    p("This tool will show a phylogenetic tree along with selected sites from a protein alignment."),
+    p("View a phylogenetic tree along with selected sites from a protein alignment.",
+      a({-href => "treeSites.cgi?alnId=DUF1080&treeId=DUF1080&tsvId=DUF1080&anchor=BT2157&pos=134,164,166",
+         -title => "putative active site of the 3-ketoglycoside hydrolase family (formerly DUF1080)" },
+        "See example.")),
     start_form(-name => 'input', -method => 'POST', -action => 'treeSites.cgi'),
     p("Alignment in multi-fasta or clustal format (up to $maxN sequences or $maxMB megabytes):",
       br(),
@@ -88,11 +96,9 @@ if (param('aln')) {
   @alnLines = <$fhAln>;
 } elsif (param('alnId')) {
   $alnId = param('alnId');
-  fail("Invalid alnId") unless $alnId =~ m/^[a-zA-Z0-9]+$/;
-  my $alnFile = "$tmpDir/$alnId.aln";
-  open(my $fhAln, "<", $alnFile) || fail("Unknown alnId $alnId");
+  my $fhAln = openFile($alnId, "aln");
   @alnLines = <$fhAln>;
-  close($fhAln) || die "Error reading $alnFile";
+  close($fhAln) || die "Error reading $alnId.aln";
 } else {
   fail("No alignment specified");
 }
@@ -142,11 +148,9 @@ if (param('tree')) {
   eval { $moTree = MOTree::new('fh' => $fh) };
 } elsif (param('treeId')) {
   $treeId = param('treeId');
-  fail("Invalid treeId") unless $treeId =~ m/^[a-zA-Z0-9]+$/;
-  my $file = "$tmpDir/$treeId.tree";
-  open(my $fh, "<", $file) || fail ("Unknown treeId $treeId");
+  my $fh = openFile($treeId, "tree");
   eval { $moTree = MOTree::new('fh' => $fh) };
-  close($fh) || die "Error reading $file";
+  close($fh) || die "Error reading $treeId.tree";
 } else {
   fail("No tree specified");
 }
@@ -204,7 +208,7 @@ if (param('tsvFile')) {
   my $fh = param('tsvFile')->handle;
   fail("tsvFile is not a file") unless $fh;
   my @lines = <$fh>;
-  my $n = HandleTsvLines(@lines);
+  my $n = handleTsvLines(@lines);
   if ($n == 0) {
     warn("No descriptions found for matching ids in the uploaded table");
   } else {
@@ -222,12 +226,10 @@ if (param('tsvFile')) {
   }
 } elsif (param('tsvId')) {
   $tsvId = param('tsvId');
-  fail("Invalid tsvId") unless $tsvId =~ m/^[a-zA-Z0-9]+$/;
-  my $file = "$tmpDir/$tsvId.tsv";
-  open(my $fh, "<", $file) || fail("Unknown tsvId $tsvId");
+  my $fh = openFile($tsvId, "tsv");
   my @lines = <$fh>;
-  close($fh) || die "Error reading $file";
-  my $n = HandleTsvLines(@lines);
+  close($fh) || die "Error reading $tsvId.tsv";
+  my $n = handleTsvLines(@lines);
   warn("No descriptions found for matching ids in the table") if $n == 0;
 }
 
@@ -604,7 +606,7 @@ sub warning($) {
   print p({-style => "color: red;"}, "Warning:", $notice), "\n";
 }
 
-sub HandleTsvLines {
+sub handleTsvLines {
   my @lines = @_;
   my $n = 0;
   foreach my $line (@lines) {
@@ -618,3 +620,14 @@ sub HandleTsvLines {
   return $n;
 }
 
+sub openFile($$) {
+  my ($id, $type) = @_;
+  die "Undefined input to openFile()" unless defined $id && defined $type;
+  die "Invalid type" unless $type=~ m/^[a-zA-Z_]+$/;
+  die "Invalid id of type $type" unless $id =~ m/^[a-zA-Z0-9_-]+$/;
+  my $file = "../static/$id.$type";
+  $file = "$tmpDir/$id.$type" unless -e $file;
+  my $fh;
+  open($fh, "<", $file) || die "Cannot read $file";
+  return $fh;
+}
