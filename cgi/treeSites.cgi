@@ -9,7 +9,7 @@ use Digest::MD5 qw{md5_hex};
 use List::Util qw{sum min max};
 use IO::Handle; # for autoflush
 use lib "../lib";
-use pbutils qw{ReadFastaEntry ParseClustal};
+use pbutils qw{ReadFastaEntry ParseClustal ParseStockholm};
 use MOTree;
 
 # In rendering mode, these options are required:
@@ -62,13 +62,14 @@ my $alnSet = param('aln') || param('alnFile') || param('alnId');
 my $treeSet = param('tree') || param('treeFile') || param('treeId');
 
 if (!$alnSet) {
+  # Starting form to upload alignment
   print
     p("View a phylogenetic tree along with selected sites from a protein alignment.",
       a({-href => "treeSites.cgi?alnId=DUF1080&treeId=DUF1080&tsvId=DUF1080&anchor=BT2157&pos=134,164,166",
          -title => "putative active site of the 3-ketoglycoside hydrolase family (formerly DUF1080)" },
         "See example.")),
     start_form(-name => 'input', -method => 'POST', -action => 'treeSites.cgi'),
-    p("First, enter an alignment in multi-fasta or clustal format (up to $maxN sequences or $maxMB megabytes):",
+    p("First, enter an alignment in multi-fasta, clustal, or stockholm format (up to $maxN sequences or $maxMB megabytes):",
       br(),
       textarea(-name => 'aln', -value => '', -cols => 70, -rows => 10),
       br(),
@@ -100,10 +101,12 @@ if (param('aln')) {
   fail("No alignment specified");
 }
 
-my %alnSeq;
+my %alnSeq; # with - as gaps (converted from "." if necessary, but potentially with lower-case)
 my %alnDesc;
 
 if (my $hash = ParseClustal(@alnLines)) {
+  %alnSeq = %$hash;
+} elsif (my $hash = ParseStockholm(@alnLines)) {
   %alnSeq = %$hash;
 } else {
   my $alnString = join("\n", @alnLines);
@@ -116,12 +119,7 @@ if (my $hash = ParseClustal(@alnLines)) {
     }
     fail("Duplicate sequence for " . encode_entities($id))
       if exists $alnSeq{$id};
-    $seq =~ s/[.]/-/g;
-    $seq = uc($seq);
-    $seq =~ m/^[A-Z-]+$/ || fail("Invalid sequence for " . encode_entities($id));
     $alnSeq{$id} = $seq;
-    fail("Sequence identifier $id in the alignment contains an invalid character, one of  :(),")
-      if $id =~ m/[:(),]/;
   }
   fail($state->{error}) if defined $state->{error};
 }
@@ -130,8 +128,17 @@ fail("No sequences in the alignment")
 
 fail("Too many sequences in the alignment") if scalar(keys %alnSeq) > $maxN;
 
+# Convert any . characters to -
+while (my ($id, $seq) = each %alnSeq) {
+  $seq =~ m/^[A-Za-z.-]+$/ || fail("Invalid sequence for " . encode_entities($id));
+  $seq =~ s/[.]/-/g;
+  $alnSeq{$id} = $seq;
+}
+
 my $alnLen;
 while (my ($id, $seq) = each %alnSeq) {
+  fail("Sequence identifier $id in the alignment contains an invalid character, one of  :(),")
+    if $id =~ m/[:(),]/;
   $alnLen = length($seq) if !defined $alnLen;
   fail("Inconsistent sequence length for " . encode_entities($id))
     unless length($seq) == $alnLen;
@@ -169,6 +176,10 @@ if (! $treeSet && param('buildTree')) {
       unless ($trimGaps && $nGaps >= $nSeq/2)
         || ($trimLower && $nLower >= $nUpper);
   }
+
+  print p("Removed positions that are at least 50% gaps.") if $trimGaps;
+  print p("Removed positions that have as many lower-case as upper-case values.") if $trimGaps;
+  print p("Trimmed to",scalar(@keep),"positions");
 
   if (scalar(@keep) < 10) {
     fail("Sorry: less than 10 alignment positions remained after trimming");
@@ -367,10 +378,14 @@ if (@alnPos > 0 && $anchorId ne "") {
   push @drawing, "Position numbering is from " . encode_entities($anchorId) . ".";
 }
 print p(@drawing);
+my @downloads = ();
+push @downloads, a({ -href => findFile($treeId, "tree") }, "tree");
+push @downloads, a({ -href => findFile($alnId, "aln") }, "alignment");
+push @downloads, a({ -href => findFile($tsvId, "tsv") }, "table of descriptions")
+  if $tsvId;
+
 print p("Download",
-        a({ -href => "$tmpDir/$treeId.tree" }, "tree"),
-        "or",
-        a({ -href => "$tmpDir/$alnId.aln" }, "alignment").",",
+        join(" or ", @downloads),
         "or see",
         a({ -href => join("",
                           "treeSites.cgi?anchor=", uri_escape($anchorId),
@@ -523,10 +538,14 @@ for (my $i = 0; $i < @alnPos; $i++) {
   my $labelChar = "#";
   $labelChar = substr($anchorAln, $pos, 1) if $anchorId ne "";
   my $colLabel = $labelChar . $anchorPos[$i];
-  push @svg, qq{<text text-anchor="left" transform="translate($x,$labelY) rotate(-45)">$colLabel</text>};
+  my $pos1 = $pos+1;
+  my $title = "Alignment position $pos1";
+  $title = "$anchorId has $labelChar at position $anchorPos[$i] (alignment position $pos1)" if $anchorId ne "";
+  my $titleTag = "<TITLE>$title</TITLE>";
+  push @svg, qq{<text text-anchor="left" transform="translate($x,$labelY) rotate(-45)">$titleTag$colLabel</text>};
   if (@leaves >= 20) {
     my $labelY2 = $svgHeight - $padBottom + 3;
-    push @svg, qq{<text transform="translate($x,$labelY2) rotate(90)">$colLabel</text>"};
+    push @svg, qq{<text transform="translate($x,$labelY2) rotate(90)">$titleTag$colLabel</text>"};
   }
 
   # draw boxes for every position
@@ -571,7 +590,7 @@ for (my $i = 0; $i < @alnPos; $i++) {
     }
   }
 
-  # draw text for each clade at best location (if there is space)
+  # draw the character for each conserved clade, if there is space
   foreach my $node (@$nodes) {
     my $ancestor = $moTree->ancestor($node);
     if ($conservedAt{$node} ne "" && ($node == $root || $conservedAt{$ancestor} eq "")) {
@@ -582,7 +601,9 @@ for (my $i = 0; $i < @alnPos; $i++) {
       } else {
         @leavesBelow = @{ $moTree->all_leaves_below($node) };
       }
-      # XXX show range of nodes, or number?? Or remove it?
+      # Hover text to report how large the clade is and give an example id,
+      # if the clade has more than one member; otherwise just
+      # show the id and its sequence across selected positions
       my @leavesBelowY = map $nodeY{$_}, @leavesBelow;
       my $height = $rowHeight + max(@leavesBelowY) - min(@leavesBelowY);
       next unless $height >= $minShowHeight;
