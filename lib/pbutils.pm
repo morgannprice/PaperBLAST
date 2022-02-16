@@ -16,7 +16,7 @@ our (@ISA,@EXPORT);
              FetchCuratedInfo
              SQLiteLine SqliteImport
              reverseComplement
-             ParseClustal!;
+             ParseClustal ParseStockholm!;
 
 sub read_list($) {
   my ($file) = @_;
@@ -453,7 +453,7 @@ length($seq) );
 sub ParseClustal(@) {
   my (@lines) = @_;
   my $header = shift @lines;
-  return undef unless $header =~ m/^CLUSTAL / || $header =~ m/^MUSCLE/;
+  return undef unless $header =~ m/^[A-Z]/; # i.e., CLUSTAL or MUSCLE
 
   my %seqs =();
   foreach my $line (@lines) {
@@ -467,6 +467,30 @@ sub ParseClustal(@) {
   }
   return undef if keys(%seqs) == 0;
   return \%seqs;
+}
+
+# Given a collection of lines, returns a hash of id to aligned sequence
+# Does not check if sequences are the correct length or if an identifier is repeated
+# On an error, returns undef
+sub ParseStockholm(@) {
+  my (@lines) = @_;
+  my $header = shift @lines;
+  return undef unless $header =~ m/^# STOCKHOLM/;
+
+  my %seq = ();
+  foreach my $line (@lines) {
+    next if $line =~ m/^#/;
+    $line =~ s/[\r\n]+$//;
+    next if $line eq "";
+    if ($line eq "//") {
+      last;
+      next;
+    }
+    $line =~ m/^(\S+)\s+(\S+)$/ || return undef;
+    my ($id, $seq) = ($1, $2);
+    $seq{$id} .= $seq;
+  }
+  return \%seq;
 }
 
 1;
