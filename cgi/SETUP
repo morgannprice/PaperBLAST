@@ -54,4 +54,6 @@ LWP::Protocol::https.
 
 For treeSites.cgi, put the FastTree executable, from
   http://www.microbesonline.org/fasttree/FastTree
-in bin/
+in bin/ and put the MUSCLE 3 executable from
+  https://drive5.com/muscle/downloads_v3.htm
+in bin/muscle3
