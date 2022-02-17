@@ -10,26 +10,39 @@ use List::Util qw{sum min max};
 use IO::Handle; # for autoflush
 use lib "../lib";
 use pbutils qw{ReadFastaEntry ParseClustal ParseStockholm};
+use pbweb;
 use MOTree;
+use DBI;
 
 # In rendering mode, these options are required:
-# aln or alnFile or alnMD5 -- alignment in multi-fasta format, or the file name (usually, md5 hash)
+# alnFile or alnId -- alignment in fasta format, or the file id (usually, md5 hash)
 #   In header lines, anything after the initial space is assumed to be a description.
 #   Either "." or "-" are gap characters.
-# tree or treeFile or treeMD5 -- tree in newick format, or the file name (usually, md5 hash)
+# treeFile or treeId -- tree in newick format, or the file id (usually, md5 hash)
 #   Labels on internal nodes are ignored.
 #   Multi-furcations are allowed. It is treated as rooted.
 # Optional arguments:
 # anchor -- sequence to choose positiosn from
 # pos -- comma-delimited list of positions (in anchor if set, or else, in alignment)
-# tsvFile or tsvId -- descriptions for the ids (as uploaded file or file name)
+# tsvFile or tsvId -- descriptions for the ids (as uploaded file or file id)
 # (This tool automatically saves uploads using alnId, treeId, or tsvId, and creates links using
 #  the MD5 arguments.)
 #
-# If alignment is missing, it shows an input form.
+# Tree-building mode -- an alignment is provided, but not a tree, and buildTree is set
+# Optional arguments:
+# trimGaps -- set if positions that are >=50% gaps should be trimmed off
+# trimLower -- set if positions that are >=50% lower case should be trimmed off
 #
-# If tree is missing, it shows a form to choose trimming options (for running FastTree)
-# or to upload a tree.
+# Tree options mode -- an alignment is provided, but not a tree, and buildTree is not set
+#
+# Alignment mode:
+# seqsFile or seqsId -- sequences (not aligned) in fasta format
+# buildAln -- if set, does the alignment
+#
+# If neither an alignment nor sequences are provided, it shows an input form.
+#
+# Homologs mode:
+# query -- the query (fasta format, uniprot format, raw sequence, or an identifier)
 
 sub fail($); # print error to HTML and exit
 sub warning($); # print warning to HTML
@@ -41,7 +54,6 @@ sub handleTsvLines; # handle tab-delimited description lines
 sub openFile($$);
 sub findFile($$); # similar but returns the filename
 
-my $tmpDir = "../tmp/aln";
 # Given a list of lines and a type, saves it to a file in $tmpDir, if necessary,
 # and returns the hash id
 sub savedHash($$);
@@ -50,6 +62,24 @@ sub savedHash($$);
 my $maxMB = 25;
 $CGI::POST_MAX = $maxMB*1024*1024;
 my $maxN = 2000; # maximum number of sequences in alignment or leaves in tree
+my $maxNAlign = 200; # maximum number of sequences to align
+my $maxLenAlign = 10000;
+
+my $tmpDir = "../tmp/aln";
+my $tmpPre = "$tmpDir/treeSites.$$";
+my $base = "../data";
+my $blastdb = "$base/uniq.faa";
+my $hassitesdb = "$base/hassites.faa";
+my $nCPU = 4;
+my $blastall = "../bin/blast/blastall";
+my $fastacmd = "../bin/blast/fastacmd";
+my $sqldb = "$base/litsearch.db";
+my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
+
+# A symbolic link to the Fitness Browser data directory is used (if it exists)
+# to allow quick access to proteins from the fitness browser.
+# That directory must include feba.db (sqlite3 database) and aaseqs (in fasta format)
+my $fbdata = "../fbrowse_data"; # path relative to the cgi directory
 
 print
   header(-charset => 'utf-8'),
@@ -58,23 +88,376 @@ print
   h2("Sites on a Tree"),
   "\n";
 
-my $alnSet = param('aln') || param('alnFile') || param('alnId');
-my $treeSet = param('tree') || param('treeFile') || param('treeId');
+my $query = param('query');
+if (defined $query) {
+  $query =~ s/^\s+//;
+  $query =~ s/\s+$//;
+}
 
+if ($query ne "") {
+  if ($query !~ m/\n/ && $query !~ m/ / && $query =~ m/[^A-Z*]/) {
+    # convert query to an identifier
+    my $short = $query;
+    $query = undef;
+    fail("Sorry, query has a FASTA header but no sequence") if $short =~ m/^>/;
+
+    # Is it a VIMSS id?
+    $query = &VIMSSToFasta($short) if $short =~ m/^VIMSS\d+$/i;
+
+    # Is it in the database?
+    if (!defined $query) {
+      $query = &DBToFasta($dbh, $blastdb, $short);
+    }
+
+    # is it a fitness browser locus tag?
+    if (!defined $query && $short =~ m/^[0-9a-zA-Z_]+$/) {
+      $query = &FBrowseToFasta($fbdata, $short);
+    }
+
+    # is it a UniProt id or gene name or protein name?
+    if (!defined $query) {
+      $query = &UniProtToFasta($short);
+    }
+
+    # is it in VIMSS as a locus tag or other synonym?
+    if (!defined $query) {
+      $query = &VIMSSToFasta($short);
+    }
+
+    # is it in Nucleotide/RefSeq? (Locus tags not in refseq may not be indexed)
+    if (!defined $query) {
+      $query = &RefSeqToFasta($short);
+    }
+    my $shortSafe = HTML::Entities::encode($short);
+    &fail("Sorry -- we were not able to find a protein sequence for the identifier <b>$shortSafe</b>. We checked it against our database of proteins that are linked to papers, against UniProt (including their ID mapping service), against MicrobesOnline, and against the NCBI protein database (RefSeq and Genbank). Please use the sequence as a query instead.")
+      if !defined $query;
+
+  }
+  my ($id, $seq);
+  if ($query =~ m/^[A-Z*]+$/) { # plain sequence
+    $seq = $query;
+  } elsif ($query =~ m/^>/) { # fasta sequence
+    my @lines = split /[\r\n]+/, $query;
+    $id = shift @lines;
+    $id =~ s/^>//;
+    $seq = "";
+    foreach my $line (@lines) {
+      $seq .= $line;
+    }
+  } else { # uniprot sequence
+    my @lines = split /[\r\n]+/, $query;
+    foreach my $line (@lines) {
+      $line =~ s/[ \t]//g;
+      $line =~ s/^\d+//;
+      next if $line eq "//";
+      $seq .= $line;
+    }
+  }
+  fail("Cannot handle query") unless defined $seq;
+  $seq =~ s/[*]//g;
+  $seq = uc($seq);
+  fail("Invalid sequence") unless $seq =~ m/^[A-Z]+$/;
+  fail("Sequence is less than 10 amino acids") if length($seq) < 10;
+
+  if (!defined $id) {
+    my $initial = substr($seq, 0, 10);
+    $initial .= "..." if length($seq) > 10;
+    $id = length($seq) . "aa_" . $initial;
+  }
+  fail("Cannot handle query") if $id eq "";
+
+  # split off the description
+  my $desc = "";
+  if ($id =~ m/^(\S+) .*/) {
+    $id = $1;
+    $desc = $2;
+  }
+  fail("Sorry, ,(): are not allowed in identifiers")
+    if $id =~ m/[():;]/;
+
+  autoflush STDOUT 1; # show preliminary results
+  my $maxHits = 100;
+  print p("Searching for up to $maxHits curated homologs for",
+          encode_entities($id),
+          encode_entities($desc),
+          "(". length($seq) . " a.a.)"), "\n";
+
+  my $tmpFaa = "$tmpPre.faa";
+  open(my $fhFaa, ">", $tmpFaa) || die "Cannot write to $tmpPre.faa";
+  print $fhFaa ">", $id, "\n", $seq, "\n";
+  close($fhFaa) || die "Error writing to $tmpFaa";
+
+  die "No such executable: $blastall" unless -x $blastall;
+  my @hits = ();
+
+  my $tmpHits = "$tmpPre.hits";
+  foreach my $db ($blastdb, $hassitesdb) {
+    die "No such file: $db" unless -e $db;
+    my @cmd = ($blastall, "-p", "blastp", "-d", $db, "-i", $tmpFaa, "-o", $tmpHits,
+               "-e", 0.001, "-m", 8, "-a", $nCPU, "-F", "m S");
+    system(@cmd) == 0 || die "Error running blastall: $!";
+    open(my $fhHits, "<", $tmpHits) || die "Cannot read $tmpHits";
+    while (<$fhHits>) {
+      chomp;
+      my @F = split /\t/, $_;
+      push @hits, \@F;
+    }
+    close($fhHits) || die "Error reading $tmpHits";
+  }
+  unlink($tmpHits);
+  unlink($tmpFaa);
+
+  # Sort hits by bit score
+  @hits = sort { $b->[11] <=> $a->[11] } @hits;
+
+  # Keep non-duplicate hits to curated
+  my @keep = (); # list of rows including subject, identity, qbeg, qend, sbeg, send, bits, and evalue
+  my %seen = ();
+  foreach my $hit (@hits) {
+    my ($queryId2, $subject, $identity, $alen, $mm, $gaps, $qbeg, $qend, $sbeg, $send, $evalue, $bits) = @$hit;
+    die unless defined $bits;
+    next if $identity < 30 || ($qend - $qbeg + 1) < length($seq) * 0.7;
+
+    if ($subject =~ m/SwissProt:(.*)/) {
+      # Figure out if this subject has a corresponding uniq id and use that instead
+      my $uniprotId = $1;
+      my $id = "SwissProt::$uniprotId";
+      my ($len2) = $dbh->selectrow_array("SELECT protein_length FROM CuratedGene WHERE db='SwissProt' AND protId=?",
+                                         {}, $uniprotId);
+      my $uniqId;
+      if (defined $len2) {
+        ($uniqId) = $dbh->selectrow_array("SELECT sequence_id FROM SeqToDuplicate WHERE duplicate_id = ?",
+                                             {}, "SwissProt::$uniprotId");
+        $uniqId = "SwissProt::$uniprotId" if !defined $uniqId; # maps to itself if no record of duplicate
+        $subject = $uniqId;
+      }
+    }
+
+    next if exists $seen{$subject};
+
+    $seen{$subject} = 1;
+
+    # Figure out if this subject is curated, if it's not a hassites or curated id
+    unless ($subject =~ m/^[a-zA-Z]+:/) {
+      my $dupIds = $dbh->selectcol_arrayref("SELECT duplicate_id FROM SeqToDuplicate WHERE sequence_id = ?",
+                                            {}, $subject);
+      my $keep = 0;
+      foreach my $dupId (@$dupIds) {
+        $keep = 1 if $dupId =~ m/:/;
+      }
+      next unless $keep;
+    }
+
+    push @keep, { 'subject' => $subject, 'identity' => $identity,
+                  'qbeg' => $qbeg, 'qend' => $qend,
+                  'sbeg' => $sbeg, 'send' => $send,
+                  'evalue' => $evalue, 'bits' => $bits };
+  }
+
+  fail("Sorry, no hits to curated proteins at above 30% identity and 70% coverage")
+    if scalar(@keep) == 0;
+
+  print p("Found hits above 30% identity and 70% coverage to", scalar(@keep), " curated proteins");
+
+  my $minIdentity = min(map $_->{identity}, @keep);
+  if ($minIdentity == 100) {
+    fail("All hits are identical to the query");
+  } elsif ($minIdentity >= 95) {
+    print p("All hits are nearly identical to the query");
+  }
+
+  my $nOld = scalar(@keep);
+  @keep = grep $_->{identity} < 100, @keep;
+  print p("Removed hits that are identical to the query, leaving", scalar(@keep))
+    if scalar(@keep) < $nOld;
+
+  # For now, just show a table of results, and add a link to align them
+  foreach my $row (@keep) {
+    print p($row->{subject}, $row->{identity}."%");
+  }
+
+  # Fetch the sequences
+  foreach my $row (@keep) {
+    my $subject = $row->{subject};
+    my $uniqId = $subject;
+    if ($uniqId =~ m/^[a-zA-Z]+:[a-zA-Z0-9]/) {
+      # From hassites, not from the maind atabase
+      # Note -- no useful description for PDB entries
+      my $tmpFile = "$tmpPre.fastacmd";
+      die "No such command: $fastacmd" unless -x $fastacmd;
+      system($fastacmd, "-s", $subject, "-o", $tmpFile, "-d", $hassitesdb) == 0
+        || die "fastacmd failed to find $subject in $hassitesdb";
+      open(my $fh, "<", $tmpFile) || die "Cannot read $tmpFile";
+      $row->{fasta} = join("", <$fh>);
+      close($fh) || die "Error reading $tmpFile";
+      unlink($tmpFile);
+      die "fastacmd failed for $subject in $hassitesdb" unless $row->{fasta} =~ m/^>/;
+    } else {
+      my $fasta = DBToFasta($dbh, $blastdb, $uniqId);
+      die "No sequence for $uniqId in $blastdb" unless defined $fasta;
+      $row->{fasta} = $fasta;
+    }
+  }
+  my $fasta = join("\n", ">$id", $seq, map $_->{fasta}, @keep);
+  $fasta =~ s/:/_/g; # turn : in identifiers into _, for compatibility with newick format
+  my @lines = split /\n/, $fasta;
+  my $seqsId = savedHash(\@lines, "seqs");
+
+  print p(a({-href => "treeSites.cgi?seqsId=$seqsId" },
+            "Build an alignment for", encode_entities($id), "and", scalar(@keep), "homologs"));
+  print p("Or",
+          a({-href => findFile($seqsId, "seqs")}, "download"),
+          "the sequences");
+  print end_html;
+  exit(0);
+}
+#else
+
+my $seqsSet = param('seqsFile') || param('seqsId');
+my $alnSet = param('alnFile') || param('alnId');
+my $treeSet = param('treeFile') || param('treeId');
+
+if ($seqsSet) {
+  my $seqsId;
+  my $fhSeqs;
+  if (param('seqsId')) {
+    $seqsId = param('seqsId');
+    $fhSeqs = openFile($seqsId, 'seqs');
+  } elsif (param('seqsFile')) {
+    $fhSeqs = param('seqsFile')->handle;
+  } else {
+    die "Unreachable";
+  }
+
+  my %seqs = ();
+  my %seqsDesc = ();
+  my $state = {};
+
+  while (my ($id, $seq) = ReadFastaEntry($fhSeqs, $state, 1)) {
+    if ($id =~ m/^(\S+)\s(.*)/) {
+      $id = $1;
+      $seqsDesc{$id} = $2;
+    }
+    fail("Duplicate sequence for " . encode_entities($id))
+      if exists $seqs{$id};
+    fail(". or - is not allowed in unaligned sequences")
+      if $seq =~ m/[.-]/;
+    $seq =~ s/[*]//;
+    fail("Illegal characters in sequence for " . encode_entities($id))
+      unless $seq =~ m/^[a-zA-Z]+$/;
+    fail("Sequence identifier " . encode_entities($id)
+         . " contains an invalid character, one of  :(),;")
+      if $id =~ m/[:(),;]/;
+    fail("Sequences for " . encode_entities($id) . " is too long")
+      if length($seq) > $maxLenAlign;
+    $seqs{$id} = $seq;
+  }
+  fail(encode_entities($state->{error})) if defined $state->{error};
+  fail("Too many sequences to align, the limit is $maxNAlign")
+    if scalar(keys %seqs) > $maxNAlign;
+  fail("Must have at least 2 sequences")
+    if scalar(keys %seqs) < 2;
+
+  if (!defined $seqsId) {
+    my @lines = ();
+    foreach my $key (sort keys %seqs) {
+      my $header = ">$key";
+      $header .= " $seqsDesc{$key}" if exists $seqsDesc{$key};
+      push @lines, $header;
+      push @lines, $seqs{$key};
+    }
+    $seqsId = savedHash(\@lines, "seqs");
+  }
+
+  if (param('buildAln')) {
+    die "buildAln without seqsId" unless $seqsId;
+    autoflush STDOUT 1; # show preliminary results
+    my $muscle = "../bin/muscle3";
+    die "No such executable: $muscle" unless -x $muscle;
+    print p("Running",
+            a({ -href => "https://doi.org/10.1093/nar/gkh340" }, "MUSCLE 3"),
+            "on", scalar(keys %seqs), "sequences"), "\n";
+    # also considered -diags but didn't necessarily speed things up much
+    my $muscleOptions = "-maxiters 2 -maxmb 1000";
+    print p("For speed, MUSCLE is running with $muscleOptions");
+    my $tmpIn = "$tmpPre.in";
+    open (my $fh, ">", $tmpIn) || die "Cannot write to $tmpIn";
+    foreach my $id (sort keys %seqs) {
+      print $fh ">", $id, "\n", $seqs{$id}, "\n";
+    }
+    close($fh) || die "Error writing to $tmpIn";
+    my $tmpAln = "$tmpPre.aln";
+    my $cmd = "$muscle -in $tmpIn $muscleOptions > $tmpAln";
+    system($cmd) == 0 || die "$cmd\nfailed: $!";
+    print p("MUSCLE succeeded"),"\n";
+
+    open(my $fhAln, "<", $tmpAln) || die "Cannot read $tmpAln";
+    my %aln = ();
+    $state = {};
+    while (my ($id, $seq) = ReadFastaEntry($fhAln, $state, 1)) {
+      die "Unexpected sequence $id" unless exists $seqs{$id};
+      $aln{$id} = $seq;
+    }
+    fail(encode_entities($state->{error})) if defined $state->{error};
+    close($fhAln) || die "Error reading $tmpAln";
+    unlink($tmpIn);
+    unlink($tmpAln);
+    my @lines = ();
+    foreach my $id (sort keys %aln) {
+      die "No aligned sequences for $id" unless exists $aln{$id};
+      my $header = ">".$id;
+      $header .= " " . $seqsDesc{$id} if exists $seqsDesc{$id};
+      push @lines, $header, $aln{$id};
+    }
+    my $alnId = savedHash(\@lines, "aln");
+    print p("Next",
+            a({-href => "treeSites.cgi?alnId=$alnId"}, "build a tree").".");
+    print p("Or download",
+            a({-href => findFile($seqsId, "seqs") }, "sequences"),
+            "or",
+            a({-href => findFile($alnId, "aln") }, "alignment"));
+  } else {
+    print
+      p("Uploaded", scalar(keys %seqs), "sequences"),
+      start_form(-name => 'input', -method => 'POST', -action => 'treeSites.cgi'),
+      hidden(-name => 'seqsId', -default => $seqsId, -override => 1),
+      p(submit(-name => "buildAln", -value => "Run MUSCLE")),
+      end_form;
+  }
+  print end_html;
+  exit(0);
+}
+
+# else
 if (!$alnSet) {
-  # Starting form to upload alignment
+  # Show the initial form to upload an alignment or sequences
   print
     p("View a phylogenetic tree along with selected sites from a protein alignment.",
       a({-href => "treeSites.cgi?alnId=DUF1080&treeId=DUF1080&tsvId=DUF1080&anchor=BT2157&pos=134,164,166",
          -title => "putative active site of the 3-ketoglycoside hydrolase family (formerly DUF1080)" },
         "See example.")),
-    start_form(-name => 'input', -method => 'POST', -action => 'treeSites.cgi'),
-    p("First, enter an alignment in multi-fasta, clustal, or stockholm format (up to $maxN sequences or $maxMB megabytes):",
+    p("The first step is to search for characterized homologs of your sequence, or to upload your sequences."),
+    start_form(-name => 'query', -method => 'POST', -action => 'treeSites.cgi'),
+    p(b("Enter a protein sequence in FASTA or Uniprot format,",
+        br(),
+        "or an identifier from UniProt, RefSeq, or MicrobesOnline: ")),
+    p({ -style => "margin-left: 2em;" },
+      textarea( -name  => 'query', -value => '', -cols  => 70, -rows  => 10 )),
+    p({ -style => "margin-left: 2em;" }, submit('Search'), reset()),
+    end_form,
+    start_form(-name => 'aln', -method => 'POST', -action => 'treeSites.cgi'),
+    p(b("Or upload an alignment in fasta, clustal, or stockholm format."),
+      "Limited to $maxN sequences or $maxMB megabytes."),
+    p({-style => "margin-left: 2em;" }, filefield(-name => 'alnFile', -size => 50),
       br(),
-      textarea(-name => 'aln', -value => '', -cols => 70, -rows => 10),
+      submit('Upload')),
+    end_form,
+    p(b("Or upload up to unaligned protein sequences in fasta format."),
+      "Limited to $maxNAlign sequences."),
+    start_form(-name => 'seqs', -method => 'POST', -action => 'treeSites.cgi'),
+    p({ -style=> "margin-left: 2em;" }, filefield(-name => 'seqsFile', -size => 50),
       br(),
-      "Or upload:", filefield(-name => 'alnFile', -size => 50)),
-    p(submit(-value => 'Go')),
+      submit('Upload')),
     end_form,
     p("Or try",
       a({-href => "sites.cgi" }, "SitesBLAST").":",
@@ -86,9 +469,7 @@ if (!$alnSet) {
 # else load the alignment
 my @alnLines = ();
 my $alnId;
-if (param('aln')) {
-  @alnLines = split '\n', param('aln');
-} elsif (param('alnFile')) {
+if (param('alnFile')) {
   my $fhAln = param('alnFile')->handle;
   fail("alnFile not a file") unless $fhAln;
   @alnLines = <$fhAln>;
@@ -121,7 +502,7 @@ if (my $hash = ParseClustal(@alnLines)) {
       if exists $alnSeq{$id};
     $alnSeq{$id} = $seq;
   }
-  fail($state->{error}) if defined $state->{error};
+  fail(encode_entities($state->{error})) if defined $state->{error};
 }
 fail("No sequences in the alignment")
   if (scalar(keys %alnSeq) == 0);
@@ -137,8 +518,8 @@ while (my ($id, $seq) = each %alnSeq) {
 
 my $alnLen;
 while (my ($id, $seq) = each %alnSeq) {
-  fail("Sequence identifier $id in the alignment contains an invalid character, one of  :(),")
-    if $id =~ m/[:(),]/;
+  fail("Sequence identifier $id in the alignment contains an invalid character, one of  :(),;")
+    if $id =~ m/[:(),;]/;
   $alnLen = length($seq) if !defined $alnLen;
   fail("Inconsistent sequence length for " . encode_entities($id))
     unless length($seq) == $alnLen;
@@ -185,7 +566,7 @@ if (! $treeSet && param('buildTree')) {
     fail("Sorry: less than 10 alignment positions remained after trimming");
   }
 
-  my $tmpTrim = "$tmpDir/treeSites.$$.trim";
+  my $tmpTrim = "$tmpPre.trim";
   open (my $fhTrim, ">", $tmpTrim) || die "Cannot write to $tmpTrim";
   foreach my $id (sort keys %alnSeq) {
     my $seq = $alnSeq{$id};
@@ -194,7 +575,7 @@ if (! $treeSet && param('buildTree')) {
   }
   close($fhTrim) || die "Error writing to $tmpTrim";
 
-  my $tmpTreeFile = "$tmpDir/treeSites.$$.tree";
+  my $tmpTreeFile = "$tmpPre.tree";
   autoflush STDOUT 1; # show preliminary results
   print p("Running",
           a({ -href => "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2835736/" },
@@ -248,9 +629,7 @@ if (! $treeSet) {
 
 # else rendering mode
 
-if (param('tree')) {
-  eval { $moTree = MOTree::new('newick' => param('tree')) };
-} elsif (param('treeFile')) {
+if (param('treeFile')) {
   my $fh = param('treeFile')->handle;
   fail("treeFile not a file") unless $fh;
   eval { $moTree = MOTree::new('fh' => $fh) };
@@ -482,6 +861,7 @@ foreach my $node (@$nodes) {
 }
 my %nodeX;
 my $maxX = max(values %rawX);
+$maxX = 0.5 if $maxX == 0;
 while (my ($node, $rawX) = each %rawX) {
   $nodeX{$node} = $padLeft + $treeWidth * $rawX / $maxX;
 }
