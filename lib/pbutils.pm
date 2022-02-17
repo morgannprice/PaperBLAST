@@ -459,9 +459,8 @@ sub ParseClustal(@) {
   foreach my $line (@lines) {
     $line =~ s/[\r\n]+$//;
     next if $line =~ m/^\s*$/;
-    $line =~ m/^(\S+)\s+(\S+)$/ || die "A".$line."A";
+    $line =~ m/^(\S+)\s+(\S+)$/ || return undef;
     my ($id, $part) = ($1,$2);
-    die $line unless $part =~ m/^[a-zA-Z.*-]+$/;
     return undef unless $part =~ m/^[a-zA-Z.*-]+$/;
     $seqs{$id} .= $part;
   }
