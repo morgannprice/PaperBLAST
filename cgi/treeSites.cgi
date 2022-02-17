@@ -168,7 +168,7 @@ if ($query ne "") {
 
   # split off the description
   my $desc = "";
-  if ($id =~ m/^(\S+) .*/) {
+  if ($id =~ m/^(\S+) (.*)/) {
     $id = $1;
     $desc = $2;
   }
@@ -280,26 +280,68 @@ if ($query ne "") {
   foreach my $row (@keep) {
     my $subject = $row->{subject};
     my $uniqId = $subject;
-    if ($uniqId =~ m/^[a-zA-Z]+:[a-zA-Z0-9]/) {
-      # From hassites, not from the maind atabase
-      # Note -- no useful description for PDB entries
+    my @fasta = ();
+    my $subjectDesc;
+    if ($uniqId =~ m/^([a-zA-Z]+):([a-zA-Z0-9].*)$/) {
+      my ($db, $id) = ($1,$2);
+      my $chain = "";
+      my @pieces = split /:/, $id;
+      if (@pieces == 2) {
+        ($id, $chain) = @pieces;
+      } elsif (@pieces == 1) {
+        ;
+      } else {
+        die "Cannot handle identifier $subject";
+      }
+
+      # From hassites, not from the main database
       my $tmpFile = "$tmpPre.fastacmd";
       die "No such command: $fastacmd" unless -x $fastacmd;
       system($fastacmd, "-s", $subject, "-o", $tmpFile, "-d", $hassitesdb) == 0
         || die "fastacmd failed to find $subject in $hassitesdb";
       open(my $fh, "<", $tmpFile) || die "Cannot read $tmpFile";
-      $row->{fasta} = join("", <$fh>);
+      @fasta = <$fh>;
       close($fh) || die "Error reading $tmpFile";
       unlink($tmpFile);
-      die "fastacmd failed for $subject in $hassitesdb" unless $row->{fasta} =~ m/^>/;
+      die "fastacmd failed for $subject in $hassitesdb" unless @fasta > 1;
+      my $info = $dbh->selectrow_hashref("SELECT * from HasSites WHERE db = ? AND id = ? AND chain = ?",
+                                         {}, $db, $id, $chain);
+      $subjectDesc = $info->{desc};
     } else {
       my $fasta = DBToFasta($dbh, $blastdb, $uniqId);
       die "No sequence for $uniqId in $blastdb" unless defined $fasta;
-      $row->{fasta} = $fasta;
+      @fasta = split /\n/, $fasta;
+      # compute description
+      my $dupIds = $dbh->selectcol_arrayref("SELECT duplicate_id FROM SeqToDuplicate WHERE sequence_id = ?",
+                                            {}, $subject);
+      my @ids = ( $subject );
+      push @ids, @$dupIds;
+      my @subjectDescs = ();
+      my $org;
+      foreach my $id (@ids) {
+        if ($id =~ m/^([a-zA-Z]+)::(.*)$/) {
+          my ($db, $protId) = ($1,$2);
+          my $info = $dbh->selectrow_hashref("SELECT * FROM CuratedGene WHERE db = ? AND protId = ?",
+                                             {}, $db, $protId);
+          die "Unknown curated item $db::$protId for $subject"
+            unless defined $info;
+          push @subjectDescs, $info->{desc};
+          $org = $info->{organism} if $info->{organism} ne "";
+        }
+      }
+      warn("No descriptions for $subject") if @subjectDescs == 0;
+      $subjectDesc = join("; ", @subjectDescs);
+      $subjectDesc .= " ($org)" if $org;
     }
+    my $subject2 = $subject; $subject2 =~ s/:/_/g;
+    # turn : in identifiers into _, for compatibility with newick format
+    $fasta[0] = ">" . $subject2 . " " . $subjectDesc;
+    $row->{fasta} = join("\n", @fasta);
   }
-  my $fasta = join("\n", ">$id", $seq, map $_->{fasta}, @keep);
-  $fasta =~ s/:/_/g; # turn : in identifiers into _, for compatibility with newick format
+  my $headerLine = ">$id";
+  $headerLine .= " $desc" if $desc ne "";
+  my $fasta = join("\n", $headerLine, $seq, map $_->{fasta}, @keep)."\n";
+  $fasta =~ s/\n+/\n/g; # remove blank lines (@fasta is not always chomped)
   my @lines = split /\n/, $fasta;
   my $seqsId = savedHash(\@lines, "seqs");
 
@@ -804,7 +846,7 @@ print p(start_form( -onsubmit => "return leafSearch();" ),
         button(-name => 'Search', -onClick => "leafSearch()"),
         button(-name => 'Clear', -onClick => "leafClear()"),
         br(),
-        span({-style => "font-size: 80%;", -id => "searchStatement"}, ""),
+        div({-style => "font-size: 80%; height: 1.5em;", -id => "searchStatement"}, ""),
         end_form);
 
 # Build an svg
@@ -1001,23 +1043,26 @@ for (my $i = 0; $i < @alnPos; $i++) {
 # Draw the tree after drawing the positions, so that text for leaf names (if displayed)
 # goes on top of the color bars
 foreach my $node (@$nodes) {
-  my $radius = $renderSmall ? 2 : 3;
+  next if $node == $root;
+  my $parent = $moTree->ancestor($node);
+  die unless defined $parent;
+
+  # draw lines left and then up or down to ancestor
+  push @svg, qq{<line x1="$nodeX{$node}" y1="$nodeY{$node}" x2="$nodeX{$parent}" y2="$nodeY{$node}" stroke="black" />};
+  push @svg, qq{<line x1="$nodeX{$parent}" y1="$nodeY{$node}" x2="$nodeX{$parent}" y2="$nodeY{$parent}" stroke="black" />};
+
+  # draw node with popup info, if any
+  # If it is a leaf, also make an (invisible) label; the group is to join these together
+  my $radius;
   my $style = "";
   if ($moTree->is_Leaf($node) && $moTree->id($node) eq $anchorId) {
     $radius = $renderSmall ? 2.5 : 4;
     $style = qq{fill="red"};
+  } elsif ($moTree->is_Leaf($node)) {
+    $radius = $renderSmall ? 2 : 3;
+  } else {
+    $radius = $renderSmall ? 1.5 : 2;
   }
-
-  if ($node != $root) {
-    # draw lines left and then up or down to ancestor
-    my $parent = $moTree->ancestor($node);
-    die unless defined $parent;
-    push @svg, qq{<line x1="$nodeX{$node}" y1="$nodeY{$node}" x2="$nodeX{$parent}" y2="$nodeY{$node}" stroke="black" />};
-    push @svg, qq{<line x1="$nodeX{$parent}" y1="$nodeY{$node}" x2="$nodeX{$parent}" y2="$nodeY{$parent}" stroke="black" />};
-  }
-
-  # draw node with popup info, if any
-  # If it is a leaf, also make an (invisible) label; the group is to join these together
   push @svg, "<g>";
   push @svg, qq{<circle cx="$nodeX{$node}" cy="$nodeY{$node}" r="$radius" $style onclick="leafClick(this)">};
   push @svg, "<TITLE>$nodeTitle{$node}</TITLE>" if $nodeTitle{$node} ne "";
