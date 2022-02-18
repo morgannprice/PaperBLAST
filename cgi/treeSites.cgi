@@ -860,15 +860,15 @@ print p(start_form( -onsubmit => "return leafSearch();" ),
 # spacer of width $pdMiddle
 # then 1 column for each position
 # and padRight
-my $padTop = 45;
+my $padTop = 70;
 my $renderSmall = scalar(@leaves) > 100;
 my $rowHeight = $renderSmall ? 3 : (scalar(@leaves) <= 20 ? 20 : 8);
 my $minShowHeight = 20; # minimum height of a character to draw
-my $padBottom = 45;
+my $padBottom = 70;
 my $padLeft = 10;
 my $treeWidth = 250;
 my $padMiddle = 50;
-my $padRight = 24;
+my $padRight = 40;
 my $posWidth = 30;
 my $svgHeight = $padTop + scalar(@leaves) * $rowHeight + $padBottom;
 my $svgWidth = $padLeft + $treeWidth + $padMiddle + scalar(@alnPos) * $posWidth + $padRight;
@@ -968,7 +968,7 @@ for (my $i = 0; $i < @alnPos; $i++) {
   push @svg, qq{<text text-anchor="left" transform="translate($x,$labelY) rotate(-45)">$titleTag$colLabel</text>};
   if (@leaves >= 20) {
     my $labelY2 = $svgHeight - $padBottom + 3;
-    push @svg, qq{<text transform="translate($x,$labelY2) rotate(90)">$titleTag$colLabel</text>"};
+    push @svg, qq{<text transform="translate($x,$labelY2) rotate(90)">${titleTag}$colLabel</text>"};
   }
 
   # draw boxes for every position
