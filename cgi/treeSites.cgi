@@ -94,7 +94,7 @@ if (defined $query) {
   $query =~ s/\s+$//;
 }
 
-if ($query ne "") {
+if (defined $query && $query ne "") {
   if ($query !~ m/\n/ && $query !~ m/ / && $query =~ m/[^A-Z*]/) {
     # convert query to an identifier
     my $short = $query;
@@ -527,9 +527,10 @@ if (param('alnFile')) {
 my %alnSeq; # with - as gaps (converted from "." if necessary, but potentially with lower-case)
 my %alnDesc;
 
-if (my $hash = ParseClustal(@alnLines)) {
+my $hash;
+if ($hash = ParseClustal(@alnLines)) {
   %alnSeq = %$hash;
-} elsif (my $hash = ParseStockholm(@alnLines)) {
+} elsif ($hash = ParseStockholm(@alnLines)) {
   %alnSeq = %$hash;
 } else {
   my $alnString = join("\n", @alnLines);
@@ -982,7 +983,10 @@ for (my $i = 0; $i < @alnPos; $i++) {
     my $boxLeft = $left + $posWidth * 0.1;
     my $boxWidth = $posWidth * 0.8;
     push @svg, qq{<rect x="$boxLeft" y="$top" width="$boxWidth" height="$heightUse" style="fill:$color; stroke-width: 0;" >};
-    push @svg, qq{<TITLE>$encodedId has $leafHas{$leaf}</TITLE>};
+    my @val = map substr($seq, $_, 1), @alnPos;
+    $val[$i] = " " . $val[$i] . " ";
+    my $has = join("", @val);
+    push @svg, qq{<TITLE>$encodedId has $has</TITLE>};
     push @svg, qq{</rect>};
   }
 
@@ -1106,7 +1110,7 @@ exit(0);
 sub fail($) {
   my ($notice) = @_;
   my $URL = "treeSites.cgi";
-  my $URL = "treeSites.cgi?alnId=$alnId&treeId=$treeId"
+  $URL = "treeSites.cgi?alnId=$alnId&treeId=$treeId"
     if defined $alnId && defined $treeId;
   $URL .= "&tsvId=$tsvId" if defined $tsvId;
   print
