@@ -499,9 +499,9 @@ unless ($query) {
               if ($isAligned) {
                 $showPos .= " (vs. " . substr($alnQ, $site1->{posAlnFrom}-1, $site1->{posAlnTo}-$site1->{posAlnFrom}+1);
                 $showPos .= " " if $posTo ne $posFrom;
-                if (exists $alnPosToQpos{$site1->{posAlnFrom}} && exists $alnPosToQpos{$site1->{posAlnFrom}}) {
+                if (exists $alnPosToQpos{$site1->{posAlnFrom}} && exists $alnPosToQpos{$site1->{posAlnTo}}) {
                   $showPos .= $alnPosToQpos{$site1->{posAlnFrom}};
-                  $showPos .= ":" . $alnPosToQpos{$site1->{posAlnFrom}}
+                  $showPos .= ":" . $alnPosToQpos{$site1->{posAlnTo}}
                     if $posTo ne $posFrom;
                 }
                 $showPos .= ")";
