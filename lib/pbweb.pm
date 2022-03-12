@@ -19,6 +19,7 @@ our (@ISA,@EXPORT);
              VIMSSToFasta RefSeqToFasta UniProtToFasta FBrowseToFasta DBToFasta
              commify
              LinkifyComment FormatStepPart DataForStepParts HMMToURL
+             warning fail
 );
 
 # Returns a list of entries from SubjectToGene, 1 for each duplicate (if any),
@@ -954,3 +955,32 @@ sub HMMToURL($) {
   return "";
 }
 
+my $cgiForFail;
+sub setCGIForFail($) {
+  ($cgiForFail) = @_;
+}
+
+sub warning {
+  my @warnings = @_;
+  if (defined $cgiForFail) {
+    print p({ -style => "color: red;" }, @warnings), "\n";
+  } else {
+    print join(" ", @warnings)."\n";
+  }
+}
+
+sub fail($) {
+  my ($notice) = @_;
+  my $URL = CGI::url(-relative => 1);
+  if ($URL ne "") {
+    print
+      p($notice),
+      p(a({-href => $URL}, "New query")),
+      end_html;
+  } else {
+    print "Failed: $notice\n";
+  }
+  exit(0);
+}
+
+1

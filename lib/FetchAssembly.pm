@@ -7,6 +7,7 @@ use LWP::Simple qw{get}; # for get()
 use LWP::UserAgent;
 use XML::LibXML;
 use Time::HiRes qw{gettimeofday};
+use pbweb qw{fail};
 use pbutils;
 use URI::Escape;
 use HTTP::Cookies;
@@ -18,24 +19,12 @@ use CGI qw{end_html a p};
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
 @EXPORT = qw(GetMatchingAssemblies CacheAssembly AASeqToAssembly
-             warning fail
              SetPrivDir GetPrivDir
              GetFitnessBrowserPath SetFitnessBrowserPath FitnessBrowserDbh
              FetchNCBIInfo FetchNCBIFaa FetchNCBIFna FetchNCBIFeatureFile ParseNCBIFeatureFile
              SearchJGI CreateJGICookie FetchJGI SearchUniProtProteomes UniProtProteomeInfo
              GetMaxNAssemblies
 );
-
-# page must be started already; reports any number of errors or warning
-sub fail {
-  warning(@_);
-  print CGI::end_html;
-  exit(0);
-}
-
-sub warning {
-  print p({ -style => "color: red;" }, @_), "\n";
-}
 
 my $maxAssemblyList = 100;
 sub GetMaxNAssemblies() {
@@ -443,7 +432,7 @@ sub GetMatchingAssemblies($$) {
     return @hits;
   } elsif ($gdb eq "MicrobesOnline") {
     my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
-      || fail("Cannot connect to MicrobesOnline:", $DBI::errstr);
+      || fail("Cannot connect to MicrobesOnline: " . $DBI::errstr);
     my $hits = $mo_dbh->selectall_arrayref("SELECT taxonomyId, shortName FROM Taxonomy
                                               WHERE shortName LIKE ? OR shortName LIKE ? ORDER BY shortName LIMIT $maxAssemblyList",
                                            { Slice => {} }, $gquery."%", "% ${gquery}");
@@ -565,7 +554,7 @@ sub CacheAssembly($$$) {
     return $assembly;
   } elsif ($gdb eq "MicrobesOnline") {
     my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
-      || fail("Cannot connect to MicrobesOnline:", $DBI::errstr);
+      || fail("Cannot connect to MicrobesOnline: " . $DBI::errstr);
     my $taxId = $gid;
     my ($genomeName) = $mo_dbh->selectrow_array(qq{ SELECT shortName FROM Taxonomy WHERE taxonomyId = ? },
                                                  {}, $taxId);

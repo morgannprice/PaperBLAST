@@ -33,7 +33,7 @@ use IO::Handle; # for autoflush
 use List::Util qw{min max};
 use lib "../lib";
 use pbutils; # for ReadFastaEntry(), Curated functions
-use FetchAssembly; # for GetMatchingAssemblies(), CacheAssembly(), warning(), fail(), etc.
+use FetchAssembly; # for GetMatchingAssemblies(), CacheAssembly(), etc.
 use pbweb;
 
 sub query_fields_html;
@@ -97,6 +97,7 @@ die "Unknown genome database: $gdb\n"
 &start_page('title' => "Curated BLAST",
            'banner' => "Curated BLAST for Genomes",
            'bannerURL' => "genomeSearch.cgi");
+setCGIForFail($cgi);
 autoflush STDOUT 1; # show preliminary results
 
 # A symbolic link to the Fitness Browser data directory is used (if it exists)

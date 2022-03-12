@@ -30,7 +30,6 @@ use lib "../lib";
 use pbweb;
 use URI::Escape;
 
-sub fail($);
 sub simstring($$$$$$$$$$$$$);
 
 my $tmpDir = "../tmp";
@@ -244,6 +243,7 @@ print <<END
 <SCRIPT src="https://fit.genomics.lbl.gov/images/fitblast.js"></SCRIPT>
 END
   ;
+setCGIForFail($cgi);
 
 my $procId = $$;
 my $timestamp = int (gettimeofday() * 1000);
@@ -380,8 +380,8 @@ if (!defined $seq && ! $more_subjectId) {
       my @nt = $seq =~ m/[ACGTUN]/g;
       my $fACGTUN = scalar(@nt) / $seqlen;
       if ($fACGTUN >= 0.9) {
-        printf("<P><font color='red'>Warning: sequence is %.1f%% nucleotide characters -- are you sure this is a protein query?</font>",
-               100 * $fACGTUN);
+        warning(sprintf("Warning: sequence is %.1f%% nucleotide characters -- are you sure this is a protein query?",
+                        100 * $fACGTUN));
       }
 
       my $newline = "%0A";
@@ -476,15 +476,6 @@ if (!defined $seq && ! $more_subjectId) {
     print h3(a({-href => "litSearch.cgi"}, "New Search")),
       $documentation;
     finish_page();
-}
-
-sub fail($) {
-    my ($notice) = @_;
-    print
-        p($notice),
-        p(a({-href => "litSearch.cgi"}, "New search")),
-        end_html;
-    exit(0);
 }
 
 sub simstring($$$$$$$$$$$$$) {

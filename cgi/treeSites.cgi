@@ -44,8 +44,6 @@ use DBI;
 # Homologs mode:
 # query -- the query (fasta format, uniprot format, raw sequence, or an identifier)
 
-sub fail($); # print error to HTML and exit
-sub warning($); # print warning to HTML
 sub handleTsvLines; # handle tab-delimited description lines
 
 # id and type to an open filehandle, usually from ../tmp/aln/id.type,
@@ -329,7 +327,7 @@ if (defined $query && $query ne "") {
           $org = $info->{organism} if $info->{organism} ne "";
         }
       }
-      warn("No descriptions for $subject") if @subjectDescs == 0;
+      warning("No descriptions for $subject") if @subjectDescs == 0;
       $subjectDesc = join("; ", @subjectDescs);
       $subjectDesc .= " ($org)" if $org;
     }
@@ -721,7 +719,7 @@ if (param('tsvFile')) {
   my @lines = <$fh>;
   my $n = handleTsvLines(@lines);
   if ($n == 0) {
-    warn("No descriptions found for matching ids in the uploaded table");
+    warning("No descriptions found for matching ids in the uploaded table");
   } else {
     print p("Found $n descriptions in the uploaded table"),"\n";
     $tsvId = savedHash(\@lines, "tsv");
@@ -732,7 +730,7 @@ if (param('tsvFile')) {
   my @lines = <$fh>;
   close($fh) || die "Error reading $tsvId.tsv";
   my $n = handleTsvLines(@lines);
-  warn("No descriptions found for matching ids in the table") if $n == 0;
+  warning("No descriptions found for matching ids in the table") if $n == 0;
 }
 
 # Finished loading input
@@ -1106,24 +1104,6 @@ print join("\n",
 
 print end_html;
 exit(0);
-
-sub fail($) {
-  my ($notice) = @_;
-  my $URL = "treeSites.cgi";
-  $URL = "treeSites.cgi?alnId=$alnId&treeId=$treeId"
-    if defined $alnId && defined $treeId;
-  $URL .= "&tsvId=$tsvId" if defined $tsvId;
-  print
-    p(b($notice)),
-      p(a({-href => $URL}, "Start over")),
-        end_html;
-  exit(0);
-}
-
-sub warning($) {
-  my ($notice) = @_;
-  print p({-style => "color: red;"}, "Warning:", $notice), "\n";
-}
 
 sub handleTsvLines {
   my @lines = @_;

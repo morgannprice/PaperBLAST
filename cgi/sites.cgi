@@ -21,7 +21,6 @@ use pbweb qw{start_page finish_page GetMotd loggerjs UniProtToFasta RefSeqToFast
 use Bio::SearchIO;
 use URI::Escape;
 
-sub fail($);
 sub FormatAlnString($$$$$$$);
 sub FormatAlnSites($$$$$$);
 
@@ -67,15 +66,6 @@ and (2) protein structures with bound ligands, from the
 <A HREF="https://zhanglab.ccmb.med.umich.edu/BioLiP">BioLip</A> database.
 END
 ;
-
-sub fail($) {
-    my ($notice) = @_;
-    print
-        p($notice),
-        p(a({-href => "sites.cgi"}, "New search")),
-        end_html;
-    exit(0);
-}
 
 my $cgi=CGI->new;
 my $query = $cgi->param('query') || "";
