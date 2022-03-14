@@ -97,7 +97,6 @@ die "Unknown genome database: $gdb\n"
 &start_page('title' => "Curated BLAST",
            'banner' => "Curated BLAST for Genomes",
            'bannerURL' => "genomeSearch.cgi");
-setCGIForFail($cgi);
 autoflush STDOUT 1; # show preliminary results
 
 # A symbolic link to the Fitness Browser data directory is used (if it exists)

@@ -243,7 +243,6 @@ print <<END
 <SCRIPT src="https://fit.genomics.lbl.gov/images/fitblast.js"></SCRIPT>
 END
   ;
-setCGIForFail($cgi);
 
 my $procId = $$;
 my $timestamp = int (gettimeofday() * 1000);
