@@ -249,71 +249,14 @@ my $timestamp = int (gettimeofday() * 1000);
 my $filename = $procId . $timestamp;
 my $seqFile = "$tmpDir/$filename.fasta";
 
-# remove leading and trailing whitespace
-$query =~ s/^\s+//;
-$query =~ s/\s+$//;
-# a single word query is assumed to be a gene id if it contains any non-sequence character
-# But, putting a protein sequence on a line is allowed (if all uppercase)
-
 autoflush STDOUT 1; # show preliminary results
-
-if ($query ne "" && $query !~ m/\n/ && $query !~ m/ / && $query =~ m/[^A-Z*]/) {
-  my $short = $query;
-  $query = undef;
-  fail("Sorry, query has a FASTA header but no sequence") if $short =~ m/^>/;
-
-  # Is it a VIMSS id?
-  $query = &VIMSSToFasta($short) if $short =~ m/^VIMSS\d+$/i;
-
-  # Is it in the database?
-  if (!defined $query) {
-    $query = &DBToFasta($dbh, $blastdb, $short);
-  }
-
-  # is it a fitness browser locus tag?
-  if (!defined $query && $short =~ m/^[0-9a-zA-Z_]+$/) {
-    $query = &FBrowseToFasta($fbdata, $short);
-  }
-
-  # is it a UniProt id or gene name or protein name?
-  if (!defined $query) {
-    $query = &UniProtToFasta($short);
-  }
-
-  # is it in VIMSS as a locus tag or other synonym?
-  if (!defined $query) {
-    $query = &VIMSSToFasta($short);
-  }
-
-  # is it in Nucleotide/RefSeq? (Locus tags not in refseq may not be indexed)
-  if (!defined $query) {
-    $query = &RefSeqToFasta($short);
-  }
-  my $shortSafe = HTML::Entities::encode($short);
-  &fail("Sorry -- we were not able to find a protein sequence for the identifier <b>$shortSafe</b>. We checked it against our database of proteins that are linked to papers, against UniProt (including their ID mapping service), against MicrobesOnline, and against the NCBI protein database (RefSeq and Genbank). Please use the sequence as a query instead.")
-    if !defined $query;
-}
-
-my $seq;
-my $def = "";
-my $hasDef = 0;
-if ($query =~ m/[A-Za-z]/) {
-    $seq = "";
-    my @lines = split /[\r\n]+/, $query;
-    $def = shift @lines if @lines > 0 && $lines[0] =~ m/^>/;
-    $def =~ s/^>//;
-    foreach (@lines) {
-        s/[ \t]//g;
-        s/^[0-9]+//; # leading digit/whitespace occurs in UniProt format
-        next if $_ eq "//";
-        &fail("Error: more than one sequence was entered.") if m/^>/;
-        &fail("Unrecognized characters in $_") unless m/^[a-zA-Z*]*$/;
-        s/[*]/X/g;
-        $seq .= uc($_);
-    }
-    $hasDef = 1 if $def ne "";
-    $def = length($seq) . " a.a." if $def eq "";
-}
+my ($def, $seq) = parseSequenceQuery(-query => $query,
+                                     -dbh => $dbh,
+                                     -blastdb => $blastdb,
+                                     -fbdata => $fbdata);
+my $hasDef = $def ne "";
+$def = sequenceToHeader($seq) unless $hasDef;
+$query = ">$def\n$seq\n";
 
 if (!defined $seq && ! $more_subjectId) {
     my $exampleId = "3615187";
@@ -371,17 +314,12 @@ if (!defined $seq && ! $more_subjectId) {
       my $initial = substr($seq, 0, 10);
       my $seqlen = length($seq);
       $initial .= "..." if $seqlen > 10;
-      $initial = "$seqlen a.a., $initial" if $hasDef;
+      $initial = "($seqlen a.a., $initial)";
+      $initial = "" if ! $hasDef;
       print
         GetMotd(),
-        h3("PaperBLAST Hits for", HTML::Entities::encode($def), "($initial)");
+        h3("PaperBLAST Hits for", HTML::Entities::encode($def), $initial);
 
-      my @nt = $seq =~ m/[ACGTUN]/g;
-      my $fACGTUN = scalar(@nt) / $seqlen;
-      if ($fACGTUN >= 0.9) {
-        warning(sprintf("Warning: sequence is %.1f%% nucleotide characters -- are you sure this is a protein query?",
-                        100 * $fACGTUN));
-      }
 
       my $newline = "%0A";
       my $cdd_url = "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=>"

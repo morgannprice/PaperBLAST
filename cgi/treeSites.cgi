@@ -85,84 +85,16 @@ print
              -script => [{ -type => "text/javascript", -src => "../static/treeSites.js"}]),
   h2("Sites on a Tree"),
   "\n";
+autoflush STDOUT 1; # show preliminary results
 
 my $query = param('query');
-if (defined $query) {
-  $query =~ s/^\s+//;
-  $query =~ s/\s+$//;
-}
 
-if (defined $query && $query ne "") {
-  if ($query !~ m/\n/ && $query !~ m/ / && $query =~ m/[^A-Z*]/) {
-    # convert query to an identifier
-    my $short = $query;
-    $query = undef;
-    fail("Sorry, query has a FASTA header but no sequence") if $short =~ m/^>/;
-
-    # Is it a VIMSS id?
-    $query = &VIMSSToFasta($short) if $short =~ m/^VIMSS\d+$/i;
-
-    # Is it in the database?
-    if (!defined $query) {
-      $query = &DBToFasta($dbh, $blastdb, $short);
-    }
-
-    # is it a fitness browser locus tag?
-    if (!defined $query && $short =~ m/^[0-9a-zA-Z_]+$/) {
-      $query = &FBrowseToFasta($fbdata, $short);
-    }
-
-    # is it a UniProt id or gene name or protein name?
-    if (!defined $query) {
-      $query = &UniProtToFasta($short);
-    }
-
-    # is it in VIMSS as a locus tag or other synonym?
-    if (!defined $query) {
-      $query = &VIMSSToFasta($short);
-    }
-
-    # is it in Nucleotide/RefSeq? (Locus tags not in refseq may not be indexed)
-    if (!defined $query) {
-      $query = &RefSeqToFasta($short);
-    }
-    my $shortSafe = HTML::Entities::encode($short);
-    &fail("Sorry -- we were not able to find a protein sequence for the identifier <b>$shortSafe</b>. We checked it against our database of proteins that are linked to papers, against UniProt (including their ID mapping service), against MicrobesOnline, and against the NCBI protein database (RefSeq and Genbank). Please use the sequence as a query instead.")
-      if !defined $query;
-
-  }
-  my ($id, $seq);
-  if ($query =~ m/^[A-Z*]+$/) { # plain sequence
-    $seq = $query;
-  } elsif ($query =~ m/^>/) { # fasta sequence
-    my @lines = split /[\r\n]+/, $query;
-    $id = shift @lines;
-    $id =~ s/^>//;
-    $seq = "";
-    foreach my $line (@lines) {
-      $seq .= $line;
-    }
-  } else { # uniprot sequence
-    my @lines = split /[\r\n]+/, $query;
-    foreach my $line (@lines) {
-      $line =~ s/[ \t]//g;
-      $line =~ s/^\d+//;
-      next if $line eq "//";
-      $seq .= $line;
-    }
-  }
-  fail("Cannot handle query") unless defined $seq;
-  $seq =~ s/[*]//g;
-  $seq = uc($seq);
-  fail("Invalid sequence") unless $seq =~ m/^[A-Z]+$/;
-  fail("Sequence is less than 10 amino acids") if length($seq) < 10;
-
-  if (!defined $id) {
-    my $initial = substr($seq, 0, 10);
-    $initial .= "..." if length($seq) > 10;
-    $id = length($seq) . "aa_" . $initial;
-  }
-  fail("Cannot handle query") if $id eq "";
+if (defined $query && $query ne "") { # 1-sequence query mode
+  my ($id, $seq) = parseSequenceQuery(-query => $query,
+                                      -dbh => $dbh,
+                                      -blastdb => $blastdb,
+                                      -fbdata => $fbdata);
+  fail("No sequence") unless defined $seq;
 
   # split off the description
   my $desc = "";
@@ -173,7 +105,9 @@ if (defined $query && $query ne "") {
   fail("Sorry, ,(): are not allowed in identifiers")
     if $id =~ m/[():;]/;
 
-  autoflush STDOUT 1; # show preliminary results
+  $id = sequenceToHeader($seq)
+    if defined $seq && $id eq "";
+
   my $maxHits = 100;
   print p("Searching for up to $maxHits curated homologs for",
           encode_entities($id),
@@ -350,7 +284,8 @@ if (defined $query && $query ne "") {
           "the sequences");
   print end_html;
   exit(0);
-}
+} # end query mode
+
 #else
 
 my $seqsSet = param('seqsFile') || param('seqsId');

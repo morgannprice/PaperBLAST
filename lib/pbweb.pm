@@ -19,6 +19,7 @@ our (@ISA,@EXPORT);
              VIMSSToFasta RefSeqToFasta UniProtToFasta FBrowseToFasta DBToFasta
              commify
              LinkifyComment FormatStepPart DataForStepParts HMMToURL
+             parseSequenceQuery sequenceToHeader
              warning fail
 );
 
@@ -955,14 +956,10 @@ sub HMMToURL($) {
   return "";
 }
 
-my $cgiForFail;
-sub setCGIForFail($) {
-  ($cgiForFail) = @_;
-}
-
 sub warning {
   my @warnings = @_;
-  if (defined $cgiForFail) {
+  my $URL = CGI::url(-relative => 1);
+  if ($URL ne "") {
     print p({ -style => "color: red;" }, @warnings), "\n";
   } else {
     print join(" ", @warnings)."\n";
@@ -981,6 +978,115 @@ sub fail($) {
     print "Failed: $notice\n";
   }
   exit(0);
+}
+
+# Takes as arguments as hash that includes
+# -query -- the input
+# -dbh -- the PaperBLAST database handle
+# -blastdb -- the filename for PaperBLAST's BLAST database (usually uniq.faa)
+# -fbdata -- the filename for the fitness browser database (optional)
+#
+# The input should be in fasta format, raw sequence (no definition line, linebreaks allowed),
+# uniprot format, or be an identifier from various databases.
+#
+# Any * characters in the input sequence are replaced with X.
+#
+# On success, returns (definition line, sequence)
+#   where the definition line will be empty if the
+#   query was sequence only, with no definition line.
+# If the input is empty (or all whitespace), returns ().
+# If it does not recognize the identifier, or it's not valid input, it uses fail().
+sub parseSequenceQuery {
+  my (%param) = @_;
+  foreach my $field (qw{-query -dbh -blastdb}) {
+    die "parameter $field must be provided to parseSequenceQuery()"
+      unless defined defined $param{$field};
+  }
+  my $query = $param{-query};
+  my $dbh = $param{-dbh};
+  my $blastdb = $param{-blastdb};
+  my $fbdata = $param{-fbdata};
+
+  # remove leading and trailing whitespace
+  $query =~ s/^\s+//;
+  $query =~ s/\s+$//;
+  return if $query eq "";
+
+  # a single word query is assumed to be a gene id if it contains any non-sequence character
+  # But, putting a protein sequence on a line is allowed (if all uppercase)
+  if ($query ne "" && $query !~ m/\n/ && $query !~ m/ / && $query =~ m/[^A-Z*]/) {
+    my $short = $query;
+    $query = undef;
+    fail("Sorry, query has a FASTA header but no sequence") if $short =~ m/^>/;
+
+    # Is it a VIMSS id?
+    $query = &VIMSSToFasta($short) if $short =~ m/^VIMSS\d+$/i;
+
+    # Is it in the database?
+    if (!defined $query) {
+      $query = &DBToFasta($dbh, $blastdb, $short);
+    }
+
+    # is it a fitness browser locus tag?
+    if (!defined $query && $fbdata && $short =~ m/^[0-9a-zA-Z_]+$/) {
+      $query = &FBrowseToFasta($fbdata, $short);
+    }
+
+    # is it a UniProt id or gene name or protein name?
+    if (!defined $query) {
+      $query = &UniProtToFasta($short);
+    }
+
+    # is it in VIMSS as a locus tag or other synonym?
+    if (!defined $query) {
+      $query = &VIMSSToFasta($short);
+    }
+
+    # is it in Nucleotide/RefSeq? (Locus tags not in refseq may not be indexed)
+    if (!defined $query) {
+      $query = &RefSeqToFasta($short);
+    }
+
+    my $shortSafe = HTML::Entities::encode($short);
+    &fail("Sorry -- we were not able to find a protein sequence for the identifier <b>$shortSafe</b>. We checked it against our database of proteins that are linked to papers, against UniProt (including their ID mapping service), against MicrobesOnline, and against the NCBI protein database (RefSeq and Genbank). Please use the sequence as a query instead.")
+      if !defined $query;
+  }
+
+  my $seq = "";
+  my $def = "";
+  my @lines = split /[\r\n]+/, $query;
+  if (@lines > 0 && $lines[0] =~ m/^>/) {
+    $def = shift @lines;
+    $def =~ s/^>//;
+  }
+  foreach (@lines) {
+    s/[ \t]//g;
+    s/^[0-9]+//; # leading digit/whitespace occurs in UniProt format
+    next if $_ eq "//";
+    &fail("Error: more than one sequence was entered.") if m/^>/;
+    &fail("Unrecognized characters in sequence")
+      unless m/^[a-zA-Z*]*$/;
+    s/[*]/X/g;
+    $seq .= uc($_);
+  }
+
+  my $seqlen = length($seq);
+  fail("Sequence is too short") unless length($seq) >= 10;
+  my @nt = $seq =~ m/[ACGTUN]/g;
+  my $fACGTUN = scalar(@nt) / $seqlen;
+  if ($fACGTUN >= 0.9) {
+    warning(sprintf("Warning: sequence is %.1f%% nucleotide characters -- are you sure this is a protein query?",
+                    100 * $fACGTUN));
+  }
+  return ($def, $seq);
+}
+
+sub sequenceToHeader($) {
+  my ($seq) = @_;
+  my $seqlen = length($seq);
+  my $initial = substr($seq, 0, 10);
+  $initial .= "..." if $seqlen > 10;
+  return length($seq) . " a.a. (" . $initial . ")";
 }
 
 1
