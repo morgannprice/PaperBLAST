@@ -673,7 +673,7 @@ sub CacheAssembly($$$) {
       my $uniparcURL = "https://www.uniprot.org/uniparc/?query=proteome:${gid}&format=fasta";
       my $faa = get($refURL);
       $faa = get($uniparcURL) unless $faa;
-      fail("Proteome $gid seems to be empty, see", a({href => $uniparcURL}, "here"))
+      fail("Proteome $gid seems to be empty, see " . a({href => $uniparcURL}, "here"))
         unless $faa;
       my $tmpfile = $assembly->{faafile} . ".$$.tmp";
       open(my $fh, ">", $tmpfile) || fail("Cannot write to $tmpfile");
