@@ -158,8 +158,8 @@ if (exists $dosteps{"am"}) {
     unlink($listfile);
     &wget("http://europepmc.org/ftp/manuscripts/", $listfile);
     my @files = &ftp_html_to_files($listfile);
-    @files = grep m/[.]xml[.]tar[.]gz$/, @files;
-    die "No xml.tar.gz files in am, see $listfile" if @files == 0;
+    @files = grep m/[.]tar[.]gz$/, @files;
+    die "No .tar.gz files in am, see $listfile" if @files == 0;
     print STDERR "Found " . scalar(@files) . " am gz files to fetch\n";
     &write_list(\@files, "$dir/am/files");
     foreach my $file (@files) {
