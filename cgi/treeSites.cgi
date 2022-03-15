@@ -459,6 +459,7 @@ if (param('alnFile')) {
 
 my %alnSeq; # with - as gaps (converted from "." if necessary, but potentially with lower-case)
 my %alnDesc;
+my %idInfo = (); # id to color or URL to value (from the input tsv)
 
 my $hash;
 if ($hash = ParseClustal(@alnLines)) {
@@ -771,7 +772,10 @@ print p(start_form(-method => 'POST', -action => 'treeSites.cgi'),
         "Upload descriptions:", filefield(-name => 'tsvFile', -size => 50),
         submit(-value => "Go"),
         br(),
-        small("Descriptions should be tab-delimited with the sequence id in the 1st column and the description in the 2nd column"),
+        small("The table should be tab-delimited with the sequence identifier in the 1st column",
+              "and the description in the 2nd column. Optionally, add fields named",
+              qq{<A HREF="https://www.december.com/html/spec/colorsvg.html">color</A>},
+              "and URL."),
         end_form);
 
 print p(start_form( -onsubmit => "return leafSearch();" ),
@@ -991,23 +995,41 @@ foreach my $node (@$nodes) {
   # draw node with popup info, if any
   # If it is a leaf, also make an (invisible) label; the group is to join these together
   my $radius;
-  my $style = "";
+  my $dotStyle = "";
+  my $color = "";
   if ($moTree->is_Leaf($node) && $moTree->id($node) eq $anchorId) {
     $radius = $renderSmall ? 2.5 : 4;
-    $style = qq{fill="red"};
   } elsif ($moTree->is_Leaf($node)) {
     $radius = $renderSmall ? 2 : 3;
   } else {
     $radius = $renderSmall ? 1.5 : 2;
   }
+  if ($moTree->is_Leaf($node)) {
+    my $id = $moTree->id($node);
+    if (exists $idInfo{$id}{color}
+        && $idInfo{$id}{color} ne ""
+        && $idInfo{$id}{color} ne "black") {
+      $radius++;
+      $color = $idInfo{$id}{color};
+      $color =~ s/[^a-zA-Z0-9#_-]//g; # remove problematic characters
+      $color = "" unless $color =~ m/^[#a-zA-Z]/;
+    }
+    $color = "red" if !defined $color && $id eq $anchorId;
+    $dotStyle = qq{fill="$color";} if $color;
+  }
+
   push @svg, "<g>";
-  push @svg, qq{<circle cx="$nodeX{$node}" cy="$nodeY{$node}" r="$radius" $style onclick="leafClick(this)">};
+  push @svg, qq{<circle cx="$nodeX{$node}" cy="$nodeY{$node}" r="$radius" $dotStyle onclick="leafClick(this)">};
   push @svg, "<TITLE>$nodeTitle{$node}</TITLE>" if $nodeTitle{$node} ne "";
   push @svg, "</circle>";
   if ($moTree->is_Leaf($node)) {
     my $xLabel = $nodeX{$node} + $radius + 2;
     my $id = $moTree->id($node);
-    push @svg, qq{<text dominant-baseline="middle" x="$xLabel" y="$nodeY{$node}" text-anchor="left" style="display:none; font-size:80%;">$id<TITLE>$nodeTitle{$node}</TITLE></text>};
+    my $idShow = $id;
+    $idShow = a({-href => $idInfo{$id}{URL}, -target => "_blank" }, $id) if $idInfo{$id}{URL};
+    # Coloring the text label also makes sense I think, but looked kinda wierd
+    my $textStyle = "display:none; font-size:80%; stroke:black;"; # use stroke not color to style SVG text
+    push @svg, qq{<text dominant-baseline="middle" x="$xLabel" y="$nodeY{$node}" text-anchor="left" style="$textStyle" >$idShow<TITLE>$nodeTitle{$node}</TITLE></text>};
   }
   push @svg, "</g>";
 }
@@ -1042,12 +1064,26 @@ exit(0);
 
 sub handleTsvLines {
   my @lines = @_;
+  my ($iColor, $iURL);
   my $n = 0;
+  if (@lines > 1) {
+    my $header = $lines[0];
+    $header =~ s/[\r\n]+//;
+    my @fields = split /\t/, $header;
+    ($iColor) = grep $fields[$_] eq "color", (0..(@fields-1));
+    ($iURL) = grep $fields[$_] eq "URL", (0..(@fields-1));
+  }
+
   foreach my $line (@lines) {
     $line =~ s/[\r\n]+$//;
-    my ($id, $desc) = split /\t/, $line;
+    my @fields = split /\t/, $line;
+    my ($id, $desc) = @fields;
     if (exists $alnSeq{$id} && defined $desc && $desc =~ m/\S/) {
       $alnDesc{$id} = $desc;
+      $idInfo{$id}{color} = $fields[$iColor]
+        if defined $iColor && defined $fields[$iColor];
+      $idInfo{$id}{URL} = $fields[$iURL]
+        if defined $iURL && defined $fields[$iURL];
       $n++;
     }
   }
