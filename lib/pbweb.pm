@@ -16,7 +16,7 @@ our (@ISA,@EXPORT);
 @EXPORT = qw(UniqToGenes SubjectToGene AddCuratedInfo
              GeneToHtmlLine GenesToHtml
              GetMotd FetchFasta HmmToFile loggerjs start_page finish_page
-             VIMSSToFasta RefSeqToFasta UniProtToFasta FBrowseToFasta DBToFasta
+             VIMSSToFasta RefSeqToFasta UniProtToFasta FBrowseToFasta DBToFasta pdbToFasta
              commify
              LinkifyComment FormatStepPart DataForStepParts HMMToURL
              parseSequenceQuery sequenceToHeader
@@ -746,6 +746,58 @@ sub FBrowseToFasta($$) {
   return $fasta;
 }
 
+# Given an identifier that might be from pdb, returns a string in fasta format, or undef
+# Supported identifiers are of the form 3osd 2eq7C or 2eq7_2 (case insensitive)
+sub pdbToFasta($) {
+  my ($query) = @_;
+  $query = uc($query);
+  return undef unless $query =~ m/^([0-9][0-9A-Z][0-9A-Z][0-9A-Z])([A-Z]?_?\d*)$/;
+  my ($entry, $chainSpec) = ($1,$2);
+  my $URL = "https://www.rcsb.org/fasta/entry/$entry/display"; # either case works
+  my $pdbFasta = get($URL);
+  return undef unless $pdbFasta =~ m/>/;
+  my @lines = split /\n/, $pdbFasta;
+  my %seqs = ();
+  my $id;
+  foreach my $line (@lines) {
+    if ($line =~ m/^>(.*)$/) {
+      $id = $1;
+      fail("Duplicate fasta for $id from " . a({-href => $URL}, "RCSB"). " -- $line")
+        if exists $seqs{$id};
+      $seqs{$id} = "";
+    } else {
+      fail("Missing header from " . a({-href => $URL}, "RCSB"))
+        unless defined $id;
+      $seqs{$id} .= $line;
+    }
+  }
+  my @ids = keys %seqs;
+  my $id;
+  if (@ids == 1 && $chainSpec eq "") {
+    $id = $ids[0];
+  } else {
+    my %chain = (); # chain specifier such as A, B, or _1, to id
+    foreach my $id (@ids) {
+      # Example ids:
+      # 2EQ7_1|Chains A, B|2-oxoglutarate dehydrogenase E3 component|Thermus thermophilus (300852)
+      # 3OSD_1|Chain A|putative glycosyl hydrolase|Bacteroides thetaiotaomicron (226186)
+      my ($spec, $chains) = split /[|]/, $id;
+      $spec =~ s/^.*_/_/;
+      $chain{$spec} = $id;
+      $chains =~ s/^chains? //i;
+      $chains =~ s/, //g;
+      foreach my $chain (split //, $chains) {
+        $chain{uc($chain)} = $id;
+      }
+    }
+    $chainSpec = "A" if $chainSpec eq "";
+    $id = $chain{$chainSpec};
+    fail("Fasta entry " . a({-href => $URL}, $entry) . " does not have chain $chainSpec")
+      unless defined $id;
+  }
+  return ">$id\n$seqs{$id}\n";
+}
+
 sub DBToFasta($$$) {
   my ($dbh, $blastdb, $query) = @_;
   my ($gene, $geneId);
@@ -1027,6 +1079,11 @@ sub parseSequenceQuery {
       $query = &DBToFasta($dbh, $blastdb, $short);
     }
 
+    # Is it a PDB identifier
+    if (!defined $query) {
+      $query = &pdbToFasta($short);
+    }
+
     # is it a fitness browser locus tag?
     if (!defined $query && $fbdata && $short =~ m/^[0-9a-zA-Z_]+$/) {
       $query = &FBrowseToFasta($fbdata, $short);
@@ -1048,7 +1105,7 @@ sub parseSequenceQuery {
     }
 
     my $shortSafe = HTML::Entities::encode($short);
-    &fail("Sorry -- we were not able to find a protein sequence for the identifier <b>$shortSafe</b>. We checked it against our database of proteins that are linked to papers, against UniProt (including their ID mapping service), against MicrobesOnline, and against the NCBI protein database (RefSeq and Genbank). Please use the sequence as a query instead.")
+    &fail("Sorry -- we were not able to find a protein sequence for the identifier <b>$shortSafe</b>. We checked it against our database of proteins that are linked to papers, against UniProt (including their ID mapping service), against MicrobesOnline, against the NCBI protein database (RefSeq and Genbank), and against PDB/RCSB. Please use the sequence as a query instead.")
       if !defined $query;
   }
 
