@@ -6,18 +6,30 @@ function leafSearch() {
     query = query.replace(/ +$/, "");
     if (query == "") return false;
     var queryU = query.toUpperCase();
-    var gs = document.getElementsByTagName("g");
-    for (i = 0; i < gs.length; i++) {
-        var list = gs[i].children;
-        if (list.length == 2 && list[0].tagName == "circle" && list[1].tagName=="text") {
-            var textObject = list[1];
-            var content = textObject.textContent.toUpperCase();
-            // match partial words at beginning or after space
-            if (content.substring(0, queryU.length) == queryU
-                || content.indexOf(" " + queryU) >= 0) {
-                textObject.style.display = "inline";
-                textObject.style.fill = "blue";
+    var labels = document.getElementById("gLabels");
+    if (labels) {
+        // find matching label at right
+        const list = labels.childNodes;
+        for(let i = 0; i < list.length; i++) {
+            let o = list[i];
+            let title = list[i].firstChild;
+            if (title && matchQuery(queryU, title.textContent)) {
+                o.style.stroke="blue";
                 nMatch++;
+            }
+        }
+    } else {
+        // no labels, find the matching node and turn the text on
+        var gs = document.getElementsByTagName("g");
+        for (i = 0; i < gs.length; i++) {
+            var list = gs[i].children;
+            if (list.length == 2 && list[0].tagName == "circle" && list[1].tagName=="text") {
+                var textObject = list[1];
+                if (matchQuery(queryU, textObject.textContent)) {
+                    textObject.style.display = "inline";
+                    textObject.style.stroke = "blue";
+                    nMatch++;
+                }
             }
         }
     }
@@ -26,18 +38,37 @@ function leafSearch() {
     return false;
 }
 
+// match partial words at beginning or after space
+function matchQuery(queryU, textContent) {
+    var content = textContent.toUpperCase();
+    return content.substring(0, queryU.length) == queryU
+        || content.indexOf(" " + queryU) >= 0;
+}
+
 function leafClear() {
-  var gs = document.getElementsByTagName("g");
-  for (i = 0; i < gs.length; i++) {
-    var list = gs[i].children;
-    if (list.length == 2 && list[0].tagName == "circle" && list[1].tagName=="text") {
-      var textObject = list[1];
-      textObject.style.display = "none";
+    var labels = document.getElementById("gLabels");
+    if (labels) {
+        const list = labels.childNodes;
+        for(let i = 0; i < list.length; i++) {
+            let o = list[i];
+            let title = list[i].firstChild;
+            if (title) {
+                o.style.stroke = "black";
+            }
+        }
     }
-  }
-  document.getElementById("query").value = "";
-  document.getElementById("searchStatement").textContent = "";
-  return false;
+    // and clear popup labels
+    var gs = document.getElementsByTagName("g");
+    for (i = 0; i < gs.length; i++) {
+        var list = gs[i].children;
+        if (list.length == 2 && list[0].tagName == "circle" && list[1].tagName=="text") {
+            var textObject = list[1];
+            textObject.style.display = "none";
+        }
+    }
+    document.getElementById("query").value = "";
+    document.getElementById("searchStatement").textContent = "";
+    return false;
 }
 
 function leafClick(o) {

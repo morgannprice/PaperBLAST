@@ -25,8 +25,8 @@ use DBI;
 # anchor -- sequence to choose positiosn from
 # pos -- comma-delimited list of positions (in anchor if set, or else, in alignment)
 # tsvFile or tsvId -- descriptions for the ids (as uploaded file or file id)
-# (This tool automatically saves uploads using alnId, treeId, or tsvId, and creates links using
-#  the MD5 arguments.)
+# (This tool automatically saves uploads using alnId, treeId, or tsvId, under their md5 hash)
+# zoom -- an internal node (as numbered by MOTree) to zoom into
 #
 # Tree-building mode -- an alignment is provided, but not a tree, and buildTree is set
 # Optional arguments:
@@ -729,7 +729,39 @@ if ($anchorId eq "") {
   @alnPos = map $anchorToAln{$_}, @anchorPos;
 }
 
-my @drawing = ("Drawing a tree for " . scalar(keys %idToLeaf) . " proteins.");
+my @drawing = ();
+my $nodeZoom = param('zoom');
+my @showLeaves = ();
+if (defined $nodeZoom && $nodeZoom =~ m/^\d+$/) {
+  die "Invalid node id $nodeZoom"
+    if $nodeZoom == $root
+      || !defined $moTree->ancestor($nodeZoom)
+      || $moTree->is_Leaf($nodeZoom);
+  @showLeaves = @{ $moTree->all_leaves_below($nodeZoom) };
+  # update $nodes to only include this node and its descendents
+  my @nodes = @{ $moTree->all_descendents($nodeZoom) };
+  unshift @nodes, $nodeZoom;
+  $nodes = \@nodes;
+} else {
+  $nodeZoom = undef;
+  @showLeaves = @leaves;
+}
+my $rootUse = defined $nodeZoom ? $nodeZoom : $root;
+
+my $baseURL = join("",
+                   "treeSites.cgi?anchor=", uri_escape($anchorId),
+                   "&pos=", join(",",@anchorPos),
+                   "&treeId=", $treeId,
+                   "&alnId=", $alnId,
+                   "&tsvId=", $tsvId || "");
+
+my @drawing;
+if (defined $nodeZoom) {
+  push @drawing, "Zoomed into a clade of " . scalar(@showLeaves) . " proteins, or see",
+    a({ -href => $baseURL }, "all", scalar(@leaves), "proteins").".";
+} else {
+  push @drawing, "Drawing a tree for " . scalar(@leaves) . " proteins.";
+}
 if (@alnPos > 0 && $anchorId ne "") {
   push @drawing, "Position numbering is from " . encode_entities($anchorId) . ".";
 }
@@ -740,16 +772,11 @@ push @downloads, a({ -href => findFile($alnId, "aln") }, "alignment");
 push @downloads, a({ -href => findFile($tsvId, "tsv") }, "table of descriptions")
   if $tsvId;
 
-print p("Download",
-        join(" or ", @downloads),
-        "or see",
-        a({ -href => join("",
-                          "treeSites.cgi?anchor=", uri_escape($anchorId),
-                          "&pos=", join(",",@anchorPos),
-                          "&treeId=", $treeId,
-                          "&alnId=", $alnId,
-                          "&tsvId=", $tsvId || "") },
-          "permanent link"),
+my $selfURL = $baseURL;
+$selfURL .= "&zoom=$nodeZoom" if defined $nodeZoom;
+
+print p("Download", join(" or ", @downloads),
+        "or see", a({ -href =>  $selfURL }, "permanent link"),
         "to this page, or",
         a({ -href => "treeSites.cgi" }, "upload new data").".");
 
@@ -778,6 +805,12 @@ print p(start_form(-method => 'POST', -action => 'treeSites.cgi'),
               "and URL."),
         end_form);
 
+my $renderLarge = defined $nodeZoom || scalar(@leaves) <= 20;
+my $renderSmall = !defined $nodeZoom && scalar(@leaves) > 100;
+my @acts;
+push @acts, "Hover or click on a leaf for information about that sequence." unless $renderLarge;
+push @acts, "Click on an internal node to zoom in to that group." if $renderSmall;
+
 print p(start_form( -onsubmit => "return leafSearch();" ),
         "Search for sequences to highlight:",
         textfield(-name => 'query', -id => 'query', -size => 20),
@@ -785,7 +818,8 @@ print p(start_form( -onsubmit => "return leafSearch();" ),
         button(-name => 'Clear', -onClick => "leafClear()"),
         br(),
         div({-style => "font-size: 80%; height: 1.5em;", -id => "searchStatement"}, ""),
-        end_form);
+        end_form,
+        @acts);
 
 # Build an svg
 # Layout:
@@ -798,21 +832,20 @@ print p(start_form( -onsubmit => "return leafSearch();" ),
 # then 1 column for each position
 # and padRight
 my $padTop = 70;
-my $renderSmall = scalar(@leaves) > 100;
-my $rowHeight = $renderSmall ? 3 : (scalar(@leaves) <= 20 ? 20 : 8);
+my $rowHeight = $renderSmall ? 3 : ($renderLarge ? 20 : 8);
 my $minShowHeight = 20; # minimum height of a character to draw
 my $padBottom = 70;
 my $padLeft = 10;
 my $treeWidth = 250;
 my $padMiddle = 50;
-my $padRight = 40;
+my $padRight = $renderLarge ? 200 : 40; # space for labels
 my $posWidth = 30;
-my $svgHeight = $padTop + scalar(@leaves) * $rowHeight + $padBottom;
+my $svgHeight = $padTop + scalar(@showLeaves) * $rowHeight + $padBottom;
 my $svgWidth = $padLeft + $treeWidth + $padMiddle + scalar(@alnPos) * $posWidth + $padRight;
 
 my %rawY; # Unscaled y for each node (0 to nLeaves-1)
-for (my $i = 0; $i < scalar(@leaves); $i++) {
-  $rawY{ $leaves[$i] } = $i;
+for (my $i = 0; $i < scalar(@showLeaves); $i++) {
+  $rawY{ $showLeaves[$i] } = $i;
 }
 foreach my $node (reverse @$nodes) {
   if (!exists $rawY{$node}) {
@@ -828,12 +861,12 @@ my $maxY = max(values %rawY);
 $maxY = 1 if $maxY == 0;
 my %nodeY;
 while (my ($node, $rawY) = each %rawY) {
-  $nodeY{$node} = $padTop + $rowHeight * (0.5 + (scalar(@leaves)-1) * $rawY / $maxY);
+  $nodeY{$node} = $padTop + $rowHeight * (0.5 + (scalar(@showLeaves)-1) * $rawY / $maxY);
 }
 
-my %rawX = ($root => 0); # Unscaled y, with root at 0
+my %rawX = ($rootUse => 0); # Unscaled y, with root at 0
 foreach my $node (@$nodes) {
-  next if $node eq $root;
+  next if $node eq $rootUse;
   my $parentX = $rawX{ $moTree->ancestor($node) };
   die $node unless defined $parentX;
   die $node unless defined $branchLen{$node};
@@ -847,7 +880,7 @@ while (my ($node, $rawX) = each %rawX) {
 }
 
 my %leafHas = (); # all the shown positions for that leaf
-foreach my $leaf (@leaves) {
+foreach my $leaf (@showLeaves) {
   my $id = $moTree->id($leaf);
   my $seq = $alnSeq{$id} || die;
   my @val = map substr($seq, $_, 1), @alnPos;
@@ -878,14 +911,14 @@ my @svg = (); # lines in the svg
 
 # For leaves, add an invisible horizontal bar with more opportunities for popup text
 # These need to be output first to ensure they are behind everything else
-for (my $i = 0; $i < @leaves; $i++) {
+for (my $i = 0; $i < @showLeaves; $i++) {
   my $leaf = $leaves[$i];
   my $x1 = 0; # $nodeX{$leaf} - 2;
   my $x2 = $svgWidth;
   my $width = $x2 - $x1;
   my $y1 = $nodeY{$leaf} - $rowHeight/2;
   push @svg, qq{<rect x="$x1" y="$y1" width="$x2" height="$rowHeight" fill="white" stroke="none" >};
-  push @svg, "<TITLE>$nodeTitle{$leaf}</TITLE>\n</rect>";
+  push @svg, qq{<TITLE>$nodeTitle{$leaf}</TITLE>\n</rect>};
 }
 
 # Show selected alignment positions (if any)
@@ -903,13 +936,14 @@ for (my $i = 0; $i < @alnPos; $i++) {
   $title = "$anchorId has $labelChar at position $anchorPos[$i] (alignment position $pos1)" if $anchorId ne "";
   my $titleTag = "<TITLE>$title</TITLE>";
   push @svg, qq{<text text-anchor="left" transform="translate($x,$labelY) rotate(-45)">$titleTag$colLabel</text>};
-  if (@leaves >= 20) {
+  if (@showLeaves >= 20) {
+    # show alignment position labels at bottom as well
     my $labelY2 = $svgHeight - $padBottom + 3;
     push @svg, qq{<text transform="translate($x,$labelY2) rotate(90)">${titleTag}$colLabel</text>"};
   }
 
   # draw boxes for every position
-  foreach my $leaf (@leaves) {
+  foreach my $leaf (@showLeaves) {
     my $id = $moTree->id($leaf);
     my $seq = $alnSeq{$id} || die;
     my $char = uc(substr($seq, $pos, 1));
@@ -956,7 +990,7 @@ for (my $i = 0; $i < @alnPos; $i++) {
   # draw the character for each conserved clade, if there is space
   foreach my $node (@$nodes) {
     my $ancestor = $moTree->ancestor($node);
-    if ($conservedAt{$node} ne "" && ($node == $root || $conservedAt{$ancestor} eq "")) {
+    if ($conservedAt{$node} ne "" && ($node == $rootUse || $conservedAt{$ancestor} eq "")) {
       # Check if the height of this subtree is at least $minShowHeight
       my @leavesBelow;
       if ($moTree->is_Leaf($node)) {
@@ -984,7 +1018,7 @@ for (my $i = 0; $i < @alnPos; $i++) {
 # Draw the tree after drawing the positions, so that text for leaf names (if displayed)
 # goes on top of the color bars
 foreach my $node (@$nodes) {
-  next if $node == $root;
+  next if $node == $rootUse;
   my $parent = $moTree->ancestor($node);
   die unless defined $parent;
 
@@ -1002,7 +1036,7 @@ foreach my $node (@$nodes) {
   } elsif ($moTree->is_Leaf($node)) {
     $radius = $renderSmall ? 2 : 3;
   } else {
-    $radius = $renderSmall ? 1.5 : 2;
+    $radius = 2; # was 1.5 if small, but that was too hard to click on
   }
   if ($moTree->is_Leaf($node)) {
     my $id = $moTree->id($node);
@@ -1019,17 +1053,34 @@ foreach my $node (@$nodes) {
   }
 
   push @svg, "<g>";
-  push @svg, qq{<circle cx="$nodeX{$node}" cy="$nodeY{$node}" r="$radius" $dotStyle onclick="leafClick(this)">};
-  push @svg, "<TITLE>$nodeTitle{$node}</TITLE>" if $nodeTitle{$node} ne "";
-  push @svg, "</circle>";
+  my $onclick = $moTree->is_Leaf($node) ? qq{onclick="leafClick(this)"} : "";
+  my $circle = qq{<circle cx="$nodeX{$node}" cy="$nodeY{$node}" r="$radius" $dotStyle $onclick >};
+  $circle .= "<TITLE>$nodeTitle{$node}</TITLE>" if $nodeTitle{$node} ne "";
+  $circle .= "</circle>";
+  $circle = qq{<A xlink:href="${baseURL}&zoom=${node}">$circle</A>} if
+    ! $moTree->is_Leaf($node) && $node ne $rootUse;
+  push @svg, $circle;
   if ($moTree->is_Leaf($node)) {
     my $xLabel = $nodeX{$node} + $radius + 2;
     my $id = $moTree->id($node);
-    my $idShow = $id;
+    my $idShow = encode_entities($id);
     $idShow = a({-href => $idInfo{$id}{URL}, -target => "_blank" }, $id) if $idInfo{$id}{URL};
     # Coloring the text label also makes sense I think, but looked kinda wierd
     my $textStyle = "display:none; font-size:80%; stroke:black;"; # use stroke not color to style SVG text
     push @svg, qq{<text dominant-baseline="middle" x="$xLabel" y="$nodeY{$node}" text-anchor="left" style="$textStyle" >$idShow<TITLE>$nodeTitle{$node}</TITLE></text>};
+  }
+  push @svg, "</g>";
+}
+
+# Draw labels at right if $renderLarge
+if ($renderLarge) {
+  my $xLabel = $svgWidth - $padRight + 8;
+  push @svg, qq{<g id="gLabels">};
+  foreach my $node (@showLeaves) {
+    my $id = $moTree->id($node);
+    my $idShow = encode_entities($id);
+    $idShow = a({-href => $idInfo{$id}{URL}, -target => "_blank" }, $id) if $idInfo{$id}{URL};
+    push @svg, qq{<text text-anchor="left" dominant-baseline="middle" x="$xLabel" y="$nodeY{$node}" style="font-size: 80%; stroke:black;"><title>$nodeTitle{$node}</title>$idShow</text>};
   }
   push @svg, "</g>";
 }
@@ -1043,7 +1094,7 @@ if (! $missingLen) {
   my $scaleSize = $scales[0];
   my $scaleLeft = $padLeft;
   my $scaleRight = $padLeft + $treeWidth * $scaleSize/$maxX;
-  my $scaleY = $padTop + scalar(@leaves) * $rowHeight + $padBottom * 0.8;
+  my $scaleY = $padTop + scalar(@showLeaves) * $rowHeight + $padBottom * 0.8;
   push @svg, qq{<line x1="$scaleLeft" y1="$scaleY" x2="$scaleRight" y2="$scaleY" stroke="black" />};
   my $scaleMid = ($scaleLeft+$scaleRight)/2;
   my $scaleY2 = $scaleY - 4;
