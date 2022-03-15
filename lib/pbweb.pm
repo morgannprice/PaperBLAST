@@ -772,7 +772,6 @@ sub pdbToFasta($) {
     }
   }
   my @ids = keys %seqs;
-  my $id;
   if (@ids == 1 && $chainSpec eq "") {
     $id = $ids[0];
   } else {
