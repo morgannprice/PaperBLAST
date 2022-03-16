@@ -897,15 +897,19 @@ foreach my $node (@$nodes) {
   $nodeTitle{$node} = $title;
 }
 
-# The "taylor" color scheme is based on
+# The "taylor" color scheme (no longer used) is based on
 # "Residual colours: a proposal for aminochromography" (Taylor 1997)
 # and https://github.com/omarwagih/ggseqlogo/blob/master/R/col_schemes.r
 # I added a dark-ish grey for gaps.
 my %taylor = split /\s+/,
-  qq{D #FF0000 S #FF3300 T #FF6600 G #FF9900 P #FFCC00 C #FFFF00 A #CCFF00 V #99FF00
-     I #66FF00 L #33FF00 M #00FF00 F #00FF66 Y #00FFCC W #00CCFF H #0066FF R #0000FF
-     K #6600FF N #CC00FF Q #FF00CC E #FF0066 - #555555};
+  qw{D #FB9A99 E #E31A1C N #B2DF8A Q #95CF73 K #78C05C R #58B044 H #33A02C F #FDBF6F W #FFA043 Y #FF7F00 P #FFFF99 M #DBAB5E C #B15928 G #A6CEE3 A #8AB8D7 V #6DA2CC L #4D8DC0 I #1F78B4 S #CAB2D6 T #6A3D9A - #555555};
 
+# Used color brewer to get 6 sets of color pairs and interpolate between them within groups of related a.a.
+# The 5 colors within green (GAVLI) and blue (NQKRH) were too difficult to tell apart, so changed
+# the lightest end of these ranges to be more pale.
+# It's still a bit difficult to distinguish arg/his or leu/ile.
+my %colors = split /\s+/,
+  qq{D #FB9A99 E #E31A1C N #CCE6FF Q #A7C9EC K #81ADD9 R #5892C7 H #1F78B4 F #FDBF6F W #FFA043 Y #FF7F00 P #FFFF99 M #DBAB5E C #B15928 G #E6FFE6 A #BDE7B7 V #93D089 L #68B85C I #33A02C S #CAB2D6 T #6A3D9A - #555555};
 my @svg = (); # lines in the svg
 
 # For leaves, add an invisible horizontal bar with more opportunities for popup text
@@ -948,7 +952,7 @@ for (my $i = 0; $i < @alnPos; $i++) {
     my $char = uc(substr($seq, $pos, 1));
     my $top = $nodeY{$leaf} - $rowHeight/2;
     my $heightUse = $rowHeight + 0.2; # extra height to prevent thin white lines
-    my $color = exists $taylor{$char} ? $taylor{$char} : "grey";
+    my $color = exists $colors{$char} ? $colors{$char} : "grey";
     my $encodedId = encode_entities($id);
     my $boxLeft = $left + $posWidth * 0.1;
     my $boxWidth = $posWidth * 0.8;
