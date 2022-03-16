@@ -783,6 +783,7 @@ print p(start_form(-method => 'GET', -action => 'treeSites.cgi'),
         hidden( -name => 'alnId', -default => $alnId, -override => 1),
         hidden( -name => 'treeId', -default => $treeId, -override => 1),
         hidden( -name => 'tsvId', -default => $tsvId, -override => 1),
+        hidden( -name => 'zoom', -default => defined $nodeZoom ? $nodeZoom : "", -override => 1),
         "Select positions",
         textfield(-name => "pos", -default => join(",",@anchorPos), -size => 30, -maxlength => 200),
         "in",
@@ -795,6 +796,7 @@ print p(start_form(-method => 'POST', -action => 'treeSites.cgi'),
         hidden( -name => 'treeId', -default => $treeId, -override => 1),
         hidden( -name => 'anchor', -default => $anchorId, -override => 1),
         hidden( -name => 'pos', -default => join(",",@anchorPos), -override => 1),
+        hidden( -name => 'zoom', -default => defined $nodeZoom ? $nodeZoom : "", -override => 1),
         "Upload descriptions:", filefield(-name => 'tsvFile', -size => 50),
         submit(-value => "Go"),
         br(),
@@ -902,7 +904,7 @@ foreach my $node (@$nodes) {
 # and https://github.com/omarwagih/ggseqlogo/blob/master/R/col_schemes.r
 # I added a dark-ish grey for gaps.
 my %taylor = split /\s+/,
-  qw{D #FB9A99 E #E31A1C N #B2DF8A Q #95CF73 K #78C05C R #58B044 H #33A02C F #FDBF6F W #FFA043 Y #FF7F00 P #FFFF99 M #DBAB5E C #B15928 G #A6CEE3 A #8AB8D7 V #6DA2CC L #4D8DC0 I #1F78B4 S #CAB2D6 T #6A3D9A - #555555};
+  qq{D #FB9A99 E #E31A1C N #B2DF8A Q #95CF73 K #78C05C R #58B044 H #33A02C F #FDBF6F W #FFA043 Y #FF7F00 P #FFFF99 M #DBAB5E C #B15928 G #A6CEE3 A #8AB8D7 V #6DA2CC L #4D8DC0 I #1F78B4 S #CAB2D6 T #6A3D9A - #555555};
 
 # Used color brewer to get 6 sets of color pairs and interpolate between them within groups of related a.a.
 # The 5 colors within green (GAVLI) and blue (NQKRH) were too difficult to tell apart, so changed
