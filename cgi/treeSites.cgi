@@ -1048,7 +1048,7 @@ foreach my $node (@$nodes) {
       $color =~ s/[^a-zA-Z0-9#_-]//g; # remove problematic characters
       $color = "" unless $color =~ m/^[#a-zA-Z]/;
     }
-    $color = "red" if !defined $color && $id eq $anchorId;
+    $color = "red" if $color eq "" && $id eq $anchorId;
     $dotStyle = qq{style="fill:$color;"} if $color;
   }
 
