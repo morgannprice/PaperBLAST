@@ -1009,13 +1009,14 @@ for (my $i = 0; $i < @alnPos; $i++) {
       my @leavesBelowY = map $nodeY{$_}, @leavesBelow;
       my $height = $rowHeight + max(@leavesBelowY) - min(@leavesBelowY);
       next unless $height >= $minShowHeight;
+      my $midY = (max(@leavesBelowY) + min(@leavesBelowY))/2;
       my $title = "";
       my $leafUse = $leavesBelow[0];
       my $id = encode_entities($moTree->id($leafUse));
       my $n1 = scalar(@leavesBelow) - 1;
       $title = ($n1 > 0 ? "$id and $n1 similar proteins have" : "$id has") . " " . $conservedAt{$leafUse}
         . " at " . $anchorPos[$i];
-      push @svg, qq{<text text-anchor="middle" dominant-baseline="middle" x="$x" y="$nodeY{$node}"><TITLE>$title</TITLE>$conservedAt{$node}</text>};
+      push @svg, qq{<text text-anchor="middle" dominant-baseline="middle" x="$x" y="$midY"><TITLE>$title</TITLE>$conservedAt{$node}</text>};
     }
   }
 } # End loop over positions
