@@ -12,9 +12,13 @@ function leafSearch() {
         const list = labels.childNodes;
         for(let i = 0; i < list.length; i++) {
             let o = list[i];
-            let title = list[i].firstChild;
+            let title = o.firstChild;
             if (title && matchQuery(queryU, title.textContent)) {
-                o.style.stroke="blue";
+                // setting the style for the whole object does not work in chrome
+                // instead, set style for the children after the  title
+                // (if there is a link, there is the A tag; otherwise, two tspans)
+                o.children[1].style.fill="blue";
+                if(o.children.length > 2) o.children[2].style.fill="blue";
                 nMatch++;
             }
         }
@@ -27,7 +31,7 @@ function leafSearch() {
                 var textObject = list[1];
                 if (matchQuery(queryU, textObject.textContent)) {
                     textObject.style.display = "inline";
-                    textObject.style.stroke = "blue";
+                    textObject.style.fill = "blue";
                     nMatch++;
                 }
             }
@@ -53,7 +57,8 @@ function leafClear() {
             let o = list[i];
             let title = list[i].firstChild;
             if (title) {
-                o.style.stroke = "black";
+                o.children[1].style.removeProperty("fill");
+                if(o.children.length > 2) o.children[2].style.removeProperty("fill");
             }
         }
     }

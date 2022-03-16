@@ -729,7 +729,6 @@ if ($anchorId eq "") {
   @alnPos = map $anchorToAln{$_}, @anchorPos;
 }
 
-my @drawing = ();
 my $nodeZoom = param('zoom');
 my @showLeaves = ();
 if (defined $nodeZoom && $nodeZoom =~ m/^\d+$/) {
@@ -812,7 +811,7 @@ push @acts, "Hover or click on a leaf for information about that sequence." unle
 push @acts, "Click on an internal node to zoom in to that group." if $renderSmall;
 
 print p(start_form( -onsubmit => "return leafSearch();" ),
-        "Search for sequences to highlight:",
+        "Search for proteins to highlight:",
         textfield(-name => 'query', -id => 'query', -size => 20),
         button(-name => 'Search', -onClick => "leafSearch()"),
         button(-name => 'Clear', -onClick => "leafClear()"),
@@ -838,7 +837,7 @@ my $padBottom = 70;
 my $padLeft = 10;
 my $treeWidth = 250;
 my $padMiddle = 50;
-my $padRight = $renderLarge ? 200 : 40; # space for labels
+my $padRight = $renderLarge ? 600 : 40; # space for labels
 my $posWidth = 30;
 my $svgHeight = $padTop + scalar(@showLeaves) * $rowHeight + $padBottom;
 my $svgWidth = $padLeft + $treeWidth + $padMiddle + scalar(@alnPos) * $posWidth + $padRight;
@@ -912,7 +911,7 @@ my @svg = (); # lines in the svg
 # For leaves, add an invisible horizontal bar with more opportunities for popup text
 # These need to be output first to ensure they are behind everything else
 for (my $i = 0; $i < @showLeaves; $i++) {
-  my $leaf = $leaves[$i];
+  my $leaf = $showLeaves[$i];
   my $x1 = 0; # $nodeX{$leaf} - 2;
   my $x2 = $svgWidth;
   my $width = $x2 - $x1;
@@ -1031,13 +1030,14 @@ foreach my $node (@$nodes) {
   my $radius;
   my $dotStyle = "";
   my $color = "";
+
   if ($moTree->is_Leaf($node) && $moTree->id($node) eq $anchorId) {
-    $radius = $renderSmall ? 2.5 : 4;
-  } elsif ($moTree->is_Leaf($node)) {
-    $radius = $renderSmall ? 2 : 3;
+    $radius = $renderSmall ? 3 : 4;
   } else {
-    $radius = 2; # was 1.5 if small, but that was too hard to click on
+    # radius 2 is a bit small to click on but any bigger looks funny if $renderSmall
+    $radius = $renderSmall ? 2 : 3;
   }
+
   if ($moTree->is_Leaf($node)) {
     my $id = $moTree->id($node);
     if (exists $idInfo{$id}{color}
@@ -1049,7 +1049,7 @@ foreach my $node (@$nodes) {
       $color = "" unless $color =~ m/^[#a-zA-Z]/;
     }
     $color = "red" if !defined $color && $id eq $anchorId;
-    $dotStyle = qq{fill="$color";} if $color;
+    $dotStyle = qq{style="fill:$color;"} if $color;
   }
 
   push @svg, "<g>";
@@ -1065,8 +1065,7 @@ foreach my $node (@$nodes) {
     my $id = $moTree->id($node);
     my $idShow = encode_entities($id);
     $idShow = a({-href => $idInfo{$id}{URL}, -target => "_blank" }, $id) if $idInfo{$id}{URL};
-    # Coloring the text label also makes sense I think, but looked kinda wierd
-    my $textStyle = "display:none; font-size:80%; stroke:black;"; # use stroke not color to style SVG text
+    my $textStyle = "display:none; font-size:80%;";
     push @svg, qq{<text dominant-baseline="middle" x="$xLabel" y="$nodeY{$node}" text-anchor="left" style="$textStyle" >$idShow<TITLE>$nodeTitle{$node}</TITLE></text>};
   }
   push @svg, "</g>";
@@ -1079,8 +1078,13 @@ if ($renderLarge) {
   foreach my $node (@showLeaves) {
     my $id = $moTree->id($node);
     my $idShow = encode_entities($id);
-    $idShow = a({-href => $idInfo{$id}{URL}, -target => "_blank" }, $id) if $idInfo{$id}{URL};
-    push @svg, qq{<text text-anchor="left" dominant-baseline="middle" x="$xLabel" y="$nodeY{$node}" style="font-size: 80%; stroke:black;"><title>$nodeTitle{$node}</title>$idShow</text>};
+    my $desc = "";
+    $desc = encode_entities($alnDesc{$id})
+      if exists $alnDesc{$id} && $alnDesc{$id} ne "";
+    $desc .= " (has $leafHas{$node})" if @alnPos > 0;
+    $idShow = qq{<tspan>$idShow</tspan><tspan style="font-size:80%;"> $desc</tspan>};
+    $idShow = a({-href => $idInfo{$id}{URL}, -target => "_blank" }, $idShow) if $idInfo{$id}{URL};
+    push @svg, qq{<text text-anchor="left" dominant-baseline="middle" x="$xLabel" y="$nodeY{$node}" ><title>$nodeTitle{$node}</title>$idShow</text>};
   }
   push @svg, "</g>";
 }
