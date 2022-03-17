@@ -659,7 +659,7 @@ sub RefSeqToFasta($) {
 
   # Fetch genbank format for entry $id
   print "<P>Looking for $short in genbank entry $id\n";
-  $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=Nucleotide&rettype=gb&id=$id";
+  $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=Nucleotide&rettype=gbwithparts&retmode=text&id=$id";
   my $gb = get($url);
   my $seqio = Bio::SeqIO->new(-fh => IO::String->new($gb), -format => "genbank");
   while (my $seq = $seqio->next_seq) {
