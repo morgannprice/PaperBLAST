@@ -278,22 +278,21 @@ if (defined $query && $query ne "") { # 1-sequence query mode
   my @lines = split /\n/, $fasta;
   my $seqsId = savedHash(\@lines, "seqs");
 
-  print p(start_form(-name => 'addSeqs', -method => 'POST', -action => 'treeSites.cgi'),
+  print p(a({-href => "treeSites.cgi?seqsId=$seqsId" },
+            "Build an alignment for", encode_entities($id), "and", scalar(@keep), "homologs")),
+        p(start_form(-name => 'addSeqs', -method => 'POST', -action => 'treeSites.cgi'),
           hidden(-name => 'seqsId', -default => $seqsId, -override => 1),
-          "Add sequences from UniProt, PDB, RefSeq, or MicrobesOnline (separate identifiers with commas or spaces):",
+          "Or add sequences from UniProt, PDB, RefSeq, or MicrobesOnline (separate identifiers with commas or spaces):",
           br(),
           textfield(-name => "addSeq", -default => "", -size => 50, -maxLength => 1000),
           br(),
-          submit(),
-          end_form);
-
-  print p(a({-href => "treeSites.cgi?seqsId=$seqsId" },
-            "Build an alignment for", encode_entities($id), "and", scalar(@keep), "homologs")),
-    p("Or",
-      a({-href => findFile($seqsId, "seqs")}, "download"),
-      "the sequences"),
-    p("Or", a({-href => "treeSites.cgi"}, "start over")),
-    end_html;
+          submit(-name => "Add"),
+          end_form),
+        p("Or",
+          a({-href => findFile($seqsId, "seqs")}, "download"),
+          "the sequences"),
+        p("Or", a({-href => "treeSites.cgi"}, "start over")),
+          end_html;
   exit(0);
 } # end query mode
 
