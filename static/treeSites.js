@@ -42,11 +42,15 @@ function leafSearch() {
     return false;
 }
 
-// match partial words at beginning or after space
+// match partial words at beginning or after space or ( or | or =
+// (which is sometimes used as a separator in definition lines)
 function matchQuery(queryU, textContent) {
     var content = textContent.toUpperCase();
     return content.substring(0, queryU.length) == queryU
-        || content.indexOf(" " + queryU) >= 0;
+        || content.indexOf(" " + queryU) >= 0
+        || content.indexOf("|" + queryU) >= 0
+        || content.indexOf("=" + queryU) >= 0
+        || content.indexOf("(" + queryU) >= 0;
 }
 
 function leafClear() {
