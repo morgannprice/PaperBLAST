@@ -741,7 +741,10 @@ if ($byorg) { # show by organism
         print p($show), "\n";
       } elsif ($format eq "rules") {
         my $het = HeteroToText(GetHetero($dbhC, $id));
-        print "\n# $singleId $id $hitInfo{$id}{id2s} $hitInfo{$id}{descs} $hitInfo{$id}{orgs}$het\n";
+        my $id2s = $hitInfo{$id}{id2s} || "";
+        my $descs = $hitInfo{$id}{desc} || "";
+        my $orgs = $hitInfo{$id}{orgs} || "";
+        print "\n# $singleId $id $id2s $descs $orgs$het\n";
         my $short = $id; $short =~ s/,.*//;
         my $desc = $hitInfo{$id}{descs};
         $desc =~ s/;; .*//;
@@ -974,7 +977,7 @@ sub TSVPrint($$$) {
   $het = "heteromer" if defined $het && $het eq "";
   foreach my $i (0..(scalar(@ids)-1)) {
     print join("\t", $nSeqShow, $cluster,
-               $ids[$i], $id2s[$i] || "", $descs[$i], $orgs[$i], $het)."\n";
+               $ids[$i], $id2s[$i] || "", $descs[$i], $orgs[$i] || "", $het || "")."\n";
   }
 }
 
