@@ -37,6 +37,7 @@ use DBI;
 #
 # Alignment mode:
 # seqsFile or seqsId -- sequences (not aligned) in fasta format
+# addSeq -- sequence identifier(s) to add
 # buildAln -- if set, does the alignment
 #
 # If neither an alignment nor sequences are provided, it shows an input form.
@@ -205,7 +206,7 @@ if (defined $query && $query ne "") { # 1-sequence query mode
 
   # For now, just show a table of results, and add a link to align them
   foreach my $row (@keep) {
-    print p($row->{subject}, $row->{identity}."%");
+    print p($row->{identity}."% identity", $row->{subject}, );
   }
 
   # Fetch the sequences
@@ -277,12 +278,22 @@ if (defined $query && $query ne "") { # 1-sequence query mode
   my @lines = split /\n/, $fasta;
   my $seqsId = savedHash(\@lines, "seqs");
 
+  print p(start_form(-name => 'addSeqs', -method => 'POST', -action => 'treeSites.cgi'),
+          hidden(-name => 'seqsId', -default => $seqsId, -override => 1),
+          "Add sequences from UniProt, PDB, RefSeq, or MicrobesOnline (separate identifiers with commas or spaces):",
+          br(),
+          textfield(-name => "addSeq", -default => "", -size => 50, -maxLength => 1000),
+          br(),
+          submit(),
+          end_form);
+
   print p(a({-href => "treeSites.cgi?seqsId=$seqsId" },
-            "Build an alignment for", encode_entities($id), "and", scalar(@keep), "homologs"));
-  print p("Or",
-          a({-href => findFile($seqsId, "seqs")}, "download"),
-          "the sequences");
-  print end_html;
+            "Build an alignment for", encode_entities($id), "and", scalar(@keep), "homologs")),
+    p("Or",
+      a({-href => findFile($seqsId, "seqs")}, "download"),
+      "the sequences"),
+    p("Or", a({-href => "treeSites.cgi"}, "start over")),
+    end_html;
   exit(0);
 } # end query mode
 
@@ -332,6 +343,46 @@ if ($seqsSet) {
     if scalar(keys %seqs) > $maxNAlign;
   fail("Must have at least 2 sequences")
     if scalar(keys %seqs) < 2;
+
+  # Handle addseq if set. If any do get set, set seqsId back to empty
+  my $addSeq = param('addSeq');
+  if (defined $addSeq) {
+    $addSeq =~ s/^\s*//;
+    $addSeq =~ s/\s*$//;
+  }
+  if (defined $addSeq && $addSeq ne "") {
+    my %addSeq = ();
+    my %addDesc = ();
+    foreach my $id (split /[ \t,;]/, $addSeq) {
+      next if $id eq "" || exists $addSeq{$id};
+      my $id2 = $id; $id2 =~ s/:/_/g; # convert some ids to safe form
+      if (exists $seqs{$id2}) {
+        warning("Identifier", encode_entities($id), "already has a sequence");
+        next;
+      }
+      my ($def, $seq) = parseSequenceQuery(-query => $id,
+                                           -dbh => $dbh,
+                                           -blastdb => $blastdb,
+                                           -fbdata => $fbdata);
+      if (!defined $seq) {
+        warning("Could not find sequence for", encode_entities($id));
+      } else {
+        print p(encode_entities($id), "is", encode_entities($def));
+        $addSeq{$id2} = $seq;
+        if ($def =~ m/ /) {
+          $def =~ s/^\S+ +//;
+          $addDesc{$id2} = $def;
+        }
+      }
+    }
+    if (keys %addSeq > 0) { # adding sequences
+      $seqsId = undef; # so it is rebuilt below
+      while (my ($id,$seq) = each %addSeq) {
+        $seqs{$id} = $addSeq{$id};
+        $seqsDesc{$id} = $addDesc{$id} if exists $addDesc{$id};
+      }
+    }
+  }
 
   if (!defined $seqsId) {
     my @lines = ();
@@ -393,12 +444,13 @@ if ($seqsSet) {
             a({-href => findFile($alnId, "aln") }, "alignment"));
   } else {
     print
-      p("Uploaded", scalar(keys %seqs), "sequences"),
+      p("Have", a({-href => findFile($seqsId,"seqs")}, scalar(keys %seqs), "sequences")),
       start_form(-name => 'input', -method => 'POST', -action => 'treeSites.cgi'),
       hidden(-name => 'seqsId', -default => $seqsId, -override => 1),
       p(submit(-name => "buildAln", -value => "Run MUSCLE")),
       end_form;
   }
+  print p("Or", a{-href => "treeSites.cgi"}, "start over");
   print end_html;
   exit(0);
 }
@@ -777,7 +829,7 @@ $selfURL .= "&zoom=$nodeZoom" if defined $nodeZoom;
 print p("Download", join(" or ", @downloads),
         "or see", a({ -href =>  $selfURL }, "permanent link"),
         "to this page, or",
-        a({ -href => "treeSites.cgi" }, "upload new data").".");
+        a({ -href => "treeSites.cgi" }, "start over").".");
 
 print p(start_form(-method => 'GET', -action => 'treeSites.cgi'),
         hidden( -name => 'alnId', -default => $alnId, -override => 1),
