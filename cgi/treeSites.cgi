@@ -357,7 +357,7 @@ if ($seqsSet) {
       next if $id eq "" || exists $addSeq{$id};
       my $id2 = $id; $id2 =~ s/:/_/g; # convert some ids to safe form
       if (exists $seqs{$id2}) {
-        warning("Identifier", encode_entities($id), "already has a sequence");
+        warning("Skipping", encode_entities($id), "which already has a sequence");
         next;
       }
       my ($def, $seq) = parseSequenceQuery(-query => $id,
@@ -375,13 +375,51 @@ if ($seqsSet) {
         }
       }
     }
+    # known sequences => 1
+    my %bySeq = map { $seqs{$_} => $_ } keys %seqs;
     if (keys %addSeq > 0) { # adding sequences
       $seqsId = undef; # so it is rebuilt below
+      my $formatdb = "../bin/blast/formatdb";
+      die "No such executable: $formatdb" unless -x $formatdb;
+      my $tmpDb = "$tmpPre.db";
+      # Warn if the new sequence is not homologous to any of the previously existing sequences
+      my $fh;
+      open($fh, ">", $tmpDb) || die "Cannot write to $tmpDb";
+      foreach my $id (sort keys %seqs) {
+        print $fh ">$id\n" . $seqs{$id} . "\n";
+      }
+      close($fh) || die "Error writing to $tmpDb";
+      my $formatCmd = "$formatdb -p T -i $tmpDb >& /dev/null";
+      system($formatCmd) == 0 || die "Command failed: $formatCmd";
+
       while (my ($id,$seq) = each %addSeq) {
-        $seqs{$id} = $addSeq{$id};
+        my $seq = $addSeq{$id};
+        warning("Warning:", encode_entities($id), "has the same sequence as", encode_entities($bySeq{$seq}))
+          if exists $bySeq{$seq};
+        my $seqFile = "$tmpPre.seq";
+        open($fh, ">", $seqFile) || die "Cannot write to $seqFile";
+        print $fh ">seq\n" . $seq . "\n";
+        close($fh) || die "Error writing to $seqFile";
+        my $hitsFile = "$tmpPre.hits";
+        my $blastCmd = "$blastall -p blastp -e 0.01 -d $tmpDb -i $seqFile -o $hitsFile -m 8 >& /dev/null";
+        system($blastCmd) ==0 || die "blast failed: $blastCmd";
+        open($fh, "<", $hitsFile) || die "Cannot read $hitsFile from $blastCmd";
+        my @hitLines = <$fh>;
+        close($fh) || die "Error reading $hitsFile";
+        unlink($seqFile);
+        unlink($hitsFile);
+        warning("Warning:", encode_entities($id), "is not similar to any of the initial sequences",
+                "(no BLASTp hit with E < 0.01)")
+          if @hitLines == 0;
+        $seqs{$id} = $seq;
+        $bySeq{$seq} = $id;
         $seqsDesc{$id} = $addDesc{$id} if exists $addDesc{$id};
       }
-    }
+      unlink($tmpDb);
+      foreach my $suffix (qw{phr pin psq}) {
+        unlink("$tmpDb.$suffix");
+      }
+    } # end if adding sequences
   }
 
   if (!defined $seqsId) {
