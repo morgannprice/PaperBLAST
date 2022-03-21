@@ -254,9 +254,11 @@ my ($def, $seq) = parseSequenceQuery(-query => $query,
                                      -dbh => $dbh,
                                      -blastdb => $blastdb,
                                      -fbdata => $fbdata);
-my $hasDef = $def ne "";
-$def = sequenceToHeader($seq) unless $hasDef;
-$query = ">$def\n$seq\n";
+my $hasDef = defined $def && $def ne "";
+if ($seq) {
+  $def = sequenceToHeader($seq) if ! $hasDef;
+  $query = ">$def\n$seq\n";
+}
 
 if (!defined $seq && ! $more_subjectId) {
     my $exampleId = "3615187";
