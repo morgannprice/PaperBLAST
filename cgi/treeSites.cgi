@@ -24,6 +24,7 @@ use DBI;
 # Optional arguments:
 # anchor -- sequence to choose positiosn from
 # pos -- comma-delimited list of positions (in anchor if set, or else, in alignment)
+#	ranges like 90:96 may also be used
 # tsvFile or tsvId -- descriptions for the ids (as uploaded file or file id)
 # (This tool automatically saves uploads using alnId, treeId, or tsvId, under their md5 hash)
 # zoom -- an internal node (as numbered by MOTree) to zoom into
@@ -793,10 +794,18 @@ my @anchorPos;               # 1-based, and in the anchor if it is set
 if (defined param('pos') && param('pos') ne "") {
   my $pos = param('pos');
   $pos =~ s/\s//g;
-  @anchorPos = split /,/, $pos;
+  my @posSpec = split /,/, $pos;
+  foreach my $spec (@posSpec) {
+    if ($spec =~ m/^(\d+):(\d+)$/ && $1 <= $2) {
+      push @anchorPos, ($1..$2);
+    } else {
+      fail("Invalid position " . encode_entities($spec))
+        unless $spec =~ m/^\d+$/;
+      push @anchorPos, $spec;
+    }
+  }
   foreach my $i (@anchorPos) {
-    fail("Invalid position $i")
-      unless $i =~ m/^\d+$/ && $i >= 1 && $i <= $alnLen;
+    fail("Invalid position $i") unless $i >= 1 && $i <= $alnLen;
     fail("position $i is past end of anchor " . encode_entities($anchorId))
       if $anchorId ne "" && $i > $anchorLen;
   }
