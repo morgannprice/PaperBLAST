@@ -447,7 +447,7 @@ if ($seqsSet) {
       p("Have", a({-href => findFile($seqsId,"seqs")}, scalar(keys %seqs), "sequences")),
       start_form(-name => 'input', -method => 'POST', -action => 'treeSites.cgi'),
       hidden(-name => 'seqsId', -default => $seqsId, -override => 1),
-      p(submit(-name => "buildAln", -value => "Run MUSCLE")),
+      p(submit(-name => "buildAln", -value => "Align with MUSCLE")),
       end_form;
   }
   print p("Or", a{-href => "treeSites.cgi"}, "start over");
