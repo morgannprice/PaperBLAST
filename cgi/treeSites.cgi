@@ -1045,7 +1045,7 @@ print p(start_form( -onsubmit => "return leafSearch();" ),
     hidden( -name => 'zoom', -default => defined $nodeZoom ? $nodeZoom : "", -override => 1),
     "Search for a sequence pattern:",
     textfield(-name => 'pattern', -size => 20),
-    button(-name => 'Search'),
+    submit(-name => 'Search'),
     end_form),
 
   p(@acts);
