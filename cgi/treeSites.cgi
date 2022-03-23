@@ -22,7 +22,7 @@ use DBI;
 #   Labels on internal nodes are ignored.
 #   Multi-furcations are allowed. It is treated as rooted.
 # Optional arguments:
-# anchor -- sequence to choose positiosn from
+# anchor -- sequence to choose positions from
 # pos -- comma-delimited list of positions (in anchor if set, or else, in alignment)
 #	ranges like 90:96 may also be used
 # tsvFile or tsvId -- descriptions for the ids (as uploaded file or file id)
@@ -693,6 +693,8 @@ if (! $treeSet && param('buildTree')) {
   exit(0);
 } # end tree building mode
 
+die unless $alnId;
+
 # Try to parse the table to get descriptions
 my $tsvId;
 if (param('tsvFile')) {
@@ -713,6 +715,17 @@ if (param('tsvFile')) {
   close($fh) || die "Error reading $tsvId.tsv";
   my $n = handleTsvLines(@lines);
   warning("No descriptions found for matching ids in the table") if $n == 0;
+}
+
+# Save alignment position mapping (id => 1-based position => 1-based aligned position)
+my %seqPosToAlnPos = map { $_ => seqPosToAlnPos($alnSeq{$_}) } keys %alnSeq;
+my %alnPosToSeqPos = (); # id => 1-based aligned non-gap position => 1-based sequence position
+while (my ($id, $hash) = each %seqPosToAlnPos) {
+  my $seq = $alnSeq{$id}; $seq =~ s/-//g;
+  while (my ($seqPos, $alnPos) = each %$hash) {
+    $alnPosToSeqPos{$id}{$alnPos} = $seqPos
+      unless substr($seq, $seqPos-1, 1) eq "-";
+  }
 }
 
 if (param('pattern')) {
@@ -760,7 +773,7 @@ if (param('pattern')) {
     my $nShow = 0;
     foreach my $id (@ids) {
       my $alnSeq = $alnSeq{$id};
-      my $seqPosToAlnPos = seqPosToAlnPos($alnSeq);
+      my $seqPosToAlnPos = $seqPosToAlnPos{$id};
       my $seq = $alnSeq; $seq =~ s/-//g;
       foreach my $pos (@{ $hits{$id} }) {
         if (++$nShow <= $nLimit) {
@@ -1162,6 +1175,9 @@ for (my $i = 0; $i < @alnPos; $i++) {
     my $boxWidth = $posWidth * 0.8;
     push @svg, qq{<rect x="$boxLeft" y="$top" width="$boxWidth" height="$heightUse" style="fill:$color; stroke-width: 0;" >};
     my @val = map substr($seq, $_, 1), @alnPos;
+    # Use spaces to emphasize this position, and show what position it is in that sequence
+    $val[$i] .= ($alnPosToSeqPos{$id}{$pos}+1)
+      if exists $alnPosToSeqPos{$id}{$pos};
     $val[$i] = " " . $val[$i] . " ";
     my $has = join("", @val);
     push @svg, qq{<TITLE>$encodedId has $has</TITLE>};
@@ -1214,10 +1230,14 @@ for (my $i = 0; $i < @alnPos; $i++) {
       my $midY = (max(@leavesBelowY) + min(@leavesBelowY))/2;
       my $title = "";
       my $leafUse = $leavesBelow[0];
-      my $id = encode_entities($moTree->id($leafUse));
+      my $id = $moTree->id($leafUse);
+      my $idShow = encode_entities($id);
       my $n1 = scalar(@leavesBelow) - 1;
-      $title = ($n1 > 0 ? "$id and $n1 similar proteins have" : "$id has") . " " . $conservedAt{$leafUse}
-        . " at " . $anchorPos[$i];
+      my $charTitle = $conservedAt{$leafUse};
+      $charTitle .= ($alnPosToSeqPos{$id}{$pos}+1)
+        if $n1 == 0 && exists $alnPosToSeqPos{$id}{$pos};
+      $title = ($n1 > 0 ? "$idShow and $n1 similar proteins have" : "$idShow has") . " " . $charTitle
+        . " aligning to " . $anchorPos[$i];
       push @svg, qq{<text text-anchor="middle" dominant-baseline="middle" x="$x" y="$midY"><TITLE>$title</TITLE>$conservedAt{$node}</text>};
     }
   }
