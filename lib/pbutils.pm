@@ -15,7 +15,7 @@ our (@ISA,@EXPORT);
              IdToUniqId FetchSeqs UniqIdToSeq
              FetchCuratedInfo
              SQLiteLine SqliteImport
-             reverseComplement
+             reverseComplement seqPosToAlnPos
              ParseClustal ParseStockholm!;
 
 sub read_list($) {
@@ -490,6 +490,21 @@ sub ParseStockholm(@) {
     $seq{$id} .= $seq;
   }
   return \%seq;
+}
+
+# given an aligned sequence, return a hash of
+# sequence position (1-based) to alignment position (1-based)
+sub seqPosToAlnPos($) {
+  my ($alnSeq) = @_;
+  my %posMap = ();
+  my $posUnaligned = 0;
+  for (my $i = 0; $i < length($alnSeq); $i++) {
+    if (substr($alnSeq,$i,1) ne "-") {
+      $posMap{$posUnaligned} = $i;
+      $posUnaligned++;
+    }
+  }
+  return \%posMap;
 }
 
 1;
