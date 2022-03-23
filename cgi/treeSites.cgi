@@ -9,7 +9,7 @@ use Digest::MD5 qw{md5_hex};
 use List::Util qw{sum min max};
 use IO::Handle; # for autoflush
 use lib "../lib";
-use pbutils qw{ReadFastaEntry ParseClustal ParseStockholm};
+use pbutils qw{ReadFastaEntry ParseClustal ParseStockholm seqPosToAlnPos};
 use pbweb;
 use MOTree;
 use DBI;
@@ -29,21 +29,27 @@ use DBI;
 # (This tool automatically saves uploads using alnId, treeId, or tsvId, under their md5 hash)
 # zoom -- an internal node (as numbered by MOTree) to zoom into
 #
-# Tree-building mode -- an alignment is provided, but not a tree, and buildTree is set
+# In pattern search mode, required options are:
+# alnId
+# pattern -- the pattern to search for
+# All the other arguments from rendering mode are preserved if present
+#	(and if anchor is set, hits to that sequence are shown first)
+#
+# Tree building mode -- an alignment is provided, but not a tree, and buildTree is set
 # Optional arguments:
 # trimGaps -- set if positions that are >=50% gaps should be trimmed off
 # trimLower -- set if positions that are >=50% lower case should be trimmed off
 #
 # Tree options mode -- an alignment is provided, but not a tree, and buildTree is not set
 #
-# Alignment mode:
+# Alignment building mode:
 # seqsFile or seqsId -- sequences (not aligned) in fasta format
 # addSeq -- sequence identifier(s) to add
 # buildAln -- if set, does the alignment
 #
 # If neither an alignment nor sequences are provided, it shows an input form.
 #
-# Homologs mode:
+# Find homologs mode:
 # query -- the query (fasta format, uniprot format, raw sequence, or an identifier)
 
 sub handleTsvLines; # handle tab-delimited description lines
@@ -81,6 +87,20 @@ my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || 
 # That directory must include feba.db (sqlite3 database) and aaseqs (in fasta format)
 my $fbdata = "../fbrowse_data"; # path relative to the cgi directory
 
+# The "taylor" color scheme (no longer used) is based on
+# "Residual colours: a proposal for aminochromography" (Taylor 1997)
+# and https://github.com/omarwagih/ggseqlogo/blob/master/R/col_schemes.r
+# I added a dark-ish grey for gaps.
+my %taylor = split /\s+/,
+  qq{D #FB9A99 E #E31A1C N #B2DF8A Q #95CF73 K #78C05C R #58B044 H #33A02C F #FDBF6F W #FFA043 Y #FF7F00 P #FFFF99 M #DBAB5E C #B15928 G #A6CEE3 A #8AB8D7 V #6DA2CC L #4D8DC0 I #1F78B4 S #CAB2D6 T #6A3D9A - #555555};
+
+# Used color brewer to get 6 sets of color pairs and interpolate between them within groups of related a.a.
+# The 5 colors within green (GAVLI) and blue (NQKRH) were too difficult to tell apart, so changed
+# the lightest end of these ranges to be more pale.
+# It's still a bit difficult to distinguish arg/his or leu/ile.
+my %colors = split /\s+/,
+  qq{D #FB9A99 E #E31A1C N #CCE6FF Q #A7C9EC K #81ADD9 R #5892C7 H #1F78B4 F #FDBF6F W #FFA043 Y #FF7F00 P #FFFF99 M #DBAB5E C #B15928 G #E6FFE6 A #BDE7B7 V #93D089 L #68B85C I #33A02C S #CAB2D6 T #6A3D9A - #555555};
+
 print
   header(-charset => 'utf-8'),
   start_html(-title => "Sites on a Tree",
@@ -91,7 +111,8 @@ autoflush STDOUT 1; # show preliminary results
 
 my $query = param('query');
 
-if (defined $query && $query ne "") { # 1-sequence query mode
+if (defined $query && $query ne "") {
+  # Homologs mode, with 1-sequence input
   my ($id, $seq) = parseSequenceQuery(-query => $query,
                                       -dbh => $dbh,
                                       -blastdb => $blastdb,
@@ -295,7 +316,7 @@ if (defined $query && $query ne "") { # 1-sequence query mode
         p("Or", a({-href => "treeSites.cgi"}, "start over")),
           end_html;
   exit(0);
-} # end query mode
+} # end homologs mode
 
 #else
 
@@ -434,6 +455,7 @@ if ($seqsSet) {
   }
 
   if (param('buildAln')) {
+    # Alignment building mode
     die "buildAln without seqsId" unless $seqsId;
     autoflush STDOUT 1; # show preliminary results
     my $muscle = "../bin/muscle3";
@@ -481,6 +503,7 @@ if ($seqsSet) {
             "or",
             a({-href => findFile($alnId, "aln") }, "alignment"));
   } else {
+    # Show option to build alignment
     print
       p("Have", a({-href => findFile($seqsId,"seqs")}, scalar(keys %seqs), "sequences")),
       start_form(-name => 'input', -method => 'POST', -action => 'treeSites.cgi'),
@@ -600,6 +623,7 @@ if (!defined $alnId) {
 my ($moTree, $treeId);
 
 if (! $treeSet && param('buildTree')) {
+  # Tree building mode
   my $trimGaps = param('trimGaps') ? 1 : 0;
   my $trimLower = param('trimLower') ? 1 : 0;
   my $ft = "../bin/FastTree";
@@ -667,7 +691,110 @@ if (! $treeSet && param('buildTree')) {
       "View the tree");
   print end_html;
   exit(0);
+} # end tree building mode
+
+# Try to parse the table to get descriptions
+my $tsvId;
+if (param('tsvFile')) {
+  my $fh = param('tsvFile')->handle;
+  fail("tsvFile is not a file") unless $fh;
+  my @lines = <$fh>;
+  my $n = handleTsvLines(@lines);
+  if ($n == 0) {
+    warning("No descriptions found for matching ids in the uploaded table");
+  } else {
+    print p("Found $n descriptions in the uploaded table"),"\n";
+    $tsvId = savedHash(\@lines, "tsv");
+  }
+} elsif (param('tsvId')) {
+  $tsvId = param('tsvId');
+  my $fh = openFile($tsvId, "tsv");
+  my @lines = <$fh>;
+  close($fh) || die "Error reading $tsvId.tsv";
+  my $n = handleTsvLines(@lines);
+  warning("No descriptions found for matching ids in the table") if $n == 0;
 }
+
+if (param('pattern')) {
+  # pattern search mode
+  my $pattern = uc(param('pattern'));
+  fail("Invalid pattern: only amino acid characters or X or . are allowed")
+    unless $pattern =~ m/^[.A-Z]+$/;
+  print p("Searching for sequence matches to $pattern");
+  $pattern =~ s/X/./g;
+  my $anchorId = param('anchor');
+  $anchorId = "" if !defined $anchorId;
+
+  my %hits = (); # id to list of starting indexes
+  my $nFound = 0;
+  while (my ($id, $aln) = each %alnSeq) {
+    my $seq = $aln; $seq =~ s/-//g;
+    while ($seq =~ m/$pattern/gi) {
+      # pos() returns the 0-based position past end of match; convert to 1-based beginning of match
+      my $pos = pos($seq) - length($pattern) + 1;
+      push @{ $hits{$id} }, $pos;
+      $nFound++;
+    }
+  }
+  my $nLimit = 100;
+  if ($nFound == 0) {
+    print p("Sorry, no matches found");
+  } else {
+    print p("Found $nFound matches in",
+            scalar(keys %hits), "of", scalar(keys %alnSeq), "sequences.");
+    if ($nFound > $nLimit) {
+      print p("Showing the first $nLimit matches.");
+    }
+
+    my @ids = sort keys %hits;
+    if ($anchorId ne "" && exists $hits{$anchorId}) {
+      # push anchor sequence to front
+      @ids = grep $_ ne $anchorId, @ids;
+      unshift @ids, $anchorId;
+    }
+
+    # Show a table of matches.
+    my @rows = ();
+    push @rows, Tr(th("Protein"), th("Position"), th("Matching sequence"));
+
+    my $nShow = 0;
+    foreach my $id (@ids) {
+      my $alnSeq = $alnSeq{$id};
+      my $seqPosToAlnPos = seqPosToAlnPos($alnSeq);
+      my $seq = $alnSeq; $seq =~ s/-//g;
+      foreach my $pos (@{ $hits{$id} }) {
+        if (++$nShow <= $nLimit) {
+          my $idShow = $id;
+          $idShow = a({ -title => $alnDesc{$id} }, $id)
+            if exists $alnDesc{$id};
+          my @matchShow = ();
+          foreach my $offset (0..(length($pattern)-1)) {
+            my $i = $pos + $offset;
+            my $alignI = $seqPosToAlnPos->{$i-1} + 1;
+            my $char = substr($seq, $i-1, 1);
+            my $color = $colors{uc($char)} || "white";
+            push @matchShow, a({-style => "background-color:$color; font-family:monospace; padding: 0.2em;", -title => "position $i ($alignI in alignment) is $char"}, $char);
+          }
+          push @rows, Tr(td($idShow,
+                            td("$pos"."..".($pos+length($pattern)-1)),
+                            td(join("",@matchShow))));
+        }
+      }
+    }
+    print table(@rows);
+  } # end else has matches
+
+  my $baseURL = "treeSites.cgi?alnId=$alnId";
+  foreach my $attr (qw{treeId tsvId anchor pos zoom"}) {
+    my $value = param($attr);
+    $baseURL .= "&" . $attr . "=" . uri_escape($value)
+      if defined $value && $value ne "";
+  }
+  print p(a({-href => $baseURL}, param('treeId') ? "Back to tree" : "Back to alignment"));
+  print p("Or", a{-href => "treeSites.cgi"}, "start over");
+  print end_html;
+  exit(0);
+} # end pattern search mode
 
 if (! $treeSet) {
   print p("The alignment has", scalar(keys %alnSeq), "sequences of length $alnLen");
@@ -735,28 +862,6 @@ if (!defined $alnId || !defined $treeId) {
 if (!defined $treeId) {
   my $newick = $moTree->toNewick();
   $treeId = savedHash([$newick], "tree");
-}
-
-# Try to parse the table to get descriptions
-my $tsvId;
-if (param('tsvFile')) {
-  my $fh = param('tsvFile')->handle;
-  fail("tsvFile is not a file") unless $fh;
-  my @lines = <$fh>;
-  my $n = handleTsvLines(@lines);
-  if ($n == 0) {
-    warning("No descriptions found for matching ids in the uploaded table");
-  } else {
-    print p("Found $n descriptions in the uploaded table"),"\n";
-    $tsvId = savedHash(\@lines, "tsv");
-  }
-} elsif (param('tsvId')) {
-  $tsvId = param('tsvId');
-  my $fh = openFile($tsvId, "tsv");
-  my @lines = <$fh>;
-  close($fh) || die "Error reading $tsvId.tsv";
-  my $n = handleTsvLines(@lines);
-  warning("No descriptions found for matching ids in the table") if $n == 0;
 }
 
 # Finished loading input
@@ -917,8 +1022,20 @@ print p(start_form( -onsubmit => "return leafSearch();" ),
         button(-name => 'Clear', -onClick => "leafClear()"),
         br(),
         div({-style => "font-size: 80%; height: 1.5em;", -id => "searchStatement"}, ""),
-        end_form,
-        @acts);
+        end_form),
+  p(start_form,
+    hidden( -name => 'alnId', -default => $alnId, -override => 1),
+    hidden( -name => 'treeId', -default => $treeId, -override => 1),
+    hidden( -name => 'tsvId', -default => $tsvId, -override => 1),
+    hidden( -name => 'anchor', -default => $anchorId, -override => 1),
+    hidden( -name => 'pos', -default => join(",",@anchorPos), -override => 1),
+    hidden( -name => 'zoom', -default => defined $nodeZoom ? $nodeZoom : "", -override => 1),
+    "Search for a sequence pattern:",
+    textfield(-name => 'pattern', -size => 20),
+    button(-name => 'Search'),
+    end_form),
+
+  p(@acts);
 
 # Build an svg
 # Layout:
@@ -997,19 +1114,6 @@ foreach my $node (@$nodes) {
   $nodeTitle{$node} = $title;
 }
 
-# The "taylor" color scheme (no longer used) is based on
-# "Residual colours: a proposal for aminochromography" (Taylor 1997)
-# and https://github.com/omarwagih/ggseqlogo/blob/master/R/col_schemes.r
-# I added a dark-ish grey for gaps.
-my %taylor = split /\s+/,
-  qq{D #FB9A99 E #E31A1C N #B2DF8A Q #95CF73 K #78C05C R #58B044 H #33A02C F #FDBF6F W #FFA043 Y #FF7F00 P #FFFF99 M #DBAB5E C #B15928 G #A6CEE3 A #8AB8D7 V #6DA2CC L #4D8DC0 I #1F78B4 S #CAB2D6 T #6A3D9A - #555555};
-
-# Used color brewer to get 6 sets of color pairs and interpolate between them within groups of related a.a.
-# The 5 colors within green (GAVLI) and blue (NQKRH) were too difficult to tell apart, so changed
-# the lightest end of these ranges to be more pale.
-# It's still a bit difficult to distinguish arg/his or leu/ile.
-my %colors = split /\s+/,
-  qq{D #FB9A99 E #E31A1C N #CCE6FF Q #A7C9EC K #81ADD9 R #5892C7 H #1F78B4 F #FDBF6F W #FFA043 Y #FF7F00 P #FFFF99 M #DBAB5E C #B15928 G #E6FFE6 A #BDE7B7 V #93D089 L #68B85C I #33A02C S #CAB2D6 T #6A3D9A - #555555};
 my @svg = (); # lines in the svg
 
 # For leaves, add an invisible horizontal bar with more opportunities for popup text
