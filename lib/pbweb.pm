@@ -146,11 +146,19 @@ sub AddCuratedInfo($) {
    }
     @out = sort @out if $db eq "TCDB"; # substrates before comments
     $gene->{comment} = join("<BR>\n", @out);
+  } elsif ($db eq "biolip") {
+    $gene->{priority} = 5; # behind most, but ahead of UniProt entries
+    my $entry = $protId; # i.e., 101mA
+    $entry =~ s/[A-Z]$//;
+    $gene->{URL} = "https://www.rcsb.org/structure/" . uc($entry);
+    # to show which ligand goes with which PDB structure
+    $gene->{comment} .= " " . "(" . a({ -href => $gene->{URL} }, $protId) . ")";
   } else {
     die "Unexpected curated database $db";
   }
   my @ids = ( $gene->{name}, $gene->{id2} );
   push @ids, $protId if $db eq "SwissProt";
+  unshift @ids, $protId if $db eq "biolip"; # always show pdb entry/chain first
   if ($db eq "TCDB") {
     my @tcids = split /,/, $gene->{id2};
     @ids = map { "TC $_" } @tcids;
