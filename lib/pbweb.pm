@@ -747,12 +747,16 @@ sub FBrowseToFasta($$) {
 }
 
 # Given an identifier that might be from pdb, returns a string in fasta format, or undef
-# Supported identifiers are of the form 3osd 2eq7C or 2eq7_2 (case insensitive)
+# Supported identifiers are of the form 3osd, 2eq7C, 2eq7_C, or 2eq7_2 (case insensitive)
 sub pdbToFasta($) {
   my ($query) = @_;
   $query = uc($query);
-  return undef unless $query =~ m/^([0-9][0-9A-Z][0-9A-Z][0-9A-Z])([A-Z]?_?\d*)$/;
+  return undef unless $query =~ m/^([0-9][0-9A-Z][0-9A-Z][0-9A-Z])([A-Z]?_?[A-Z]?\d*)$/i;
   my ($entry, $chainSpec) = ($1,$2);
+  return undef unless $chainSpec eq ""
+    || $chainSpec =~ m/_?[A-Z]/i
+    || $chainSpec =~ m/_\d+/;
+  $chainSpec =~ s/_//g; # now it should be a number or a chain letter
   my $URL = "https://www.rcsb.org/fasta/entry/$entry/display"; # either case works
   my $pdbFasta = get($URL);
   return undef unless $pdbFasta =~ m/>/;
@@ -775,13 +779,13 @@ sub pdbToFasta($) {
   if (@ids == 1 && $chainSpec eq "") {
     $id = $ids[0];
   } else {
-    my %chain = (); # chain specifier such as A, B, or _1, to id
+    my %chain = (); # chain specifier such as A, B, or 1, to id
     foreach my $id (@ids) {
       # Example ids:
       # 2EQ7_1|Chains A, B|2-oxoglutarate dehydrogenase E3 component|Thermus thermophilus (300852)
       # 3OSD_1|Chain A|putative glycosyl hydrolase|Bacteroides thetaiotaomicron (226186)
       my ($spec, $chains) = split /[|]/, $id;
-      $spec =~ s/^.*_/_/;
+      $spec =~ s/^.*_//;
       $chain{$spec} = $id;
       $chains =~ s/^chains? //i;
       $chains =~ s/, //g;
