@@ -7,7 +7,7 @@ use lib "$Bin/../lib";
 use pbutils;
 use DBI;
 
-my @allsteps = qw{sprot ecocyc db stats compare};
+my @allsteps = qw{sprot ecocyc biolip db stats compare};
 my $allsteps = join(",",@allsteps);
 my $comparedir = "$Bin/../data";
 
@@ -77,8 +77,21 @@ if (exists $dosteps{ecocyc}) {
   &maybe_run("bin/parse_ecocyc.pl $indir/ecocyc/data > $workdir/ecocyc.curated_parsed");
 }
 
+if (exists $dosteps{biolip}) {
+  # build work/PDBLigands.tab and static/biolip.curated_parsed
+  &maybe_run("zcat $indir/components.cif.gz | $Bin/parsePdbCdd.pl > $workdir/PDBLigands.tab");
+  my @biolip = ("$indir/BioLiP_2013-03-6_nr.txt", "$indir/BioLiP_UP_nr.txt");
+  my $protNames = "$indir/protnames.lst";
+  foreach my $file ($protNames, @biolip) {
+    die "No such file: $file\n" unless -e $file || defined $test;
+  }
+  &maybe_run("$Bin/biolipCurated.pl -biolip @biolip -pdbnames $protNames -pdbligands $workdir/PDBLigands.tab > static/biolip.curated_parsed");
+}
+
 if (exists $dosteps{db}) {
-  foreach my $file (qw{snippets_comb hits.papers pmclinks.papers generif_tab.rif sprot.curated_parsed ecocyc.curated_parsed}) {
+  foreach my $file (qw{snippets_comb hits.papers pmclinks.papers generif_tab.rif
+                       sprot.curated_parsed ecocyc.curated_parsed
+                       PDBLigands.tab}) {
     die "No such file: $workdir/$file" unless -e "$workdir/$file" || defined $test;
   }
   my @cmd = ();
@@ -99,13 +112,12 @@ if (exists $dosteps{db}) {
           "static/CAZy.curated_parsed", "static/CharProtDB.curated_parsed",
           "static/metacyc.curated_parsed", "static/reanno.curated_parsed",
           "static/REBASE.curated_parsed", "static/BRENDA.curated_parsed",
-          "static/TCDB.curated_parsed",
+          "static/TCDB.curated_parsed", "static/biolip.curated_parsed",
           "-prefix",
           "$workdir/hits",
           "$workdir/pmclinks",
           "$workdir/generif_tab");
   &maybe_run(join(" ", @cmd));
-  &maybe_run("zcat $indir/components.cif.gz | $Bin/parsePdbCdd.pl > $workdir/PDBLigands.tab");
   &maybe_run("$Bin/loadSiteTables.pl -db $outdir/litsearch.db -indir $workdir");
   &maybe_run("cp $workdir/hassites.faa $outdir/");
   &maybe_run("$Bin/blast/formatdb -p T -o T -i $outdir/hassites.faa");
