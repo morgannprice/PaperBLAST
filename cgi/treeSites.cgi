@@ -167,29 +167,41 @@ if (defined $query && $query ne "") {
 
   # Keep non-duplicate hits to curated
   my @keep = (); # list of rows including subject, identity, qbeg, qend, sbeg, send, bits, and evalue
-  my %seen = ();
+  my %seen = (); # subjects seen so far
   foreach my $hit (@hits) {
     my ($queryId2, $subject, $identity, $alen, $mm, $gaps, $qbeg, $qend, $sbeg, $send, $evalue, $bits) = @$hit;
     die unless defined $bits;
     next if $identity < 30 || ($qend - $qbeg + 1) < length($seq) * 0.7;
 
-    if ($subject =~ m/SwissProt:(.*)/) {
-      # Figure out if this subject has a corresponding uniq id and use that instead
-      my $uniprotId = $1;
-      my $id = "SwissProt::$uniprotId";
-      my ($len2) = $dbh->selectrow_array("SELECT protein_length FROM CuratedGene WHERE db='SwissProt' AND protId=?",
-                                         {}, $uniprotId);
-      my $uniqId;
-      if (defined $len2) {
-        ($uniqId) = $dbh->selectrow_array("SELECT sequence_id FROM SeqToDuplicate WHERE duplicate_id = ?",
-                                             {}, "SwissProt::$uniprotId");
-        $uniqId = "SwissProt::$uniprotId" if !defined $uniqId; # maps to itself if no record of duplicate
-        $subject = $uniqId;
+    if ($subject =~ m/^([a-zA-Z0-9]+):([^:].*)/) {
+      # Hits from the sites database may be redundant with CuratedGene
+      # So, figure out if this subject has a corresponding uniq id and use that instead
+      my ($subjectDb,$subjectId) = ($1,$2);
+      my ($db2,$id2); # potential identifiers in CuratedGene
+      if ($subjectDb eq "SwissProt") {
+        $db2 = "SwissProt";
+        $id2 = $subjectId;
+      } elsif ($subjectDb eq "PDB") {
+        $subjectId =~ m/^([0-9A-Za-z]+):([A-Z]+)$/
+          || die "Invalid subjectId $subjectId from subject $subject";
+        $db2 = "biolip";
+        $id2 = $1.$2;
+      }
+      if (defined $db2 && defined $id2) {
+        my ($len2) = $dbh->selectrow_array("SELECT protein_length FROM CuratedGene WHERE db=? AND protId=?",
+                                           {}, $db2, $id2);
+        my $uniqId;
+        if (defined $len2) {
+          ($uniqId) = $dbh->selectrow_array("SELECT sequence_id FROM SeqToDuplicate WHERE duplicate_id = ?",
+                                            {}, $db2 . "::" . $id2);
+          $uniqId = $db2 . "::" . $id2 if !defined $uniqId; # maps to itself if no record of duplicate
+          $subject = $uniqId;
+        }
       }
     }
-
+    # If it's a redundant id (either because of multiple alignments, or because it is in both
+    # curated and hassites), then skip it.
     next if exists $seen{$subject};
-
     $seen{$subject} = 1;
 
     # Figure out if this subject is curated, if it's not a hassites or curated id
@@ -207,7 +219,8 @@ if (defined $query && $query ne "") {
                   'qbeg' => $qbeg, 'qend' => $qend,
                   'sbeg' => $sbeg, 'send' => $send,
                   'evalue' => $evalue, 'bits' => $bits };
-  }
+    last if (@keep) >= $maxHits;
+  } # end loop over hits
 
   fail("Sorry, no hits to curated proteins at above 30% identity and 70% coverage")
     if scalar(@keep) == 0;
