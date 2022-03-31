@@ -1,0 +1,14 @@
+
+g.alnRow rect:first-child {
+  fill: white;
+}
+
+g.alnRow:hover rect:first-child {
+  /* stroke: black; stroke-width: 0.5; */
+  fill: lightgrey;
+}
+
+rect.aln:hover+text, text.aln:hover  {
+  font-size:120%; font-weight: bold;
+}
+

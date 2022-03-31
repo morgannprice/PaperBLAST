@@ -9,12 +9,12 @@ use Digest::MD5 qw{md5_hex};
 use List::Util qw{sum min max};
 use IO::Handle; # for autoflush
 use lib "../lib";
-use pbutils qw{ReadFastaEntry ParseClustal ParseStockholm seqPosToAlnPos};
+use pbutils qw{ReadFastaEntry ParseClustal ParseStockholm seqPosToAlnPos idToSites};
 use pbweb;
 use MOTree;
 use DBI;
 
-# In rendering mode, these options are required:
+# In tree+sites rendering mode, these options are required:
 # alnFile or alnId -- alignment in fasta format, or the file id (usually, md5 hash)
 #   In header lines, anything after the initial space is assumed to be a description.
 #   Either "." or "-" are gap characters.
@@ -28,6 +28,12 @@ use DBI;
 # tsvFile or tsvId -- descriptions for the ids (as uploaded file or file id)
 # (This tool automatically saves uploads using alnId, treeId, or tsvId, under their md5 hash)
 # zoom -- an internal node (as numbered by MOTree) to zoom into
+#
+# In tree+alignment rendering mode, these options are required:
+# alnId, treeId, and alnShow=all, lowgap, or function
+# Optional: tsvFile (zoom is not supported)
+#	Q: is this a different mode, or does it just mean that pos is computed and there is some bolding?
+#		Maybe they should always be in bold!
 #
 # In pattern search mode, required options are:
 # alnId
@@ -104,6 +110,7 @@ my %colors = split /\s+/,
 print
   header(-charset => 'utf-8'),
   start_html(-title => "Sites on a Tree",
+             -style => { 'src' => "../static/treeSites.css" },
              -script => [{ -type => "text/javascript", -src => "../static/treeSites.js"}]),
   h2("Sites on a Tree"),
   "\n";
@@ -730,14 +737,14 @@ if (param('tsvFile')) {
   warning("No descriptions found for matching ids in the table") if $n == 0;
 }
 
-# Save alignment position mapping (id => 1-based position => 1-based aligned position)
+# Save alignment position mapping (id => 0-based position => 0-based aligned position)
 my %seqPosToAlnPos = map { $_ => seqPosToAlnPos($alnSeq{$_}) } keys %alnSeq;
-my %alnPosToSeqPos = (); # id => 1-based aligned non-gap position => 1-based sequence position
+my %alnPosToSeqPos = (); # id => 0-based aligned non-gap position => 0-based sequence position
 while (my ($id, $hash) = each %seqPosToAlnPos) {
   my $seq = $alnSeq{$id}; $seq =~ s/-//g;
   while (my ($seqPos, $alnPos) = each %$hash) {
-    $alnPosToSeqPos{$id}{$alnPos} = $seqPos
-      unless substr($seq, $seqPos-1, 1) eq "-";
+    die if substr($seq, $seqPos, 1) eq "-";
+    $alnPosToSeqPos{$id}{$alnPos} = $seqPos;
   }
 }
 
@@ -847,7 +854,7 @@ if (! $treeSet) {
   exit(0);
 }
 
-# else rendering mode
+# else rendering mode (tree+alignment or tree+sites)
 
 if (param('treeFile')) {
   my $fh = param('treeFile')->handle;
@@ -914,6 +921,161 @@ my $anchorId = param('anchor');
 $anchorId = "" if !defined $anchorId;
 fail("Unknown anchor id " . encode_entities($anchorId))
   if $anchorId ne "" && !exists $alnSeq{$anchorId};
+
+if (param('alnShow')) {
+  # tree+alignment rendering mode
+  my $alnShow = param('alnShow');
+
+  # Which sequences (if any) have functional information?
+  my %function = (); # sequence id => position => comment
+  my $nPosFunction = 0;
+  foreach my $id (keys %alnSeq) {
+    my $id2 = $id; $id2 =~ s/_/:/g;
+    my $seq = $alnSeq{$id}; $seq =~ s/-//g;
+    my $function = idToSites($dbh, "../bin/blast", "../data/hassites.faa", $id2, $seq);
+    $function{$id} = $function if scalar(keys %$function);
+    $nPosFunction += scalar(keys %$function);
+  }
+  if (keys %function == 0) {
+    print p("Did not find functional information for residues in any of the " . scalar(keys %alnSeq) . " sequences");
+  } else {
+    print p("Found functional information for residues in " . scalar(keys %function) . " sequences ($nPosFunction residues total).");
+  }
+  my @alnPos; # 0 based
+  if ($alnShow eq "function") {
+    my %alnPos = ();
+    while (my ($id, $function) = each %function) {
+      my $seqPosToAlnPos = $seqPosToAlnPos{$id};
+      foreach my $pos (keys %$function) { # 1-based functional positions
+        my $alnPos = $seqPosToAlnPos->{$pos-1};
+        warning("Illegal residue position $pos in $id") unless defined $alnPos;
+        $alnPos{$alnPos} = 1;
+      }
+    }
+    @alnPos = sort { $a <=> $b } (keys %alnPos);
+  } elsif ($alnShow eq "filter") {
+    my $nSeq = scalar(keys %alnSeq);
+    for (my $i = 0; $i < $alnLen; $i++) {
+      my $nGap = 0;
+      foreach my $alnSeq (values %alnSeq) {
+        $nGap++ if substr($alnSeq, $i, 1) eq "-";
+      }
+      push @alnPos, $i unless $nGap > $nSeq/2;
+    }
+  } else { # show all
+    @alnPos = 0..($alnLen-1);
+  }
+  warning("No positions to show.") if @alnPos == 0;
+
+  # Show key residues and highlight the functional ones.
+  # First, lay out the SVG
+  my @svg = (); # all the objects within the main <g> of the svg
+  my @defs = (); # objects to define
+  my $idLeft = 10;
+  my $idWidth = 250;
+  my $idRight = $idLeft + $idWidth;
+  my $alnLeft = $idRight + 10;
+  my $alnTop = 70;
+
+  # Lay out the x positions for each position
+  my %posX = (); # position (0-based) to center X
+  my $maxX = $alnLeft + 5;
+  my $posWidth = 22;
+  foreach my $i (0..(scalar(@alnPos)-1)) {
+    my $pos = $alnPos[$i];
+    $maxX += 6 if $i > 0 && $pos > $alnPos[$i-1] + 1;
+    $posX{$pos} = $maxX;
+    $maxX += $posWidth;
+  }
+  my $alnRight = $maxX - $posWidth/2;
+
+  # show the position labels at the top
+  while (my ($pos, $x) = each %posX) {
+    my $xCenter = $x;
+    my $labelY = $alnTop - 11;
+    my $pos1 = $pos + 1;
+    push @svg, qq{<text text-anchor="left" transform="translate($xCenter,$labelY) rotate(-45)"><title>Alignment position $pos1</title>#${pos1}</text>};
+  }
+  my $svgWidth = $maxX + 40;
+
+  my $rowHeight = 24;
+  my %posY = (); # id to center Y
+  my $maxY = $alnTop;
+  foreach my $id (sort keys %alnSeq) {
+    $posY{$id} = $maxY;
+    $maxY += $rowHeight;
+  }
+  my $alnHeight = $maxY - $alnTop;
+  my $padBottom = 70;
+  my $svgHeight = $maxY + $padBottom;
+  my $alnTop2 = $alnTop - 10;
+  my $alnHeight2 = $alnHeight + 20;
+  push @defs, qq{<clipPath id="id-region"><rect x="$idLeft" y="$alnTop2" width="$idWidth" height="$alnHeight2" /></clipPath>};
+
+  foreach my $id (sort keys %alnSeq) {
+    my $y = $posY{$id};
+    die unless defined $y;
+    my $yUp = $y - $rowHeight/2;
+    my $rectW = $alnRight - $idLeft;
+    push @svg, qq{<g class="alnRow">}; # define a group to contain this row
+    push @svg, qq{<rect y="$yUp" x="$idLeft" width="$rectW" height="$rowHeight" />};
+    my $alnSeq = $alnSeq{$id};
+    my $showId = encode_entities($id);
+    $showId .= qq{ <tspan style="font-size:80%;">} . encode_entities($alnDesc{$id}) . "</tspan>";
+    $showId = "<TITLE>" . encode_entities($alnDesc{$id}) . "</TITLE>" . $showId if $alnDesc{$id};
+    # Clip the id/description to the $idLeft/$idRight region using clipPath from id-region (defined above)
+    my $colorSpec = "";
+    $colorSpec = qq{ stroke="darkred" stroke-width=0.5 } if $id eq $anchorId;
+    push @svg, qq{<text text-anchor="start" dominant-baseline="middle" clip-path="url(#id-region)" x="$idLeft" y="$y" $colorSpec>$showId</text>};
+
+    foreach my $i (0..(scalar(@alnPos)-1)) {
+      my $pos = $alnPos[$i];
+      my $x = $posX{$pos};
+      die unless defined $x;
+      my $pos1 = $pos+1; # 1-based position in alignment
+      my $char = substr($alnSeq, $pos, 1);
+      my $color = $colors{uc($char)} || "white"; # for background rectangle
+      my $style = "fill: $color;"; # for background rectangle
+      my $title = encode_entities($id) . " at #${pos1}";
+      if ($char ne "-") {
+        my $seqPos = $alnPosToSeqPos{$id}{$pos} + 1; # 1-based
+        die "No raw position for $id $pos1 $char" unless defined $seqPos;
+        $title .= ": $char$seqPos";
+        if (exists $function{$id}{$seqPos}) {
+          $style .= " stroke-width:2.5; stroke: black;";
+          $title .= " " . $function{$id}{$seqPos};
+        }
+      }
+      my $x1 = $x - 9;
+      my $y1 = $y - 11;
+      # Since the popup text is the same for the rect and the text, I thought
+      # I should try to put the text inside the rect object, but that does not work.
+      # (Possibly nesting svgs would work? Seems complicated.)
+      # Just specify the title twice.
+      push @svg, qq{<rect class="aln" style="$style" x="$x1" y="$y1" width="18" height="20" >};
+      push @svg, qq{<title>$title</title>};
+      push @svg, qq{</rect>};
+      push @svg, qq{<text class="aln" x="$x" y="$y" text-anchor="middle" dominant-baseline="middle" style="font-family:monospace;">};
+      push @svg, qq{<title>$title</title>};
+      push @svg, qq{$char</text>};
+    } # end loop over alignment positions
+    push @svg, "</g>";
+  } # end loop over ids
+  print join("\n",
+             "<DIV>",
+             qq{<SVG width="$svgWidth" height="$svgHeight" style="position: relative; left: 1em;">},
+             "<defs>", @defs, "</defs>",
+             qq{<g transform="scale(1)">},
+             @svg,
+             "</g>",
+             "</SVG>",
+             "</DIV>");
+  print end_html;
+  exit(0);
+}
+
+# else tree+sites rendering mode
+
 my ($anchorAln, $anchorSeq, $anchorLen);
 if ($anchorId ne "") {
   $anchorAln = $alnSeq{$anchorId};
@@ -1141,6 +1303,7 @@ foreach my $node (@$nodes) {
 }
 
 my @svg = (); # lines in the svg
+my @defs = (); # defined objects (if any)
 
 # For leaves, add an invisible horizontal bar with more opportunities for popup text
 # These need to be output first to ensure they are behind everything else
@@ -1350,6 +1513,7 @@ if (! $missingLen) {
 print join("\n",
   "<DIV>",
   qq{<SVG width="$svgWidth" height="$svgHeight" style="position: relative; left: 1em;">},
+  "<defs>", @defs, "</defs>",
   qq{<g transform="scale(1)">},
   @svg,
   "</g>",
