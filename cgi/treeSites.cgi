@@ -33,6 +33,9 @@ use DBI;
 # alnId, treeId, and posSet=function, filtered, or all
 # Optional: tsvFile, anchor (pos and zoom are ignored)
 #
+# In showId mode (to show details about a sequence), required fields are:
+# alnId, showId. If tsvId and treeId are set, it uses those as well.
+#
 # In pattern search mode, required options are:
 # alnId
 # pattern -- the pattern to search for
@@ -875,6 +878,75 @@ if (! $treeSet) {
   exit(0);
 }
 
+if (defined param('showId') && param('showId') ne "") {
+  # showId mode: show information about a sequence
+  my $id = param('showId');
+  fail("Unknown id") if !exists $alnSeq{$id};
+  my $alnSeq = $alnSeq{$id};
+  my $seq = uc($alnSeq); $seq =~ s/-//g;
+  my $newline = "%0A";
+
+  print h3("Information about", encode_entities($id)),
+    p("Unaligned length:", length($seq)),
+    p("Alignment length:", length($alnSeq));
+  print p("Description:", encode_entities($alnDesc{$id}))
+    if exists $alnDesc{$id};
+  print p(a({ -href => $idInfo{$id}{URL} }, "Link"),"(from the uploaded table)") if $idInfo{$id}{URL};
+
+  # Show functional residues, if any
+  my $id2 = $id; $id2 =~ s/_/:/g;
+  my $function = idToSites($dbh, "../bin/blast", "../data/hassites.faa", $id2, $seq);
+  if (keys %$function == 0) {
+    print p("No known functional residues");
+  } else {
+    print h3("Functional residues");
+    foreach my $pos (sort {$a<=>$b} keys %$function) {
+      print p($pos . substr($seq, $pos-1, 1) . ":", $function->{$pos});
+    }
+  }
+
+  print
+    h3("Analysis tools"),
+    p(a({-href => "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=>${id}$newline$seq"},
+        "PaperBLAST"),
+      "(search for papers about homologs of this protein)"),
+    p(a({-href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=>${id}$newline$seq"},
+        "Search CDD"),
+      "(the Conserved Domains Database, which includes COG and superfam)"),
+    p(start_form(-name => "PfamForm", -id => "PfamForm",
+                 -method => "POST", -action => "https://www.ebi.ac.uk/Tools/hmmer/search/hmmscan"),
+      hidden('seq', ">$id\n$seq"),
+      hidden('hmmdb', 'pfam'),
+      hidden('E', '1'),
+      hidden('domE', '1'),
+      submit(-style => "display: none;", -id => 'PfamButton'),
+      end_form,
+      a({-href => "javascript:document.getElementById('PfamForm').submit()"},
+        "Search PFam"),
+      "(including for weak hits, up to E = 1)"),
+    p(a({ -href => "http://www.ebi.ac.uk/thornton-srv/databases/cgi-bin/pdbsum/FindSequence.pl?pasted=$seq",
+          -title => "Find similar proteins with known structures (PDBsum)"},
+        "Search structures")),
+    p("Predict transmembrane helices and signal peptides:",
+      a({-href => "http://fit.genomics.lbl.gov/cgi-bin/myPhobius.cgi?name=${id}&seq=${seq}"},
+        "Phobius")),
+    p("Find homologs in the",
+      a({-href => "https://iseq.lbl.gov/genomes/seqsearch?sequence=>${id}%0A$seq"},
+        "ENIGMA genome browser"));
+
+  my $seqShow = $seq;
+  $seqShow =~ s/(.{60})/$1\n/gs;
+  print h3("Sequence"), pre(">".$id."\n".$seqShow);
+
+  $alnSeq =~ s/(.{60})/$1\n/gs;
+  print h3("Aligned sequence"), pre(">".$id."\n".$alnSeq);
+
+  print p(a({-href => $baseURL}, param('treeId') ? "Back to tree" : "Back to alignment"));
+  print end_html;
+  exit(0);
+} # end showId mode
+
+
 # else rendering mode (tree+auto_sites or tree+choose_sites)
 
 if (param('treeFile')) {
@@ -1067,7 +1139,7 @@ foreach my $node (@showLeaves) {
   my $title = encode_entities($id);
   $title .= ": " . encode_entities($alnDesc{$id}) if exists $alnDesc{$id};
   $nodeTitle{$node} = $title;
-  $nodeLink{$node} = $idInfo{$id}{URL} if $idInfo{$id}{URL};
+  $nodeLink{$node} = $baseURL."&showId=$id";
 }
 
 my $posSet = param('posSet');
@@ -1203,8 +1275,8 @@ if ($posSet) {
     # Clip the id/description to the $idLeft/$idRight region using clipPath from id-region (defined above)
     my $colorSpec = "";
     $colorSpec = qq{ stroke="darkred" stroke-width=0.5 } if $id eq $anchorId;
-    $showId = qq{<A xlink:href="$idInfo{$id}{URL}" target="_blank">$showId</A>}
-      if $idInfo{$id}{URL};
+    $showId = qq{<A xlink:href="$nodeLink{$node}" target="_blank">$showId</A>}
+      if $nodeLink{$node};
     push @svg, qq{<text text-anchor="start" dominant-baseline="middle" clip-path="url(#id-region)" x="$idLeft" y="$y" $colorSpec>$showId</text>};
 
     foreach my $i (0..(scalar(@alnPos)-1)) {
