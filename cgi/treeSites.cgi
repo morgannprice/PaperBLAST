@@ -1402,7 +1402,7 @@ if ($posSet) {
   my $rowHeight = $renderSmall ? 3 : ($renderLarge ? 20 : 8);
   my $minShowHeight = 20;      # minimum height of a character to draw
   my $padLeft = 10;
-  my $padMiddle = 50;
+  my $padMiddle = $renderLarge ? 10 : 50;
   my $padRight = $renderLarge ? 600 : 40; # space for labels
   my $posWidth = 30;
   my $svgHeight = $padTop + scalar(@showLeaves) * $rowHeight + $padBottom;
