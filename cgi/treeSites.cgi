@@ -1272,7 +1272,7 @@ if ($posSet) {
     $showId = "<TITLE>" . encode_entities($alnDesc{$id}) . "</TITLE>" . $showId if $alnDesc{$id};
     # Clip the id/description to the $idLeft/$idRight region using clipPath from id-region (defined above)
     my $colorSpec = "";
-    $colorSpec = qq{ stroke="darkred" stroke-width=0.5 } if $id eq $anchorId;
+    $colorSpec = qq{ fill="red" } if $id eq $anchorId;
     $showId = qq{<A xlink:href="$nodeLink{$node}" target="_blank">$showId</A>}
       if $nodeLink{$node};
     push @svg, qq{<text text-anchor="start" dominant-baseline="middle" clip-path="url(#id-region)" x="$idLeft" y="$y" $colorSpec>$showId</text>};
