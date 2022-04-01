@@ -254,17 +254,14 @@ if (defined $query && $query ne "") {
 
   print p("Found hits above 30% identity and 70% coverage to", scalar(@keep), " curated proteins");
 
-  my $minIdentity = min(map $_->{identity}, @keep);
-  if ($minIdentity == 100) {
-    fail("All hits are identical to the query");
-  } elsif ($minIdentity >= 95) {
-    print p("All hits are nearly identical to the query");
-  }
-
   my $nOld = scalar(@keep);
   @keep = grep $_->{identity} < 100, @keep;
   print p("Removed hits that are identical to the query, leaving", scalar(@keep))
     if scalar(@keep) < $nOld;
+
+  my $minIdentity = min(map $_->{identity}, @keep);
+  print p("All hits are nearly identical to the query")
+    if $minIdentity  >= 95;
 
   # For now, just show a table of results, and add a link to align them
   foreach my $row (@keep) {
@@ -340,12 +337,14 @@ if (defined $query && $query ne "") {
   my @lines = split /\n/, $fasta;
   my $seqsId = savedHash(\@lines, "seqs");
 
+  print p(a({-href => "treeSites.cgi?seqsId=$seqsId" }, 
+            "Build an alignment for", encode_entities($id), "and", scalar(@keep), "homologs"))
+    if @keep > 0;
+
   print
-    p(a({-href => "treeSites.cgi?seqsId=$seqsId" },
-        "Build an alignment for", encode_entities($id), "and", scalar(@keep), "homologs")),
     start_form(-name => 'addSeqs', -method => 'POST', -action => 'treeSites.cgi'),
     hidden(-name => 'seqsId', -default => $seqsId, -override => 1),
-    "Or add sequences from UniProt, PDB, RefSeq, or MicrobesOnline (separate identifiers with commas or spaces):",
+    "Add sequences from UniProt, PDB, RefSeq, or MicrobesOnline (separate identifiers with commas or spaces):",
     br(),
     textfield(-name => "addSeq", -default => "", -size => 50, -maxLength => 1000),
     br(),
@@ -355,7 +354,7 @@ if (defined $query && $query ne "") {
       a({-href => findFile($seqsId, "seqs")}, "download"),
       "the sequences"),
     p("Or", a({-href => "treeSites.cgi"}, "start over")),
-          end_html;
+    end_html;
   exit(0);
 } # end homologs mode
 
@@ -403,8 +402,8 @@ if ($seqsSet) {
   fail(encode_entities($state->{error})) if defined $state->{error};
   fail("Too many sequences to align, the limit is $maxNAlign")
     if scalar(keys %seqs) > $maxNAlign;
-  fail("Must have at least 2 sequences")
-    if scalar(keys %seqs) < 2;
+  fail("Must have at least 1 sequence")
+    if scalar(keys %seqs) < 1;
 
   # Handle addseq if set. If any do get set, set seqsId back to empty
   my $addSeq = param('addSeq');
@@ -496,6 +495,8 @@ if ($seqsSet) {
   }
 
   if (param('buildAln')) {
+    fail("Must have at least 2 sequences to align")
+      if scalar(keys %seqs) < 2;
     # Alignment building mode
     die "buildAln without seqsId" unless $seqsId;
     autoflush STDOUT 1; # show preliminary results
@@ -655,6 +656,9 @@ while (my ($id, $seq) = each %alnSeq) {
   fail("Inconsistent sequence length for " . encode_entities($id))
     unless length($seq) == $alnLen;
 }
+
+fail("Alignment must have at least 2 sequences")
+  if scalar(keys %alnSeq) < 2;
 
 # Save the alignment, if necessary
 if (!defined $alnId) {
