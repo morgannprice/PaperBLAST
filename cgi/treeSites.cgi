@@ -90,6 +90,10 @@ sub layoutTree;
 # Does not render the scale bar.
 sub renderTree;
 
+# Given a seqsId, return the HTML for the add-sequences form
+# (and a link to download the sequences)
+sub addSeqsForm($);
+
 # maximum size of posted data, in bytes
 my $maxMB = 25;
 $CGI::POST_MAX = $maxMB*1024*1024;
@@ -341,18 +345,7 @@ if (defined $query && $query ne "") {
             "Build an alignment for", encode_entities($id), "and", scalar(@keep), "homologs"))
     if @keep > 0;
 
-  print
-    start_form(-name => 'addSeqs', -method => 'POST', -action => 'treeSites.cgi'),
-    hidden(-name => 'seqsId', -default => $seqsId, -override => 1),
-    "Add sequences from UniProt, PDB, RefSeq, or MicrobesOnline (separate identifiers with commas or spaces):",
-    br(),
-    textfield(-name => "addSeq", -default => "", -size => 50, -maxLength => 1000),
-    br(),
-    submit(-name => "Add"),
-    end_form,
-    p("Or",
-      a({-href => findFile($seqsId, "seqs")}, "download"),
-      "the sequences"),
+  print addSeqsForm($seqsId),
     p("Or", a({-href => "treeSites.cgi"}, "start over")),
     end_html;
   exit(0);
@@ -552,6 +545,7 @@ if ($seqsSet) {
       hidden(-name => 'seqsId', -default => $seqsId, -override => 1),
       p(submit(-name => "buildAln", -value => "Align with MUSCLE")),
       end_form;
+    print addSeqsForm($seqsId);
   }
   print p("Or", a{-href => "treeSites.cgi"}, "start over");
   print end_html;
@@ -1806,4 +1800,20 @@ sub scaleBar {
   my $y2 = $y - 4;
   push @out, qq{<text text-anchor="middle" x="$scaleMid" y="$y2">$scaleSize /site</text>};
   return @out;
+}
+
+sub addSeqsForm($) {
+  my ($seqsId) = @_;
+  return join("\n",
+    start_form(-name => 'addSeqs', -method => 'POST', -action => 'treeSites.cgi'),
+    hidden(-name => 'seqsId', -default => $seqsId, -override => 1),
+    "Add sequences from UniProt, PDB, RefSeq, or MicrobesOnline (separate identifiers with commas or spaces):",
+    br(),
+    textfield(-name => "addSeq", -default => "", -size => 50, -maxLength => 1000),
+    br(),
+    submit(-name => "Add"),
+    end_form,
+    p("Or",
+      a({-href => findFile($seqsId, "seqs")}, "download"),
+      "the sequences"));
 }
