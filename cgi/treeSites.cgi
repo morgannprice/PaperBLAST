@@ -14,7 +14,7 @@ use pbweb;
 use MOTree;
 use DBI;
 
-# In tree+choose-sites rendering mode, these options are required:
+# In tree+choose_sites rendering mode, these options are required:
 # alnFile or alnId -- alignment in fasta format, or the file id (usually, md5 hash)
 #   In header lines, anything after the initial space is assumed to be a description.
 #   Either "." or "-" are gap characters.
@@ -29,7 +29,7 @@ use DBI;
 # (This tool automatically saves uploads using alnId, treeId, or tsvId, under their md5 hash)
 # zoom -- an internal node (as numbered by MOTree) to zoom into
 #
-# In tree+auto-sites rendering mode, these options are required:
+# In tree+auto_sites rendering mode, these options are required:
 # alnId, treeId, and posSet=function, filtered, or all
 # Optional: tsvFile, anchor (pos and zoom are ignored)
 #
@@ -81,7 +81,7 @@ sub layoutTree;
 #    nodeSize (radius to use), nodeColor (defaults to black),
 #    nodeClick (for setting onclick), nodeLink (for setting href), and nodeTitle
 #	(click/link/title/colorare required by may be empty),
-#    leafShow -- yes, none, or hidden
+#    showLabels -- yes, none, or hidden
 #    optionally: specify the root to use
 # returns a list of lines for the svg
 # Does not render the scale bar.
@@ -875,7 +875,7 @@ if (! $treeSet) {
   exit(0);
 }
 
-# else rendering mode (tree+alignment or tree+sites)
+# else rendering mode (tree+auto_sites or tree+choose_sites)
 
 if (param('treeFile')) {
   my $fh = param('treeFile')->handle;
@@ -1046,9 +1046,33 @@ print
         "and URL."),
   end_form;
 
+my $padTop = 70;
+my $treeWidth = 250;
+my $padBottom = 70;
+
+# For leaves, set nodeColor and nodeLink using idInfo, and set nodeTitle using alnDesc
+my (%nodeColor, %nodeTitle, %nodeLink);
+foreach my $node (@showLeaves) {
+  my $id = $moTree->id($node);
+  my $color = "";
+  if (exists $idInfo{$id}{color}
+      && $idInfo{$id}{color} ne ""
+      && $idInfo{$id}{color} ne "black") {
+    $color = $idInfo{$id}{color};
+    $color =~ s/[^a-zA-Z0-9#_-]//g; # remove problematic characters
+    $color = "" unless $color =~ m/^[#a-zA-Z]/;
+  }
+  $color = "red" if $color eq "" && $id eq $anchorId;
+  $nodeColor{$node} = $color if $color;
+  my $title = encode_entities($id);
+  $title .= ": " . encode_entities($alnDesc{$id}) if exists $alnDesc{$id};
+  $nodeTitle{$node} = $title;
+  $nodeLink{$node} = $idInfo{$id}{URL} if $idInfo{$id}{URL};
+}
+
 my $posSet = param('posSet');
 if ($posSet) {
-  # tree+alignment rendering mode
+  # tree+automatically-selected sites mode
 
   # Which sequences (if any) have functional information?
   my %function = (); # sequence id => position => comment
@@ -1099,26 +1123,45 @@ if ($posSet) {
       unless $posSet eq $posSetArg || ($posSetArg eq "functional" && scalar(keys %function) == 0);
   }
   print
-    div({-style => "float:left;"},
+    div({-style => "float:left; width:60%"},
         "Or", join(", ", @links).",",
         "or", a({-href => $baseURL}, "choose"), "positions"),
     div({-style => "float:right; width:40%;"}, $patternSearchForm),
     div({-style => "clear:both; height:0;"}); # clear the floats
 
-  # Show key residues and highlight the functional ones.
+  # Show key residues and highlight the functional ones, with the tree at the left
   # First, lay out the SVG
   my @svg = (); # all the objects within the main <g> of the svg
   my @defs = (); # objects to define
-  my $idLeft = 10;
+  my $idLeft = $treeWidth + 10;
   my $idWidth = 250;
   my $idRight = $idLeft + $idWidth;
   my $alnLeft = $idRight + 10;
-  my $alnTop = 70;
+  my $alnTop = $padTop;
+  my $rowHeight = 24;
+  my $posWidth = 22;
 
-  # Lay out the x positions for each position
+  my %layout = layoutTree('tree' => $moTree,
+                          'leafHeight' => $rowHeight, 'treeTop' => $padTop,
+                          'treeLeft' => 0, 'treeWidth' => $treeWidth);
+  my $nodeX = $layout{nodeX};
+  my $nodeY = $layout{nodeY};
+  my %nodeSize = map { $_ => 4 } @$nodes;
+
+  push @svg, renderTree('tree' => $moTree,
+                        'nodeX' => $nodeX, 'nodeY' => $nodeY,
+                        'nodeSize' => \%nodeSize, 'nodeColor' => \%nodeColor,
+                        'nodeClick' => {}, 'nodeLink' => \%nodeLink,
+                        'nodeTitle' => \%nodeTitle,
+                        'showLabels' => 'none');
+  push @svg, scaleBar('maxDepth' => $layout{maxDepth},
+                      'treeWidth' => $treeWidth,
+                      'treeLeft' => 0,
+                      'y' => max(values %$nodeY) + 0.5 * $padBottom);
+
+  # Lay out the x positions for each alignment position
   my %posX = (); # position (0-based) to center X
   my $maxX = $alnLeft + 5;
-  my $posWidth = 22;
   foreach my $i (0..(scalar(@alnPos)-1)) {
     my $pos = $alnPos[$i];
     $maxX += 6 if $i > 0 && $pos > $alnPos[$i-1] + 1;
@@ -1136,22 +1179,18 @@ if ($posSet) {
   }
   my $svgWidth = $maxX + 40;
 
-  my $rowHeight = 24;
-  my %posY = (); # id to center Y
-  my $maxY = $alnTop;
-  foreach my $id (sort keys %alnSeq) {
-    $posY{$id} = $maxY;
-    $maxY += $rowHeight;
-  }
-  my $alnHeight = $maxY - $alnTop;
+  my $alnHeight = max(values %$nodeY) - $alnTop;
   my $padBottom = 70;
-  my $svgHeight = $maxY + $padBottom;
+  my $svgHeight = max(values %$nodeY) + $padBottom;
   my $alnTop2 = $alnTop - 10;
   my $alnHeight2 = $alnHeight + 20;
   push @defs, qq{<clipPath id="id-region"><rect x="$idLeft" y="$alnTop2" width="$idWidth" height="$alnHeight2" /></clipPath>};
 
-  foreach my $id (sort keys %alnSeq) {
-    my $y = $posY{$id};
+  # show (clipped) labels and descriptions
+  foreach my $i (0..(scalar(@showLeaves)-1)) {
+    my $node = $showLeaves[$i];
+    my $id = $moTree->id($node);
+    my $y = $nodeY->{$node};
     die unless defined $y;
     my $yUp = $y - $rowHeight/2;
     my $rectW = $alnRight - $idLeft;
@@ -1164,6 +1203,8 @@ if ($posSet) {
     # Clip the id/description to the $idLeft/$idRight region using clipPath from id-region (defined above)
     my $colorSpec = "";
     $colorSpec = qq{ stroke="darkred" stroke-width=0.5 } if $id eq $anchorId;
+    $showId = qq{<A xlink:href="$idInfo{$id}{URL}" target="_blank">$showId</A>}
+      if $idInfo{$id}{URL};
     push @svg, qq{<text text-anchor="start" dominant-baseline="middle" clip-path="url(#id-region)" x="$idLeft" y="$y" $colorSpec>$showId</text>};
 
     foreach my $i (0..(scalar(@alnPos)-1)) {
@@ -1209,7 +1250,7 @@ if ($posSet) {
              "</SVG>",
              "</DIV>");
 } else {
-  #tree+sites rendering mode
+  #tree+choose_sites mode
 
   my @alnPos = ();                # 0-based, and in the alignment
   if ($anchorId eq "") {
@@ -1258,13 +1299,13 @@ if ($posSet) {
     push @drawing, "Position numbering is from " . encode_entities($anchorId) . ".";
   }
   print
-    div({-style => "float:left;"},
+    div({-style => "float:left; width:60%"},
         "Or see",
         $posSetLinks{functional}, "positions, see",
         $posSetLinks{filtered}, "positions, or see",
         $posSetLinks{all}, "positions.",
-        p(@drawing, @acts)),
-          div({-style => "float:right; width:40%;"},
+        br(), br(), @drawing, @acts),
+    div({-style => "float:right; width:40%"},
               $patternSearchForm,
               start_form( -onsubmit => "return leafSearch();"),
               "Highlight matching proteins: ", br(),
@@ -1276,7 +1317,7 @@ if ($posSet) {
               br(),
               div({-style => "font-size: 80%; height: 1.5em;", -id => "searchStatement"}, ""),
               end_form),
-                div({-style => "clear:both; height:0;"}); # clear the floats
+    div({-style => "clear:both; height:0;"}); # clear the floats
 
   # Build an svg
   # Layout:
@@ -1288,12 +1329,9 @@ if ($posSet) {
   # spacer of width $pdMiddle
   # then 1 column for each position
   # and padRight
-  my $padTop = 70;
   my $rowHeight = $renderSmall ? 3 : ($renderLarge ? 20 : 8);
   my $minShowHeight = 20;      # minimum height of a character to draw
-  my $padBottom = 70;
   my $padLeft = 10;
-  my $treeWidth = 250;
   my $padMiddle = 50;
   my $padRight = $renderLarge ? 600 : 40; # space for labels
   my $posWidth = 30;
@@ -1305,7 +1343,7 @@ if ($posSet) {
                           'treeLeft' => 0, 'treeWidth' => $treeWidth);
   my $nodeX = $layout{nodeX};
   my $nodeY = $layout{nodeY};
-  my $maxX = $layout{maxDepth};
+  my $maxDepth = $layout{maxDepth};
 
   my %leafHas = ();            # all the shown positions for that leaf
   foreach my $leaf (@showLeaves) {
@@ -1313,17 +1351,7 @@ if ($posSet) {
     my $seq = $alnSeq{$id} || die;
     my @val = map substr($seq, $_, 1), @alnPos;
     $leafHas{$leaf} = join("", @val);
-  }
-
-  my %nodeTitle = ();
-  foreach my $node (@$nodes) {
-    my $id = $moTree->id($node);
-    my $title = encode_entities($id);
-    if ($moTree->is_Leaf($node)) {
-      $title .= ": " . encode_entities($alnDesc{$id}) if exists $alnDesc{$id};
-      $title .= " (has $leafHas{$node})" if @alnPos > 0;
-    }
-    $nodeTitle{$node} = $title;
+    $nodeTitle{$leaf} .= " (has " . join("", @val) . ")";
   }
 
   my @svg = ();                 # lines in the svg
@@ -1445,7 +1473,7 @@ if ($posSet) {
 
   # Draw the tree after drawing the positions, so that text for leaf names (if displayed)
   # goes on top of the color bars
-  my (%nodeSize, %nodeColor, %nodeClick, %nodeLink);
+  my (%nodeSize, %nodeClick);
   foreach my $node (@$nodes) {
     next if $node == $rootUse;
     my $radius;
@@ -1459,18 +1487,9 @@ if ($posSet) {
     }
     if ($moTree->is_Leaf($node)) {
       my $id = $moTree->id($node);
-      if (exists $idInfo{$id}{color}
-          && $idInfo{$id}{color} ne ""
-          && $idInfo{$id}{color} ne "black") {
-        $radius++;
-        $color = $idInfo{$id}{color};
-        $color =~ s/[^a-zA-Z0-9#_-]//g; # remove problematic characters
-        $color = "" unless $color =~ m/^[#a-zA-Z]/;
-      }
-      $color = "red" if $color eq "" && $id eq $anchorId;
-      $nodeColor{$node} = $color;
+      # colored nodes are more visible
+      $nodeSize{$node}++ if exists $nodeColor{$node} && $nodeColor{$node} ne "black";
       $nodeClick{$node} = "leafClick(this)"; # javascript to show the hidden label
-      $nodeLink{$node} = $idInfo{$id}{URL} if $idInfo{$id}{URL};
     } else {
       $nodeLink{$node} = "$baseURL&zoom=$node";
     }
@@ -1480,7 +1499,7 @@ if ($posSet) {
                         'nodeSize' => \%nodeSize, 'nodeColor' => \%nodeColor,
                         'nodeClick' => \%nodeClick, 'nodeLink' => \%nodeLink,
                         'nodeTitle' => \%nodeTitle,
-                        'leafShow' => 'hidden');
+                        'showLabels' => 'hidden');
   # Draw labels at right if $renderLarge
   if ($renderLarge) {
     my $xLabel = $svgWidth - $padRight + 8;
@@ -1488,8 +1507,7 @@ if ($posSet) {
     foreach my $node (@showLeaves) {
       my $id = $moTree->id($node);
       my $idShow = encode_entities($id);
-      my $desc = "";
-      $desc = encode_entities($alnDesc{$id})
+      my $desc = encode_entities($alnDesc{$id})
         if exists $alnDesc{$id} && $alnDesc{$id} ne "";
       $desc .= " (has $leafHas{$node})" if @alnPos > 0;
       $idShow = qq{<tspan>$idShow</tspan><tspan style="font-size:80%;"> $desc</tspan>};
@@ -1499,7 +1517,7 @@ if ($posSet) {
     push @svg, "</g>";
   }
 
-  push @svg, scaleBar('maxDepth' => $maxX,
+  push @svg, scaleBar('maxDepth' => $maxDepth,
                       'treeWidth' => $treeWidth, 'treeLeft' => 0,
                       'y' => $padTop + scalar(@showLeaves) * $rowHeight + $padBottom * 0.5)
     unless $missingLen;
@@ -1627,12 +1645,12 @@ sub layoutTree {
     $rawX{$node} = $parentX + $branchLen{$node};
   }
   my %nodeX;
-  my $maxX = max(values %rawX);
-  $maxX = 0.5 if $maxX == 0;
+  my $maxDepth = max(values %rawX);
+  $maxDepth = 0.5 if $maxDepth == 0;
   while (my ($node, $rawX) = each %rawX) {
-    $nodeX{$node} = $treeLeft + $treeWidth * $rawX / $maxX;
+    $nodeX{$node} = $treeLeft + $treeWidth * $rawX / $maxDepth;
   }
-  return ( 'nodeX' => \%nodeX, 'nodeY' => \%nodeY, 'maxDepth' => $maxX );
+  return ( 'nodeX' => \%nodeX, 'nodeY' => \%nodeY, 'maxDepth' => $maxDepth );
 }
 
 sub renderTree {
@@ -1645,7 +1663,7 @@ sub renderTree {
   my $nodeClick = $param{nodeClick} || die;
   my $nodeLink = $param{nodeLink} || die;
   my $nodeTitle = $param{nodeTitle} || die;
-  my $leafShow = $param{leafShow} || die; # yes, none, or hidden
+  my $showLabels = $param{showLabels} || die; # yes, none, or hidden
   my $root = $param{root};
   $root = $tree->get_root_node unless defined $root;
   my $nodes = $moTree->all_descendents($root);
@@ -1670,17 +1688,17 @@ sub renderTree {
     my $title = $nodeTitle->{$node};
     $circle .= "<TITLE>$title</TITLE>" if defined $title && $title ne "";
     $circle .= "</circle>";
-    $circle = qq{<A xlink:href="$nodeLink->{$node}">$circle</A>}
+    $circle = qq{<A xlink:href="$nodeLink->{$node}" target="_blank">$circle</A>}
       if ! $nodeClick->{$node} && $nodeLink->{$node};
 
     push @out, $circle;
-    if ($moTree->is_Leaf($node) && $leafShow ne "none") {
+    if ($moTree->is_Leaf($node) && $showLabels ne "none") {
       my $xLabel = $nodeX->{$node} + $radius + 2;
       my $id = $moTree->id($node);
       my $idShow = encode_entities($id);
       my $textStyle = "font-size:80%;";
-      $textStyle .= " display:none;" if $leafShow eq "hidden";
-      $idShow = qq{<A xlink:href="$nodeLink->{$node}" target="blank">$idShow</A>}
+      $textStyle .= " display:none;" if $showLabels eq "hidden";
+      $idShow = qq{<A xlink:href="$nodeLink->{$node}" target="_blank">$idShow</A>}
         if $nodeLink->{$node};
       $idShow .= "<TITLE>$title</TITLE>" if defined $title && $title ne "";
       push @out, qq{<text dominant-baseline="middle" x="$xLabel" y="$nodeY->{$node}" text-anchor="left" style="$textStyle" >$idShow</text>};
