@@ -14,7 +14,7 @@ use pbweb;
 use MOTree;
 use DBI;
 
-# In tree+sites rendering mode, these options are required:
+# In tree+choose-sites rendering mode, these options are required:
 # alnFile or alnId -- alignment in fasta format, or the file id (usually, md5 hash)
 #   In header lines, anything after the initial space is assumed to be a description.
 #   Either "." or "-" are gap characters.
@@ -29,11 +29,9 @@ use DBI;
 # (This tool automatically saves uploads using alnId, treeId, or tsvId, under their md5 hash)
 # zoom -- an internal node (as numbered by MOTree) to zoom into
 #
-# In tree+alignment rendering mode, these options are required:
-# alnId, treeId, and alnShow=all, lowgap, or function
-# Optional: tsvFile (zoom is not supported)
-#	Q: is this a different mode, or does it just mean that pos is computed and there is some bolding?
-#		Maybe they should always be in bold!
+# In tree+auto-sites rendering mode, these options are required:
+# alnId, treeId, and posSet=function, filtered, or all
+# Optional: tsvFile, anchor (pos and zoom are ignored)
 #
 # In pattern search mode, required options are:
 # alnId
@@ -320,20 +318,21 @@ if (defined $query && $query ne "") {
   my @lines = split /\n/, $fasta;
   my $seqsId = savedHash(\@lines, "seqs");
 
-  print p(a({-href => "treeSites.cgi?seqsId=$seqsId" },
-            "Build an alignment for", encode_entities($id), "and", scalar(@keep), "homologs")),
-        p(start_form(-name => 'addSeqs', -method => 'POST', -action => 'treeSites.cgi'),
-          hidden(-name => 'seqsId', -default => $seqsId, -override => 1),
-          "Or add sequences from UniProt, PDB, RefSeq, or MicrobesOnline (separate identifiers with commas or spaces):",
-          br(),
-          textfield(-name => "addSeq", -default => "", -size => 50, -maxLength => 1000),
-          br(),
-          submit(-name => "Add"),
-          end_form),
-        p("Or",
-          a({-href => findFile($seqsId, "seqs")}, "download"),
-          "the sequences"),
-        p("Or", a({-href => "treeSites.cgi"}, "start over")),
+  print
+    p(a({-href => "treeSites.cgi?seqsId=$seqsId" },
+        "Build an alignment for", encode_entities($id), "and", scalar(@keep), "homologs")),
+    start_form(-name => 'addSeqs', -method => 'POST', -action => 'treeSites.cgi'),
+    hidden(-name => 'seqsId', -default => $seqsId, -override => 1),
+    "Or add sequences from UniProt, PDB, RefSeq, or MicrobesOnline (separate identifiers with commas or spaces):",
+    br(),
+    textfield(-name => "addSeq", -default => "", -size => 50, -maxLength => 1000),
+    br(),
+    submit(-name => "Add"),
+    end_form,
+    p("Or",
+      a({-href => findFile($seqsId, "seqs")}, "download"),
+      "the sequences"),
+    p("Or", a({-href => "treeSites.cgi"}, "start over")),
           end_html;
   exit(0);
 } # end homologs mode
@@ -748,6 +747,13 @@ while (my ($id, $hash) = each %seqPosToAlnPos) {
   }
 }
 
+my $baseURL = "treeSites.cgi?alnId=$alnId";
+foreach my $attr (qw{treeId tsvId anchor pos zoom"}) {
+  my $value = param($attr);
+  $baseURL .= "&" . $attr . "=" . uri_escape($value)
+    if defined $value && $value ne "";
+}
+
 if (param('pattern')) {
   # pattern search mode
   my $pattern = uc(param('pattern'));
@@ -817,13 +823,9 @@ if (param('pattern')) {
     print table(@rows);
   } # end else has matches
 
-  my $baseURL = "treeSites.cgi?alnId=$alnId";
-  foreach my $attr (qw{treeId tsvId anchor pos zoom"}) {
-    my $value = param($attr);
-    $baseURL .= "&" . $attr . "=" . uri_escape($value)
-      if defined $value && $value ne "";
-  }
-  print p(a({-href => $baseURL}, param('treeId') ? "Back to tree" : "Back to alignment"));
+  my $URL = $baseURL;
+  $baseURL .= "&posSet=".param('posSet') if param('posSet');
+  print p(a({-href => $URL}, param('treeId') ? "Back to tree" : "Back to alignment"));
   print p("Or", a{-href => "treeSites.cgi"}, "start over");
   print end_html;
   exit(0);
@@ -922,9 +924,112 @@ $anchorId = "" if !defined $anchorId;
 fail("Unknown anchor id " . encode_entities($anchorId))
   if $anchorId ne "" && !exists $alnSeq{$anchorId};
 
-if (param('alnShow')) {
+my ($anchorAln, $anchorSeq, $anchorLen);
+if ($anchorId ne "") {
+  $anchorAln = $alnSeq{$anchorId};
+  $anchorSeq = $anchorAln; $anchorSeq =~ s/[-]//g;
+  $anchorLen = length($anchorSeq);
+}
+
+# The pos parameter is ignored in the auto-sites mode
+my @anchorPos; # 1-based, and in the anchor if it is set
+if (defined param('pos') && param('pos') ne "") {
+  my $pos = param('pos');
+  $pos =~ s/\s//g;
+  my @posSpec = split /,/, $pos;
+  foreach my $spec (@posSpec) {
+    if ($spec =~ m/^(\d+):(\d+)$/ && $1 <= $2) {
+      push @anchorPos, ($1..$2);
+    } else {
+      fail("Invalid position " . encode_entities($spec))
+        unless $spec =~ m/^\d+$/;
+      push @anchorPos, $spec;
+    }
+  }
+  foreach my $i (@anchorPos) {
+    fail("Invalid position $i") unless $i >= 1 && $i <= $alnLen;
+    fail("position $i is past end of anchor " . encode_entities($anchorId))
+      if $anchorId ne "" && $i > $anchorLen;
+  }
+}
+
+# the zoom parameter is ignored in auto-sites mode
+my $nodeZoom = param('zoom');
+my @showLeaves = ();
+if (defined $nodeZoom && $nodeZoom =~ m/^\d+$/) {
+  die "Invalid node id $nodeZoom"
+    if $nodeZoom == $root
+      || !defined $moTree->ancestor($nodeZoom)
+      || $moTree->is_Leaf($nodeZoom);
+  @showLeaves = @{ $moTree->all_leaves_below($nodeZoom) };
+  # update $nodes to only include this node and its descendents
+  my @nodes = @{ $moTree->all_descendents($nodeZoom) };
+  unshift @nodes, $nodeZoom;
+  $nodes = \@nodes;
+} else {
+  $nodeZoom = undef;
+  @showLeaves = @leaves;
+}
+my $rootUse = defined $nodeZoom ? $nodeZoom : $root;
+
+my %posSetLinks = ( "functional" => a({-href => "$baseURL&posSet=functional",
+                                        -title => "see all residues with a known function"},
+                                       "functional"),
+                     "filtered" => a({-href => "$baseURL&posSet=filtered",
+                                      -title => "see all alignment columns that are less than half gaps"},
+                                     "filtered"),
+                     "all" => a({-href => "$baseURL&posSet=all",
+                                 -title => "all $alnLen alignment columns"},
+                                "all"));
+
+my @hidden = (hidden( -name => 'alnId', -default => $alnId, -override => 1),
+              hidden( -name => 'treeId', -default => $treeId, -override => 1),
+              hidden( -name => 'tsvId', -default => $tsvId, -override => 1),
+              hidden( -name => 'anchor', -default => $anchorId, -override => 1),
+              hidden( -name => 'pos', -default => join(",",@anchorPos), -override => 1),
+              hidden( -name => 'zoom', -default => defined $nodeZoom ? $nodeZoom : "", -override => 1),
+              hidden( -name => 'posSet', -default => param('posSet') || "", -override => 1));
+
+my $patternSearchForm = join("\n",
+  start_form(-method => 'GET', -action => 'treeSites.cgi'),
+  @hidden,
+  "Find a sequence pattern:",
+  br(),
+  textfield(-name => 'pattern', -size => 20),
+  submit(-name => 'Find'),
+  end_form);
+
+# Download and upload links at top are the same across both tree+ modes
+my @downloads = ();
+push @downloads, a({ -href => findFile($treeId, "tree") }, "tree");
+push @downloads, a({ -href => findFile($alnId, "aln") }, "alignment")
+  . " (" . scalar(keys %alnSeq) . " x $alnLen)";
+push @downloads, a({ -href => findFile($tsvId, "tsv") }, "table of descriptions")
+  if $tsvId;
+my $selfURL = $baseURL;
+$selfURL .= "&zoom=$nodeZoom" if defined $nodeZoom;
+$selfURL .= "&posSet=".param('posSet') if param('posSet');
+print p({-style => "margin-bottom: 0.25em;"},
+         "Download", join(" or ", @downloads),
+        "or see", a({ -href =>  $selfURL }, "permanent link"),
+        "to this page, or",
+        a({ -href => "treeSites.cgi" }, "start over").".");
+print
+  start_form(-method => 'POST', -action => 'treeSites.cgi',
+             -style => "margin-left:3em; margin-top:0;"),
+  @hidden,
+  "Upload descriptions: ", filefield(-name => 'tsvFile', -size => 50),
+  submit(-value => "Go"),
+  br(),
+  small("The table should be tab-delimited with the sequence identifier in the 1st column",
+        "and the description in the 2nd column. Optionally, add fields named",
+        qq{<A HREF="https://www.december.com/html/spec/colorsvg.html">color</A>},
+        "and URL."),
+  end_form;
+
+my $posSet = param('posSet');
+if ($posSet) {
   # tree+alignment rendering mode
-  my $alnShow = param('alnShow');
 
   # Which sequences (if any) have functional information?
   my %function = (); # sequence id => position => comment
@@ -936,13 +1041,8 @@ if (param('alnShow')) {
     $function{$id} = $function if scalar(keys %$function);
     $nPosFunction += scalar(keys %$function);
   }
-  if (keys %function == 0) {
-    print p("Did not find functional information for residues in any of the " . scalar(keys %alnSeq) . " sequences");
-  } else {
-    print p("Found functional information for residues in " . scalar(keys %function) . " sequences ($nPosFunction residues total).");
-  }
   my @alnPos; # 0 based
-  if ($alnShow eq "function") {
+  if ($posSet eq "functional") {
     my %alnPos = ();
     while (my ($id, $function) = each %function) {
       my $seqPosToAlnPos = $seqPosToAlnPos{$id};
@@ -953,7 +1053,12 @@ if (param('alnShow')) {
       }
     }
     @alnPos = sort { $a <=> $b } (keys %alnPos);
-  } elsif ($alnShow eq "filter") {
+    if (@alnPos > 0){ 
+      print p("Showing", scalar(@alnPos), "alignment positions with known function (in at least one sequence).");
+    } else {
+      warning("No functional positions to show.");
+    }
+  } elsif ($posSet eq "filtered") { # majority non-gaps
     my $nSeq = scalar(keys %alnSeq);
     for (my $i = 0; $i < $alnLen; $i++) {
       my $nGap = 0;
@@ -962,10 +1067,24 @@ if (param('alnShow')) {
       }
       push @alnPos, $i unless $nGap > $nSeq/2;
     }
-  } else { # show all
+    print p("Showing", scalar(@alnPos), "alignment positions (of $alnLen) that are less than half gaps");
+  } elsif ($posSet eq "all") {
     @alnPos = 0..($alnLen-1);
+    print p("Showing all", scalar(@alnPos), "alignment positions.");
+  } else {
+    fail("Invalid value of posSet parameter");
   }
-  warning("No positions to show.") if @alnPos == 0;
+  my @links = ();
+  foreach my $posSetArg (qw{functional filtered all}) {
+    push @links, join(" ", "see", $posSetLinks{$posSetArg}, "positions")
+      unless $posSet eq $posSetArg || ($posSetArg eq "functional" && scalar(keys %function) == 0);
+  }
+  print
+    div({-style => "float:left;"},
+        "Or", join(", ", @links).",",
+        "or", a({-href => $baseURL}, "choose"), "positions"),
+    div({-style => "float:right; width:40%;"}, $patternSearchForm),
+    div({-style => "clear:both; height:0;"}); # clear the floats
 
   # Show key residues and highlight the functional ones.
   # First, lay out the SVG
@@ -1076,34 +1195,6 @@ if (param('alnShow')) {
 
 # else tree+sites rendering mode
 
-my ($anchorAln, $anchorSeq, $anchorLen);
-if ($anchorId ne "") {
-  $anchorAln = $alnSeq{$anchorId};
-  $anchorSeq = $anchorAln; $anchorSeq =~ s/[-]//g;
-  $anchorLen = length($anchorSeq);
-}
-
-my @anchorPos;               # 1-based, and in the anchor if it is set
-if (defined param('pos') && param('pos') ne "") {
-  my $pos = param('pos');
-  $pos =~ s/\s//g;
-  my @posSpec = split /,/, $pos;
-  foreach my $spec (@posSpec) {
-    if ($spec =~ m/^(\d+):(\d+)$/ && $1 <= $2) {
-      push @anchorPos, ($1..$2);
-    } else {
-      fail("Invalid position " . encode_entities($spec))
-        unless $spec =~ m/^\d+$/;
-      push @anchorPos, $spec;
-    }
-  }
-  foreach my $i (@anchorPos) {
-    fail("Invalid position $i") unless $i >= 1 && $i <= $alnLen;
-    fail("position $i is past end of anchor " . encode_entities($anchorId))
-      if $anchorId ne "" && $i > $anchorLen;
-  }
-}
-
 my @alnPos = ();                # 0-based, and in the alignment
 if ($anchorId eq "") {
   @alnPos = map { $_ - 1 } @anchorPos;
@@ -1120,81 +1211,17 @@ if ($anchorId eq "") {
   @alnPos = map $anchorToAln{$_}, @anchorPos;
 }
 
-my $nodeZoom = param('zoom');
-my @showLeaves = ();
-if (defined $nodeZoom && $nodeZoom =~ m/^\d+$/) {
-  die "Invalid node id $nodeZoom"
-    if $nodeZoom == $root
-      || !defined $moTree->ancestor($nodeZoom)
-      || $moTree->is_Leaf($nodeZoom);
-  @showLeaves = @{ $moTree->all_leaves_below($nodeZoom) };
-  # update $nodes to only include this node and its descendents
-  my @nodes = @{ $moTree->all_descendents($nodeZoom) };
-  unshift @nodes, $nodeZoom;
-  $nodes = \@nodes;
-} else {
-  $nodeZoom = undef;
-  @showLeaves = @leaves;
-}
-my $rootUse = defined $nodeZoom ? $nodeZoom : $root;
-
-my $baseURL = join("",
-                   "treeSites.cgi?anchor=", uri_escape($anchorId),
-                   "&pos=", join(",",@anchorPos),
-                   "&treeId=", $treeId,
-                   "&alnId=", $alnId,
-                   "&tsvId=", $tsvId || "");
-
-my @drawing;
-if (defined $nodeZoom) {
-  push @drawing, "Zoomed into a clade of " . scalar(@showLeaves) . " proteins, or see",
-    a({ -href => $baseURL }, "all", scalar(@leaves), "proteins").".";
-} else {
-  push @drawing, "Drawing a tree for " . scalar(@leaves) . " proteins.";
-}
-if (@alnPos > 0 && $anchorId ne "") {
-  push @drawing, "Position numbering is from " . encode_entities($anchorId) . ".";
-}
-print p(@drawing);
-my @downloads = ();
-push @downloads, a({ -href => findFile($treeId, "tree") }, "tree");
-push @downloads, a({ -href => findFile($alnId, "aln") }, "alignment");
-push @downloads, a({ -href => findFile($tsvId, "tsv") }, "table of descriptions")
-  if $tsvId;
-
-my $selfURL = $baseURL;
-$selfURL .= "&zoom=$nodeZoom" if defined $nodeZoom;
-
-print p("Download", join(" or ", @downloads),
-        "or see", a({ -href =>  $selfURL }, "permanent link"),
-        "to this page, or",
-        a({ -href => "treeSites.cgi" }, "start over").".");
 
 print p(start_form(-method => 'GET', -action => 'treeSites.cgi'),
         hidden( -name => 'alnId', -default => $alnId, -override => 1),
         hidden( -name => 'treeId', -default => $treeId, -override => 1),
         hidden( -name => 'tsvId', -default => $tsvId, -override => 1),
         hidden( -name => 'zoom', -default => defined $nodeZoom ? $nodeZoom : "", -override => 1),
-        "Select positions",
+        "Select positions to show:",
         textfield(-name => "pos", -default => join(",",@anchorPos), -size => 30, -maxlength => 200),
         "in",
         textfield(-name => "anchor", -default => $anchorId, -size => 20, -maxlength => 200),
         submit(-value => "Go"),
-        end_form);
-
-print p(start_form(-method => 'POST', -action => 'treeSites.cgi'),
-        hidden( -name => 'alnId', -default => $alnId, -override => 1),
-        hidden( -name => 'treeId', -default => $treeId, -override => 1),
-        hidden( -name => 'anchor', -default => $anchorId, -override => 1),
-        hidden( -name => 'pos', -default => join(",",@anchorPos), -override => 1),
-        hidden( -name => 'zoom', -default => defined $nodeZoom ? $nodeZoom : "", -override => 1),
-        "Upload descriptions:", filefield(-name => 'tsvFile', -size => 50),
-        submit(-value => "Go"),
-        br(),
-        small("The table should be tab-delimited with the sequence identifier in the 1st column",
-              "and the description in the 2nd column. Optionally, add fields named",
-              qq{<A HREF="https://www.december.com/html/spec/colorsvg.html">color</A>},
-              "and URL."),
         end_form);
 
 my $renderLarge = defined $nodeZoom || scalar(@leaves) <= 20;
@@ -1203,27 +1230,37 @@ my @acts;
 push @acts, "Hover or click on a leaf for information about that sequence." unless $renderLarge;
 push @acts, "Click on an internal node to zoom in to that group." if $renderSmall;
 
-print p(start_form( -onsubmit => "return leafSearch();" ),
-        "Search for proteins to highlight:",
-        textfield(-name => 'query', -id => 'query', -size => 20),
-        button(-name => 'Search', -onClick => "leafSearch()"),
-        button(-name => 'Clear', -onClick => "leafClear()"),
-        br(),
-        div({-style => "font-size: 80%; height: 1.5em;", -id => "searchStatement"}, ""),
-        end_form),
-  p(start_form,
-    hidden( -name => 'alnId', -default => $alnId, -override => 1),
-    hidden( -name => 'treeId', -default => $treeId, -override => 1),
-    hidden( -name => 'tsvId', -default => $tsvId, -override => 1),
-    hidden( -name => 'anchor', -default => $anchorId, -override => 1),
-    hidden( -name => 'pos', -default => join(",",@anchorPos), -override => 1),
-    hidden( -name => 'zoom', -default => defined $nodeZoom ? $nodeZoom : "", -override => 1),
-    "Search for a sequence pattern:",
-    textfield(-name => 'pattern', -size => 20),
-    submit(-name => 'Search'),
-    end_form),
-
-  p(@acts);
+my @drawing;
+if (defined $nodeZoom) {
+  push @drawing, "Zoomed into a clade of " . scalar(@showLeaves) . " proteins, or see ",
+    a({ -href => $baseURL }, "all", scalar(@leaves), "proteins").".";
+} else {
+  push @drawing, "Drawing all " . scalar(@leaves) . " proteins "
+    . small("(click on an internal node to zoom)") . ".";
+}
+if (@alnPos > 0 && $anchorId ne "") {
+  push @drawing, "Position numbering is from " . encode_entities($anchorId) . ".";
+}
+print
+  div({-style => "float:left;"},
+      "Or see",
+        $posSetLinks{functional}, "positions, see",
+        $posSetLinks{filtered}, "positions, or see",
+        $posSetLinks{all}, "positions.",
+      p(@drawing, @acts)),
+  div({-style => "float:right; width:40%;"},
+      $patternSearchForm,
+      start_form( -onsubmit => "return leafSearch();"),
+      "Highlight matching proteins: ", br(),
+      textfield(-name => 'query', -id => 'query', -size => 20),
+      " ",
+      button(-name => 'Match', -onClick => "leafSearch()"),
+      " ",
+      button(-name => 'Clear', -onClick => "leafClear()"),
+      br(),
+      div({-style => "font-size: 80%; height: 1.5em;", -id => "searchStatement"}, ""),
+      end_form),
+  div({-style => "clear:both; height:0;"}); # clear the floats
 
 # Build an svg
 # Layout:
