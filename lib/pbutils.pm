@@ -584,7 +584,7 @@ sub idToSites($$$$$) {
         $parts{$ligandId} = 1;
         push @parts, "binds $ligandNames{$ligandId}";
       }
-      if ($comment & !exists $parts{$comment}) {
+      if ($comment && !exists $parts{$comment}) {
         $parts{$comment} = 1;
         push @parts, $comment;
       }
