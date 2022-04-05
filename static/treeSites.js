@@ -83,5 +83,5 @@ function leafClear() {
 function leafClick(o) {
   var textObject = o.parentNode.children[1];
   textObject.style.display = "inline";
-  textObject.style.fill = "#AA0000";
+  textObject.style.fill = "blue";
 }
