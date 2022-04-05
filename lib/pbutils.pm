@@ -3,6 +3,7 @@ package pbutils;
 require Exporter;
 use strict;
 use File::stat;
+use Digest::MD5 qw{md5_hex};
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
@@ -509,56 +510,20 @@ sub seqPosToAlnPos($) {
 }
 
 # Given a sequence identifier and seqeuence, fetch functional sites, if any.
-# Checks both HasSites itself (identifiers like SwissProt:P68080 or PDB:101m:A)
-# and identical sequences to that id (via SeqToDuplicate; note
-# that biolip::101mA is identical to PDB:101m:A).
-# The provided sequence must match the reference sequence.
+# The current implementation relies on the SeqHasSite table
+# and ignores the identifier.
 # Returns a hash of position (1-based) => comment
 sub idToSites($$$$$) {
   my ($dbh, $blastDir, $hasSitesDb, $idIn, $seqIn) = @_;
-  my @siteIds = (); # ids to look up in HasSites
-  push @siteIds, $idIn
-    if $idIn =~ m/^(SwissProt|PDB):[^:]/; # looks like a sites id
-
-  # Fetch all matching ids
-  my $uniqId = IdToUniqId($dbh, $idIn);
-  my $dup = $dbh->selectcol_arrayref("SELECT duplicate_id FROM SeqToDuplicate WHERE sequence_id = ?",
-                                     {}, $uniqId);
-  my @dupIds = ($uniqId);
-  push @dupIds, @$dup;
-  # Convert to SwissProt: or PDB: if appropriate
-  foreach my $dupId (@dupIds) {
-    if ($dupId =~ m/^([a-zA-Z]+)::(.*)$/) { # looks like a curated id
-      my ($curatedDb, $curatedId) = ($1,$2);
-      if ($curatedDb eq "SwissProt") {
-        push @siteIds, "SwissProt:".$curatedId;
-      } elsif ($curatedDb eq "biolip") {
-        # 101mA to 101m:A
-        my $id = $curatedId; $id =~ s/(.)$/:$1/;
-        push @siteIds, "PDB:" . $id;
-      }
-    }
-  }
-
+  my $sites = $dbh->selectall_arrayref(qq{SELECT * from SeqHasSite JOIN Site USING (db,id,chain)
+                                             WHERE seqHash = ? AND seqLength = ?
+                                             ORDER BY db,id,chain,ligandId,posFrom,posTo},
+                                          { Slice => {} },
+                                       md5_hex($seqIn), length($seqIn));
   my %sitePos = (); # position to list of [ ligandId, comment ]
-  foreach my $siteId (@siteIds) {
-    my ($siteDb, $siteIdPart, $siteChain) = split /:/, $siteId;
-    my $sites = $dbh->selectall_arrayref("SELECT * from Site WHERE db = ? AND id = ? AND chain = ?",
-                                            { Slice => {} }, $siteDb, $siteIdPart, $siteChain);
-    if (@$sites > 0) {
-      # verify that sequences match
-      # (biolip converted to SwissProt might not be in hassites.faa at all otherwise)
-      my $tmpFile = ($ENV{TMPDIR} || "/tmp") . "/idToSites.$$.faa";
-      FetchSeqs($blastDir, $hasSitesDb, [ $siteId ], $tmpFile);
-      my $refSeqs = ReadFasta($tmpFile);
-      unlink($tmpFile);
-      my ($refSeq) = values %$refSeqs;
-      next unless $refSeq eq $seqIn;
-      foreach my $site (@$sites) {
-        foreach my $i ($site->{posFrom} .. $site->{posTo}) {
-          push @{ $sitePos{$i} }, [ $site->{ligandId}, $site->{comment} ];
-        }
-      }
+  foreach my $site (@$sites) {
+    foreach my $i ($site->{posFrom} .. $site->{posTo}) {
+      push @{ $sitePos{$i} }, [ $site->{ligandId}, $site->{comment} ];
     }
   }
 
