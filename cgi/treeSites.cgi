@@ -610,6 +610,7 @@ if (param('alnFile')) {
 my %alnSeq; # with - as gaps (converted from "." if necessary, but potentially with lower-case)
 my %alnDesc;
 my %idInfo = (); # id to color or URL to value (from the input tsv)
+my $topText; # description for empty id, if set in the input tsv
 
 my $hash;
 if ($hash = ParseClustal(@alnLines)) {
@@ -1374,6 +1375,8 @@ if ($posSet) {
   my @acts;
   push @acts, "Hover or click on a leaf for information about that sequence." unless $renderLarge;
   push @acts, "Click on an internal node to zoom in to that group." if $renderSmall;
+  push @acts, p({-style => "font-size:90%;"}, "Comment:", encode_entities($topText))
+                if defined $topText && $topText ne "";
 
   my @drawing;
   if (defined $nodeZoom) {
@@ -1639,6 +1642,7 @@ sub handleTsvLines {
     $line =~ s/[\r\n]+$//;
     my @fields = split /\t/, $line;
     my ($id, $desc) = @fields;
+    $topText = $desc if $id eq "";
     if (exists $alnSeq{$id} && defined $desc && $desc =~ m/\S/) {
       $alnDesc{$id} = $desc;
       $idInfo{$id}{color} = $fields[$iColor]
