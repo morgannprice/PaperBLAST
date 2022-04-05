@@ -9,7 +9,7 @@ use Digest::MD5 qw{md5_hex};
 use List::Util qw{sum min max};
 use IO::Handle; # for autoflush
 use lib "../lib";
-use pbutils qw{ReadFastaEntry ParseClustal ParseStockholm seqPosToAlnPos idToSites};
+use pbutils qw{ReadFastaEntry ParseClustal ParseStockholm seqPosToAlnPos idToSites idToSiteRows};
 use pbweb;
 use MOTree;
 use DBI;
@@ -898,6 +898,24 @@ if (defined param('showId') && param('showId') ne "") {
     print h3("Functional residues");
     foreach my $pos (sort {$a<=>$b} keys %$function) {
       print p($pos . substr($seq, $pos-1, 1) . ":", $function->{$pos});
+    }
+    # And find the reference information and link to it
+    my $sites = idToSiteRows($dbh, "../bin/blast", "../data/hassites.faa", $id2, $seq);
+    my %seen = ();
+    foreach my $row (@$sites) {
+      my $db = $row->{db};
+      my $id = $row->{id};
+      next if exists $seen{$db}{$id};
+      $seen{$db}{$id} = 1;
+      if ($db eq "SwissProt") {
+        print p("from",
+                a({-href => "https://www.uniprot.org/uniprot/$id", -title => "SwissProt curators" }, $id));
+      } elsif ($db eq "PDB") {
+        print p("from",
+                a({-href => "https://www.rcsb.org/structure/".uc($id), -title => "protein structure (BioLiP)"}, $id));
+      } else {
+        warning("Unknown database $db");
+      }
     }
   }
 
