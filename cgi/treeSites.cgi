@@ -825,8 +825,12 @@ if (param('pattern')) {
       foreach my $pos (@{ $hits{$id} }) {
         if (++$nShow <= $nLimit) {
           my $idShow = $id;
-          $idShow = a({ -title => $alnDesc{$id} }, $id)
-            if exists $alnDesc{$id};
+          my $idURL = "$baseURL&showId=$idShow";
+          if (exists $alnDesc{$id}) {
+            $idShow = a({ -title => $alnDesc{$id}, -href => $idURL }, $id);
+          } else {
+            $idShow = a({ -href => $idURL }, $id);
+          }
           my @matchShow = ();
           foreach my $offset (0..(length($pattern)-1)) {
             my $i = $pos + $offset;
@@ -835,9 +839,9 @@ if (param('pattern')) {
             my $color = $colors{uc($char)} || "white";
             push @matchShow, a({-style => "background-color:$color; font-family:monospace; padding: 0.2em;", -title => "position $i ($alignI in alignment) is $char"}, $char);
           }
-          push @rows, Tr(td($idShow,
-                            td("$pos"."..".($pos+length($pattern)-1)),
-                            td(join("",@matchShow))));
+          push @rows, Tr(td($idShow),
+                         td("$pos"."..".($pos+length($pattern)-1)),
+                         td(join("",@matchShow)));
         }
       }
     }
