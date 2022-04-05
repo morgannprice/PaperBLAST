@@ -124,6 +124,15 @@ CREATE TABLE HasSites(
   PRIMARY KEY(db,id,chain)
 );
 
+CREATE TABLE SeqHasSite (
+  seqHash TEXT, /* the md5 hash of the sequence */
+  seqLength INT,
+  db TEXT,
+  id TEXT,
+  chain TEXT,
+  PRIMARY KEY (seqHash, seqLength, db, id, chain)
+);
+
 CREATE TABLE PdbLigand(
   ligandId TEXT,
   ligandName TEXT,
