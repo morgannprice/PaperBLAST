@@ -17,7 +17,7 @@ our (@ISA,@EXPORT);
              FetchCuratedInfo
              SQLiteLine SqliteImport
              reverseComplement seqPosToAlnPos
-             idToSites
+             idToSites idToSiteRows
              ParseClustal ParseStockholm!;
 
 sub read_list($) {
@@ -509,17 +509,22 @@ sub seqPosToAlnPos($) {
   return \%posMap;
 }
 
+sub idToSiteRows($$$$$) {
+  my ($dbh, $blastDir, $hasSitesDb, $idIn, $seqIn) = @_;
+  return $dbh->selectall_arrayref(qq{SELECT * from SeqHasSite JOIN Site USING (db,id,chain)
+                                             WHERE seqHash = ? AND seqLength = ?
+                                             ORDER BY db,id,chain,ligandId,posFrom,posTo},
+                                  { Slice => {} },
+                                  md5_hex($seqIn), length($seqIn));
+}
+
 # Given a sequence identifier and seqeuence, fetch functional sites, if any.
 # The current implementation relies on the SeqHasSite table
 # and ignores the identifier.
 # Returns a hash of position (1-based) => comment
 sub idToSites($$$$$) {
   my ($dbh, $blastDir, $hasSitesDb, $idIn, $seqIn) = @_;
-  my $sites = $dbh->selectall_arrayref(qq{SELECT * from SeqHasSite JOIN Site USING (db,id,chain)
-                                             WHERE seqHash = ? AND seqLength = ?
-                                             ORDER BY db,id,chain,ligandId,posFrom,posTo},
-                                          { Slice => {} },
-                                       md5_hex($seqIn), length($seqIn));
+  my $sites = idToSiteRows($dbh, $blastDir, $hasSitesDb, $idIn, $seqIn);
   my %sitePos = (); # position to list of [ ligandId, comment ]
   foreach my $site (@$sites) {
     foreach my $i ($site->{posFrom} .. $site->{posTo}) {
