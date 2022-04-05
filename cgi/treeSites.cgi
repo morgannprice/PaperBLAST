@@ -1599,7 +1599,8 @@ if ($posSet) {
         if exists $alnDesc{$id} && $alnDesc{$id} ne "";
       $desc .= " (has $leafHas{$node})" if @alnPos > 0;
       $idShow = qq{<tspan>$idShow</tspan><tspan style="font-size:80%;"> $desc</tspan>};
-      $idShow = a({-href => $idInfo{$id}{URL}, -target => "_blank" }, $idShow) if $idInfo{$id}{URL};
+      $idShow = a({-href => "$nodeLink{$node}", -target => "_blank" }, $idShow)
+        if $nodeLink{$node};
       push @svg, qq{<text text-anchor="left" dominant-baseline="middle" x="$xLabel" y="$nodeY->{$node}" ><title>$nodeTitle{$node}</title>$idShow</text>};
     }
     push @svg, "</g>";
