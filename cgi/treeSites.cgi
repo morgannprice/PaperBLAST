@@ -136,7 +136,11 @@ print
   start_html(-title => "Sites on a Tree",
              -style => { 'src' => "../static/treeSites.css" },
              -script => [{ -type => "text/javascript", -src => "../static/treeSites.js"}]),
-  h2("Sites on a Tree"),
+  div({-style => "background-color: #40C0CB; display: block; position: absolute; top: 0px; left: -1px; width: 100%; padding: 0.25em; z-index: 400;"},
+      h2({-style => "margin:0em;"},
+         a({-href => "treeSites.cgi",
+            -style => "color: gold; font-family: 'Montserrat', sans-serif; font-style:italic; text-shadow: 1px 1px 1px #000000; text-decoration: none;"}, "Sites on a Tree",small("(beta)")))),
+  p("&nbsp;"),
   "\n";
 autoflush STDOUT 1; # show preliminary results
 
@@ -346,9 +350,8 @@ if (defined $query && $query ne "") {
     if @keep > 0;
 
   print addSeqsForm($seqsId),
-    p("Or", a({-href => "treeSites.cgi"}, "start over")),
-    end_html;
-  exit(0);
+    p("Or", a({-href => "treeSites.cgi"}, "start over"));
+  finish_page();
 } # end homologs mode
 
 #else
@@ -548,15 +551,14 @@ if ($seqsSet) {
     print addSeqsForm($seqsId);
   }
   print p("Or", a{-href => "treeSites.cgi"}, "start over");
-  print end_html;
-  exit(0);
+  finish_page();
 }
 
 # else
 if (!$alnSet) {
   # Show the initial form to upload an alignment or sequences
   print
-    p("View a phylogenetic tree along with selected sites from a protein alignment.",
+    p("<i>Sites on a Tree</i> shows a phylogenetic tree along with selected sites from a protein alignment.",
       a({-href => "treeSites.cgi?alnId=DUF1080&treeId=DUF1080&tsvId=DUF1080&anchor=BT2157&pos=134,164,166",
          -title => "putative active site of the 3-ketoglycoside hydrolase family (formerly DUF1080)" },
         "See example.")),
@@ -586,8 +588,7 @@ if (!$alnSet) {
     p("Or try",
       a({-href => "sites.cgi" }, "SitesBLAST").":",
       "find homologs with known functional residues and see if they are conserved");
-  print end_html;
-  exit(0);
+  finish_page()
 }
 
 # else load the alignment
@@ -728,8 +729,7 @@ if (! $treeSet && param('buildTree')) {
     p("Rerooted the tree to minimize its depth (midpoint rooting)."),
     p(a{ -href => "treeSites.cgi?alnId=$alnId&treeId=$treeId"},
       "View the tree");
-  print end_html;
-  exit(0);
+  finish_page()
 } # end tree building mode
 
 die unless $alnId;
@@ -847,8 +847,7 @@ if (param('pattern')) {
   $baseURL .= "&posSet=".param('posSet') if param('posSet');
   print p(a({-href => $URL}, param('treeId') ? "Back to tree" : "Back to alignment"));
   print p("Or", a{-href => "treeSites.cgi"}, "start over");
-  print end_html;
-  exit(0);
+  finish_page();
 } # end pattern search mode
 
 if (! $treeSet) {
@@ -872,8 +871,7 @@ if (! $treeSet) {
     p("Or upload a rooted tree in newick format:", filefield(-name => 'treeFile', -size => 50)),
     p(submit(-name => "input", -value => "Upload")),
     end_form;
-  print end_html;
-  exit(0);
+  finish_page();
 }
 
 if (defined param('showId') && param('showId') ne "") {
@@ -943,8 +941,7 @@ if (defined param('showId') && param('showId') ne "") {
   print h3("Aligned sequence"), pre(">".$id."\n".$alnSeq);
 
   print p(a({-href => $baseURL}, param('treeId') ? "Back to tree" : "Back to alignment"));
-  print end_html;
-  exit(0);
+  finish_page();
 } # end showId mode
 
 
@@ -1605,8 +1602,7 @@ if ($posSet) {
              "</SVG>",
              "</DIV>");
 } # end tree+sites rendering mode
-print end_html;
-exit(0);
+finish_page();
 
 sub handleTsvLines {
   my @lines = @_;
@@ -1812,7 +1808,7 @@ sub addSeqsForm($) {
     hidden(-name => 'seqsId', -default => $seqsId, -override => 1),
     "Add sequences from UniProt, PDB, RefSeq, or MicrobesOnline (separate identifiers with commas or spaces):",
     br(),
-    textfield(-name => "addSeq", -default => "", -size => 50, -maxLength => 1000),
+    textfield(-name => "addSeq", -override => 1, -default => "", -size => 50, -maxLength => 1000),
     br(),
     submit(-name => "Add"),
     end_form,
