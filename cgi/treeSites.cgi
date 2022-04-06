@@ -565,7 +565,7 @@ if (!$alnSet) {
         "example").").",
       "Or, it can show the alignment of all known functional residues",
       "(".a({-href => "treeSites.cgi?alnId=BT2402&treeId=BT2402&tsvId=BT2402&posSet=functional&anchor=BT2402",
-             -title => "functional residues for phosphoglycerate mutases and alternative homoserine kinases"},
+             -title => "functional residues of phosphoglycerate mutases and alternative homoserine kinases"},
             "example").")."),
     p("The first step is to search for characterized homologs of your sequence, or to upload your sequences."),
     start_form(-name => 'query', -method => 'POST', -action => 'treeSites.cgi'),
