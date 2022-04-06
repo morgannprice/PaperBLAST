@@ -271,9 +271,14 @@ if (defined $query && $query ne "") {
   print p("All hits are nearly identical to the query")
     if $minIdentity  >= 95;
 
-  # For now, just show a table of results, and add a link to align them
+  # Show the results, and add a link to align them
   foreach my $row (@keep) {
-    print p($row->{identity}."% identity", $row->{subject}, );
+    my @genes = &UniqToGenes($dbh, $row->{subject});
+    # curated entries only
+    my @genes2 = grep exists $_->{db}, @genes;
+    @genes = @genes2 if @genes2 > 0;
+    my @parts = map GeneToHtmlLine($_), @genes;
+    print p($row->{identity}."% identity to", join(";<BR>", @parts));
   }
 
   # Fetch the sequences
