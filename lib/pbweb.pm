@@ -183,9 +183,10 @@ sub SubjectToGene($$) {
     $gene->{pmIds} = $dbh->selectcol_arrayref("SELECT pmId FROM CuratedPaper WHERE db = ? AND protId = ?",
                                               {}, $db, $protId);
     return $gene;
-  } else { # look in Gene table
-    my $gene = $dbh->selectrow_hashref("SELECT * FROM Gene WHERE geneId = ?", {}, $subjectId);
-    die "Unrecognized gene $subjectId" unless defined $gene;
+  }
+  # else look in Gene table or HasSites
+  my $gene = $dbh->selectrow_hashref("SELECT * FROM Gene WHERE geneId = ?", {}, $subjectId);
+  if ($gene) {
     $gene->{subjectId} = $subjectId;
     $gene->{priority} = 6; # literature mined is lowest
     if ($subjectId =~ m/^VIMSS(\d+)$/) {
@@ -196,27 +197,56 @@ sub SubjectToGene($$) {
       $gene->{URL} = "http://www.ncbi.nlm.nih.gov/protein/$subjectId";
       $gene->{source} = "RefSeq";
     } elsif ($subjectId =~ m/^[A-Z][A-Z0-9]+$/) { # SwissProt/TREMBL
-      $gene->{URL} = "http://www.uniprot.org/uniprot/$subjectId";
+      $gene->{URL} = "https://www.uniprot.org/uniprot/$subjectId";
       $gene->{source} = "SwissProt/TReMBL";
     } else {
       die "Cannot build a URL for subject $subjectId";
     }
-
-    my $papers = $dbh->selectall_arrayref(qq{ SELECT DISTINCT * FROM GenePaper
+  } elsif ($subjectId =~ m/^[a-zA-Z]+:/) {
+    # Look in HasSites. This only works for ids like SwissProt:P90754 or PDB:1t0b:A
+    my @parts = split /:/, $subjectId;
+    die "Invalid subject $subjectId is not in Gene or HasSite"
+      unless @parts >= 2 && @parts <= 3;
+    my ($db, $id, $chain) = @parts;
+    $chain = "" if !defined $chain;
+    $gene = $dbh->selectrow_hashref("SELECT * FROM HasSites WHERE db = ? AND id = ? AND chain = ?",
+                                    {}, $db, $id, $chain);
+    die "Cannot find $subjectId in Gene or HasSites table" unless $gene;
+    $gene->{subjectId} = $subjectId;
+    $gene->{source} = $db;
+    $gene->{protein_length} = $gene->{length};
+    if ($db eq "SwissProt") {
+      $gene->{URL} = "https://www.uniprot.org/uniprot/$id";
+    } elsif ($db eq "PDB") {
+      $gene->{URL} = "https://rcsb.org/structure/$id";
+    } else {
+      die "Cannot build a URL for subject $subjectId -- unhandled db $db";
+    }
+    $gene->{priority} = 4.5; # above literature mined
+  } else {
+    die "Cannot handle subject $subjectId not in Gene table";
+  }
+  my $papers = $dbh->selectall_arrayref(qq{ SELECT DISTINCT * FROM GenePaper
                                               LEFT JOIN PaperAccess USING (pmcId,pmId)
                                               WHERE geneId = ?
                                               ORDER BY year DESC },
-                                          { Slice => {} }, $subjectId);
-    $gene->{papers} = $papers;
+                                        { Slice => {} }, $subjectId);
+  $gene->{papers} = $papers;
 
-    # set up showName
-    my @terms = map { $_->{queryTerm} } @$papers;
-    my %terms = map { $_ => 1 } @terms;
-    @terms = sort keys %terms;
-    $gene->{showName} = join(", ", @terms) if !defined $gene->{showName};
-
-    return $gene;
+  # set up showName
+  my @terms = map { $_->{queryTerm} } @$papers;
+  my %terms = map { $_ => 1 } @terms;
+  @terms = sort keys %terms;
+  if (!defined $gene->{showName}) {
+    $gene->{showName} = join(", ", @terms);
+    if ($gene->{showName} eq "") {
+      # for HasSites entries, there won't be any papers
+      $gene->{showName} = $subjectId;
+      $gene->{showName} =~ s/^[^:]+://;
+      $gene->{showName} =~ s/://g;
+    }
   }
+  return $gene;
 }
 
 my $li_with_style = qq{<LI style="list-style-type: none;" margin-left: 6em; >};
