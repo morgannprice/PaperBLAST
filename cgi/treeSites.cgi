@@ -139,7 +139,7 @@ print
   div({-style => "background-color: #40C0CB; display: block; position: absolute; top: 0px; left: -1px; width: 100%; padding: 0.25em; z-index: 400;"},
       h2({-style => "margin:0em;"},
          a({-href => "treeSites.cgi",
-            -style => "color: gold; font-family: 'Montserrat', sans-serif; font-style:italic; text-shadow: 1px 1px 1px #000000; text-decoration: none;"}, "Sites on a Tree",small("(beta)")))),
+            -style => "color: gold; font-family: 'Montserrat', sans-serif; font-style:italic; text-shadow: 1px 1px 1px #000000; text-decoration: none;"}, "Sites on a Tree"))),
   p("&nbsp;"),
   "\n";
 autoflush STDOUT 1; # show preliminary results
@@ -568,7 +568,7 @@ if (!$alnSet) {
       "(".a({-href => "treeSites.cgi?alnId=DUF1080&treeId=DUF1080&tsvId=DUF1080&anchor=BT2157&pos=134,164,166",
          -title => "putative active site of the 3-ketoglycoside hydrolase family" },
         "example").").",
-      "Or, it can show the alignment of all known functional residues",
+      "Or, it can show all the known functional residues",
       "(".a({-href => "treeSites.cgi?alnId=BT2402&treeId=BT2402&tsvId=BT2402&posSet=functional&anchor=BT2402",
              -title => "functional residues of phosphoglycerate mutases and alternative homoserine kinases"},
             "example").")."),
@@ -1180,6 +1180,12 @@ foreach my $node (@showLeaves) {
   $nodeTitle{$node} = $title;
   $nodeLink{$node} = $baseURL."&showId=$id";
 }
+foreach my $node (@$nodes) {
+  if (! $moTree->is_Leaf($node)) {
+    my $id = $moTree->id($node);
+    $nodeTitle{$node} = $id if $id ne "";
+  }
+}
 
 my $posSet = param('posSet');
 if ($posSet) {
@@ -1414,7 +1420,7 @@ if ($posSet) {
     push @drawing, "Position numbering is from " . encode_entities($anchorId) . ".";
   }
   print
-    div({-style => "float:left; width:60%; margin-right:3em;"},
+    div({-style => "float:left; width:60%;"},
         "Or see",
         $posSetLinks{functional}, "positions, see",
         $posSetLinks{filtered}, "positions, or see",
@@ -1804,7 +1810,9 @@ sub renderTree {
     my $title = $nodeTitle->{$node};
     $circle .= "<TITLE>$title</TITLE>" if defined $title && $title ne "";
     $circle .= "</circle>";
-    $circle = qq{<A xlink:href="$nodeLink->{$node}" target="_blank">$circle</A>}
+    my $targetSpec = "";
+    $targetSpec = qq{target="_blank"} if $moTree->is_Leaf($node);
+    $circle = qq{<A xlink:href="$nodeLink->{$node}" $targetSpec>$circle</A>}
       if ! $nodeClick->{$node} && $nodeLink->{$node};
 
     push @out, $circle;
