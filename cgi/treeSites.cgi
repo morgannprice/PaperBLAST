@@ -558,10 +558,10 @@ if ($seqsSet) {
 if (!$alnSet) {
   # Show the initial form to upload an alignment or sequences
   print
-    p("<i>Sites on a Tree</i> shows a phylogenetic tree along with selected sites from a protein alignment.",
-      a({-href => "treeSites.cgi?alnId=DUF1080&treeId=DUF1080&tsvId=DUF1080&anchor=BT2157&pos=134,164,166",
+    p("<i>Sites on a Tree</i> shows a phylogenetic tree for a protein family along with selected sites from the alignment",
+      "(".a({-href => "treeSites.cgi?alnId=DUF1080&treeId=DUF1080&tsvId=DUF1080&anchor=BT2157&pos=134,164,166",
          -title => "putative active site of the 3-ketoglycoside hydrolase family (formerly DUF1080)" },
-        "See example.")),
+        "example").")."),
     p("The first step is to search for characterized homologs of your sequence, or to upload your sequences."),
     start_form(-name => 'query', -method => 'POST', -action => 'treeSites.cgi'),
     p(b("Enter a protein sequence in FASTA or Uniprot format,",
@@ -949,6 +949,14 @@ if (defined param('showId') && param('showId') ne "") {
     p(a({ -href => "http://www.ebi.ac.uk/thornton-srv/databases/cgi-bin/pdbsum/FindSequence.pl?pasted=$seq",
           -title => "Find similar proteins with known structures (PDBsum)"},
         "Search structures")),
+    qq{<SCRIPT src="https://fit.genomics.lbl.gov/d3js/d3.min.js"></SCRIPT>
+       <SCRIPT src="https://fit.genomics.lbl.gov/images/fitblast.js"></SCRIPT>},
+    p("Fitness BLAST:", qq{<SPAN ID="fitblast_short"><SMALL>loading...</SMALL></SPAN>}),
+    qq{<SCRIPT>
+         var server_root = "https://fit.genomics.lbl.gov/";
+         var seq = "$seq";
+         fitblast_load_short("fitblast_short", server_root, seq);
+       </SCRIPT>},
     p("Predict transmembrane helices and signal peptides:",
       a({-href => "http://fit.genomics.lbl.gov/cgi-bin/myPhobius.cgi?name=${id}&seq=${seq}"},
         "Phobius")),
