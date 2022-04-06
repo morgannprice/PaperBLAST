@@ -27,6 +27,9 @@ For genomeSearch.cgi to work also requires a usearch executable to be
 in bin/usearch.  Version 10.0 (32-bit) has been tested; later versions
 will probably work as well.
 
+For treeSites.cgi to work also requires executables for MUSCLE 3 and
+FastTree 2 in bin/muscle3 and bin/FastTree.
+
 For hmmSearch.cgi to work also requires static/pfam and
 static/tigrfam:
 
