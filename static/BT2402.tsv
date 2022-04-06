@@ -1,0 +1,10 @@
+id	desc	color	URL
+	BT2402 (red label) belongs to a family of proteins that replace homoserine kinase (thrB) in threonine biosynthesis (green nodes). The phosphate donor is not known. They are related to cofactor-independent phosphoglycerate mutases (blue nodes). The binding sites for two zinc ions are conserved (but not the binding site for calcium).		
+BT2402	alternative homoserine kinase [Bacteroides thetaiotaomicron VPI-5482]	green	https://fit.genomics.lbl.gov/cgi-bin/cofit.cgi?orgId=Btheta&locusId=351930
+HMPREF1058_RS14725	alternative homoserine kinase [Phocaeicola vulgatus CL09T03C04]	green	
+WP_010879247.1	phosphoglycerate mutase, 2,3-bisphosphoglycerate-independent [Archaeoglobus fulgidus ATCC 49558]	blue	https://www.uniprot.org/uniprot/O28523
+VIMSS105237	phosphoglycerate mutase, 2,3-bisphosphoglycerate-independent [Saccharolobus solfataricus]	blue	https://pubmed.ncbi.nlm.nih.gov/12644480/
+VIMSS10219	phosphoglycerate mutase, 2,3-bisphosphoglycerate-independent [Methanocaldococcus jannaschii ATCC 43067]	blue	https://www.uniprot.org/uniprot/Q59007
+P58814	phosphoglycerate mutase, 2,3-bisphosphoglycerate-independent [Pyrococcus furiosus ATCC 43587]	blue	https://www.uniprot.org/uniprot/P58814
+PDB_2zkt_B	structure of phosphoglycerate mutase PH0037 [Pyrococcus horikoshii]	blue	https://www.rcsb.org/structure/2ZKT
+BRENDA__A0A1D3TXG7	putative phosphoglycerate mutase [Anaerobium acetethylicum]	orange	https://pubmed.ncbi.nlm.nih.gov/28004884/

@@ -558,10 +558,15 @@ if ($seqsSet) {
 if (!$alnSet) {
   # Show the initial form to upload an alignment or sequences
   print
-    p("<i>Sites on a Tree</i> shows a phylogenetic tree for a protein family along with selected sites from the alignment",
+    p(i("Sites on a Tree"),
+      "shows a phylogenetic tree for a protein family along with the sites you choose",
       "(".a({-href => "treeSites.cgi?alnId=DUF1080&treeId=DUF1080&tsvId=DUF1080&anchor=BT2157&pos=134,164,166",
-         -title => "putative active site of the 3-ketoglycoside hydrolase family (formerly DUF1080)" },
-        "example").")."),
+         -title => "putative active site of the 3-ketoglycoside hydrolase family" },
+        "example").").",
+      "Or, it can show the alignment of all known functional residues",
+      "(".a({-href => "treeSites.cgi?alnId=BT2402&treeId=BT2402&tsvId=BT2402&posSet=functional&anchor=BT2402",
+             -title => "functional residues for phosphoglycerate mutases and alternative homoserine kinases"},
+            "example").")."),
     p("The first step is to search for characterized homologs of your sequence, or to upload your sequences."),
     start_form(-name => 'query', -method => 'POST', -action => 'treeSites.cgi'),
     p(b("Enter a protein sequence in FASTA or Uniprot format,",
@@ -1223,10 +1228,12 @@ if ($posSet) {
     push @links, join(" ", "see", $posSetLinks{$posSetArg}, "positions")
       unless $posSet eq $posSetArg || ($posSetArg eq "functional" && scalar(keys %function) == 0);
   }
+  my @leftContent = ("Or", join(", ", @links).",",
+                     "or", a({-href => $baseURL}, "choose"), "positions.");
+  push @leftContent, p({-style => "font-size:90%;"}, "Comment:", encode_entities($topText))
+                if defined $topText && $topText ne "";
   print
-    div({-style => "float:left; width:60%"},
-        "Or", join(", ", @links).",",
-        "or", a({-href => $baseURL}, "choose"), "positions"),
+    div({-style => "float:left; width:60%;"}, @leftContent),
     div({-style => "float:right; width:40%;"}, $patternSearchForm),
     div({-style => "clear:both; height:0;"}); # clear the floats
 
@@ -1402,7 +1409,7 @@ if ($posSet) {
     push @drawing, "Position numbering is from " . encode_entities($anchorId) . ".";
   }
   print
-    div({-style => "float:left; width:60%"},
+    div({-style => "float:left; width:60%; margin-right:3em;"},
         "Or see",
         $posSetLinks{functional}, "positions, see",
         $posSetLinks{filtered}, "positions, or see",
@@ -1411,7 +1418,7 @@ if ($posSet) {
     div({-style => "float:right; width:40%"},
               $patternSearchForm,
               start_form( -onsubmit => "return leafSearch();"),
-              "Highlight matching proteins: ", br(),
+              "Highlight by annotation: ", br(),
               textfield(-name => 'query', -id => 'query', -size => 20),
               " ",
               button(-name => 'Match', -onClick => "leafSearch()"),
