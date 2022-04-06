@@ -98,7 +98,9 @@ unless (defined $seq) {
       br(),
       textarea( -name  => 'query', -value => '', -cols  => 70, -rows  => 10 )),
     p(submit('Search'), reset()),
-    end_form;
+    end_form,
+    p("Or try", a({-href => "treeSites.cgi", -title =>"Sites on a Tree: view functional residues in an alignment"},
+                  "Sites on a Tree"));
   finish_page();
   exit(0);
 }
@@ -108,6 +110,7 @@ $header = sequenceToHeader($seq) unless $hasDef;
 $query = ">$header\n$seq\n";
 
 print p("Comparing $header to proteins with known functional sites using BLASTp with E &le; $maxE."),
+  p("Or try", a({-href => "treeSites.cgi?query=".uri_escape($query)}, "Sites on a Tree")),
   "\n";
 open(my $fhFaa, ">", $seqFile) || die "Cannot write to $seqFile\n";
 print $fhFaa ">$header\n$seq\n";
