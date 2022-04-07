@@ -131,6 +131,15 @@ my %taylor = split /\s+/,
 my %colors = split /\s+/,
   qq{D #FB9A99 E #E31A1C N #CCE6FF Q #A7C9EC K #81ADD9 R #5892C7 H #1F78B4 F #FDBF6F W #FFA043 Y #FF7F00 P #FFFF99 M #DBAB5E C #B15928 G #E6FFE6 A #BDE7B7 V #93D089 L #68B85C I #33A02C S #CAB2D6 T #6A3D9A - #555555};
 
+my $biolipLink = a({-href => "https://zhanggroup.org/BioLiP/",
+                    -title => "BioLiP: ligand-protein binding database"},
+                   "BioLiP");
+my $siteSources = join(" ", $biolipLink,
+                       "or",
+                       a({-href => "https://www.expasy.org/resources/uniprotkb-swiss-prot",
+                          -title => "sequence features in SwissProt"},
+                         "SwissProt"));
+
 print
   header(-charset => 'utf-8'),
   start_html(-title => "Sites on a Tree",
@@ -908,7 +917,7 @@ if (defined param('showId') && param('showId') ne "") {
   my $id2 = $id; $id2 =~ s/_/:/g;
   my $function = idToSites($dbh, "../bin/blast", "../data/hassites.faa", $id2, $seq);
   if (keys %$function == 0) {
-    print p("No known functional residues");
+    print p("No known functional residues in $siteSources.");
   } else {
     print h3("Functional residues");
     foreach my $pos (sort {$a<=>$b} keys %$function) {
@@ -923,11 +932,12 @@ if (defined param('showId') && param('showId') ne "") {
       next if exists $seen{$db}{$id};
       $seen{$db}{$id} = 1;
       if ($db eq "SwissProt") {
-        print p("from",
-                a({-href => "https://www.uniprot.org/uniprot/$id", -title => "SwissProt curators" }, $id));
+        print p("from SwissProt entry",
+                a({-href => "https://www.uniprot.org/uniprot/$id" }, $id));
       } elsif ($db eq "PDB") {
-        print p("from",
-                a({-href => "https://www.rcsb.org/structure/".uc($id), -title => "protein structure (BioLiP)"}, $id));
+        print p("from protein structure",
+                a({-href => "https://www.rcsb.org/structure/".uc($id), -title => "Protein Data Bank (PDB)"}, $id),
+                "via", $biolipLink);
       } else {
         warning("Unknown database $db");
       }
@@ -1213,10 +1223,11 @@ if ($posSet) {
       }
     }
     @alnPos = sort { $a <=> $b } (keys %alnPos);
-    if (@alnPos > 0){ 
-      print p("Showing", scalar(@alnPos), "alignment positions with known function (in at least one sequence).");
+    if (@alnPos > 0){
+      print p("Showing", scalar(@alnPos),
+              "alignment positions with known function (in at least one sequence) from $siteSources.");
     } else {
-      warning("No functional positions to show.");
+      warning("No functional positions to show from $siteSources.");
     }
   } elsif ($posSet eq "filtered") { # majority non-gaps
     my $nSeq = scalar(keys %alnSeq);
