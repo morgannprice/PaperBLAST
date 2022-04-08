@@ -1211,7 +1211,8 @@ if ($posSet) {
   my $nPosFunction = 0;
   foreach my $id (keys %alnSeq) {
     my $id2 = $id; $id2 =~ s/_/:/g;
-    my $seq = $alnSeq{$id}; $seq =~ s/-//g;
+    # lower-case in alignment will prevent exact matching
+    my $seq = uc($alnSeq{$id}); $seq =~ s/-//g;
     my $function = idToSites($dbh, "../bin/blast", "../data/hassites.faa", $id2, $seq);
     $function{$id} = $function if scalar(keys %$function);
     $nPosFunction += scalar(keys %$function);
@@ -1237,13 +1238,13 @@ if ($posSet) {
   } elsif ($posSet eq "filtered") { # majority non-gaps
     my $nSeq = scalar(keys %alnSeq);
     for (my $i = 0; $i < $alnLen; $i++) {
-      my $nGap = 0;
+      my $nFilter = 0; # number of lower-case or gap characters
       foreach my $alnSeq (values %alnSeq) {
-        $nGap++ if substr($alnSeq, $i, 1) eq "-";
+        $nFilter++ if substr($alnSeq, $i, 1) =~ m/[a-z-]/;
       }
-      push @alnPos, $i unless $nGap > $nSeq/2;
+      push @alnPos, $i unless $nFilter > $nSeq/2;
     }
-    print p("Showing", scalar(@alnPos), "alignment positions (of $alnLen) that are less than half gaps");
+    print p("Showing", scalar(@alnPos), "alignment positions (of $alnLen) that are less than half gaps or lower-case");
   } elsif ($posSet eq "all") {
     @alnPos = 0..($alnLen-1);
     print p("Showing all", scalar(@alnPos), "alignment positions.");
