@@ -1193,7 +1193,7 @@ foreach my $node (@showLeaves) {
 foreach my $node (@$nodes) {
   if (! $moTree->is_Leaf($node)) {
     my $id = $moTree->id($node);
-    $nodeTitle{$node} = $id if $id ne "";
+    $nodeTitle{$node} = $id if defined $id && $id ne "";
   }
 }
 
@@ -1639,8 +1639,8 @@ if ($posSet) {
     foreach my $node (@showLeaves) {
       my $id = $moTree->id($node);
       my $idShow = encode_entities($id);
-      my $desc = encode_entities($alnDesc{$id})
-        if exists $alnDesc{$id} && $alnDesc{$id} ne "";
+      my $desc = "";
+      $desc = encode_entities($alnDesc{$id}) if exists $alnDesc{$id} && $alnDesc{$id} ne "";
       $desc .= " (has $leafHas{$node})" if @alnPos > 0;
       $idShow = qq{<tspan>$idShow</tspan><tspan style="font-size:80%;"> $desc</tspan>};
       $idShow = a({-href => "$nodeLink{$node}", -target => "_blank" }, $idShow)
