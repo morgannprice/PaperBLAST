@@ -470,28 +470,32 @@ sub ParseClustal(@) {
   return \%seqs;
 }
 
-# Given a collection of lines, returns a hash of id to aligned sequence
+# Given a collection of lines, returns two hashes: id to aligned sequence and id to desc
 # Does not check if sequences are the correct length or if an identifier is repeated
 # On an error, returns undef
 sub ParseStockholm(@) {
   my (@lines) = @_;
   my $header = shift @lines;
-  return undef unless $header =~ m/^# STOCKHOLM/;
+  return () unless $header =~ m/^# STOCKHOLM/;
 
-  my %seq = ();
+  my %seq;
+  my %desc;
   foreach my $line (@lines) {
-    next if $line =~ m/^#/;
     $line =~ s/[\r\n]+$//;
     next if $line eq "";
     if ($line eq "//") {
       last;
       next;
     }
+    $desc{$1} = $2
+      if $line =~ m/^#=GS (\S+) +DE +(.*)$/;
+    next if $line =~ m/^#/;
+
     $line =~ m/^(\S+)\s+(\S+)$/ || return undef;
     my ($id, $seq) = ($1, $2);
     $seq{$id} .= $seq;
   }
-  return \%seq;
+  return (\%seq, \%desc);
 }
 
 # given an aligned sequence, return a hash of

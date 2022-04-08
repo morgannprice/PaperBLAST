@@ -634,22 +634,27 @@ my $topText; # description for empty id, if set in the input tsv
 my $hash;
 if ($hash = ParseClustal(@alnLines)) {
   %alnSeq = %$hash;
-} elsif ($hash = ParseStockholm(@alnLines)) {
-  %alnSeq = %$hash;
 } else {
-  my $alnString = join("\n", @alnLines);
-  open (my $fh, "<", \$alnString);
-  my $state = {};
-  while (my ($id, $seq) = ReadFastaEntry($fh, $state, 1)) {
-    if ($id =~ m/^(\S+)\s(.*)/) {
-      $id = $1;
-      $alnDesc{$id} = $2;
+  my $descHash;
+  ($hash, $descHash) = ParseStockholm(@alnLines);
+  if (defined $hash) {
+    %alnSeq = %$hash;
+    %alnDesc = %$descHash;
+  } else {
+    my $alnString = join("\n", @alnLines);
+    open (my $fh, "<", \$alnString);
+    my $state = {};
+    while (my ($id, $seq) = ReadFastaEntry($fh, $state, 1)) {
+      if ($id =~ m/^(\S+)\s+(.*)/) {
+        $id = $1;
+        $alnDesc{$id} = $2;
+      }
+      fail("Duplicate sequence for " . encode_entities($id))
+        if exists $alnSeq{$id};
+      $alnSeq{$id} = $seq;
     }
-    fail("Duplicate sequence for " . encode_entities($id))
-      if exists $alnSeq{$id};
-    $alnSeq{$id} = $seq;
+    fail(encode_entities($state->{error})) if defined $state->{error};
   }
-  fail(encode_entities($state->{error})) if defined $state->{error};
 }
 fail("No sequences in the alignment")
   if (scalar(keys %alnSeq) == 0);
