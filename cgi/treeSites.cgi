@@ -276,7 +276,7 @@ if (defined $query && $query ne "") {
   print p("Removed hits that are identical to the query, leaving", scalar(@keep))
     if scalar(@keep) < $nOld;
 
-  my $minIdentity = min(map $_->{identity}, @keep);
+  my $minIdentity = min(map $_->{identity}, 0, @keep);
   print p("All hits are nearly identical to the query")
     if $minIdentity  >= 95;
 

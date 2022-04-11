@@ -45,7 +45,7 @@ if ($up) {
   push @errors, "Uploaded file does not start with HMMER3"
     unless ($lines[0] =~ m/^HMMER3/i);
   push @errors, "Uploaded file does not end with a // line"
-    unless ($lines[-1] =~ m!^//\r?\n?!);
+    unless (@lines > 0 && $lines[-1] =~ m!^//\r?\n?!);
   my @endlines = grep m!^//!, @lines;
   push @errors, "Uploaded file has more than one record-ending // line"
     unless @endlines == 1;
@@ -54,9 +54,6 @@ if ($up) {
     unless @namelines > 0;
   push @errors, "Uploaded file has more than one NAME"
     unless @namelines <= 1;
-  my $name = $namelines[0];
-  chomp $name;
-  $name =~ s/^NAME +//;
   if (@errors > 0) {
     print header,
       start_html(-title => "HMM Upload failed"),
@@ -65,6 +62,9 @@ if ($up) {
       a({ -href => "hmmSearch.cgi"}, "Try another search");
     finish_page();
   }
+  my $name = $namelines[0];
+  chomp $name;
+  $name =~ s/^NAME +//;
 
   my $hex = Digest::MD5::md5_hex(@lines);
   my $hmmId = "hex.$hex";
