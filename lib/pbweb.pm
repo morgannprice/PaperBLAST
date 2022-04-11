@@ -989,7 +989,7 @@ sub FormatStepPart($$$$$) {
     $out .= " (" . a({ -href => "genomeSearch.cgi?gdb="
                        . $orgs->{$orgId}{gdb}
                        . "&gid=" . $orgs->{$orgId}{gid}
-                       . "&query=$value",
+                       . "&query=$value&word=1",
                        -title => "Run Curated BLAST" },
                      "search")
       . ")" if $orgId ne "";
