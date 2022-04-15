@@ -452,7 +452,7 @@ my $xfile = "$fnafile.aa6";
 if (! -e $xfile) {
   my $cmd = "$usearch -fastx_findorfs $fnafile -aaout $xfile -orfstyle 7 -mincodons $minCodons";
   system("$cmd >& /dev/null") == 0
-    || die "usearch findorfs failed: $!";
+    || die "usearch findorfs failed:\n$cmd\n$!";
 }
 unlink($seqFile) if $upfile;
 
@@ -578,10 +578,11 @@ sub PrintHits($$$$) {
       AddCuratedInfo($chit); # for the URL and showName fields
       my @showOrgWords = split / /, $chit->{organism};
       @showOrgWords = @showOrgWords[0..1] if @showOrgWords > 2;
-      push @descs, a({-href => $chit->{URL}, -title => "from " . $chit->{db},
+      my $desc = a({-href => $chit->{URL}, -title => "from " . $chit->{db},
                       -onmousedown => loggerjs("curated", $chit->{subjectId}) },
-                     $chit->{showName}) . ": " . $chit->{desc}
-        . " " . small("from " . i(join(" ", @showOrgWords)));
+                     $chit->{showName}) . ": " . $chit->{desc};
+      $desc .= " " . small("from " . i(join(" ", @showOrgWords))) if @showOrgWords;
+      push @descs, $desc;
     }
     my $percentcov = int($row->{coverage} * 100 + 0.5);
     my $clen = $chits->[0]{protein_length};
