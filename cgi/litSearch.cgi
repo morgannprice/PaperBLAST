@@ -328,8 +328,9 @@ if (!defined $seq && ! $more_subjectId) {
 
 
       my $newline = "%0A";
+      my $def2 = $def; $def2 =~ s/[|]/./g;
       my $cdd_url = "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=>"
-        . uri_escape($def) . $newline . $seq;
+        . uri_escape($def2) . $newline . $seq;
       my $sblastURL = "sites.cgi?query=" . uri_escape($query);
       print qq{ <DIV style="float:right; padding-left: 10px; width:25%; background-color: #EEEEEE;">
                 <P>Also see
