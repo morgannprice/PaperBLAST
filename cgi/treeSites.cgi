@@ -948,16 +948,16 @@ if (defined param('showId') && param('showId') ne "") {
       }
     }
   }
-
+  my $defCDD = $id; $defCDD =~ s/[|]/./g;
   print
     h3("Analysis tools"),
     p(a({-href => "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=>${id}$newline$seq"},
         "PaperBLAST"),
       "(search for papers about homologs of this protein)"),
-    p(a({-href => "http://papers.genomics.lbl.gov/cgi-bin/sites.cgi?query=>${id}$newline$seq"},
+    p(a({-href => "http://papers.genomics.lbl.gov/cgi-bin/sites.cgi?query=>$id$newline$seq"},
         "SitesBLAST"),
       "(search for homologs with known functional residues)"),
-    p(a({-href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=>${id}$newline$seq"},
+    p(a({-href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=>${defCDD}$newline$seq"},
         "Search CDD"),
       "(the Conserved Domains Database, which includes COG and superfam)"),
     p(start_form(-name => "PfamForm", -id => "PfamForm",
