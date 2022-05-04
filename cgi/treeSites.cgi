@@ -28,10 +28,11 @@ use DBI;
 # tsvFile or tsvId -- descriptions for the ids (as uploaded file or file id)
 # (This tool automatically saves uploads using alnId, treeId, or tsvId, under their md5 hash)
 # zoom -- an internal node (as numbered by MOTree) to zoom into
+# svg -- output an svg file, not an html page
 #
 # In tree+auto_sites rendering mode, these options are required:
 # alnId, treeId, and posSet=function, filtered, or all
-# Optional: tsvFile, anchor (pos and zoom are ignored)
+# Optional: tsvFile, anchor, svg (pos and zoom are ignored)
 #
 # In showId mode (to show details about a sequence), required fields are:
 # alnId, showId. If tsvId and treeId are set, it uses those as well.
@@ -140,18 +141,27 @@ my $siteSources = join(" ", $biolipLink,
                           -title => "sequence features in SwissProt"},
                          "SwissProt"));
 
-print
-  header(-charset => 'utf-8'),
-  start_html(-title => "Sites on a Tree",
-             -style => { 'src' => "../static/treeSites.css" },
-             -script => [{ -type => "text/javascript", -src => "../static/treeSites.js"}]),
-  div({-style => "background-color: #40C0CB; display: block; position: absolute; top: 0px; left: -1px; width: 100%; padding: 0.25em; z-index: 400;"},
-      h2({-style => "margin:0em;"},
-         a({-href => "treeSites.cgi",
-            -style => "color: gold; font-family: 'Montserrat', sans-serif; font-style:italic; text-shadow: 1px 1px 1px #000000; text-decoration: none;"}, "Sites on a Tree"))),
-  p("&nbsp;"),
-  "\n";
-autoflush STDOUT 1; # show preliminary results
+my $writeSvg = param('svg'); # writing an SVG instead of HTML
+if ($writeSvg) {
+  print "Content-Type:image/svg+xml\n";
+  print "Content-Disposition: attachment; filename=treeSites.svg\n\n";
+} else {
+  print
+    header(-charset => 'utf-8'),
+    start_html(-title => "Sites on a Tree",
+               -style => { 'src' => "../static/treeSites.css" },
+               -script => [{ -type => "text/javascript", -src => "../static/treeSites.js"}]),
+    div({-style => qq{background-color: #40C0CB; display: block; position: absolute;
+                      top: 0px; left: -1px; width: 100%; padding: 0.25em; z-index: 400; } },
+        h2({-style => "margin:0em;"},
+           a({-href => "treeSites.cgi",
+              -style => qq{color: gold; font-family: 'Montserrat', sans-serif; font-style:italic;
+                           text-shadow: 1px 1px 1px #000000; text-decoration: none;"}},
+              "Sites on a Tree"))),
+    p("&nbsp;"),
+    "\n";
+  autoflush STDOUT 1; # show preliminary results
+}
 
 my $query = param('query');
 
@@ -1154,23 +1164,25 @@ push @downloads, a({ -href => findFile($tsvId, "tsv") }, "table of descriptions"
 my $selfURL = $baseURL;
 $selfURL .= "&zoom=$nodeZoom" if defined $nodeZoom;
 $selfURL .= "&posSet=".param('posSet') if param('posSet');
-print p({-style => "margin-bottom: 0.25em;"},
-         "Download", join(" or ", @downloads),
-        "or see", a({ -href =>  $selfURL }, "permanent link"),
-        "to this page, or",
-        a({ -href => "treeSites.cgi" }, "start over").".");
-print
-  start_form(-method => 'POST', -action => 'treeSites.cgi',
-             -style => "margin-left:3em; margin-top:0;"),
-  @hidden,
-  "Upload descriptions: ", filefield(-name => 'tsvFile', -size => 50),
-  submit(-value => "Go"),
-  br(),
-  small("The table should be tab-delimited with the sequence identifier in the 1st column",
-        "and the description in the 2nd column. Optionally, add fields named",
-        qq{<A HREF="https://www.december.com/html/spec/colorsvg.html">color</A>},
-        "and URL."),
-  end_form;
+unless ($writeSvg) {
+  print p({-style => "margin-bottom: 0.25em;"},
+          "Download", join(" or ", @downloads),
+          "or see", a({ -href =>  $selfURL }, "permanent link"),
+          "to this page, or",
+          a({ -href => "treeSites.cgi" }, "start over").".");
+  print
+    start_form(-method => 'POST', -action => 'treeSites.cgi',
+               -style => "margin-left:3em; margin-top:0;"),
+    @hidden,
+    "Upload descriptions: ", filefield(-name => 'tsvFile', -size => 50),
+    submit(-value => "Go"),
+    br(),
+    small("The table should be tab-delimited with the sequence identifier in the 1st column",
+          "and the description in the 2nd column. Optionally, add fields named",
+          qq{<A HREF="https://www.december.com/html/spec/colorsvg.html">color</A>},
+          "and URL."),
+    end_form;
+}
 
 my $padTop = 70;
 my $treeWidth = 250;
@@ -1203,6 +1215,11 @@ foreach my $node (@$nodes) {
 }
 
 my $posSet = param('posSet');
+
+my @svg = (); # all the objects within the main <g> of the svg
+my @defs = (); # objects to define
+my ($svgWidth, $svgHeight);
+
 if ($posSet) {
   # tree+automatically-selected sites mode
 
@@ -1229,11 +1246,13 @@ if ($posSet) {
       }
     }
     @alnPos = sort { $a <=> $b } (keys %alnPos);
-    if (@alnPos > 0){
-      print p("Showing", scalar(@alnPos),
-              "alignment positions with known function (in at least one sequence) from $siteSources.");
-    } else {
-      warning("No functional positions to show from $siteSources.");
+    unless ($writeSvg) {
+      if (@alnPos > 0) {
+        print p("Showing", scalar(@alnPos),
+                "alignment positions with known function (in at least one sequence) from $siteSources.");
+      } else {
+        warning("No functional positions to show from $siteSources.");
+      }
     }
   } elsif ($posSet eq "filtered") { # majority non-gaps
     my $nSeq = scalar(keys %alnSeq);
@@ -1244,10 +1263,12 @@ if ($posSet) {
       }
       push @alnPos, $i unless $nFilter > $nSeq/2;
     }
-    print p("Showing", scalar(@alnPos), "alignment positions (of $alnLen) that are less than half gaps or lower-case");
+    print p("Showing", scalar(@alnPos), "alignment positions (of $alnLen) that are less than half gaps or lower-case")
+      unless $writeSvg;
   } elsif ($posSet eq "all") {
     @alnPos = 0..($alnLen-1);
-    print p("Showing all", scalar(@alnPos), "alignment positions.");
+    print p("Showing all", scalar(@alnPos), "alignment positions.")
+      unless $writeSvg;
   } else {
     fail("Invalid value of posSet parameter");
   }
@@ -1260,15 +1281,15 @@ if ($posSet) {
                      "or", a({-href => $baseURL}, "choose"), "positions.");
   push @leftContent, p({-style => "font-size:90%;"}, "Comment:", encode_entities($topText))
                 if defined $topText && $topText ne "";
-  print
-    div({-style => "float:left; width:60%;"}, @leftContent),
-    div({-style => "float:right; width:40%;"}, $patternSearchForm),
-    div({-style => "clear:both; height:0;"}); # clear the floats
+  unless ($writeSvg) {
+    print
+      div({-style => "float:left; width:60%;"}, @leftContent),
+      div({-style => "float:right; width:40%;"}, $patternSearchForm),
+      div({-style => "clear:both; height:0;"}); # clear the floats
+  }
 
   # Show key residues and highlight the functional ones, with the tree at the left
   # First, lay out the SVG
-  my @svg = (); # all the objects within the main <g> of the svg
-  my @defs = (); # objects to define
   my $idLeft = $treeWidth + 10;
   my $idWidth = 250;
   my $idRight = $idLeft + $idWidth;
@@ -1313,11 +1334,11 @@ if ($posSet) {
     my $pos1 = $pos + 1;
     push @svg, qq{<text text-anchor="left" transform="translate($xCenter,$labelY) rotate(-45)"><title>Alignment position $pos1</title>#${pos1}</text>};
   }
-  my $svgWidth = $maxX + 40;
+  $svgWidth = $maxX + 40;
 
   my $alnHeight = max(values %$nodeY) - $alnTop;
   my $padBottom = 70;
-  my $svgHeight = max(values %$nodeY) + $padBottom;
+  $svgHeight = max(values %$nodeY) + $padBottom;
   my $alnTop2 = $alnTop - 10;
   my $alnHeight2 = $alnHeight + 20;
   push @defs, qq{<clipPath id="id-region"><rect x="$idLeft" y="$alnTop2" width="$idWidth" height="$alnHeight2" /></clipPath>};
@@ -1331,7 +1352,9 @@ if ($posSet) {
     my $yUp = $y - $rowHeight/2;
     my $rectW = $alnRight - $idLeft;
     push @svg, qq{<g class="alnRow">}; # define a group to contain this row
-    push @svg, qq{<rect y="$yUp" x="$idLeft" width="$rectW" height="$rowHeight" />};
+    # This rectangle is for hovering on rows -- skip if writing svg only
+    push @svg, qq{<rect y="$yUp" x="$idLeft" width="$rectW" height="$rowHeight" />}
+      unless $writeSvg;
     my $alnSeq = $alnSeq{$id};
     my $showId = encode_entities($id);
     $showId .= qq{ <tspan style="font-size:80%;">} . encode_entities($alnDesc{$id}) . "</tspan>";
@@ -1340,7 +1363,7 @@ if ($posSet) {
     my $colorSpec = "";
     $colorSpec = qq{ fill="red" } if $id eq $anchorId;
     $showId = qq{<A xlink:href="$nodeLink{$node}" target="_blank">$showId</A>}
-      if $nodeLink{$node};
+      if $nodeLink{$node} && ! $writeSvg;
     push @svg, qq{<text text-anchor="start" dominant-baseline="middle" clip-path="url(#id-region)" x="$idLeft" y="$y" $colorSpec>$showId</text>};
 
     foreach my $i (0..(scalar(@alnPos)-1)) {
@@ -1376,15 +1399,6 @@ if ($posSet) {
     } # end loop over alignment positions
     push @svg, "</g>";
   } # end loop over ids
-  print join("\n",
-             "<DIV>",
-             qq{<SVG width="$svgWidth" height="$svgHeight" style="position: relative; left: 1em;">},
-             "<defs>", @defs, "</defs>",
-             qq{<g transform="scale(1)">},
-             @svg,
-             "</g>",
-             "</SVG>",
-             "</DIV>");
 } else {
   #tree+choose_sites mode
 
@@ -1415,7 +1429,8 @@ if ($posSet) {
           "in",
           textfield(-name => "anchor", -default => $anchorId, -size => 20, -maxlength => 200),
           submit(-value => "Go"),
-          end_form);
+          end_form)
+    unless $writeSvg;
 
   my $renderLarge = defined $nodeZoom || scalar(@leaves) <= 20;
   my $renderSmall = !defined $nodeZoom && scalar(@leaves) > 100;
@@ -1436,14 +1451,15 @@ if ($posSet) {
   if (@alnPos > 0 && $anchorId ne "") {
     push @drawing, "Position numbering is from " . encode_entities($anchorId) . ".";
   }
-  print
-    div({-style => "float:left; width:60%;"},
-        "Or see",
-        $posSetLinks{functional}, "positions, see",
-        $posSetLinks{filtered}, "positions, or see",
-        $posSetLinks{all}, "positions.",
-        br(), br(), @drawing, @acts),
-    div({-style => "float:right; width:40%"},
+  unless ($writeSvg) {
+    print
+      div({-style => "float:left; width:60%;"},
+          "Or see",
+          $posSetLinks{functional}, "positions, see",
+          $posSetLinks{filtered}, "positions, or see",
+          $posSetLinks{all}, "positions.",
+          br(), br(), @drawing, @acts),
+          div({-style => "float:right; width:40%"},
               $patternSearchForm,
               start_form( -onsubmit => "return leafSearch();"),
               "Highlight by annotation: ", br(),
@@ -1455,8 +1471,8 @@ if ($posSet) {
               br(),
               div({-style => "font-size: 80%; height: 1.5em;", -id => "searchStatement"}, ""),
               end_form),
-    div({-style => "clear:both; height:0;"}); # clear the floats
-
+           div({-style => "clear:both; height:0;"}); # clear the floats
+  }
   # Build an svg
   # Layout:
   # y axis (0 at top):
@@ -1473,8 +1489,8 @@ if ($posSet) {
   my $padMiddle = $renderLarge ? 10 : 50;
   my $padRight = $renderLarge ? 600 : 40; # space for labels
   my $posWidth = 30;
-  my $svgHeight = $padTop + scalar(@showLeaves) * $rowHeight + $padBottom;
-  my $svgWidth = $padLeft + $treeWidth + $padMiddle + scalar(@alnPos) * $posWidth + $padRight;
+  $svgHeight = $padTop + scalar(@showLeaves) * $rowHeight + $padBottom;
+  $svgWidth = $padLeft + $treeWidth + $padMiddle + scalar(@alnPos) * $posWidth + $padRight;
 
   my %layout = layoutTree('tree' => $moTree, 'root' => $rootUse,
                           'leafHeight' => $rowHeight, 'treeTop' => $padTop,
@@ -1491,9 +1507,6 @@ if ($posSet) {
     $leafHas{$leaf} = join("", @val);
     $nodeTitle{$leaf} .= " (has " . join("", @val) . ")";
   }
-
-  my @svg = ();                 # lines in the svg
-  my @defs = ();                # defined objects (if any)
 
   # For leaves, add an invisible horizontal bar with more opportunities for popup text
   # These need to be output first to ensure they are behind everything else
@@ -1660,18 +1673,34 @@ if ($posSet) {
                       'treeWidth' => $treeWidth, 'treeLeft' => 0,
                       'y' => $padTop + scalar(@showLeaves) * $rowHeight + $padBottom * 0.5)
     unless $missingLen;
+} # end tree+sites rendering mode
 
+if ($writeSvg) {
+  print join("\n",
+             qq{<?xml version="1.0"?>},
+             qq{<svg xmlns="http://www.w3.org/2000/svg" width="$svgWidth" height="$svgHeight">},
+             "<defs>", @defs, "</defs>",
+             qq{<g transform="scale(1)">},
+             @svg,
+             "</g>",
+             "</svg>")."\n";
+  exit(0);
+} else {
+  my $x = $svgWidth - 80;
+  my $y = $svgHeight - 10;
   print join("\n",
              "<DIV>",
              qq{<SVG width="$svgWidth" height="$svgHeight" style="position: relative; left: 1em;">},
              "<defs>", @defs, "</defs>",
              qq{<g transform="scale(1)">},
              @svg,
+             qq{<text font-size="small" fill="grey" x="$x" y="$y">},
+             qq{<A xlink:href="$selfURL&svg=1" target="_blank">download SVG</A></text>},
              "</g>",
              "</SVG>",
              "</DIV>");
-} # end tree+sites rendering mode
-finish_page();
+  finish_page();
+}
 
 sub handleTsvLines {
   my @lines = @_;
@@ -1830,7 +1859,7 @@ sub renderTree {
     my $targetSpec = "";
     $targetSpec = qq{target="_blank"} if $moTree->is_Leaf($node);
     $circle = qq{<A xlink:href="$nodeLink->{$node}" $targetSpec>$circle</A>}
-      if ! $nodeClick->{$node} && $nodeLink->{$node};
+      if ! $nodeClick->{$node} && $nodeLink->{$node} && ! $writeSvg;
 
     push @out, $circle;
     if ($moTree->is_Leaf($node) && $showLabels ne "none") {
@@ -1839,8 +1868,7 @@ sub renderTree {
       my $idShow = encode_entities($id);
       my $textStyle = "font-size:80%;";
       $textStyle .= " display:none;" if $showLabels eq "hidden";
-      $idShow = qq{<A xlink:href="$nodeLink->{$node}" target="_blank">$idShow</A>}
-        if $nodeLink->{$node};
+;
       $idShow .= "<TITLE>$title</TITLE>" if defined $title && $title ne "";
       push @out, qq{<text dominant-baseline="middle" x="$xLabel" y="$nodeY->{$node}" text-anchor="left" style="$textStyle" >$idShow</text>};
     }
