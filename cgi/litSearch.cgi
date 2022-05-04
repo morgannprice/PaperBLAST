@@ -89,6 +89,7 @@ Reference into Function (NCBI)">GeneRIF</A>, <A
 HREF="http://www.uniprot.org/" title="The manually annotated and reviewed section of UniProt">UniProtKB/Swiss-Prot</A>,
 <A HREF="http://www.brenda-enzymes.org/index.php" title="The Comprehensive Enzyme Information System">BRENDA</A>,
 <A HREF="http://www.cazy.org/" title="Carbohydrate-Active enZYmes Database">CAZy</A> (as made available by <A HREF="http://csbl.bmb.uga.edu/dbCAN/download.php">dbCAN</A>),
+<A HREF="https://seq2fun.dcmb.med.umich.edu/BioLiP/" title="BioLiP for Ligand-protein binding database">BioLiP</A>,
 <A HREF="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/" title="Database of experimentally characterized protein annotations">CharProtDB</A>,
 <A HREF="http://metacyc.org/" title="MetaCyc Metabolic Pathway Database">MetaCyc</A>,
 <A HREF="http://ecocyc.org" title="EcoCyc: Encyclopedia of E. coli Genes and Metabolic Pathways">EcoCyc</A>,
@@ -126,30 +127,53 @@ unfortunately, unique identifiers such as locus tags are rarely
 provided in abstracts.
 
 <P>PaperBLAST also incorporates manually-curated links between protein sequences and
-articles: <UL> <LI>Proteins from NCBI's RefSeq are included if a
-<A HREF="https://www.ncbi.nlm.nih.gov/gene/about-generif">GeneRIF</A>
-entry links the gene to an article in <A
-HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A><sup>&reg;</sup>.
-GeneRIF also provides a short summary of the article's claim about the
-protein, which is shown instead of a snippet.  <LI>Proteins
-from Swiss-Prot (the curated part of <A HREF="http://uniprot.org">UniProt</A>) are included if the curators
-identified experimental evidence for the protein's function (evidence
-code ECO:0000269). For these proteins, the fields of the Swiss-Prot entry that
-describe the protein's function are shown (with bold headings).
-<LI>Proteins from <A HREF="http://www.brenda-enzymes.org/index.php">BRENDA</A>, a curated database of enzymes, are included if they are linked to a paper in PubMed and their full sequence is known.
-  <LI>Every protein from <A HREF="http://ecocyc.org">EcoCyc</A>, a curated
-database of the proteins in <i> Escherichia coli</i> K-12, is included, regardless
-of whether they are characterized or not.
-<LI>Proteins from the <A HREF="http://metacyc.org">MetaCyc</A> metabolic pathway database are included if they are linked to a paper in PubMed and their full sequence is known.
-<LI>Proteins from the Transport Classification Database (<A HREF="http://www.tcdb.org">TCDB</A>) are included if they have known substrate(s), have reference(s), and are not described as uncharacterized or putative. (Some of the references are not visible on the PaperBLAST web site.)
-<LI>Every protein from <A HREF="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/">CharProtDB</A>, a database of experimentally characterized protein annotations, is included.
-<LI>Proteins from the <A HREF="http://www.cazy.org/">CAZy</A> database of carbohydrate-active enzymes are included if they are associated with an Enzyme Classification number. Even though CAZy does not provide links from individual protein sequences to papers, these should all be experimentally-characterized proteins.
-<LI>Proteins from the <A HREF="http://rebase.neb.com/rebase/rebase.html">REBASE</A> database of restriction enzymes are included if they have known specificity.
-<LI>Every protein with an evidence-based reannotation (based on mutant phenotypes) in the <A HREF="http://fit.genomics.lbl.gov/">Fitness Browser</A> is included.
-  </UL>Except for GeneRIF,
+articles:
+<UL>
+<LI>Proteins from NCBI's RefSeq are included if a
+  <A HREF="https://www.ncbi.nlm.nih.gov/gene/about-generif">GeneRIF</A>
+  entry links the gene to an article in
+  <A  HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A><sup>&reg;</sup>.
+  GeneRIF also provides a short summary of the article's claim about the
+  protein, which is shown instead of a snippet.
+<LI>Proteins from Swiss-Prot (the curated part of <A HREF="http://uniprot.org">UniProt</A>)
+  are included if the curators
+  identified experimental evidence for the protein's function (evidence
+  code ECO:0000269). For these proteins, the fields of the Swiss-Prot entry that
+  describe the protein's function are shown (with bold headings).
+<LI>Proteins from <A HREF="http://www.brenda-enzymes.org/index.php">BRENDA</A>,
+  a curated database of enzymes, are included if they are linked to a paper in PubMed
+  and their full sequence is known.
+<LI>Every protein from
+  <A HREF="https://seq2fun.dcmb.med.umich.edu/BioLiP/">BioLiP</A>,
+  a database
+  of ligand-binding sites and catalytic residues in protein structures, is included. Since BioLiP itself
+  does not include descriptions of the proteins, those are taken from the
+  <A HREF="https://www.rcsb.org/" title="Protein Data Bank">Protein Data Bank</A>.
+<LI>Every protein from <A HREF="http://ecocyc.org">EcoCyc</A>, a curated
+  database of the proteins in <i> Escherichia coli</i> K-12, is included, regardless
+  of whether they are characterized or not.
+<LI>Proteins from the <A HREF="http://metacyc.org">MetaCyc</A> metabolic pathway database
+  are included if they are linked to a paper in PubMed and their full sequence is known.
+<LI>Proteins from the Transport Classification Database (<A HREF="http://www.tcdb.org">TCDB</A>)
+  are included if they have known substrate(s), have reference(s),
+  and are not described as uncharacterized or putative.
+  (Some of the references are not visible on the PaperBLAST web site.)
+<LI>Every protein from <A HREF="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/">CharProtDB</A>,
+  a database of experimentally characterized protein annotations, is included.
+<LI>Proteins from the <A HREF="http://www.cazy.org/">CAZy</A> database of carbohydrate-active enzymes
+  are included if they are associated with an Enzyme Classification number.
+  Even though CAZy does not provide links from individual protein sequences to papers,
+  these should all be experimentally-characterized proteins.
+<LI>Proteins from the <A HREF="http://rebase.neb.com/rebase/rebase.html">REBASE</A> database
+  of restriction enzymes are included if they have known specificity.
+<LI>Every protein with an evidence-based reannotation (based on mutant phenotypes)
+  in the <A HREF="http://fit.genomics.lbl.gov/">Fitness Browser</A> is included.
+</UL>
+<P>Except for GeneRIF,
 the curated entries include a short curated
-description of the protein's function.  Many of these entries also
-link to articles in <A
+description of the protein's function.
+For entries from BioLiP, the protein's function may not be known beyond binding to the ligand.
+Many of these entries also link to articles in <A
 HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A>.
 
 <P>For more information see the
@@ -157,9 +181,10 @@ HREF="http://www.ncbi.nlm.nih.gov/pubmed/">PubMed</A>.
 or the <A HREF="https://github.com/morgannprice/PaperBLAST">code</A>.
 You can download PaperBLAST's database <A HREF="https://github.com/morgannprice/PaperBLAST#download">here</A>.
 
-<P>Changes since the paper was written:
+<P>Changes to PaperBLAST since the paper was written:
 
 <UL>
+<LI>March 2022: incorporated BioLiP.
 <LI>April 2020: incorporated TCDB.
 <LI>April 2019: EuropePMC now returns table entries in their search results. This has expanded PaperBLAST's database, but most of the new entries are of low relevance, and the resulting snippets are often just lists of locus tags with annotations.
 <LI>February 2018: the alignment page reports the conservation of the hit's functional sites (if available from from Swiss-Prot or UniProt)
