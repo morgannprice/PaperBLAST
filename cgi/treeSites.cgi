@@ -1300,7 +1300,7 @@ if ($posSet) {
 
   my %layout = layoutTree('tree' => $moTree,
                           'leafHeight' => $rowHeight, 'treeTop' => $padTop,
-                          'treeLeft' => 0, 'treeWidth' => $treeWidth);
+                          'treeLeft' => 4, 'treeWidth' => $treeWidth);
   my $nodeX = $layout{nodeX};
   my $nodeY = $layout{nodeY};
   my %nodeSize = map { $_ => 4 } @$nodes;
@@ -1313,7 +1313,7 @@ if ($posSet) {
                         'showLabels' => 'none');
   push @svg, scaleBar('maxDepth' => $layout{maxDepth},
                       'treeWidth' => $treeWidth,
-                      'treeLeft' => 0,
+                      'treeLeft' => 4,
                       'y' => max(values %$nodeY) + 0.5 * $padBottom);
 
   # Lay out the x positions for each alignment position
@@ -1494,7 +1494,7 @@ if ($posSet) {
 
   my %layout = layoutTree('tree' => $moTree, 'root' => $rootUse,
                           'leafHeight' => $rowHeight, 'treeTop' => $padTop,
-                          'treeLeft' => 0, 'treeWidth' => $treeWidth);
+                          'treeLeft' => 4, 'treeWidth' => $treeWidth);
   my $nodeX = $layout{nodeX};
   my $nodeY = $layout{nodeY};
   my $maxDepth = $layout{maxDepth};
@@ -1670,10 +1670,10 @@ if ($posSet) {
   }
 
   push @svg, scaleBar('maxDepth' => $maxDepth,
-                      'treeWidth' => $treeWidth, 'treeLeft' => 0,
+                      'treeWidth' => $treeWidth, 'treeLeft' => 4,
                       'y' => $padTop + scalar(@showLeaves) * $rowHeight + $padBottom * 0.5)
     unless $missingLen;
-} # end tree+sites rendering mode
+} # end tree+choose_sites mode
 
 if ($writeSvg) {
   print join("\n",
@@ -1686,16 +1686,16 @@ if ($writeSvg) {
              "</svg>")."\n";
   exit(0);
 } else {
-  my $x = $svgWidth - 80;
-  my $y = $svgHeight - 10;
+  my $x = $svgWidth - 1;
+  my $y = $svgHeight - 2;
   print join("\n",
              "<DIV>",
              qq{<SVG width="$svgWidth" height="$svgHeight" style="position: relative; left: 1em;">},
              "<defs>", @defs, "</defs>",
              qq{<g transform="scale(1)">},
              @svg,
-             qq{<text font-size="small" fill="grey" x="$x" y="$y">},
-             qq{<A xlink:href="$selfURL&svg=1" target="_blank">download SVG</A></text>},
+             qq{<text font-size="smaller" font-family="arial" text-anchor="end" x="$x" y="$y">},
+             qq{<A xlink:href="$selfURL&svg=1">download SVG</A></text>},
              "</g>",
              "</SVG>",
              "</DIV>");
@@ -1804,7 +1804,7 @@ sub layoutTree {
     $nodeY{$node} = $treeTop + $leafHeight * (0.5 + (scalar(@showLeaves)-1) * $rawY / $maxY);
   }
 
-  my %rawX = ($rootUse => $treeLeft);   # Unscaled y, with root at 0
+  my %rawX = ($rootUse => 0);   # Unscaled y, with root at 0
   foreach my $node (@$nodes) {
     next if $node eq $rootUse;
     my $parentX = $rawX{ $moTree->ancestor($node) };
