@@ -33,17 +33,24 @@ my %charToLong = ("A" => "Ala", "C" => "Cys", "D" => "Asp", "E" => "Glu",
                   "T" => "Thr", "V" => "Val", "W" => "Trp", "Y" => "Tyr",
                   "O" => "Pyrrolysine", "U" => "Selenocysteine");
 # These indicate which amino acid goes with which style, i.e. see .aa1 in pbweb::start_page
-my %charSets = ("AILMFWV" => 1,
-                "KR" => 2,
-                "ED" => 3,
-                "NQST" => 4,
-                "C" => 5,
-                "G" => 6,
-                "P" => 7,
-                "HY" => 8);
+my %charSets = ();
+if (lc(param('color')) eq "clustal") {
+  %charSets = ("AILMFWV" => 1,
+               "KR" => 2,
+               "ED" => 3,
+               "NQST" => 4,
+               "C" => 5,
+               "G" => 6,
+               "P" => 7,
+               "HY" => 8);
+} else {
+  %charSets = map { $_ => $_ } split //, "ACDEFGHIKLMNPQRSTVWY";
+  $charSets{"-"} = "Gap";
+}
+
 my %charToSet = ();
 
-my $mygrey = "#EEEEEE";
+my $borderCol = "#EEEEEE";
 
 my $tmpDir = "../tmp";
 my $blastall = "../bin/blast/blastall";
@@ -604,7 +611,7 @@ sub AddMouseOver($$$) {
   return $html unless $iAln >= 0;
   my $id = "Aln${nHit}P${iAln}";
   return span({ -onmouseover => qq{document.getElementById("$id").style.borderColor = "black"},
-                -onmouseout => qq{document.getElementById("$id").style.borderColor = "$mygrey"} },
+                -onmouseout => qq{document.getElementById("$id").style.borderColor = "$borderCol"} },
               $html);
 }
 
