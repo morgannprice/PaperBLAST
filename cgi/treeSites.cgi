@@ -120,19 +120,36 @@ my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || 
 # That directory must include feba.db (sqlite3 database) and aaseqs (in fasta format)
 my $fbdata = "../fbrowse_data"; # path relative to the cgi directory
 
-# The "taylor" color scheme (no longer used) is based on
-# "Residual colours: a proposal for aminochromography" (Taylor 1997)
-# and https://github.com/omarwagih/ggseqlogo/blob/master/R/col_schemes.r
-# I added a dark-ish grey for gaps.
-my %taylor = split /\s+/,
-  qq{D #FB9A99 E #E31A1C N #B2DF8A Q #95CF73 K #78C05C R #58B044 H #33A02C F #FDBF6F W #FFA043 Y #FF7F00 P #FFFF99 M #DBAB5E C #B15928 G #A6CEE3 A #8AB8D7 V #6DA2CC L #4D8DC0 I #1F78B4 S #CAB2D6 T #6A3D9A - #555555};
-
-# Used color brewer to get 6 sets of color pairs and interpolate between them within groups of related a.a.
+# I ued color brewer to get 6 sets of color pairs and interpolate between them within groups of related a.a.
 # The 5 colors within green (GAVLI) and blue (NQKRH) were too difficult to tell apart, so changed
 # the lightest end of these ranges to be more pale.
 # It's still a bit difficult to distinguish arg/his or leu/ile.
-my %colors = split /\s+/,
+# This is the default scheme.
+my %brewerColors = split /\s+/,
   qq{D #FB9A99 E #E31A1C N #CCE6FF Q #A7C9EC K #81ADD9 R #5892C7 H #1F78B4 F #FDBF6F W #FFA043 Y #FF7F00 P #FFFF99 M #DBAB5E C #B15928 G #E6FFE6 A #BDE7B7 V #93D089 L #68B85C I #33A02C S #CAB2D6 T #6A3D9A - #555555};
+
+# The "taylor" color scheme is based on
+# "Residual colours: a proposal for aminochromography" (Taylor 1997)
+# and https://github.com/omarwagih/ggseqlogo/blob/master/R/col_schemes.r
+# I added a dark-ish grey for gaps.
+my %taylorColors = split /\s+/,
+  qq{D #FB9A99 E #E31A1C N #B2DF8A Q #95CF73 K #78C05C R #58B044 H #33A02C F #FDBF6F W #FFA043 Y #FF7F00 P #FFFF99 M #DBAB5E C #B15928 G #A6CEE3 A #8AB8D7 V #6DA2CC L #4D8DC0 I #1F78B4 S #CAB2D6 T #6A3D9A - #555555};
+
+# The usual "Shapely" scheme has amino acid categories, but the Raster3D "shapely" has
+# a different color for each amino acid, see
+# http://acces.ens-lyon.fr/biotic/rastop/help/colour.htm
+# (I modified glycine from white to light grey.)
+my %shapelyColors = split /\s/,
+  qq{A #8CFF8C G #DDDDDD L #455E45 S #FF7042 V #FF8CFF T #B84C00 K #4747B8 D #A00042 I #004C00 N #FF7C70 E #660000 P #525252 R #00007C F #534C42 Q #FF4C4C Y #8C704C H #7070FF C #FFFF70 M #B8A042 W #4F4600 - #555555};
+
+# The color parameter is available for testing, but is not maintained across views
+my $colorParam = lc(param('color'));
+my %colors = %brewerColors;
+if ($colorParam eq "taylor") {
+  %colors = %taylorColors;
+} elsif ($colorParam eq "shapely") {
+  %colors = %shapelyColors;
+}
 
 my $biolipLink = a({-href => "https://zhanggroup.org/BioLiP/",
                     -title => "BioLiP: ligand-protein binding database"},
@@ -166,7 +183,6 @@ if ($writeSvg) {
 }
 
 my $query = param('query');
-
 if (defined $query && $query ne "") {
   # Homologs mode, with 1-sequence input
   my ($id, $seq) = parseSequenceQuery(-query => $query,
