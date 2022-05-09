@@ -47,6 +47,7 @@ use DBI;
 # Optional arguments:
 # trimGaps -- set if positions that are >=50% gaps should be trimmed off
 # trimLower -- set if positions that are >=50% lower case should be trimmed off
+# anchor (ultimately passed to tree viewer)
 #
 # Tree options mode -- an alignment is provided, but not a tree, and buildTree is not set
 #
@@ -54,6 +55,7 @@ use DBI;
 # seqsFile or seqsId -- sequences (not aligned) in fasta format
 # addSeq -- sequence identifier(s) to add
 # buildAln -- if set, does the alignment
+# anchor (ultimately passed to tree viewer)
 #
 # If neither an alignment nor sequences are provided, it shows an input form.
 #
@@ -91,9 +93,9 @@ sub layoutTree;
 # Does not render the scale bar.
 sub renderTree;
 
-# Given a seqsId, return the HTML for the add-sequences form
+# Given a seqsId and anchorId, return the HTML for the add-sequences form
 # (and a link to download the sequences)
-sub addSeqsForm($);
+sub addSeqsForm($$);
 
 # maximum size of posted data, in bytes
 my $maxMB = 25;
@@ -369,11 +371,11 @@ if (defined $query && $query ne "") {
   my @lines = split /\n/, $fasta;
   my $seqsId = savedHash(\@lines, "seqs");
 
-  print p(a({-href => "treeSites.cgi?seqsId=$seqsId" }, 
+  print p(a({-href => "treeSites.cgi?seqsId=$seqsId&anchor=$id" }, 
             "Build an alignment for", encode_entities($id), "and", scalar(@keep), "homologs"))
     if @keep > 0;
 
-  print addSeqsForm($seqsId),
+  print addSeqsForm($seqsId,$id),
     p("Or", a({-href => "treeSites.cgi"}, "start over"));
   finish_page();
 } # end homologs mode
@@ -385,6 +387,8 @@ my $alnSet = param('alnFile') || param('alnId');
 my $treeSet = param('treeFile') || param('treeId');
 
 if ($seqsSet) {
+  # Show alignment options (and add sequences if requested),
+  # or actually build the alignment
   my $seqsId;
   my $fhSeqs;
   if (param('seqsId')) {
@@ -459,11 +463,11 @@ if ($seqsSet) {
     # known sequences => 1
     my %bySeq = map { $seqs{$_} => $_ } keys %seqs;
     if (keys %addSeq > 0) { # adding sequences
+      # Warn if the new sequence is not homologous to any of the previously existing sequences
       $seqsId = undef; # so it is rebuilt below
       my $formatdb = "../bin/blast/formatdb";
       die "No such executable: $formatdb" unless -x $formatdb;
       my $tmpDb = "$tmpPre.db";
-      # Warn if the new sequence is not homologous to any of the previously existing sequences
       my $fh;
       open($fh, ">", $tmpDb) || die "Cannot write to $tmpDb";
       foreach my $id (sort keys %seqs) {
@@ -558,8 +562,11 @@ if ($seqsSet) {
       push @lines, $header, $aln{$id};
     }
     my $alnId = savedHash(\@lines, "aln");
+    my $anchorId = param('anchor');
+    my $anchorOpt = "";
+    $anchorOpt = "&anchor=$anchorId" if defined $anchorId && $anchorId ne "";
     print p("Next",
-            a({-href => "treeSites.cgi?alnId=$alnId"}, "build a tree").".");
+            a({-href => "treeSites.cgi?alnId=$alnId$anchorOpt"}, "build a tree").".");
     print p("Or download",
             a({-href => findFile($seqsId, "seqs") }, "sequences"),
             "or",
@@ -570,9 +577,10 @@ if ($seqsSet) {
       p("Have", a({-href => findFile($seqsId,"seqs")}, scalar(keys %seqs), "sequences")),
       start_form(-name => 'input', -method => 'POST', -action => 'treeSites.cgi'),
       hidden(-name => 'seqsId', -default => $seqsId, -override => 1),
+      hidden(-name => 'anchor'),
       p(submit(-name => "buildAln", -value => "Align with MUSCLE")),
       end_form;
-    print addSeqsForm($seqsId);
+    print addSeqsForm($seqsId, param('anchor'));
   }
   print p("Or", a{-href => "treeSites.cgi"}, "start over");
   finish_page();
@@ -759,10 +767,12 @@ if (! $treeSet && param('buildTree')) {
   unlink($tmpTreeFile);
   my $newick = $moTree->toNewick();
   $treeId = savedHash([$newick], "tree");
+  my $anchorId = param('anchor');
+  my $anchorOpt = "&anchor=$anchorId" if defined $anchorId && $anchorId ne "";
   print
     p("FastTree succeeded."),
     p("Rerooted the tree to minimize its depth (midpoint rooting)."),
-    p(a{ -href => "treeSites.cgi?alnId=$alnId&treeId=$treeId"},
+    p(a{ -href => "treeSites.cgi?alnId=$alnId&treeId=$treeId$anchorOpt"},
       "View the tree");
   finish_page()
 } # end tree building mode
@@ -896,6 +906,7 @@ if (! $treeSet) {
   print
     start_form(-name => 'buildTree', -method => 'POST', -action => 'treeSites.cgi'),
     hidden(-name => 'alnId', -default => $alnId, -override => 1),
+    hidden(-name => 'anchor'),
     p("Compute a tree:"),
     p(checkbox(-name => 'trimGaps', -checked => 1, -value => 1, -label => ''),
       "Trim columns that are &ge;50% gaps"),
@@ -907,6 +918,7 @@ if (! $treeSet) {
   print
     start_form(-name => 'inputTree', -method => 'POST', -action => 'treeSites.cgi'),
     hidden(-name => 'alnId', -default => $alnId, -override => 1),
+    hidden(-name => 'anchor'),
     p("Or upload a rooted tree in newick format:", filefield(-name => 'treeFile', -size => 50)),
     p(submit(-name => "input", -value => "Upload")),
     end_form;
@@ -1901,11 +1913,13 @@ sub scaleBar {
   return @out;
 }
 
-sub addSeqsForm($) {
-  my ($seqsId) = @_;
+sub addSeqsForm($$) {
+  my ($seqsId, $anchorId) = @_;
+  $anchorId = "" if !defined $anchorId;
   return join("\n",
     start_form(-name => 'addSeqs', -method => 'POST', -action => 'treeSites.cgi'),
     hidden(-name => 'seqsId', -default => $seqsId, -override => 1),
+    hidden(-name => 'anchor', -default => $anchorId, -override => 1),
     "Add sequences from UniProt, PDB, RefSeq, or MicrobesOnline (separate identifiers with commas or spaces):",
     br(),
     textfield(-name => "addSeq", -override => 1, -default => "", -size => 50, -maxLength => 1000),
