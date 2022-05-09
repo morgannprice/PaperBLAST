@@ -585,6 +585,8 @@ sub start_page {
 /* for showing protein sequences */
 /* base style, and for unusual items */
 .aa  { background-color: white; }
+
+/* Clustal colors */
 .aa1 { background-color: lightblue; } /* for AILMFWV */
 .aa2 { background-color: red; } /* for KR */
 .aa3 { background-color: magenta; } /* for ED */
@@ -594,21 +596,57 @@ sub start_page {
 .aa7 { background-color: yellow; } /* for P */
 .aa8 { background-color: cyan; } /* for HY */
 
+/* My brewed colors (see sitesTree.cgi for origin) */
+.aaD { background-color: #FB9A99; }
+.aaE { background-color: #E31A1C; }
+.aaN { background-color: #CCE6FF; }
+.aaQ { background-color: #A7C9EC; }
+.aaK { background-color: #81ADD9; }
+.aaR { background-color: #5892C7; }
+.aaH { background-color: #1F78B4; }
+.aaF { background-color: #FDBF6F; }
+.aaW { background-color: #FFA043; }
+.aaY { background-color: #FF7F00; }
+.aaP { background-color: #FFFF99; }
+.aaM { background-color: #DBAB5E; }
+.aaC { background-color: #B15928; }
+.aaG { background-color: #E6FFE6; }
+.aaA { background-color: #BDE7B7; }
+.aaV { background-color: #93D089; }
+.aaL { background-color: #68B85C; }
+.aaI { background-color: #33A02C; }
+.aaS { background-color: #CAB2D6; }
+.aaT { background-color: #6A3D9A; }
+.aaGap { background-color: #EEEEEE; }
+
 /* for showing the alignment line */
 .alnS, .alnS1, .alnS0 { font-size: smaller; }
 .alnS1 { font-weight: bold; color: darkgreen; } /* site, matching */
 .alnS0 { font-weight: bold; color: darkred; } /* site, not matching */
 
+/* pad the characters a little bit */
+.aa, .aa1, .aa2, .aa3, .aa4, .aa5, .aa6, .aa7, .aa8, .aa9,
+.aaD, .aaE, .aaN, .aaQ, .aaK, .aaR, .aaH, .aaF, .aaW, .aaY,
+.aaP, .aaM, .aaC, .aaG, .aaA, .aaV, .aaL, .aaI, .aaS, .aaT, .aaGap,
+.alnS, .alnS1, .alnS0 {
+  padding-left: 1px; padding-right: 1px; font-weight: bold;
+}
+
 /* for an alignment column */
 .alnCol, .alnLabel {
   vertical-align:top; float:left; display:inline-block;
-  margin-top: 1em;
+  margin-top: 1.5em;
   font-family: "Courier New", monospace;
+  font-size: 90%;
 }
-.alnCol { background-color: #EEEEEE; border: solid 1px #EEEEEE; }
+.alnCol { background-color: #EEEEEE;
+  border-width-left: 1px; border-width-right: 1px;
+  border-width-top: 2px; border-width-bottom: 2px;
+  border-color: #EEEEEE; border-style: solid; }
+
 /* In many browsers, the label prevents the columns from wrapping all the way to the left,
    so, make it subtly smaller */
-.alnLabel { margin-right: 0.5em; padding-top: 0.04em; border: none; font-size: 95% }
+.alnLabel { margin-right: 0.5em; padding-top: 0.04em; border: none; font-size: 85% }
 
 END
 ;
