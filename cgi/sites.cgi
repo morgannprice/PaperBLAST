@@ -34,7 +34,7 @@ my %charToLong = ("A" => "Ala", "C" => "Cys", "D" => "Asp", "E" => "Glu",
                   "O" => "Pyrrolysine", "U" => "Selenocysteine");
 # These indicate which amino acid goes with which style, i.e. see .aa1 in pbweb::start_page
 my %charSets = ();
-if (lc(param('color')) eq "clustal") {
+if (param('color') eq "clustal") {
   %charSets = ("AILMFWV" => 1,
                "KR" => 2,
                "ED" => 3,
