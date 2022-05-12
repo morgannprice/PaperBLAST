@@ -1182,7 +1182,7 @@ my @hidden = (hidden( -name => 'alnId', -default => $alnId, -override => 1),
 my $patternSearchForm = join("\n",
   start_form(-method => 'GET', -action => 'treeSites.cgi'),
   @hidden,
-  a({-title => "Find patterns like ASDF, CxxC, or DEA[DH] or in the unaligned sequences" }, "Find sequence pattern:"),
+  a({-title => "Find patterns like NSG, CxxC, or DEA[DH] or in the unaligned sequences" }, "Find sequence pattern:"),
   br(),
   textfield(-name => 'pattern', -size => 20),
   submit(-name => 'Find'),
@@ -1466,10 +1466,10 @@ if ($posSet) {
           end_form)
     unless $writeSvg;
 
-  my $renderLarge = defined $nodeZoom || scalar(@leaves) <= 20;
+  my $renderLarge = defined $nodeZoom || scalar(@leaves) <= 30;
   my $renderSmall = !defined $nodeZoom && scalar(@leaves) > 100;
   my @acts;
-  push @acts, "Hover or click on a leaf for information about that sequence." unless $renderLarge;
+  push @acts, "Hover or click on a leaf for information about that protein." unless $renderLarge;
   push @acts, "Click on an internal node to zoom in to that group." if $renderSmall;
   push @acts, p({-style => "font-size:90%;"}, "Comment:", encode_entities($topText))
                 if defined $topText && $topText ne "";
@@ -1541,7 +1541,7 @@ if ($posSet) {
     my $seq = $alnSeq{$id} || die;
     my @val = map substr($seq, $_, 1), @alnPos;
     $leafHas{$leaf} = join("", @val);
-    $nodeTitle{$leaf} .= " (has " . join("", @val) . ")";
+    $nodeTitle{$leaf} .= " (has " . join("", @val) . ")" if @alnPos > 0;
   }
 
   # For leaves, add an invisible horizontal bar with more opportunities for popup text
@@ -1676,7 +1676,8 @@ if ($posSet) {
       my $id = $moTree->id($node);
       # colored nodes are more visible
       $nodeSize{$node}++ if exists $nodeColor{$node} && $nodeColor{$node} ne "black";
-      $nodeClick{$node} = "leafClick(this)"; # javascript to show the hidden label
+      # javascript to show the hidden label
+      $nodeClick{$node} = "leafClick(this)" unless $renderLarge;
     } else {
       $nodeLink{$node} = "$baseURL&zoom=$node";
     }
@@ -1698,7 +1699,7 @@ if ($posSet) {
       $desc = encode_entities($alnDesc{$id}) if exists $alnDesc{$id} && $alnDesc{$id} ne "";
       $desc .= " (has $leafHas{$node})" if @alnPos > 0;
       $idShow = qq{<tspan>$idShow</tspan><tspan style="font-size:80%;"> $desc</tspan>};
-      $idShow = a({-href => "$nodeLink{$node}", -target => "_blank" }, $idShow)
+      $idShow = qq{<a xlink:href="$nodeLink{$node}" target="_blank">$idShow</a>}
         if $nodeLink{$node};
       push @svg, qq{<text text-anchor="left" dominant-baseline="middle" x="$xLabel" y="$nodeY->{$node}" ><title>$nodeTitle{$node}</title>$idShow</text>};
     }
@@ -1906,6 +1907,8 @@ sub renderTree {
       $textStyle .= " display:none;" if $showLabels eq "hidden";
 ;
       $idShow .= "<TITLE>$title</TITLE>" if defined $title && $title ne "";
+      $idShow = qq{<A xlink:href="$nodeLink->{$node}" target="_blank">$idShow</A>}
+        if $nodeLink->{$node} ne "";
       push @out, qq{<text dominant-baseline="middle" x="$xLabel" y="$nodeY->{$node}" text-anchor="left" style="$textStyle" >$idShow</text>};
     }
     push @out, "</g>";
