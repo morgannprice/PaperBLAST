@@ -839,9 +839,10 @@ if (param('pattern')) {
   # pattern search mode
   my $pattern = uc(param('pattern'));
   fail("Invalid pattern: only amino acid characters or X or . are allowed")
-    unless $pattern =~ m/^[.A-Z]+$/;
+    unless $pattern =~ m/^([.A-Z]|\[[A-Z]+\])+$/;
   print p("Searching for sequence matches to $pattern");
   $pattern =~ s/X/./g;
+  my $pattern2 = $pattern; $pattern2 =~ s/\[[A-Z]+\]/./g;
   my $anchorId = param('anchor');
   $anchorId = "" if !defined $anchorId;
 
@@ -851,7 +852,7 @@ if (param('pattern')) {
     my $seq = $aln; $seq =~ s/-//g;
     while ($seq =~ m/$pattern/gi) {
       # pos() returns the 0-based position past end of match; convert to 1-based beginning of match
-      my $pos = pos($seq) - length($pattern) + 1;
+      my $pos = pos($seq) - length($pattern2) + 1;
       push @{ $hits{$id} }, $pos;
       $nFound++;
     }
@@ -875,7 +876,7 @@ if (param('pattern')) {
 
     # Show a table of matches.
     my @rows = ();
-    push @rows, Tr(th("Protein"), th("Position"), th("Matching sequence"));
+    push @rows, Tr(th("Protein"), th("Position"), th("Aligned pos."), th("Matching sequence"));
 
     my $nShow = 0;
     foreach my $id (@ids) {
@@ -892,20 +893,25 @@ if (param('pattern')) {
             $idShow = a({ -href => $idURL }, $id);
           }
           my @matchShow = ();
-          foreach my $offset (0..(length($pattern)-1)) {
+          foreach my $offset (0..(length($pattern2)-1)) {
             my $i = $pos + $offset;
             my $alignI = $seqPosToAlnPos->{$i-1} + 1;
             my $char = substr($seq, $i-1, 1);
             my $color = $colors{uc($char)} || "white";
-            push @matchShow, a({-style => "background-color:$color; font-family:monospace; padding: 0.2em;", -title => "position $i ($alignI in alignment) is $char"}, $char);
+            push @matchShow, a({-style => "background-color:$color; font-family:monospace; padding: 0.2em;",
+                                -title => "position $i ($alignI in alignment) is $char"},
+                               $char);
           }
           push @rows, Tr(td($idShow),
                          td("$pos"."..".($pos+length($pattern)-1)),
+                         td(($seqPosToAlnPos->{$pos-1}+1)
+                            . ".."
+                            . ($seqPosToAlnPos->{$pos+length($pattern2)-2}+1)),
                          td(join("",@matchShow)));
         }
       }
     }
-    print table(@rows);
+    print table({-style => "border-spacing: 5px;"}, @rows);
   } # end else has matches
 
   my $URL = $baseURL;
@@ -1176,7 +1182,7 @@ my @hidden = (hidden( -name => 'alnId', -default => $alnId, -override => 1),
 my $patternSearchForm = join("\n",
   start_form(-method => 'GET', -action => 'treeSites.cgi'),
   @hidden,
-  a({-title => "Find patterns like ASDF or CxxC in the unaligned sequences" }, "Find subsequence:"),
+  a({-title => "Find patterns like ASDF, CxxC, or DEA[DH] or in the unaligned sequences" }, "Find sequence pattern:"),
   br(),
   textfield(-name => 'pattern', -size => 20),
   submit(-name => 'Find'),
