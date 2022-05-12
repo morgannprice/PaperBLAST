@@ -143,7 +143,7 @@ my %shapelyColors = split /\s/,
   qq{A #8CFF8C G #DDDDDD L #455E45 S #FF7042 V #FF8CFF T #B84C00 K #4747B8 D #A00042 I #004C00 N #FF7C70 E #660000 P #525252 R #00007C F #534C42 Q #FF4C4C Y #8C704C H #7070FF C #FFFF70 M #B8A042 W #4F4600 - #555555};
 
 # The color parameter is available for testing, but is not maintained across views
-my $colorParam = lc(param('color'));
+my $colorParam = param('color') || "";
 my %colors = %brewerColors;
 if ($colorParam eq "taylor") {
   %colors = %taylorColors;
@@ -1176,7 +1176,7 @@ my @hidden = (hidden( -name => 'alnId', -default => $alnId, -override => 1),
 my $patternSearchForm = join("\n",
   start_form(-method => 'GET', -action => 'treeSites.cgi'),
   @hidden,
-  "Find a sequence pattern:",
+  a({-title => "Find patterns like ASDF or CxxC in the unaligned sequences" }, "Find subsequence:"),
   br(),
   textfield(-name => 'pattern', -size => 20),
   submit(-name => 'Find'),
@@ -1490,7 +1490,9 @@ if ($posSet) {
           div({-style => "float:right; width:40%"},
               $patternSearchForm,
               start_form( -onsubmit => "return leafSearch();"),
-              "Highlight by annotation: ", br(),
+              a({-title => "Match protein identifiers or descriptions to highlight them" },
+                "Highlight proteins:"),
+              br(),
               textfield(-name => 'query', -id => 'query', -size => 20),
               " ",
               button(-name => 'Match', -onClick => "leafSearch()"),
