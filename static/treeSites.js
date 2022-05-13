@@ -43,10 +43,11 @@ function leafSearch() {
             if (!labels && !alnRows) {
                 title.style.display = "inline";
             }
-            // This looks better, but does not work reliably in chrome, not sure why not:
-            // title.style.fill = "blue";
+            // This looks good, but does not work reliably in chrome, not sure why not
+            title.style.fill = "blue";
             // Works reliably, a bit funny looking
             title.style.stroke = "blue";
+            title.style.strokeWidth = "0.5px";
             nMatch++;
         }
     }
@@ -65,7 +66,8 @@ function matchQuery(queryU, textContent) {
         || content.indexOf("|" + queryU) >= 0
         || content.indexOf("=" + queryU) >= 0
         || content.indexOf("(" + queryU) >= 0
-        || content.indexOf("_" + queryU) >= 0;
+        || content.indexOf("_" + queryU) >= 0
+        || content.indexOf("[" + queryU) >= 0;
 }
 
 function leafClear() {
@@ -74,6 +76,7 @@ function leafClear() {
     var titles = getTitleObjects();
     for (var t of getTitleObjects()) {
         t.style.stroke = null;
+        t.style.fill = null;
         if (!labels && !alnRows) {
             t.style.display = "none";
         }
@@ -87,4 +90,6 @@ function leafClick(o) {
   var textObject = o.parentNode.children[1];
   textObject.style.display = "inline";
   textObject.style.fill = "blue";
+  textObject.style.stroke = "blue";
+  textObject.style.strokeWidth = 0.5;
 }
