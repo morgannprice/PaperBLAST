@@ -1187,6 +1187,19 @@ my $patternSearchForm = join("\n",
   textfield(-name => 'pattern', -size => 20),
   submit(-name => 'Find'),
   end_form);
+my $searchForm = join("\n",
+   start_form( -onsubmit => "return leafSearch();"),
+   a({-title => "Match protein identifiers or descriptions to highlight them" },
+     "Highlight proteins:"),
+   br(),
+   textfield(-name => 'query', -id => 'query', -size => 20),
+   " ",
+   button(-name => 'Match', -onClick => "leafSearch()"),
+   " ",
+   button(-name => 'Clear', -onClick => "leafClear()"),
+   br(),
+   end_form,
+   div({-style => "font-size: 80%; height: 1.5em;", -id => "searchStatement"}, ""));
 
 # Download and upload links at top are the same across both tree+ modes
 my @downloads = ();
@@ -1318,7 +1331,8 @@ if ($posSet) {
   unless ($writeSvg) {
     print
       div({-style => "float:left; width:60%;"}, @leftContent),
-      div({-style => "float:right; width:40%;"}, $patternSearchForm),
+      div({-style => "float:right; width:40%;"},
+          $patternSearchForm, p($searchForm)),
       div({-style => "clear:both; height:0;"}); # clear the floats
   }
 
@@ -1378,8 +1392,8 @@ if ($posSet) {
   push @defs, qq{<clipPath id="id-region"><rect x="$idLeft" y="$alnTop2" width="$idWidth" height="$alnHeight2" /></clipPath>};
 
   # show (clipped) labels and descriptions
-  foreach my $i (0..(scalar(@showLeaves)-1)) {
-    my $node = $showLeaves[$i];
+  push @svg, qq{<g id="alnRows">};
+  foreach my $node (@showLeaves) {
     my $id = $moTree->id($node);
     my $y = $nodeY->{$node};
     die unless defined $y;
@@ -1392,7 +1406,9 @@ if ($posSet) {
     my $alnSeq = $alnSeq{$id};
     my $showId = encode_entities($id);
     $showId .= qq{ <tspan style="font-size:80%;">} . encode_entities($alnDesc{$id}) . "</tspan>";
-    $showId = "<TITLE>" . encode_entities($alnDesc{$id}) . "</TITLE>" . $showId if $alnDesc{$id};
+    # a space at end of title causes the texntContent of the parent <text> to be correct
+    # for the search feature
+    $showId = "<TITLE>" . encode_entities($alnDesc{$id}) . " </TITLE>" . $showId if $alnDesc{$id};
     # Clip the id/description to the $idLeft/$idRight region using clipPath from id-region (defined above)
     my $colorSpec = "";
     $colorSpec = qq{ fill="red" } if $id eq $anchorId;
@@ -1433,6 +1449,7 @@ if ($posSet) {
     } # end loop over alignment positions
     push @svg, "</g>";
   } # end loop over ids
+  push @svg, qq{</g>};
 } else {
   #tree+choose_sites mode
 
@@ -1493,21 +1510,11 @@ if ($posSet) {
           $posSetLinks{filtered}, "positions, or see",
           $posSetLinks{all}, "positions.",
           br(), br(), @drawing, @acts),
-          div({-style => "float:right; width:40%"},
-              $patternSearchForm,
-              start_form( -onsubmit => "return leafSearch();"),
-              a({-title => "Match protein identifiers or descriptions to highlight them" },
-                "Highlight proteins:"),
-              br(),
-              textfield(-name => 'query', -id => 'query', -size => 20),
-              " ",
-              button(-name => 'Match', -onClick => "leafSearch()"),
-              " ",
-              button(-name => 'Clear', -onClick => "leafClear()"),
-              br(),
-              div({-style => "font-size: 80%; height: 1.5em;", -id => "searchStatement"}, ""),
-              end_form),
-           div({-style => "clear:both; height:0;"}); # clear the floats
+      div({-style => "float:right; width:40%;"},
+          $patternSearchForm,
+          p($searchForm,
+             div({-style => "font-size: 80%; height: 1.5em;", -id => "searchStatement"}, ""))),
+      div({-style => "clear:both; height:0;"}); # clear the floats
   }
   # Build an svg
   # Layout:
@@ -1541,7 +1548,6 @@ if ($posSet) {
     my $seq = $alnSeq{$id} || die;
     my @val = map substr($seq, $_, 1), @alnPos;
     $leafHas{$leaf} = join("", @val);
-    $nodeTitle{$leaf} .= " (has " . join("", @val) . ")" if @alnPos > 0;
   }
 
   # For leaves, add an invisible horizontal bar with more opportunities for popup text
@@ -1553,7 +1559,9 @@ if ($posSet) {
     my $width = $x2 - $x1;
     my $y1 = $nodeY->{$leaf} - $rowHeight/2;
     push @svg, qq{<rect x="$x1" y="$y1" width="$x2" height="$rowHeight" fill="white" stroke="none" >};
-    push @svg, qq{<TITLE>$nodeTitle{$leaf}</TITLE>\n</rect>};
+    my $t = $nodeTitle{$leaf};
+    $t .= " (has $leafHas{$leaf})" if $leafHas{$leaf};
+    push @svg, qq{<TITLE>$t</TITLE>\n</rect>};
   }
 
   # Show selected alignment positions (if any)
@@ -1697,11 +1705,12 @@ if ($posSet) {
       my $idShow = encode_entities($id);
       my $desc = "";
       $desc = encode_entities($alnDesc{$id}) if exists $alnDesc{$id} && $alnDesc{$id} ne "";
-      $desc .= " (has $leafHas{$node})" if @alnPos > 0;
       $idShow = qq{<tspan>$idShow</tspan><tspan style="font-size:80%;"> $desc</tspan>};
       $idShow = qq{<a xlink:href="$nodeLink{$node}" target="_blank">$idShow</a>}
         if $nodeLink{$node};
-      push @svg, qq{<text text-anchor="left" dominant-baseline="middle" x="$xLabel" y="$nodeY->{$node}" ><title>$nodeTitle{$node}</title>$idShow</text>};
+      my $t = $nodeTitle{$node};
+      $t .= " (has $leafHas{$node})" if $leafHas{$node};
+      push @svg, qq{<text text-anchor="left" dominant-baseline="middle" x="$xLabel" y="$nodeY->{$node}" ><title>$t</title>$idShow</text>};
     }
     push @svg, "</g>";
   }
