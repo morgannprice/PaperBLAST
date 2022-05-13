@@ -1330,8 +1330,8 @@ if ($posSet) {
                 if defined $topText && $topText ne "";
   unless ($writeSvg) {
     print
-      div({-style => "float:left; width:60%;"}, @leftContent),
-      div({-style => "float:right; width:40%;"},
+      div({-style => "float:left; width:60%; padding-right: 2em;"}, @leftContent),
+      div({-style => "float:right;"},
           $patternSearchForm, p($searchForm)),
       div({-style => "clear:both; height:0;"}); # clear the floats
   }
@@ -1504,13 +1504,13 @@ if ($posSet) {
   }
   unless ($writeSvg) {
     print
-      div({-style => "float:left; width:60%;"},
+      div({-style => "float:left; width:60%; padding-right: 2em;"},
           "Or see",
           $posSetLinks{functional}, "positions, see",
           $posSetLinks{filtered}, "positions, or see",
           $posSetLinks{all}, "positions.",
           br(), br(), @drawing, @acts),
-      div({-style => "float:right; width:40%;"},
+      div({-style => "float:right;"},
           $patternSearchForm,
           p($searchForm,
              div({-style => "font-size: 80%; height: 1.5em;", -id => "searchStatement"}, ""))),
