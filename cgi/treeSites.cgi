@@ -1527,7 +1527,8 @@ if ($posSet) {
   # then 1 column for each position
   # and padRight
   my $rowHeight = $renderSmall ? 3 : ($renderLarge ? 20 : 8);
-  my $minShowHeight = 20;      # minimum height of a character to draw
+  my $minShowHeight = $renderSmall ? 15 : 19;      # minimum height of a character to draw
+  my $charStyle = $renderSmall ? qq{style="font-size: 85%;"} : "";
   my $padLeft = 10;
   my $padMiddle = $renderLarge ? 10 : 50;
   my $padRight = $renderLarge ? 600 : 40; # space for labels
@@ -1661,7 +1662,8 @@ if ($posSet) {
           if $n1 == 0 && exists $alnPosToSeqPos{$id}{$pos};
         $title = ($n1 > 0 ? "$idShow and $n1 similar proteins have" : "$idShow has") . " " . $charTitle
           . " aligning to " . $anchorPos[$i];
-        push @svg, qq{<text text-anchor="middle" dominant-baseline="middle" x="$x" y="$midY"><TITLE>$title</TITLE>$conservedAt{$node}</text>};
+        push @svg, qq{<text text-anchor="middle" dominant-baseline="middle" x="$x" y="$midY" $charStyle>}
+          . qq{<TITLE>$title</TITLE>$conservedAt{$node}</text>};
       }
     }
   } # End loop over positions
