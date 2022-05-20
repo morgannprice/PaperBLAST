@@ -22,6 +22,7 @@ use CGI::Carp qw(warningsToBrowser fatalsToBrowser);
 use Time::HiRes qw{gettimeofday};
 use DBI;
 use lib "../lib";
+use HTML::Entities;
 use pbutils; # for ReadTable()
 use pbweb; # for FetchFasta()
 
@@ -34,7 +35,9 @@ my $base = "../data";
 my $sqldb = "$base/litsearch.db";
 my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
 
-my $title = "Align $def1 vs. $def2";
+my $def1Show = encode_entities($def1);
+my $def2Show = encode_entities($def2);
+my $title = "Align $def1Show vs. $def2Show";
 start_page('title' => $title);
 
 my $tmpDir = "../tmp";
@@ -68,12 +71,12 @@ my $len2 = length($seq2);
 my $cdd_base = "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=>";
 my $newline = "%0A";
 print
-    p("$def1: $len1 amino acids", br(),
-      "$def2: $len2 amino acids"),
+    p("$def1Show: $len1 amino acids", br(),
+      "$def2Show: $len2 amino acids"),
     p("Or search the Conserved Domains Database with",
-      a({ -href => "$cdd_base$def1$newline$seq1" }, $def1),
+      a({ -href => "$cdd_base$def1$newline$seq1" }, $def1Show),
       "or",
-      a({ -href => "$cdd_base$def2$newline$seq2" }, $def2));
+      a({ -href => "$cdd_base$def2$newline$seq2" }, $def2Show));
 
 open(FAA1, ">", "$prefix.faa1");
 print FAA1 ">seq1\n$seq1\n";
@@ -225,14 +228,14 @@ if (defined $acc2 && $out[0] !~ m/No hits/i) {
         print h3("Conservation of Functional Sites and Regions"),
           table({cellspacing => 0, cellpadding => 3, border => 1}, @trows),
             p(small("Conservation of each site or region is based on the highest-scoring alignment only.")),
-              p(a({ -href => "http://uniprot.org/uniprot/$uniprotId" }, "Also see UniProt entry for $def2" ));
+              p(a({ -href => "http://uniprot.org/uniprot/$uniprotId" }, "Also see UniProt entry for $def2Show" ));
       } else {
         print p(small("No functional sites for the subject",
                     a({ -href => "http://www.uniprot.org/uniprot/$uniprotId" }, $uniprotId)));
       }
     }
   } else {
-    print p(small("No functional sites because the subject $def2 is not linked to a UniProt identifier in PaperBLAST's database"));
+    print p(small("No functional sites because the subject $def2Show is not linked to a UniProt identifier in PaperBLAST's database"));
   }
 }
 unlink("$prefix.bl2seq") unless $debug;
