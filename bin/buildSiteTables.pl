@@ -328,7 +328,9 @@ print STDERR "Warning: found sequences of " . scalar(keys %sprotLen)
   . "SwissProt identifiers, out of " . scalar(keys %sprotIds) . "\n"
   if scalar(keys %sprotLen) != scalar(keys %sprotIds);
 
-system($formatdb,"-p","T","-o","T","-i","$outdir/hassites.faa") == 0
+# Use -o F because otherwise similar ids such as PDB:6qx2:k and PDB:6qx2:K lead to warnings
+# when running BLASTp
+system($formatdb,"-p","T","-o","F","-i","$outdir/hassites.faa") == 0
   || die "$formatdb failed -- $!";
 print STDERR "Formatted $outdir/hassites.faa\n";
 
