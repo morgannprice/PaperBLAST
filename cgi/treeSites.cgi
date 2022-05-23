@@ -61,6 +61,7 @@ use DBI;
 #
 # Find homologs mode:
 # query -- the query (fasta format, uniprot format, raw sequence, or an identifier)
+# identity (optional) -- %identity threshold to use for inclusion
 
 sub handleTsvLines; # handle tab-delimited description lines
 
@@ -109,7 +110,7 @@ my $tmpPre = "$tmpDir/treeSites.$$";
 my $base = "../data";
 my $blastdb = "$base/uniq.faa";
 my $hassitesdb = "$base/hassites.faa";
-my $nCPU = 4;
+my $nCPU = 8;
 my $blastall = "../bin/blast/blastall";
 my $fastacmd = "../bin/blast/fastacmd";
 my $sqldb = "$base/litsearch.db";
@@ -191,6 +192,12 @@ if (defined $query && $query ne "") {
                                       -fbdata => $fbdata);
   fail("No sequence") unless defined $seq;
 
+  my $identityParam = param('identity');
+  my $identityThreshold = 30;
+  $identityThreshold = $identityParam
+    if defined $identityParam && $identityParam =~ m/^\d+$/
+      && $identityParam < 100;
+
   # split off the description
   my $desc = "";
   if ($id =~ m/^(\S+) (.*)/) {
@@ -243,7 +250,7 @@ if (defined $query && $query ne "") {
   foreach my $hit (@hits) {
     my ($queryId2, $subject, $identity, $alen, $mm, $gaps, $qbeg, $qend, $sbeg, $send, $evalue, $bits) = @$hit;
     die unless defined $bits;
-    next if $identity < 30 || ($qend - $qbeg + 1) < length($seq) * 0.7;
+    next if ($qend - $qbeg + 1) < length($seq) * 0.7;
 
     if ($subject =~ m/^([a-zA-Z0-9]+):([^:].*)/) {
       # Hits from the sites database may be redundant with CuratedGene
@@ -294,10 +301,10 @@ if (defined $query && $query ne "") {
     last if (@keep) >= $maxHits;
   } # end loop over hits
 
-  fail("Sorry, no hits to curated proteins at above 30% identity and 70% coverage")
+  fail("Sorry, no hits to curated proteins at above 70% coverage and E < 0.001")
     if scalar(@keep) == 0;
 
-  print p("Found hits above 30% identity and 70% coverage to", scalar(@keep), " curated proteins");
+  print p("Found hits above 70% coverage to", scalar(@keep), " curated proteins");
 
   my $nOld = scalar(@keep);
   @keep = grep $_->{identity} < 100, @keep;
@@ -308,18 +315,36 @@ if (defined $query && $query ne "") {
   print p("All hits are nearly identical to the query")
     if $minIdentity  >= 95;
 
-  # Show the results, and add a link to align them
+  # Format the results
+  my @include = (); # rows above the threshold
+  my @formatInclude = ();
+  my @formatRest = ();
+  my $including = 1;
   foreach my $row (@keep) {
+    my $identity = int($row->{identity} + 0.5);
+    if ($including && $identity < $identityThreshold) {
+      $including = 0;
+    }
+    push @include, $row if $including;
+
     my @genes = &UniqToGenes($dbh, $row->{subject});
     # curated entries only
     my @genes2 = grep exists $_->{db}, @genes;
     @genes = @genes2 if @genes2 > 0;
     my @parts = map GeneToHtmlLine($_), @genes;
-    print p($row->{identity}."% identity to", join(";<BR>", @parts));
+    my $coverage = int(0.5 + 100 * ($row->{qend} - $row->{qbeg} + 1)/length($seq));
+
+    push @parts, "&nbsp;&nbsp;&nbsp; ${identity}% identity, ${coverage}% coverage of query";
+    my $formatted = p(join("<BR>", @parts));
+    if ($including) {
+      push @formatInclude, $formatted;
+    } else {
+      push @formatRest, $formatted;
+    }
   }
 
   # Fetch the sequences
-  foreach my $row (@keep) {
+  foreach my $row (@include) {
     my $subject = $row->{subject};
     my $uniqId = $subject;
     my @fasta = ();
@@ -380,19 +405,51 @@ if (defined $query && $query ne "") {
     $fasta[0] = ">" . $subject2 . " " . $subjectDesc;
     $row->{fasta} = join("\n", @fasta);
   }
-  my $headerLine = ">$id";
-  $headerLine .= " $desc" if $desc ne "";
-  my $fasta = join("\n", $headerLine, $seq, map $_->{fasta}, @keep)."\n";
-  $fasta =~ s/\n+/\n/g; # remove blank lines (@fasta is not always chomped)
-  my @lines = split /\n/, $fasta;
-  my $seqsId = savedHash(\@lines, "seqs");
 
-  print p(a({-href => "treeSites.cgi?seqsId=$seqsId&anchor=$id" }, 
-            "Build an alignment for", encode_entities($id), "and", scalar(@keep), "homologs"))
-    if @keep > 0;
 
-  print addSeqsForm($seqsId,$id),
-    p("Or", a({-href => "treeSites.cgi"}, "start over"));
+  if (@include > 0) {
+    # Show the hits above the threshold, the build alignment link, and add sequences form
+    print h3("Hits with &ge; ${identityThreshold}% identity");
+    print join("\n", @formatInclude)."\n";
+
+    my $headerLine = ">$id";
+    $headerLine .= " $desc" if $desc ne "";
+    my $fasta = join("\n", $headerLine, $seq, map $_->{fasta}, @include)."\n";
+    $fasta =~ s/\n+/\n/g; # remove blank lines (@fasta is not always chomped)
+    my @lines = split /\n/, $fasta;
+    my $seqsId = savedHash(\@lines, "seqs");
+
+    print p(a({-href => "treeSites.cgi?seqsId=$seqsId&anchor=$id" }, 
+              "Build an alignment"),
+            "for", encode_entities($id), "and", scalar(@include),
+            "homologs",,
+            "with &ge; ${identityThreshold}% identity");
+    warning("Warning: alignments of sequences with under 30% identity are less reliable.")
+      if grep { int(0.5 + $_->{identity}) < 30 } @include;
+
+    print addSeqsForm($seqsId,$id);
+  } else {
+    print h4("No hits had ${identityThreshold}% identity"),"\n";
+  }
+
+  # Form to change the %identity cutoff
+  print
+    p(start_form(-name => 'identityCutoff', -method => 'GET', -action => 'treeSites.cgi'),
+      hidden(-name => 'query'),
+      "Change threshold:",
+      textfield(-name => 'identity', -default => $identityThreshold, -override => 1, -size => 2)
+      . "% identity",
+      submit(-name => "Go"),
+      end_form), "\n";
+
+  if (@formatRest > 0) {
+    print h3("Additional hits");
+    print join("\n", @formatRest), "\n";
+  } else {
+    print p("No additional hits (below ${identityThreshold}% identity) were found")
+      unless scalar(keys %seen) >= $maxHits;
+  }
+  print p("Or", a({-href => "treeSites.cgi"}, "start over"));
   finish_page();
 } # end homologs mode
 
@@ -1954,17 +2011,16 @@ sub scaleBar {
 sub addSeqsForm($$) {
   my ($seqsId, $anchorId) = @_;
   $anchorId = "" if !defined $anchorId;
-  return join("\n",
-    start_form(-name => 'addSeqs', -method => 'POST', -action => 'treeSites.cgi'),
-    hidden(-name => 'seqsId', -default => $seqsId, -override => 1),
-    hidden(-name => 'anchor', -default => $anchorId, -override => 1),
-    "Add sequences from UniProt, PDB, RefSeq, or MicrobesOnline (separate identifiers with commas or spaces):",
-    br(),
-    textfield(-name => "addSeq", -override => 1, -default => "", -size => 50, -maxLength => 1000),
-    br(),
-    submit(-name => "Add"),
-    end_form,
-    p("Or",
-      a({-href => findFile($seqsId, "seqs")}, "download"),
-      "the sequences"));
+  return
+    join("\n",
+         start_form(-name => 'addSeqs', -method => 'POST', -action => 'treeSites.cgi'),
+         hidden(-name => 'seqsId', -default => $seqsId, -override => 1),
+         hidden(-name => 'anchor', -default => $anchorId, -override => 1),
+         "Add sequences from UniProt, PDB, RefSeq, or MicrobesOnline (separate identifiers with commas or spaces):",
+         br(),
+         textfield(-name => "addSeq", -override => 1, -default => "", -size => 50, -maxLength => 1000),
+         submit(-name => "Add"),
+         br(),
+         end_form,
+         "or " . a({-href => findFile($seqsId, "seqs")}, "download") . " the sequences");
 }
