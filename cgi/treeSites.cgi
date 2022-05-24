@@ -1268,14 +1268,17 @@ my @downloads = ();
 push @downloads, a({ -href => findFile($treeId, "tree") }, "tree");
 push @downloads, a({ -href => findFile($alnId, "aln") }, "alignment")
   . " (" . scalar(keys %alnSeq) . " x $alnLen)";
-push @downloads, a({ -href => findFile($tsvId, "tsv") }, "table of descriptions")
+push @downloads, a({ -href => "$baseURL&tsv=1"}, "positions")
+  if param('pos');
+push @downloads, a({ -href => findFile($tsvId, "tsv") }, "descriptions")
   if $tsvId;
+$downloads[-1] = "or " . $downloads[-1] if @downloads > 1;
 my $selfURL = $baseURL;
 $selfURL .= "&zoom=$nodeZoom" if defined $nodeZoom;
 $selfURL .= "&posSet=".param('posSet') if param('posSet');
 unless ($writeSvg || $writeTsv) {
   print p({-style => "margin-bottom: 0.25em;"},
-          "Download", join(" or ", @downloads),
+          "Download", join(", ", @downloads) . ",",
           "or see", a({ -href =>  $selfURL }, "permanent link"),
           "to this page, or",
           a({ -href => "treeSites.cgi" }, "start over").".");
