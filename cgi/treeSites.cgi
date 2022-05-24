@@ -14,6 +14,8 @@ use pbweb;
 use MOTree;
 use DBI;
 
+# This tool automatically saves uploads using alnId, treeId, or tsvId, under their md5 hash.
+#
 # In tree+choose_sites rendering mode, these options are required:
 # alnFile or alnId -- alignment in fasta format, or the file id (usually, md5 hash)
 #   In header lines, anything after the initial space is assumed to be a description.
@@ -26,9 +28,10 @@ use DBI;
 # pos -- comma-delimited list of positions (in anchor if set, or else, in alignment)
 #	ranges like 90:96 may also be used
 # tsvFile or tsvId -- descriptions for the ids (as uploaded file or file id)
-# (This tool automatically saves uploads using alnId, treeId, or tsvId, under their md5 hash)
 # zoom -- an internal node (as numbered by MOTree) to zoom into
-# svg -- output an svg file, not an html page
+# svg -- output an svg image, not an html page
+# tsv -- output a tab-separated table of proteins and alignment positions, not an html page
+#	(zoom should be ignored)
 #
 # In tree+auto_sites rendering mode, these options are required:
 # alnId, treeId, and posSet=function, filtered, or all
@@ -47,7 +50,7 @@ use DBI;
 # Optional arguments:
 # trimGaps -- set if positions that are >=50% gaps should be trimmed off
 # trimLower -- set if positions that are >=50% lower case should be trimmed off
-# anchor (ultimately passed to tree viewer)
+# anchor (ultimately passed to the tree viewer)
 #
 # Tree options mode -- an alignment is provided, but not a tree, and buildTree is not set
 #
@@ -161,10 +164,15 @@ my $siteSources = join(" ", $biolipLink,
                           -title => "sequence features in SwissProt"},
                          "SwissProt"));
 
+# Start the page, or the output file
 my $writeSvg = param('svg'); # writing an SVG instead of HTML
+my $writeTsv = param('tsv');
 if ($writeSvg) {
   print "Content-Type:image/svg+xml\n";
   print "Content-Disposition: attachment; filename=treeSites.svg\n\n";
+} elsif ($writeTsv) {
+  print "Content-Type:text/tab-separated-values\n";
+  print "Content-Disposition: attachment; filename=treeSites.tsv\n\n";
 } else {
   print
     header(-charset => 'utf-8'),
@@ -436,9 +444,8 @@ if (defined $query && $query ne "") {
   print
     p(start_form(-name => 'identityCutoff', -method => 'GET', -action => 'treeSites.cgi'),
       hidden(-name => 'query'),
-      "Change threshold:",
-      textfield(-name => 'identity', -default => $identityThreshold, -override => 1, -size => 2)
-      . "% identity",
+      'Change minimum %identity:',
+      textfield(-name => 'identity', -default => $identityThreshold, -override => 1, -size => 2),
       submit(-name => "Go"),
       end_form), "\n";
 
@@ -450,15 +457,55 @@ if (defined $query && $query ne "") {
       unless scalar(keys %seen) >= $maxHits;
   }
   print p("Or", a({-href => "treeSites.cgi"}, "start over"));
-  finish_page();
+  finish_page(); # (exits)
 } # end homologs mode
-
-#else
 
 my $seqsSet = param('seqsFile') || param('seqsId');
 my $alnSet = param('alnFile') || param('alnId');
 my $treeSet = param('treeFile') || param('treeId');
 
+if (!$seqsSet && !$alnSet) {
+  # Show the initial form to upload an alignment or sequences
+  print
+    p(i("Sites on a Tree"),
+      "shows a phylogenetic tree for a protein family along with the sites you choose",
+      "(".a({-href => "treeSites.cgi?alnId=DUF1080&treeId=DUF1080&tsvId=DUF1080&anchor=BT2157&pos=134,164,166",
+         -title => "putative active site of the 3-ketoglycoside hydrolase family" },
+        "example").").",
+      "Or, it can show all the known functional residues",
+      "(".a({-href => "treeSites.cgi?alnId=BT2402&treeId=BT2402&tsvId=BT2402&posSet=functional&anchor=BT2402",
+             -title => "functional residues of phosphoglycerate mutases and alternative homoserine kinases"},
+            "example").")."),
+    p("The first step is to search for characterized homologs of your sequence, or to upload your sequences."),
+    start_form(-name => 'query', -method => 'POST', -action => 'treeSites.cgi'),
+    p(b("Enter a protein sequence in FASTA or Uniprot format,",
+        br(),
+        "or an identifier from UniProt, RefSeq, or MicrobesOnline: ")),
+    p({ -style => "margin-left: 2em;" },
+      textarea( -name  => 'query', -value => '', -cols  => 70, -rows  => 10 )),
+    p({ -style => "margin-left: 2em;" }, submit('Search'), reset()),
+    end_form,
+    start_form(-name => 'aln', -method => 'POST', -action => 'treeSites.cgi'),
+    p(b("Or upload an alignment in fasta, clustal, or stockholm format."),
+      "Limited to $maxN sequences or $maxMB megabytes."),
+    p({-style => "margin-left: 2em;" }, filefield(-name => 'alnFile', -size => 50),
+      br(),
+      submit('Upload')),
+    end_form,
+    p(b("Or upload unaligned protein sequences in fasta format."),
+      "Limited to $maxNAlign sequences."),
+    start_form(-name => 'seqs', -method => 'POST', -action => 'treeSites.cgi'),
+    p({ -style=> "margin-left: 2em;" }, filefield(-name => 'seqsFile', -size => 50),
+      br(),
+      submit('Upload')),
+    end_form,
+    p("Or try",
+      a({-href => "sites.cgi" }, "SitesBLAST").":",
+      "find homologs with known functional residues and see if they are conserved");
+  finish_page(); # (exits)
+} # end front page (no seqs or aln set)
+
+#else
 if ($seqsSet) {
   # Show alignment options (and add sequences if requested),
   # or actually build the alignment
@@ -502,7 +549,7 @@ if ($seqsSet) {
   fail("Must have at least 1 sequence")
     if scalar(keys %seqs) < 1;
 
-  # Handle addseq if set. If any do get set, set seqsId back to empty
+  # Handle addSeq if set. If any do get set, set seqsId back to empty
   my $addSeq = param('addSeq');
   if (defined $addSeq) {
     $addSeq =~ s/^\s*//;
@@ -592,9 +639,9 @@ if ($seqsSet) {
   }
 
   if (param('buildAln')) {
+    # Alignment building mode
     fail("Must have at least 2 sequences to align")
       if scalar(keys %seqs) < 2;
-    # Alignment building mode
     die "buildAln without seqsId" unless $seqsId;
     autoflush STDOUT 1; # show preliminary results
     my $muscle = "../bin/muscle3";
@@ -644,6 +691,7 @@ if ($seqsSet) {
             a({-href => findFile($seqsId, "seqs") }, "sequences"),
             "or",
             a({-href => findFile($alnId, "aln") }, "alignment"));
+    # end buildAln mode
   } else {
     # Show option to build alignment
     print
@@ -657,49 +705,7 @@ if ($seqsSet) {
   }
   print p("Or", a{-href => "treeSites.cgi"}, "start over");
   finish_page();
-}
-
-# else
-if (!$alnSet) {
-  # Show the initial form to upload an alignment or sequences
-  print
-    p(i("Sites on a Tree"),
-      "shows a phylogenetic tree for a protein family along with the sites you choose",
-      "(".a({-href => "treeSites.cgi?alnId=DUF1080&treeId=DUF1080&tsvId=DUF1080&anchor=BT2157&pos=134,164,166",
-         -title => "putative active site of the 3-ketoglycoside hydrolase family" },
-        "example").").",
-      "Or, it can show all the known functional residues",
-      "(".a({-href => "treeSites.cgi?alnId=BT2402&treeId=BT2402&tsvId=BT2402&posSet=functional&anchor=BT2402",
-             -title => "functional residues of phosphoglycerate mutases and alternative homoserine kinases"},
-            "example").")."),
-    p("The first step is to search for characterized homologs of your sequence, or to upload your sequences."),
-    start_form(-name => 'query', -method => 'POST', -action => 'treeSites.cgi'),
-    p(b("Enter a protein sequence in FASTA or Uniprot format,",
-        br(),
-        "or an identifier from UniProt, RefSeq, or MicrobesOnline: ")),
-    p({ -style => "margin-left: 2em;" },
-      textarea( -name  => 'query', -value => '', -cols  => 70, -rows  => 10 )),
-    p({ -style => "margin-left: 2em;" }, submit('Search'), reset()),
-    end_form,
-    start_form(-name => 'aln', -method => 'POST', -action => 'treeSites.cgi'),
-    p(b("Or upload an alignment in fasta, clustal, or stockholm format."),
-      "Limited to $maxN sequences or $maxMB megabytes."),
-    p({-style => "margin-left: 2em;" }, filefield(-name => 'alnFile', -size => 50),
-      br(),
-      submit('Upload')),
-    end_form,
-    p(b("Or upload unaligned protein sequences in fasta format."),
-      "Limited to $maxNAlign sequences."),
-    start_form(-name => 'seqs', -method => 'POST', -action => 'treeSites.cgi'),
-    p({ -style=> "margin-left: 2em;" }, filefield(-name => 'seqsFile', -size => 50),
-      br(),
-      submit('Upload')),
-    end_form,
-    p("Or try",
-      a({-href => "sites.cgi" }, "SitesBLAST").":",
-      "find homologs with known functional residues and see if they are conserved");
-  finish_page()
-}
+} # end if $seqsSet
 
 # else load the alignment
 my @alnLines = ();
@@ -759,6 +765,7 @@ while (my ($id, $seq) = each %alnSeq) {
   $alnSeq{$id} = $seq;
 }
 
+# Check the alignment
 my $alnLen;
 while (my ($id, $seq) = each %alnSeq) {
   fail("Sequence identifier $id in the alignment contains an invalid character, one of  :(),;")
@@ -773,86 +780,132 @@ fail("Alignment must have at least 2 sequences")
 
 # Save the alignment, if necessary
 if (!defined $alnId) {
+  die unless @alnLines > 0;
   $alnId = savedHash(\@alnLines, "aln");
 }
 
-my ($moTree, $treeId);
+# Should have an alignment
+if (! $treeSet) { # Build the tree or show the form
+  if (param('buildTree')) {
+    # Tree building mode
+    my $trimGaps = param('trimGaps') ? 1 : 0;
+    my $trimLower = param('trimLower') ? 1 : 0;
+    my $ft = "../bin/FastTree";
+    die "No such executable: $ft" unless -x $ft;
 
-if (! $treeSet && param('buildTree')) {
-  # Tree building mode
-  my $trimGaps = param('trimGaps') ? 1 : 0;
-  my $trimLower = param('trimLower') ? 1 : 0;
-  my $ft = "../bin/FastTree";
-  die "No such executable: $ft" unless -x $ft;
-
-  # Trim the alignment
-  my @keep = (); # positions to keep
-  my $nSeq = scalar(keys %alnSeq);
-  for (my $i = 0; $i < $alnLen; $i++) {
-    my $nGaps = 0;
-    my $nLower = 0;
-    foreach my $seq (values %alnSeq) {
-      my $char = substr($seq, $i, 1);
-      if ($char eq '-') {
-        $nGaps++;
-      } elsif ($char eq lc($char)) {
-        $nLower++;
+    # Trim the alignment
+    my @keep = (); # positions to keep
+    my $nSeq = scalar(keys %alnSeq);
+    for (my $i = 0; $i < $alnLen; $i++) {
+      my $nGaps = 0;
+      my $nLower = 0;
+      foreach my $seq (values %alnSeq) {
+        my $char = substr($seq, $i, 1);
+        if ($char eq '-') {
+          $nGaps++;
+        } elsif ($char eq lc($char)) {
+          $nLower++;
+        }
       }
+      my $nUpper = $nSeq - $nGaps - $nLower;
+      push @keep, $i
+        unless ($trimGaps && $nGaps >= $nSeq/2)
+          || ($trimLower && $nLower >= $nUpper);
     }
-    my $nUpper = $nSeq - $nGaps - $nLower;
-    push @keep, $i
-      unless ($trimGaps && $nGaps >= $nSeq/2)
-        || ($trimLower && $nLower >= $nUpper);
-  }
 
-  print p("Removed positions that are at least 50% gaps.") if $trimGaps;
-  print p("Removed positions that have as many lower-case as upper-case values.") if $trimGaps;
-  print p("Trimmed to",scalar(@keep),"positions");
+    print p("Removed positions that are at least 50% gaps.") if $trimGaps;
+    print p("Removed positions that have as many lower-case as upper-case values.") if $trimGaps;
+    print p("Trimmed to",scalar(@keep),"positions");
 
-  if (scalar(@keep) < 10) {
-    fail("Sorry: less than 10 alignment positions remained after trimming");
-  }
+    if (scalar(@keep) < 5) {
+      fail("Sorry: less than 5 alignment positions remained after trimming."
+           . " Not building a tree.");
+    }
 
-  my $tmpTrim = "$tmpPre.trim";
-  open (my $fhTrim, ">", $tmpTrim) || die "Cannot write to $tmpTrim";
-  foreach my $id (sort keys %alnSeq) {
-    my $seq = $alnSeq{$id};
-    my $trimmed = join("", map substr($seq, $_, 1), @keep);
-    print $fhTrim ">", $id, "\n", $trimmed, "\n";
-  }
-  close($fhTrim) || die "Error writing to $tmpTrim";
+    my $tmpTrim = "$tmpPre.trim";
+    open (my $fhTrim, ">", $tmpTrim) || die "Cannot write to $tmpTrim";
+    foreach my $id (sort keys %alnSeq) {
+      my $seq = $alnSeq{$id};
+      my $trimmed = join("", map substr($seq, $_, 1), @keep);
+      print $fhTrim ">", $id, "\n", $trimmed, "\n";
+    }
+    close($fhTrim) || die "Error writing to $tmpTrim";
 
-  my $tmpTreeFile = "$tmpPre.tree";
-  autoflush STDOUT 1; # show preliminary results
-  print p("Running",
-          a({ -href => "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2835736/" },
-            "FastTree 2"),
-          "on an alignment with",
-          scalar(@keep), "positions and $nSeq sequences.",
-          "This could take a few minutes."), "\n";
-  system("$ft -quiet $tmpTrim > $tmpTreeFile") == 0
-    || die "FastTree failed on $tmpTrim : $!";
+    my $tmpTreeFile = "$tmpPre.tree";
+    autoflush STDOUT 1; # show preliminary results
+    print p("Running",
+            a({ -href => "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2835736/" },
+              "FastTree 2"),
+            "on an alignment with",
+            scalar(@keep), "positions and $nSeq sequences.");
+    print p("This could take a few minutes.") if scalar(@keep) * $nSeq > 1e6;
+    print "\n";
+    system("$ft -quiet $tmpTrim > $tmpTreeFile") == 0
+      || die "FastTree failed on $tmpTrim : $!";
 
-  $moTree = MOTree::new('file' => $tmpTreeFile)
-    || die "Error parsing $tmpTreeFile";
-  $moTree->rerootMidpoint();
-  unlink($tmpTrim);
-  unlink($tmpTreeFile);
+    my $moTree = MOTree::new('file' => $tmpTreeFile)
+      || die "Error parsing $tmpTreeFile";
+    $moTree->rerootMidpoint();
+    unlink($tmpTrim);
+    unlink($tmpTreeFile);
+    my $newick = $moTree->toNewick();
+    my $treeId = savedHash([$newick], "tree");
+    my $anchorId = param('anchor');
+    my $anchorOpt = "&anchor=$anchorId" if defined $anchorId && $anchorId ne "";
+    print
+      p("FastTree succeeded."),
+      p("Rerooted the tree to minimize its depth (midpoint rooting)."),
+      p(a{ -href => "treeSites.cgi?alnId=$alnId&treeId=$treeId$anchorOpt"},
+        "View the tree");
+    finish_page();
+    # end tree building mode
+  } else {
+    # Form to compute a tree
+    print p("The alignment has", scalar(keys %alnSeq), "sequences of length $alnLen");
+    print
+      start_form(-name => 'buildTree', -method => 'POST', -action => 'treeSites.cgi'),
+      hidden(-name => 'alnId', -default => $alnId, -override => 1),
+      hidden(-name => 'anchor'),
+      p("Compute a tree:"),
+      p(checkbox(-name => 'trimGaps', -checked => 1, -value => 1, -label => ''),
+        "Trim columns that are &ge;50% gaps"),
+      p(checkbox(-name => 'trimLower', -checked => 1, -value => 1, -label => ''),
+        "Trim columns with more lowercase than uppercase"),
+      p(submit(-name => "buildTree", -value => "Run FastTree")),
+      end_form;
+    print
+      start_form(-name => 'inputTree', -method => 'POST', -action => 'treeSites.cgi'),
+      hidden(-name => 'alnId', -default => $alnId, -override => 1),
+      hidden(-name => 'anchor'),
+      p("Or upload a rooted tree in newick format:", filefield(-name => 'treeFile', -size => 50)),
+      p(submit(-name => "input", -value => "Upload")),
+      end_form;
+    finish_page();
+  } # end show form to build tree
+} # end if ! $treeSet
+
+# Load tree
+my ($moTree, $treeId);
+if (param('treeFile')) {
+  my $fh = param('treeFile')->handle;
+  fail("treeFile not a file") unless $fh;
+  eval { $moTree = MOTree::new('fh' => $fh) };
+  fail("Could not parse tree") unless $moTree;
   my $newick = $moTree->toNewick();
+  # Checking that leaves in the tree all leaves in the tree have sequences is below
+  # Warning if sequences in the alignment are not in the tree is below
   $treeId = savedHash([$newick], "tree");
-  my $anchorId = param('anchor');
-  my $anchorOpt = "&anchor=$anchorId" if defined $anchorId && $anchorId ne "";
-  print
-    p("FastTree succeeded."),
-    p("Rerooted the tree to minimize its depth (midpoint rooting)."),
-    p(a{ -href => "treeSites.cgi?alnId=$alnId&treeId=$treeId$anchorOpt"},
-      "View the tree");
-  finish_page()
-} # end tree building mode
+} elsif (param('treeId')) {
+  $treeId = param('treeId');
+  my $fh = openFile($treeId, "tree");
+  eval { $moTree = MOTree::new('fh' => $fh) };
+  close($fh) || die "Error reading $treeId.tree";
+  fail("Could not parse tree") unless $moTree;
+} else {
+  die "No tree specified";
+}
 
-die unless $alnId;
-
-# Try to parse the table to get descriptions
+# Load the table of descriptions, if any
 my $tsvId;
 if (param('tsvFile')) {
   my $fh = param('tsvFile')->handle;
@@ -874,7 +927,16 @@ if (param('tsvFile')) {
   warning("No descriptions found for matching ids in the table") if $n == 0;
 }
 
-# Save alignment position mapping (id => 0-based position => 0-based aligned position)
+# Now have the alignment, tree, and table (if any)
+my $baseURL = "treeSites.cgi?alnId=$alnId&treeId=$treeId";
+$baseURL .= "&tsvId=$tsvId" if $tsvId;
+foreach my $attr (qw{anchor pos zoom}) {
+  my $value = param($attr);
+  $baseURL .= "&" . $attr . "=" . uri_escape($value)
+    if defined $value && $value ne "";
+}
+
+# The alignment position mapping (id => 0-based position => 0-based aligned position)
 my %seqPosToAlnPos = map { $_ => seqPosToAlnPos($alnSeq{$_}) } keys %alnSeq;
 my %alnPosToSeqPos = (); # id => 0-based aligned non-gap position => 0-based sequence position
 while (my ($id, $hash) = each %seqPosToAlnPos) {
@@ -883,13 +945,6 @@ while (my ($id, $hash) = each %seqPosToAlnPos) {
     die if substr($seq, $seqPos, 1) eq "-";
     $alnPosToSeqPos{$id}{$alnPos} = $seqPos;
   }
-}
-
-my $baseURL = "treeSites.cgi?alnId=$alnId";
-foreach my $attr (qw{treeId tsvId anchor pos zoom"}) {
-  my $value = param($attr);
-  $baseURL .= "&" . $attr . "=" . uri_escape($value)
-    if defined $value && $value ne "";
 }
 
 if (param('pattern')) {
@@ -977,32 +1032,6 @@ if (param('pattern')) {
   print p("Or", a{-href => "treeSites.cgi"}, "start over");
   finish_page();
 } # end pattern search mode
-
-if (! $treeSet) {
-  print p("The alignment has", scalar(keys %alnSeq), "sequences of length $alnLen");
-
-  # Form to compute a tree
-  print
-    start_form(-name => 'buildTree', -method => 'POST', -action => 'treeSites.cgi'),
-    hidden(-name => 'alnId', -default => $alnId, -override => 1),
-    hidden(-name => 'anchor'),
-    p("Compute a tree:"),
-    p(checkbox(-name => 'trimGaps', -checked => 1, -value => 1, -label => ''),
-      "Trim columns that are &ge;50% gaps"),
-    p(checkbox(-name => 'trimLower', -checked => 1, -value => 1, -label => ''),
-      "Trim columns with more lowercase than uppercase"),
-    p(submit(-name => "buildTree", -value => "Run FastTree")),
-    end_form;
-
-  print
-    start_form(-name => 'inputTree', -method => 'POST', -action => 'treeSites.cgi'),
-    hidden(-name => 'alnId', -default => $alnId, -override => 1),
-    hidden(-name => 'anchor'),
-    p("Or upload a rooted tree in newick format:", filefield(-name => 'treeFile', -size => 50)),
-    p(submit(-name => "input", -value => "Upload")),
-    end_form;
-  finish_page();
-}
 
 if (defined param('showId') && param('showId') ne "") {
   # showId mode: show information about a sequence
@@ -1103,20 +1132,7 @@ if (defined param('showId') && param('showId') ne "") {
 
 
 # else rendering mode (tree+auto_sites or tree+choose_sites)
-
-if (param('treeFile')) {
-  my $fh = param('treeFile')->handle;
-  fail("treeFile not a file") unless $fh;
-  eval { $moTree = MOTree::new('fh' => $fh) };
-} elsif (param('treeId')) {
-  $treeId = param('treeId');
-  my $fh = openFile($treeId, "tree");
-  eval { $moTree = MOTree::new('fh' => $fh) };
-  close($fh) || die "Error reading $treeId.tree";
-} else {
-  fail("No tree specified") unless defined $treeId;
-}
-fail("Could not parse tree") unless $moTree;
+fail("No tree specified") unless defined $treeId;
 
 # Fail if there are any leaves in the tree without sequences
 my $nodes = $moTree->depthfirst(); # depth-first ordering of all nodes
@@ -1129,23 +1145,12 @@ foreach my $leaf (@leaves) {
   fail("Leaf named " . encode_entities($id) . " is not in the alignment")
     unless exists $alnSeq{$id};
 }
-
-# Issue a warning error for any sequences not in the tree, if this
-# is the first time they were used together
-if (!defined $alnId || !defined $treeId) {
+if (param('treeFile')) { # warn if sequences are missing from uploaded tree
   foreach my $id (keys %alnSeq) {
     warning("Sequence " . encode_entities($id) . " is not in the tree")
       unless exists $idToLeaf{$id};
   }
 }
-
-# Save the tree, if necessary
-if (!defined $treeId) {
-  my $newick = $moTree->toNewick();
-  $treeId = savedHash([$newick], "tree");
-}
-
-# Finished loading input
 
 my %branchLen = (); # node to branch length
 my $missingLen = 0; # set if any leaf or internal node had no branch length
@@ -1156,14 +1161,14 @@ foreach my $node (@$nodes) {
   next if $node == $root;
   my $len = $moTree->branch_length($node);
   if ($len eq "") {
-    print p($node);
     $missingLen = 1;
     $len = 1;
   }
   $len = 0 if $len < 0;
   $branchLen{$node} = $len;
 }
-warning("Missing branch lengths were set to 1") if $missingLen;
+warning("Missing branch lengths were set to 1")
+  if $missingLen && param('treeFile');
 
 my $anchorId = param('anchor');
 $anchorId = "" if !defined $anchorId;
@@ -1268,7 +1273,7 @@ push @downloads, a({ -href => findFile($tsvId, "tsv") }, "table of descriptions"
 my $selfURL = $baseURL;
 $selfURL .= "&zoom=$nodeZoom" if defined $nodeZoom;
 $selfURL .= "&posSet=".param('posSet') if param('posSet');
-unless ($writeSvg) {
+unless ($writeSvg || $writeTsv) {
   print p({-style => "margin-bottom: 0.25em;"},
           "Download", join(" or ", @downloads),
           "or see", a({ -href =>  $selfURL }, "permanent link"),
@@ -1350,7 +1355,7 @@ if ($posSet) {
       }
     }
     @alnPos = sort { $a <=> $b } (keys %alnPos);
-    unless ($writeSvg) {
+    unless ($writeSvg || $writeTsv) {
       if (@alnPos > 0) {
         print p("Showing", scalar(@alnPos),
                 "alignment positions with known function (in at least one sequence) from $siteSources.");
@@ -1368,11 +1373,11 @@ if ($posSet) {
       push @alnPos, $i unless $nFilter > $nSeq/2;
     }
     print p("Showing", scalar(@alnPos), "alignment positions (of $alnLen) that are less than half gaps or lower-case")
-      unless $writeSvg;
+      unless $writeSvg || $writeTsv;
   } elsif ($posSet eq "all") {
     @alnPos = 0..($alnLen-1);
     print p("Showing all", scalar(@alnPos), "alignment positions.")
-      unless $writeSvg;
+      unless $writeSvg || $writeTsv;
   } else {
     fail("Invalid value of posSet parameter");
   }
@@ -1385,7 +1390,7 @@ if ($posSet) {
                      "or", a({-href => $baseURL}, "choose"), "positions.");
   push @leftContent, p({-style => "font-size:90%;"}, "Comment:", encode_entities($topText))
                 if defined $topText && $topText ne "";
-  unless ($writeSvg) {
+  unless ($writeSvg || $writeTsv) {
     print
       div({-style => "float:left; width:60%; padding-right: 2em;"}, @leftContent),
       div({-style => "float:right;"},
@@ -1419,7 +1424,8 @@ if ($posSet) {
   push @svg, scaleBar('maxDepth' => $layout{maxDepth},
                       'treeWidth' => $treeWidth,
                       'treeLeft' => 4,
-                      'y' => max(values %$nodeY) + 0.5 * $padBottom);
+                      'y' => max(values %$nodeY) + 0.5 * $padBottom)
+    unless $missingLen;
 
   # Lay out the x positions for each alignment position
   my %posX = (); # position (0-based) to center X
@@ -1526,6 +1532,37 @@ if ($posSet) {
     @alnPos = map $anchorToAln{$_}, @anchorPos;
   }
 
+  if ($writeTsv) {
+    my @attr = ("id","desc");
+    if ($tsvId) {
+      push @attr, "color";
+      push @attr, "URL";
+    }
+    my @posNames = ();
+    if ($anchorId ne "") {
+      @posNames = map substr($anchorSeq, $_-1, 1).$_, @anchorPos;
+    } else {
+      @posNames = map "aln$_", @anchorPos;
+    }
+    print join("\t", @attr, @posNames)."\n";
+    foreach my $leaf (@leaves) { # ignores zoom
+      my @out = ();
+      my $id = $moTree->id($leaf);
+      my $desc = "";
+      $desc = $alnDesc{$id} if exists $alnDesc{$id};
+      push @out, ($id, $desc);
+      if ($tsvId) {
+        my $color = "";
+        $color = $idInfo{$id}{color} if exists $idInfo{$id}{color};
+        my $URL = "";
+        $URL = $idInfo{$id}{URL} if exists $idInfo{$id}{URL};
+        push @out, ($color, $URL);
+      }
+      push @out, map substr($alnSeq{$id}, $_, 1), @alnPos;
+      print join("\t", @out)."\n";
+    }
+    exit(0); # table complete
+  }
 
   print p(start_form(-method => 'GET', -action => 'treeSites.cgi'),
           hidden( -name => 'alnId', -default => $alnId, -override => 1),
@@ -1538,7 +1575,7 @@ if ($posSet) {
           textfield(-name => "anchor", -default => $anchorId, -size => 20, -maxlength => 200),
           submit(-value => "Go"),
           end_form)
-    unless $writeSvg;
+    unless $writeSvg || $writeTsv;
 
   my $renderLarge = defined $nodeZoom || scalar(@leaves) <= 30;
   my $renderSmall = !defined $nodeZoom && scalar(@leaves) > 100;
@@ -1559,7 +1596,7 @@ if ($posSet) {
   if (@alnPos > 0 && $anchorId ne "") {
     push @drawing, "Position numbering is from " . encode_entities($anchorId) . ".";
   }
-  unless ($writeSvg) {
+  unless ($writeSvg || $writeTsv) {
     print
       div({-style => "float:left; width:60%; padding-right: 2em;"},
           "Or see",
@@ -1994,7 +2031,7 @@ sub scaleBar {
 
   my @out = ();
 
-  my @scales = reverse qw{0.001 0.002 0.005 0.01 0.02 0.05 0.1 0.2 0.5 1};
+  my @scales = reverse qw{0.0001 0.001 0.002 0.005 0.01 0.02 0.05 0.1 0.2 0.5 1};
   while ($scales[0] > 0.8 * $maxDepth && @scales > 1) {
     shift @scales;
   }
