@@ -81,8 +81,10 @@ my $formatdb = "$blastdir/formatdb";
 die "No such executable: $formatdb\n" unless -x $formatdb;
 
 # Fetch the assemblies
+FetchAssembly::setFailMode("warning");
 my %gid = (); # gid => assembly
 my @assemblies = ();
+my @fail = ();
 foreach my $orgspec (@orgspec) {
   my @parts = split /:/, $orgspec;
   die "organism specifier $orgspec should have two parts"
@@ -112,13 +114,17 @@ foreach my $orgspec (@orgspec) {
     $assembly = AASeqToAssembly(\%headerToSeq, $cachedir);
     $assembly->{genomeName} = $genomeName;
   } else {
-    $assembly = CacheAssembly($gdb, $gid, $cachedir)
-      || die "Cannot fetch $orgspec\n";
+    $assembly = CacheAssembly($gdb, $gid, $cachedir);
+    unless($assembly) {
+      push @fail, "$gdb:$gid";
+      print STDERR "Warning: cannot fetch $orgspec\n";
+    }
   }
   print STDERR "Loaded $orgspec\n";
   push @assemblies, $assembly;
   $gid{$gid} = $assembly;
 }
+die "Some assemblies failed to load: " . join(" ", @fail) . "\n" if @fail > 0;
 
 open(my $fhOut, ">", "$prefix.faa")
   || die "Cannot write to $prefix.faa\n";
