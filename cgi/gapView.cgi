@@ -1493,7 +1493,8 @@ sub GeneURL($$) {
       if ($g->{genomic_accession} && $g->{start} && $g->{end}) {
         my $center = int(($g->{start} + $g->{end})/2);
         my ($left,$right) = ($center-5000,$center+5000);
-        # The NCBI sequence viewer is smart enough to clip to valid regions
+        $left = 1 if $left < 1;
+        # Hopefully it will handle too-high values ok
         return "https://www.ncbi.nlm.nih.gov/nuccore/$g->{genomic_accession}/scaffold?report=graph&v=$left:$right";
       }
       # No longer build PaperBLAST links
