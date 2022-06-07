@@ -2,7 +2,7 @@ PaperBLAST is a tool to find papers about homologs of a protein of interest. For
 
 http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=VIMSS14484
 
-This code base also includes Curated BLAST for Genomes and GapMind.
+This code base also includes Curated BLAST for Genomes, GapMind, SitesBLAST, and Sites on a Tree.
 
 # System Requirements
 
