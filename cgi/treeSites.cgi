@@ -1806,7 +1806,7 @@ if ($posSet) {
       $desc = encode_entities($alnDesc{$id}) if exists $alnDesc{$id} && $alnDesc{$id} ne "";
       $idShow = qq{<tspan>$idShow</tspan><tspan style="font-size:80%;"> $desc</tspan>};
       $idShow = qq{<a xlink:href="$nodeLink{$node}" target="_blank">$idShow</a>}
-        if $nodeLink{$node};
+        if $nodeLink{$node} && ! $writeSvg;
       my $t = $nodeTitle{$node};
       $t .= " (has $leafHas{$node})" if $leafHas{$node};
       push @svg, qq{<text text-anchor="left" dominant-baseline="middle" x="$xLabel" y="$nodeY->{$node}" ><title>$t</title>$idShow</text>};
@@ -2016,7 +2016,7 @@ sub renderTree {
 ;
       $idShow .= "<TITLE>$title</TITLE>" if defined $title && $title ne "";
       $idShow = qq{<A xlink:href="$nodeLink->{$node}" target="_blank">$idShow</A>}
-        if $nodeLink->{$node} ne "";
+        if $nodeLink->{$node} ne "" && ! $writeSvg;
       push @out, qq{<text dominant-baseline="middle" x="$xLabel" y="$nodeY->{$node}" text-anchor="left" style="$textStyle" >$idShow</text>};
     }
     push @out, "</g>";
