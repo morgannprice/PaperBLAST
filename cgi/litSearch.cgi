@@ -95,7 +95,8 @@ HREF="http://www.uniprot.org/" title="The manually annotated and reviewed sectio
 <A HREF="http://ecocyc.org" title="EcoCyc: Encyclopedia of E. coli Genes and Metabolic Pathways">EcoCyc</A>,
 <A HREF="http://www.tcdb.org/" title="The Transporter Classification Database (TCDB)"</A>TCDB</A>,
 <A HREF="http://rebase.neb.com/rebase/rebase.html" title="The Restriction Enzyme Database">REBASE</A>,
-and the <A HREF="http://fit.genomics.lbl.gov/" title="Reannotations from genome-wide fitness data">Fitness Browser</A>.
+the <A HREF="http://fit.genomics.lbl.gov/" title="Reannotations from genome-wide fitness data">Fitness Browser</A>,
+and a subset of the European Nucleotide Archive with the /experiment tag.
 Given this database and a protein sequence query,
 PaperBLAST uses <A
 HREF="https://en.wikipedia.org/wiki/BLAST">protein-protein BLAST</A>
@@ -149,6 +150,8 @@ articles:
   of ligand-binding sites and catalytic residues in protein structures, is included. Since BioLiP itself
   does not include descriptions of the proteins, those are taken from the
   <A HREF="https://www.rcsb.org/" title="Protein Data Bank">Protein Data Bank</A>.
+  Descriptions from PDB rely on the original submitter of the
+    structure and cannot be updated by others, so they may be less reliable.
 <LI>Every protein from <A HREF="http://ecocyc.org">EcoCyc</A>, a curated
   database of the proteins in <i> Escherichia coli</i> K-12, is included, regardless
   of whether they are characterized or not.
@@ -168,6 +171,16 @@ articles:
   of restriction enzymes are included if they have known specificity.
 <LI>Every protein with an evidence-based reannotation (based on mutant phenotypes)
   in the <A HREF="http://fit.genomics.lbl.gov/">Fitness Browser</A> is included.
+<LI>Coding sequence (CDS) features from the
+    <A HREF="https://www.ebi.ac.uk/ena/browser/about">European Nucleotide Archive</A> (ENA)
+    are included if the /experiment tag is set (implying that there is experimental evidence for the annotation),
+    the nucleotide entry links to paper(s) in PubMed,
+    and the nucleotide entry is from the STD data class
+    (implying that these are targeted annotated sequences, not from shotgun sequencing).
+    Also, to filter out genes whose transcription or translation was detected, but whose function
+    was not studied, nucleotide entries or papers with more than 25 such proteins are excluded.
+    Descriptions from ENA rely on the original submitter of the
+    sequence and cannot be updated by others, so they may be less reliable.
 </UL>
 <P>Except for GeneRIF,
 the curated entries include a short curated
@@ -184,6 +197,7 @@ You can download PaperBLAST's database <A HREF="https://github.com/morgannprice/
 <P>Changes to PaperBLAST since the paper was written:
 
 <UL>
+<LI>June 2022: incorporated ENA.
 <LI>March 2022: incorporated BioLiP.
 <LI>April 2020: incorporated TCDB.
 <LI>April 2019: EuropePMC now returns table entries in their search results. This has expanded PaperBLAST's database, but most of the new entries are of low relevance, and the resulting snippets are often just lists of locus tags with annotations.
