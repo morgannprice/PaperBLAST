@@ -153,10 +153,15 @@ sub AddCuratedInfo($) {
     $gene->{URL} = "https://www.rcsb.org/structure/" . uc($entry);
     # to show which ligand goes with which PDB structure
     $gene->{comment} .= " " . "(" . a({ -href => $gene->{URL} }, $protId) . ")";
+  } elsif ($db eq "ENA") {
+    $gene->{source} = "European Nucleotide Archive /experiment tag";
+    $gene->{priority} = 5.5; # behind biolip
+    $gene->{URL} = "https://www.ebi.ac.uk/ena/browser/view/$protId";
   } else {
     die "Unexpected curated database $db";
   }
   my @ids = ( $gene->{name}, $gene->{id2} );
+  @ids = ( $gene->{name}, $protId) if $db eq "ENA";
   push @ids, $protId if $db eq "SwissProt";
   unshift @ids, $protId if $db eq "biolip"; # always show pdb entry/chain first
   if ($db eq "TCDB") {

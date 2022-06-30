@@ -113,6 +113,7 @@ if (exists $dosteps{db}) {
           "static/metacyc.curated_parsed", "static/reanno.curated_parsed",
           "static/REBASE.curated_parsed", "static/BRENDA.curated_parsed",
           "static/TCDB.curated_parsed", "static/biolip.curated_parsed",
+          "static/ENA.curated_parsed",
           "-prefix",
           "$workdir/hits",
           "$workdir/pmclinks",
