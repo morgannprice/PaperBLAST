@@ -265,9 +265,9 @@ sub csv_quote($);
       my %pmIds = (); # check for duplicates
       foreach my $pmId (@pmIds) {
         die "Invalid pubmed id $pmId for $db $protId in $cfile" unless $pmId =~ m/^\d+$/;
-        die "Duplicate pubmed id for $db $protId in $cfile" if exists $pmIds{$pmId};
+        print STDERR "Warning: duplicate pubmed id $pmId for $db $protId in $cfile\n" if exists $pmIds{$pmId};
+        print CPAPER join("\t", $db, $protId, $pmId)."\n" unless exists $pmIds{$pmId};
         $pmIds{$pmId} = 1;
-        print CPAPER join("\t", $db, $protId, $pmId)."\n";
       }
     }
     close(IN) || die "Error reading $cfile";
