@@ -34,7 +34,7 @@ sub simstring($$$$$$$$$$$$$);
 
 my $tmpDir = "../tmp";
 my $blastall = "../bin/blast/blastall";
-my $nCPU = 4;
+my $nCPU = 10;
 my $base = "../data";
 my $blastdb = "$base/uniq.faa";
 my $sqldb = "$base/litsearch.db";
