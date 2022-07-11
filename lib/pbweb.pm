@@ -764,8 +764,8 @@ sub RefSeqToFasta($) {
 sub UniProtToFasta($) {
   my ($short) = @_;
   die unless defined $short;
-  # include=no -- no isoforms
-  my $url = "http://www.uniprot.org/uniprot/?query=${short}&format=fasta&sort=score&include=no&limit=2";
+  # size limits #results returned
+  my $url = "https://rest.uniprot.org/uniprotkb/search?query=${short}&format=fasta&includeIsoform=false&size=2";
   my $results = get($url);
   if (defined $results && $results =~ m/^>/) {
     # select the first hit only
