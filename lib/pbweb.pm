@@ -20,7 +20,7 @@ our (@ISA,@EXPORT);
              commify
              LinkifyComment FormatStepPart DataForStepParts HMMToURL
              parseSequenceQuery sequenceToHeader
-             warning fail
+             warning fail runWhileCommenting
 );
 
 # Returns a list of entries from SubjectToGene, 1 for each duplicate (if any),
@@ -1228,6 +1228,34 @@ sub sequenceToHeader($) {
   my $initial = substr($seq, 0, 10);
   $initial .= "..." if $seqlen > 10;
   return length($seq) . " a.a. (" . $initial . ")";
+}
+
+# The caller should ensure that autoflush is on.
+# This will run the specified command while sending HTML comments to prevent
+# Cloudflare timeouts.
+sub runWhileCommenting(@) {
+  my (@arg) = @_;
+  my $pid = fork();
+  die "Cannot fork: $!" unless defined $pid;
+  if ($pid == 0) {
+    # Do the work
+    exec(@arg);
+  }
+  #else
+  my $wid = fork();
+  die "Cannot fork: $!" unless defined $wid;
+  if ($wid == 0) {
+    my $n = 0;
+    while(1) {
+      sleep(2);
+      $n += 2;
+      print "<!-- waiting for job for $n sec -->\n";
+    }
+  }
+  #else
+  wait;
+  kill 'KILL', $wid;
+  return ${^CHILD_ERROR_NATIVE};
 }
 
 1

@@ -34,7 +34,7 @@ sub simstring($$$$$$$$$$$$$);
 
 my $tmpDir = "../tmp";
 my $blastall = "../bin/blast/blastall";
-my $nCPU = 10;
+my $nCPU = 6;
 my $base = "../data";
 my $blastdb = "$base/uniq.faa";
 my $sqldb = "$base/litsearch.db";
@@ -414,7 +414,7 @@ if (!defined $seq && ! $more_subjectId) {
       close(SEQ) || die "Error writing to $seqFile";
       my $hitsFile = "$tmpDir/$filename.hits";
       print p({ -id => "searching" }, "Running BLASTp..."), "\n";
-      system($blastall, "-p", "blastp", "-d", $blastdb, "-i", $seqFile, "-o", $hitsFile,
+      runWhileCommenting($blastall, "-p", "blastp", "-d", $blastdb, "-i", $seqFile, "-o", $hitsFile,
              "-e", 0.001, "-m", 8, "-a", $nCPU, "-F", "m S") == 0 || die "Error running blastall: $!";
       print join("\n",
                  "<SCRIPT>",
