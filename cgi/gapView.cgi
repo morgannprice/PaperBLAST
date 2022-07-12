@@ -1605,9 +1605,10 @@ END
                   -title => "GapMind: Automated annotation of amino acid biosynthesis" },
                 "paper from 2019"),
               "on GapMind for amino acid biosynthesis, the",
-              a({ -href => "https://doi.org/10.1101/2021.11.02.466981",
-                  -title => "GapMind for Carbon Sources: Automated annotations of catabolic pathways" },
-                "preprint on GapMind for carbon sources," ),
+              a({ -href => "https://doi.org/10.1371/journal.pgen.1010156",
+                  -title => "Filling gaps in bacterial catabolic pathways with computation and high-throughput genetics" },
+                "paper from 2022"),
+              "on GapMind for carbon sources,",
               "or view the",
               a({ -href => "https://github.com/morgannprice/PaperBLAST" }, "source code"));
   my $changesFile = "../gaps/$set/changes";
