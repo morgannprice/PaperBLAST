@@ -309,10 +309,10 @@ if (defined $query && $query ne "") {
     last if (@keep) >= $maxHits;
   } # end loop over hits
 
-  fail("Sorry, no hits to curated proteins at above 70% coverage and E < 0.001")
+  fail("Sorry, no hits to curated proteins were found with E < 0.001 and high coverage (70%)")
     if scalar(@keep) == 0;
 
-  print p("Found hits above 70% coverage to", scalar(@keep), " curated proteins");
+  print p("Found high-coverage hits (&ge;70%) to", scalar(@keep), " curated proteins.");
 
   my $nOld = scalar(@keep);
   @keep = grep $_->{identity} < 100, @keep;
@@ -322,6 +322,9 @@ if (defined $query && $query ne "") {
   my $minIdentity = min(0, map $_->{identity}, @keep);
   print p("All hits are nearly identical to the query")
     if $minIdentity  >= 95;
+
+  print p("You can add additional sequences or change the %identity threshold for inclusion.",
+          "Once you have selected sequences, you can build an alignment and a tree.");
 
   # Format the results
   my @include = (); # rows above the threshold
@@ -427,8 +430,9 @@ if (defined $query && $query ne "") {
     my @lines = split /\n/, $fasta;
     my $seqsId = savedHash(\@lines, "seqs");
 
-    print p(a({-href => "treeSites.cgi?seqsId=$seqsId&anchor=$id" }, 
-              "Build an alignment"),
+    print h3("Build an alignment"),
+      p(a({-href => "treeSites.cgi?seqsId=$seqsId&anchor=$id" }, 
+                "Build an alignment"),
             "for", encode_entities($id), "and", scalar(@include),
             "homologs",,
             "with &ge; ${identityThreshold}% identity");
@@ -437,7 +441,7 @@ if (defined $query && $query ne "") {
 
     print addSeqsForm($seqsId,$id);
   } else {
-    print h4("No hits had ${identityThreshold}% identity"),"\n";
+    print h3("No hits had ${identityThreshold}% identity"),"\n";
   }
 
   # Form to change the %identity cutoff
@@ -450,7 +454,7 @@ if (defined $query && $query ne "") {
       end_form), "\n";
 
   if (@formatRest > 0) {
-    print h3("Additional hits");
+    print h3("Additional hits (identity < ${identityThreshold}%)");
     print join("\n", @formatRest), "\n";
   } else {
     print p("No additional hits (below ${identityThreshold}% identity) were found")
@@ -696,6 +700,7 @@ if ($seqsSet) {
     # Show option to build alignment
     print
       p("Have", a({-href => findFile($seqsId,"seqs")}, scalar(keys %seqs), "sequences")),
+      p("You can align the sequences or select additional sequences. Once you have an alignment, you can build a tree."),
       start_form(-name => 'input', -method => 'POST', -action => 'treeSites.cgi'),
       hidden(-name => 'seqsId', -default => $seqsId, -override => 1),
       hidden(-name => 'anchor'),
@@ -861,12 +866,15 @@ if (! $treeSet) { # Build the tree or show the form
     # end tree building mode
   } else {
     # Form to compute a tree
-    print p("The alignment has", scalar(keys %alnSeq), "sequences of length $alnLen");
+    print p("The alignment has", scalar(keys %alnSeq), "sequences of length $alnLen.",
+            "You can compute a tree with",
+            a({-href => "http://www.microbesonline.org/fasttree/"}, "FastTree 2"),
+            "or build your own and upload it.");
     print
       start_form(-name => 'buildTree', -method => 'POST', -action => 'treeSites.cgi'),
       hidden(-name => 'alnId', -default => $alnId, -override => 1),
       hidden(-name => 'anchor'),
-      p("Compute a tree:"),
+      p(b("Compute a tree:")),
       p(checkbox(-name => 'trimGaps', -checked => 1, -value => 1, -label => ''),
         "Trim columns that are &ge;50% gaps"),
       p(checkbox(-name => 'trimLower', -checked => 1, -value => 1, -label => ''),
@@ -877,7 +885,7 @@ if (! $treeSet) { # Build the tree or show the form
       start_form(-name => 'inputTree', -method => 'POST', -action => 'treeSites.cgi'),
       hidden(-name => 'alnId', -default => $alnId, -override => 1),
       hidden(-name => 'anchor'),
-      p("Or upload a rooted tree in newick format:", filefield(-name => 'treeFile', -size => 50)),
+      p(b("Or upload a rooted tree in newick format:"), filefield(-name => 'treeFile', -size => 50)),
       p(submit(-name => "input", -value => "Upload")),
       end_form;
     finish_page();
@@ -2056,11 +2064,12 @@ sub addSeqsForm($$) {
          start_form(-name => 'addSeqs', -method => 'POST', -action => 'treeSites.cgi'),
          hidden(-name => 'seqsId', -default => $seqsId, -override => 1),
          hidden(-name => 'anchor', -default => $anchorId, -override => 1),
+         h3("Select sequences"),
          "Add sequences from UniProt, PDB, RefSeq, or MicrobesOnline (separate identifiers with commas or spaces):",
          br(),
          textfield(-name => "addSeq", -override => 1, -default => "", -size => 50, -maxLength => 1000),
          submit(-name => "Add"),
          br(),
          end_form,
-         "or " . a({-href => findFile($seqsId, "seqs")}, "download") . " the sequences");
+         p("Or", a({-href => findFile($seqsId, "seqs")}, "download"), "the sequences"));
 }
