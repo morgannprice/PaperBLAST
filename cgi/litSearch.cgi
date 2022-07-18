@@ -182,7 +182,7 @@ articles:
     Descriptions from ENA rely on the original submitter of the
     sequence and cannot be updated by others, so they may be less reliable.
 </UL>
-<P>Except for GeneRIF,
+<P>Except for GeneRIF and ENA,
 the curated entries include a short curated
 description of the protein's function.
 For entries from BioLiP, the protein's function may not be known beyond binding to the ligand.
@@ -197,7 +197,7 @@ You can download PaperBLAST's database <A HREF="https://github.com/morgannprice/
 <P>Changes to PaperBLAST since the paper was written:
 
 <UL>
-<LI>June 2022: incorporated ENA.
+<LI>June 2022: incorporated some coding sequences from ENA with the /experiment tag.
 <LI>March 2022: incorporated BioLiP.
 <LI>April 2020: incorporated TCDB.
 <LI>April 2019: EuropePMC now returns table entries in their search results. This has expanded PaperBLAST's database, but most of the new entries are of low relevance, and the resulting snippets are often just lists of locus tags with annotations.
