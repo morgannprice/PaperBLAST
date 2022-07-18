@@ -309,8 +309,13 @@ if (defined $query && $query ne "") {
     last if (@keep) >= $maxHits;
   } # end loop over hits
 
-  fail("Sorry, no hits to curated proteins were found with E < 0.001 and high coverage (70%)")
-    if scalar(@keep) == 0;
+  if (scalar(@keep) == 0) {
+    print p("Sorry, no hits to curated proteins were found with E < 0.001 and high coverage (70%)");
+    my @lines = (">$id", $seq);
+    my $seqsId = savedHash(\@lines, "seqs");
+    print addSeqsForm($seqsId, $id);
+    finish_page();
+  }
 
   print p("Found high-coverage hits (&ge;70%) to", scalar(@keep), " curated proteins.");
 
