@@ -740,9 +740,21 @@ sub RefSeqToFasta($) {
 
   # Fetch genbank format for entry $id
   print "<P>Looking for $short in genbank entry $id\n";
-  $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=Nucleotide&rettype=gbwithparts&retmode=text&id=$id";
-  my $gb = get($url);
-  my $seqio = Bio::SeqIO->new(-fh => IO::String->new($gb), -format => "genbank");
+  my $cacheGbk = "../tmp/cache/gb.$id.gbk";
+  my $seqio;
+  if (-e $cacheGbk) {
+    open my $fh, "<", $cacheGbk || die "Cannot read $cacheGbk";
+    $seqio = Bio::SeqIO->new(-fh => $fh, -format => "genbank");
+  } else {
+    $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=Nucleotide&rettype=gbwithparts&retmode=text&id=$id";
+    my $gb = get($url);
+    fail("Failed to fetch $url from NCBI, please try again") if !defined $gb;
+    fail("Fetching $url from NCBI gave empty results") if $gb eq "" || $gb eq "\n";
+    open my $fh, ">", $cacheGbk || die "Cannot write to $cacheGbk";
+    print $fh $gb;
+    close($fh) || die "Error writing to $cacheGbk";
+    $seqio = Bio::SeqIO->new(-fh => IO::String->new($gb), -format => "genbank");
+  }
   while (my $seq = $seqio->next_seq) {
     foreach my $ft ($seq->get_SeqFeatures) {
       next unless $ft->primary_tag eq "CDS"
@@ -758,6 +770,7 @@ sub RefSeqToFasta($) {
       return ">$defline\n$aaseq";
     }
   }
+  print p("Sorry, failed find $short in the genbank file, see $cacheGbk");
   return undef;
 }
 

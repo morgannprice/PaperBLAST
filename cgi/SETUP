@@ -9,7 +9,8 @@ sqlite3 must be installed
 
 bin/ cgi/ lib/ static/ should match the code repository
 
-The tmp/ subdirectory should be writable by the web server
+The tmp/ subdirectory and the tmp/cache/ subdirectories should exist
+and be writable by the web server.
 
 For treeSites.cgi to work, the tmp/aln subdirectory should exist and
 be writable by the web server.
