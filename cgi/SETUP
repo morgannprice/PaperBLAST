@@ -53,6 +53,11 @@ that the web server does not provide access to files in the private/
 directory.  If using apache, the private/.htaccess sile hould read
 "Deny to all").
 
+For querying NCBI, it is recommended to put an NCBI API key in
+private/.NCBI.api_key as a single line. For documentation about
+NCBI's API keys see
+https://ncbiinsights.ncbi.nlm.nih.gov/2017/11/02/new-api-keys-for-the-e-utilities/
+
 Several of the fetching tools (as used within Curated BLAST) require
 LWP::Protocol::https.
 

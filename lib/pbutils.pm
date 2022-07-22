@@ -4,6 +4,7 @@ require Exporter;
 use strict;
 use File::stat;
 use Digest::MD5 qw{md5_hex};
+require FindBin;
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
@@ -18,7 +19,8 @@ our (@ISA,@EXPORT);
              SQLiteLine SqliteImport
              reverseComplement seqPosToAlnPos
              idToSites idToSiteRows
-             ParseClustal ParseStockholm!;
+             ParseClustal ParseStockholm
+             getNCBIKey addNCBIKey!;
 
 sub read_list($) {
   my ($file) = @_;
@@ -566,6 +568,26 @@ sub idToSites($$$$$) {
     $out{$pos} = join("; ", @parts);
   }
   return \%out;
+}
+
+sub getNCBIKey() {
+  my $file = $FindBin::RealBin . "/../private/.NCBI.api_key";
+  open(my $fh, "<", $file);
+  if ($fh) {
+    my $key = <$fh>;
+    chomp $key;
+    close($fh);
+    return($key);
+  }
+  return(undef);
+}
+
+# Add NCBI API key to a URL, or no change if the key is not set
+sub addNCBIKey($) {
+  my ($url) = @_;
+  my $key = getNCBIKey();
+  $url .= "&api_key=$key" if defined $key;
+  return $url;
 }
 
 1;

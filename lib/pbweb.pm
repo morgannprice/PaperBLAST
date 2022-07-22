@@ -10,6 +10,7 @@ use DBI;
 use IO::String;
 use Bio::SeqIO;
 use URI::Escape;
+use pbutils qw{addNCBIKey};
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
@@ -727,13 +728,13 @@ sub RefSeqToFasta($) {
     # Potentially an NCBI protein identifier like WP_093840703.1 or AAC76544.1
     # (the version number like .1 is optional)
     my $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.cgi?db=Protein&rettype=fasta&id=$short";
-    my $results = get($url);
+    my $results = get(addNCBIKey($url));
     return $results if defined $results && $results =~ m/^>/;
   }
   return undef unless $short =~ m/^[A-Za-z][A-Za-z0-9]+_[A-Za-z0-9]+[.]?\d?$/;
 
   my $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.cgi?db=Nucleotide&retmode=json&term=$short";
-  my $json = from_json(get($url));
+  my $json = from_json(get(addNCBIKey($url)));
   return undef unless defined $json;
   my $id = $json->{esearchresult}{idlist}[0];
   return undef unless $id;
@@ -747,7 +748,7 @@ sub RefSeqToFasta($) {
     $seqio = Bio::SeqIO->new(-fh => $fh, -format => "genbank");
   } else {
     $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=Nucleotide&rettype=gbwithparts&retmode=text&id=$id";
-    my $gb = get($url);
+    my $gb = get(addNCBIKey($url));
     fail("Failed to fetch $url from NCBI, please try again") if !defined $gb;
     fail("Fetching $url from NCBI gave empty results") if $gb eq "" || $gb eq "\n";
     open my $fh, ">", $cacheGbk || die "Cannot write to $cacheGbk";

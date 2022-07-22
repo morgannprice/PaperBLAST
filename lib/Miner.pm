@@ -6,7 +6,7 @@ use LWP::Simple;
 use LWP::UserAgent;
 use HTTP::Request;
 use JSON;
-
+use pbutils qw{addNCBIKey};
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
@@ -300,7 +300,7 @@ sub FetchPubMed {
       sleep(1) if $iTry > 0; # wait for NCBI to recover
       my $URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.cgi?db=PubMed&rettype=xml&id="
         . join(",",@set);
-      my $results = LWP::Simple::get($URL);
+      my $results = LWP::Simple::get(addNCBIKey($URL));
       unless (defined $results && $results =~ m/PubmedArticleSet/) {
         print STDERR "Warning: Could not fetch results for ids $set[0] to $set[-1], retrying\n";
         next;

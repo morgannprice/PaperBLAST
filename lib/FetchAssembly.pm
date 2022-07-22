@@ -54,7 +54,7 @@ sub FetchNCBIInfo($) {
   # First run the query using esearch
   my $URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=assembly&retmax=${maxAssemblyList}&term=" . $query;
   my $nRetry = 2;
-  my $string = FetchWithRetry($URL, $nRetry);
+  my $string = FetchWithRetry(addNCBIKey($URL), $nRetry);
   die "Failed to contact NCBI eutils at $URL\n" unless $string;
   my $fxml = XML::LibXML->load_xml(string => $string, recover => 1);
   my @idnodes = $fxml->findnodes("//IdList/Id");
@@ -66,7 +66,7 @@ sub FetchNCBIInfo($) {
   @ids = $ids[0..($maxAssemblyList-1)] if scalar(@ids) > $maxAssemblyList;
   my $idspec= join(",",@ids);
   $URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=assembly&id=$idspec";
-  $string = FetchWithRetry($URL, $nRetry);
+  $string = FetchWithRetry(addNCBIKey($URL), $nRetry);
   die "Failed to contact NCBI eutils at $URL\n" unless $string;
   my $sxml = XML::LibXML->load_xml(string => $string, recover => 1);
   my @obj = $sxml->findnodes("//DocumentSummary");
