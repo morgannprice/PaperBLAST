@@ -153,7 +153,7 @@ unless (-e $resultsFile
 # Parse the results. For each unique sequence id, a hash
 # of hmmAcc, hmmlen, evalue, score, and hits, which is a list of hashes,
 # each containing domscore, hmmfrom, hmmto, envfrom, envto [envelope coordinates]
-my %hits = (); 
+my %hits = ();
 
 open(IN, "<", $resultsFile) || die "Cannot read $resultsFile";
 while(my $line = <IN>) {
@@ -174,13 +174,12 @@ while(my $line = <IN>) {
 }
 close(IN) || die "Error reading $resultsFile";
 
+my $URL = pbweb::HMMToURL($hmmId);
+my $hmmLink = $isUploaded ? "Uploaded HMM" : $hmmId;
+$hmmLink = a({-href => $URL}, $hmmLink) if $URL;
 if (keys %hits > 0) {
   my $first = (values %hits)[0];
-  my $URL = $hmmfile;
-  $URL = "https://www.ncbi.nlm.nih.gov/Structure/cdd/$hmmId" if $hmmId =~ m/^TIGR\d+$/;
-  $URL = "https://pfam.xfam.org/family/$hmmId" if $hmmId =~ m/^PF\d+$/;
-  my @parts = (a({ -href => $URL}, escapeHTML($first->{hmmAcc})),
-               "hits",
+  my @parts = ($hmmLink, "hits",
                scalar(keys %hits), "sequences in PaperBLAST's database above the trusted cutoff.");
   if ($curatedOnly) {
     push @parts, "Showing hits to curated sequences only.",
@@ -194,7 +193,7 @@ if (keys %hits > 0) {
   push @parts, "or try", a({-href => "hmmSearch.cgi"}, "another family.");
   print p(@parts);
 } else {
-  print p("Sorry, no hits for", a({ -href => $hmmfile }, $showId) . ".",
+  print p("Sorry, no hits for $hmmLink.",
           "Try",
           a({-href => "hmmSearch.cgi"},
             "another family."));

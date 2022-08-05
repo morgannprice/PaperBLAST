@@ -1101,7 +1101,7 @@ sub HMMToURL($) {
     return "https://www.ncbi.nlm.nih.gov/Structure/cdd/".$hmmId;
   } elsif ($hmmId =~ m/^PF/) {
     my $hmmIdShort = $hmmId; $hmmIdShort =~ s/[.]\d+$//;
-    return "http://pfam.xfam.org/family/".$hmmIdShort;
+    return "https://www.ebi.ac.uk/interpro/entry/pfam/$hmmIdShort/";
   }
   return "";
 }

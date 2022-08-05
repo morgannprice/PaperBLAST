@@ -32,7 +32,7 @@ use Time::HiRes qw{gettimeofday};
 use DBI;
 use lib "../lib";
 use pbutils qw{ReadTable NewerThan CuratedWordMatch ReadFastaEntry};
-use pbweb qw{start_page AddCuratedInfo GeneToHtmlLine DataForStepParts FormatStepPart LinkifyComment};
+use pbweb qw{start_page AddCuratedInfo GeneToHtmlLine DataForStepParts FormatStepPart LinkifyComment HMMToURL};
 use Steps qw{ReadSteps};
 use DB_File;
 use URI::Escape;
@@ -836,7 +836,7 @@ sub CuratedToHtml($$) {
       die $pfam unless $pfam =~ m/^PF\d+$/;
       my $cov = ($row->{hmmTo} - $row->{hmmFrom} + 1) / $row->{hmmLen};
       my $covPercent = int(0.5 + 100 * $cov);
-      push @pfams, a({ -href => "http://pfam.xfam.org/family/${pfam}#pfamContent",
+      push @pfams, a({ -href => HMMToURL($pfam),
                        -title => "amino acids $row->{seqFrom}:$row->{seqTo} (${covPercent}% coverage of $row->{hmmAcc}, $row->{bits} bits)" },
                      $row->{hmmName});
     }

@@ -117,7 +117,7 @@ while(my $line = <TSV>) {
     if (@pfamlinks >= 3) {
       push @pfamextra, "$name";
     } else {
-      push @pfamlinks, a({ -href => "http://pfam.xfam.org/family/$pfam", -title => "PFam $pfam $dombeg:$domend", }, $name);
+      push @pfamlinks, a({ -href => HMMToURL($pfam), -title => "PFam $pfam $dombeg:$domend", }, $name);
     }
   }
   push @pfamlinks, a({ -title => join(", ", @pfamextra) }, "...")
