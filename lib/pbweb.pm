@@ -150,7 +150,14 @@ sub AddCuratedInfo($) {
   } elsif ($db eq "biolip") {
     $gene->{priority} = 5; # behind most, but ahead of UniProt entries
     my $entry = $protId; # i.e., 101mA
-    $entry =~ s/[A-Z]$//;
+    # Remove the chain identifier from teh end
+    if ($entry =~ m/^pdb/i) {
+      # Future identifiers will be of the form pdb_00099xyz (12 total characters)
+      $entry = substr($entry, 0, 12);
+    } else {
+      # handle traditional identifiers like 3OSD
+      $entry = substr($entry, 0, 4);
+    }
     $gene->{URL} = "https://www.rcsb.org/structure/" . uc($entry);
     # to show which ligand goes with which PDB structure
     $gene->{comment} .= " " . "(" . a({ -href => $gene->{URL} }, $protId) . ")";
