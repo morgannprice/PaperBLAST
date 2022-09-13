@@ -1067,14 +1067,37 @@ if (defined param('showId') && param('showId') ne "") {
     if exists $alnDesc{$id};
   # Does this match a curated identifier in PaperBLAST's database?
   my @curated = ();
-  my $id2 = $id; $id2 =~ s/_/:/g;
+  my $id2 = $id;
+  # Try to convert back to a PaperBLAST id
+  # Convert db__protId back to db::protId
+  $id2 =~ s/__/::/ if $id2 =~ m/^[a-zA-Z]+__/;
+  if ($id2 =~ m/^reanno::/) {
+    # for entries like reanno::Koxy:BWI76_RS27025 or reanno::pseudo5_N2C3_1:AO356_28500
+    # it can be tricky to parse the organism from the locus. But we can fetch the organism prefix
+    # and then assign any matches
+    my $orgStart = $id2;
+    $orgStart =~ s/^reanno:://;
+    $orgStart =~ s/_.*//;
+    if ($orgStart ne "") {
+      my ($protIds) = $dbh->selectall_arrayref("SELECT protId FROM CuratedGene WHERE db = ? AND protId LIKE ?",
+                                           {}, "reanno", "$orgStart%");
+      foreach my $row (@$protIds) {
+        my $protId = $row->[0];
+        my $protId2 = $protId; $protId2 =~ s/:/_/g;
+        if ("reanno::$protId2" eq $id2) {
+          $id2 = "reanno::$protId";
+          last;
+        }
+      }
+    }
+  }
   my ($uniqId) = $dbh->selectrow_array("SELECT sequence_id FROM SeqToDuplicate WHERE duplicate_id = ?",
                                        {}, $id2);
   $uniqId = $id2 if !defined $uniqId;
   my $dupIds = $dbh->selectcol_arrayref("SELECT duplicate_id FROM SeqToDuplicate WHERE sequence_id = ?",
                                         {}, $uniqId);
   # In case we went from id2 => uniq => id2
-  my @dupIds = grep { $_ ne $id2 } $dupIds;
+  my @dupIds = grep { $_ ne $id2 } @$dupIds;
   foreach my $dupId ($id2, @dupIds) {
     if ($dupId =~ m/^([a-zA-Z]+)::(.*)$/) { # potential curated id
       my ($db, $protId) = ($1,$2);
