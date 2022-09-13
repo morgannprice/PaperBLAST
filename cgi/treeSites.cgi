@@ -350,7 +350,9 @@ if (defined $query && $query ne "") {
     my @parts = map GeneToHtmlLine($_), @genes;
     my $coverage = int(0.5 + 100 * ($row->{qend} - $row->{qbeg} + 1)/length($seq));
 
-    push @parts, "&nbsp;&nbsp;&nbsp; ${identity}% identity, ${coverage}% coverage of query";
+    my $bits = $row->{bits};
+    $bits =~ s/^ +//;
+    push @parts, "&nbsp;&nbsp;&nbsp; ${identity}% identity, ${coverage}% coverage of query ($bits bits)";
     my $formatted = p(join("<BR>", @parts));
     if ($including) {
       push @formatInclude, $formatted;
@@ -364,8 +366,10 @@ if (defined $query && $query ne "") {
     my $subject = $row->{subject};
     my $uniqId = $subject;
     my @fasta = ();
-    my $subjectDesc;
+    my $idSave = $subject;
+    my $subjectDesc = "";
     if ($uniqId =~ m/^([a-zA-Z]+):([a-zA-Z0-9].*)$/) {
+      # From hassites, not from the main database
       my ($db, $id) = ($1,$2);
       my $chain = "";
       my @pieces = split /:/, $id;
@@ -377,7 +381,6 @@ if (defined $query && $query ne "") {
         die "Cannot handle identifier $subject";
       }
 
-      # From hassites, not from the main database
       my $tmpFile = "$tmpPre.fastacmd";
       die "No such command: $fastacmd" unless -x $fastacmd;
       system($fastacmd, "-s", $subject, "-o", $tmpFile, "-d", $hassitesdb) == 0
@@ -391,37 +394,40 @@ if (defined $query && $query ne "") {
                                          {}, $db, $id, $chain);
       $subjectDesc = $info->{desc};
     } else {
+      # from the main database
       my $fasta = DBToFasta($dbh, $blastdb, $uniqId);
       die "No sequence for $uniqId in $blastdb" unless defined $fasta;
       @fasta = split /\n/, $fasta;
       # compute description
       my $dupIds = $dbh->selectcol_arrayref("SELECT duplicate_id FROM SeqToDuplicate WHERE sequence_id = ?",
                                             {}, $subject);
-      my @ids = ( $subject );
-      push @ids, @$dupIds;
-      my @subjectDescs = ();
-      my $org;
-      foreach my $id (@ids) {
+      my @curated = ();
+      foreach my $id ($subject, @$dupIds) {
         if ($id =~ m/^([a-zA-Z]+)::(.*)$/) {
           my ($db, $protId) = ($1,$2);
           my $info = $dbh->selectrow_hashref("SELECT * FROM CuratedGene WHERE db = ? AND protId = ?",
                                              {}, $db, $protId);
           die "Unknown curated item $db::$protId for $subject"
             unless defined $info;
-          push @subjectDescs, $info->{desc};
-          $org = $info->{organism} if $info->{organism} ne "";
+          AddCuratedInfo($info);
+          push @curated, $info;
         }
       }
-      warning("No descriptions for $subject") if @subjectDescs == 0;
-      $subjectDesc = join("; ", @subjectDescs);
-      $subjectDesc .= " ($org)" if $org;
+      if (@curated == 0) {
+        # Since biolip entries are all in Curated, this should not happen; but just issue a warning
+        warning("No descriptions for $subject");
+      } else {
+        @curated = sort { $a->{priority} <=> $b->{priority} || $a->{db} <=> $b->{db} } @curated;
+        my $top = $curated[0];
+        $subjectDesc = $top->{desc};
+        $subjectDesc .= " ($top->{organism})" if $top->{organism} ne "";
+        $idSave = join("::", $top->{db}, $top->{protId});
+      }
     }
-    my $subject2 = $subject; $subject2 =~ s/:/_/g;
-    # turn : in identifiers into _, for compatibility with newick format
-    $fasta[0] = ">" . $subject2 . " " . $subjectDesc;
+    $idSave =~ s/:/_/g; # for compatibility with newick format
+    $fasta[0] = ">" . $idSave . " " . $subjectDesc;
     $row->{fasta} = join("\n", @fasta);
-  }
-
+  } # end loop over included hits
 
   if (@include > 0) {
     # Show the hits above the threshold, the build alignment link, and add sequences form
@@ -1057,12 +1063,41 @@ if (defined param('showId') && param('showId') ne "") {
   print h3("Information about", encode_entities($id)),
     p("Unaligned length:", length($seq)),
     p("Alignment length:", length($alnSeq));
-  print p("Description:", encode_entities($alnDesc{$id}))
+  print p("Description in the alignment:", encode_entities($alnDesc{$id}))
     if exists $alnDesc{$id};
+  # Does this match a curated identifier in PaperBLAST's database?
+  my @curated = ();
+  my $id2 = $id; $id2 =~ s/_/:/g;
+  my ($uniqId) = $dbh->selectrow_array("SELECT sequence_id FROM SeqToDuplicate WHERE duplicate_id = ?",
+                                       {}, $id2);
+  $uniqId = $id2 if !defined $uniqId;
+  my $dupIds = $dbh->selectcol_arrayref("SELECT duplicate_id FROM SeqToDuplicate WHERE sequence_id = ?",
+                                        {}, $uniqId);
+  # In case we went from id2 => uniq => id2
+  my @dupIds = grep { $_ ne $id2 } $dupIds;
+  foreach my $dupId ($id2, @dupIds) {
+    if ($dupId =~ m/^([a-zA-Z]+)::(.*)$/) { # potential curated id
+      my ($db, $protId) = ($1,$2);
+      my $info = $dbh->selectrow_hashref("SELECT * FROM CuratedGene WHERE db = ? AND protId = ?",
+                                         {}, $db, $protId);
+      if (defined $info) {
+        AddCuratedInfo($info);
+        push @curated, $info;
+      }
+    }
+  }
+  @curated = sort { $a->{priority} <=> $b->{priority} || $a->{db} <=> $b->{db} } @curated;
+  if (@curated > 0) {
+    print p("Curated description:");
+    my @parts = map GeneToHtmlLine($_), @curated;
+    push @parts, i("Warning:") . " These curated entries have a different sequence length than the sequence in the alignment."
+      if ($curated[0]{protein_length} != length($seq));
+    print p({-style => "margin-left: 5em;"}, join("<BR>", @parts));
+  }
+
   print p(a({ -href => $idInfo{$id}{URL} }, "Link"),"(from the uploaded table)") if $idInfo{$id}{URL};
 
   # Show functional residues, if any
-  my $id2 = $id; $id2 =~ s/_/:/g;
   my $function = idToSites($dbh, "../bin/blast", "../data/hassites.faa", $id2, $seq);
   if (keys %$function == 0) {
     print p("No known functional residues in $siteSources.");
