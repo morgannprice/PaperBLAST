@@ -1,5 +1,5 @@
 id	desc	URL	color
-	DUF1080 is a family of hydrolases and includes putative 3-ketoglycoside hydrolases. The putative active site was identified from the structure of BT2157 (PDB:3osd). In the tree, BT2157 and other 3-ketoglycoside hydrolases are colored green, and endoglucanase THTE_1561 is in red.		
+	DUF1080 is a family of hydrolases and includes putative 3-ketoglycoside hydrolases. The putative active site was identified from the structure of BT2157 (PDB:3osd). In the tree, BT2157 and other 3-ketoglycoside hydrolases are colored green, and endoglucanase THTE_1561 is in red. These members of DUF1080 were taken from MicrobesOnline (using hits to PFam PF06439.11 with 80 bits or higher), clustered at 60% identity to reduce the number of sequences, and aligned using hmmalign. 		
 10262249_29_210	single domain, from Spirosoma linguale DSM 74	http://microbesonline.org/cgi-bin/fetchLocus.cgi?locus=10262249	
 10265754_21_224	single domain, from Spirosoma linguale DSM 74	http://microbesonline.org/cgi-bin/fetchLocus.cgi?locus=10265754	
 10266833_46_287	single domain, from Spirosoma linguale DSM 74	http://microbesonline.org/cgi-bin/fetchLocus.cgi?locus=10266833	
