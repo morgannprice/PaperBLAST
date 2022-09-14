@@ -2165,7 +2165,7 @@ sub buildColorLegend($$) {
   my @out = ();
   my $yMid = $yTop + 12 + 1;
   push @out, qq{<text x="$xAt" y="$yMid" text-anchor="left" dominant-baseline="middle">amino acids:</text>};
-  $xAt += 90;
+  $xAt += 110;
   foreach my $char (@char) {
     my $title = $aaTitles{$char};
     push @out, qq{<rect x="$xAt" y="$yTop" width="24" height="24" style="fill: $colors{$char}; stroke-width:0">};
@@ -2178,5 +2178,5 @@ sub buildColorLegend($$) {
 }
 
 sub colorLegendWidth() {
-  return 21*24 + 90;
+  return 21*24 + 110;
 }
