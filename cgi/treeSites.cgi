@@ -1480,7 +1480,7 @@ if ($posSet) {
   # Show key residues and highlight the functional ones, with the tree at the left
   # First, lay out the SVG
   my $idLeft = $treeWidth + 10;
-  my $idWidth = 250;
+  my $idWidth = 325;
   my $idRight = $idLeft + $idWidth;
   my $alnLeft = $idRight + 10;
   my $alnTop = $padTop;
@@ -1547,16 +1547,16 @@ if ($posSet) {
       unless $writeSvg;
     my $alnSeq = $alnSeq{$id};
     my $showId = encode_entities($id);
-    $showId .= qq{ <tspan style="font-size:80%;">} . encode_entities($alnDesc{$id}) . "</tspan>";
+    $showId .= " " . encode_entities($alnDesc{$id}) if exists $alnDesc{$id};
     # a space at end of title causes the texntContent of the parent <text> to be correct
     # for the search feature
     $showId = "<TITLE>" . encode_entities($alnDesc{$id}) . " </TITLE>" . $showId if $alnDesc{$id};
-    # Clip the id/description to the $idLeft/$idRight region using clipPath from id-region (defined above)
     my $colorSpec = "";
     $colorSpec = qq{ fill="red" } if $id eq $anchorId;
     $showId = qq{<A xlink:href="$nodeLink{$node}" target="_blank">$showId</A>}
       if $nodeLink{$node} && ! $writeSvg;
-    push @svg, qq{<text text-anchor="start" dominant-baseline="middle" clip-path="url(#id-region)" x="$idLeft" y="$y" $colorSpec>$showId</text>};
+    # Clip the id/description to the $idLeft/$idRight region using clipPath from id-region (defined above)
+    push @svg, qq{<text text-anchor="start" dominant-baseline="middle" clip-path="url(#id-region)" x="$idLeft" y="$y"  font-size="90%" $colorSpec >$showId</text>};
 
     foreach my $i (0..(scalar(@alnPos)-1)) {
       my $pos = $alnPos[$i];
