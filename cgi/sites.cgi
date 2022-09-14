@@ -50,7 +50,7 @@ if (defined param('color') && param('color') eq "clustal") {
 
 my %charToSet = ();
 
-my $borderCol = "#EEEEEE";
+my $borderCol = "#EEEEEE"; # also in pb.js alnHighlight()
 
 my $tmpDir = "../tmp";
 my $blastall = "../bin/blast/blastall";
@@ -435,7 +435,7 @@ foreach my $hit (@hits) {
             } else {
               my $qPos = $alnPosToQpos{ $site->{posAlnFrom} };
               my $qShow = a({-title => "$qChar$qPos in query" }, $qChar.$qPos);
-              my $matchChar = $qChar eq $sChar ? "=" : "<span style='color:red'>&ne;</span>";
+              my $matchChar = $qChar eq $sChar ? "=" : "<span style='color:darkred'>&ne;</span>";
               $posShow .= " ($matchChar $qShow)";
             }
             $posShow = AddMouseOver($posShow, $nHit, $site->{posAlnFrom});
@@ -477,7 +477,7 @@ foreach my $hit (@hits) {
               if ($qSeq eq $sSeq) {
                 $showPos .= " (= ";
               } else {
-                $showPos .= " (<span style='color:red'>&ne;</span> ";
+                $showPos .= " (<span style='color:darkred'>&ne;</span> ";
               }
               my $qShow = $qSeq;
               $qShow .= " " if $posTo ne $posFrom;
@@ -625,8 +625,8 @@ sub AddMouseOver($$$) {
   my ($html, $nHit, $iAln) = @_;
   return $html unless $iAln >= 0;
   my $id = "Aln${nHit}P${iAln}";
-  return span({ -onmouseover => qq{document.getElementById("$id").style.borderColor = "black"},
-                -onmouseout => qq{document.getElementById("$id").style.borderColor = "$borderCol"} },
+  return span({ -onmouseover => "alnHighlight('$id', 1)",
+                -onmouseout => "alnHighlight('$id', 0)" },
               $html);
 }
 

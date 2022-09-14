@@ -27,3 +27,14 @@ function tblexpander(obj) {
     tr.style.display = "none";
     return(true);
 }
+
+function alnHighlight(id,on) {
+  var s = document.getElementById(id).style;
+  if (on) {
+    s.borderColor="black";
+    s.fontWeight="bold";
+  } else {
+    s.borderColor="#EEEEEE";
+    s.fontWeight="normal";
+  }
+}
