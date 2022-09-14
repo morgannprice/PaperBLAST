@@ -101,6 +101,10 @@ sub renderTree;
 # (and a link to download the sequences)
 sub addSeqsForm($$);
 
+# Given xTop and yLeft, return SVG code for a color legend
+sub buildColorLegend($$);
+sub colorLegendWidth();
+
 # maximum size of posted data, in bytes
 my $maxMB = 25;
 $CGI::POST_MAX = $maxMB*1024*1024;
@@ -1374,7 +1378,7 @@ unless ($writeSvg || $writeTsv) {
 
 my $padTop = 70;
 my $treeWidth = 250;
-my $padBottom = 70;
+my $padBottom = 130;
 
 # For leaves, set nodeColor and nodeLink using idInfo, and set nodeTitle using alnDesc
 my (%nodeColor, %nodeTitle, %nodeLink);
@@ -1503,8 +1507,11 @@ if ($posSet) {
   push @svg, scaleBar('maxDepth' => $layout{maxDepth},
                       'treeWidth' => $treeWidth,
                       'treeLeft' => 4,
-                      'y' => max(values %$nodeY) + 0.5 * $padBottom)
+                      'y' => max(values %$nodeY) + 30)
     unless $missingLen;
+  my $colorLegendLeft = 5;
+  push @svg, buildColorLegend($colorLegendLeft, max(values %$nodeY) + $padBottom - 40)
+    if @alnPos > 0;
 
   # Lay out the x positions for each alignment position
   my %posX = (); # position (0-based) to center X
@@ -1524,10 +1531,10 @@ if ($posSet) {
     my $pos1 = $pos + 1;
     push @svg, qq{<text text-anchor="left" transform="translate($xCenter,$labelY) rotate(-45)"><title>Alignment position $pos1</title>#${pos1}</text>};
   }
-  $svgWidth = $maxX + 40;
+  $svgWidth = max($maxX + 40, $colorLegendLeft + colorLegendWidth());
 
   my $alnHeight = max(values %$nodeY) - $alnTop;
-  my $padBottom = 70;
+  my $padBottom = 130;
   $svgHeight = max(values %$nodeY) + $padBottom;
   my $alnTop2 = $alnTop - 10;
   my $alnHeight2 = $alnHeight + 20;
@@ -1708,6 +1715,8 @@ if ($posSet) {
   my $posWidth = 30;
   $svgHeight = $padTop + scalar(@showLeaves) * $rowHeight + $padBottom;
   $svgWidth = $padLeft + $treeWidth + $padMiddle + scalar(@alnPos) * $posWidth + $padRight;
+  my $colorLegendLeft = 5;
+  $svgWidth = max($svgWidth, $colorLegendLeft + colorLegendWidth());
 
   my %layout = layoutTree('tree' => $moTree, 'root' => $rootUse,
                           'leafHeight' => $rowHeight, 'treeTop' => $padTop,
@@ -1892,8 +1901,10 @@ if ($posSet) {
 
   push @svg, scaleBar('maxDepth' => $maxDepth,
                       'treeWidth' => $treeWidth, 'treeLeft' => 4,
-                      'y' => $padTop + scalar(@showLeaves) * $rowHeight + $padBottom * 0.5)
+                      'y' => $padTop + scalar(@showLeaves) * $rowHeight + 30)
     unless $missingLen;
+  push @svg, buildColorLegend($colorLegendLeft, $padTop + scalar(@showLeaves) * $rowHeight + $padBottom - 40)
+    if @alnPos > 0;
 } # end tree+choose_sites mode
 
 if ($writeSvg) {
@@ -2140,4 +2151,32 @@ sub addSeqsForm($$) {
          br(),
          end_form,
          p("Or", a({-href => findFile($seqsId, "seqs")}, "download"), "the sequences"));
+}
+
+sub buildColorLegend($$) {
+  my %aaTitles = qw{- gap A alanine C cysteine D aspartate E glutamate
+                    F phenylalanine G glycine H histidine I isoleucine
+                    K lysine L leucine M methionine N asparagine P proline Q glutamine
+                    R arginine S serine T threonine V valine W tryptophan Y tyrosine};
+
+  my ($xLeft, $yTop) = @_;
+  my @char = sort keys %colors;
+  my $xAt = $xLeft;
+  my @out = ();
+  my $yMid = $yTop + 12 + 1;
+  push @out, qq{<text x="$xAt" y="$yMid" text-anchor="left" dominant-baseline="middle">amino acids:</text>};
+  $xAt += 90;
+  foreach my $char (@char) {
+    my $title = $aaTitles{$char};
+    push @out, qq{<rect x="$xAt" y="$yTop" width="24" height="24" style="fill: $colors{$char}; stroke-width:0">};
+    push @out, qq{<TITLE>$title</TITLE></rect>};
+    my $xMid = $xAt + 12;
+    push @out, qq{<text x="$xMid" y="$yMid" text-anchor="middle" dominant-baseline="middle" ><TITLE>$title</TITLE>$char</text>};
+    $xAt += 24;
+  }
+  return join("", @out);
+}
+
+sub colorLegendWidth() {
+  return 21*24 + 90;
 }
