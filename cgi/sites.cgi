@@ -422,17 +422,22 @@ foreach my $hit (@hits) {
         my @posShow = ();
         foreach my $site (@$ligSites) {
           my $posShow = "";
-          my $qChar = substr($alnS, $site->{posAlnFrom}-1, 1) if $isAligned;
-          $posShow .= $qChar if $isAligned;
+          my $sChar = substr($alnS, $site->{posAlnFrom}-1, 1) if $isAligned;
+          $posShow .= $sChar if $isAligned;
           $posShow .= $site->{posFrom};
           $posShow = a({-title => "$site->{pdbFrom} in PDB numbering for $id$chain"},
                        $posShow)
             if $site->{pdbFrom} ne "";
           if ($isAligned) {
             my $qChar = substr($alnQ, $site->{posAlnFrom}-1, 1);
-            $posShow .= " (vs. $qChar"
-              . ($qChar ne "-" ? $alnPosToQpos{ $site->{posAlnFrom} } : "")
-                . ")";
+            if ($qChar eq "-") {
+              $posShow .= " (vs. gap)";
+            } else {
+              my $qPos = $alnPosToQpos{ $site->{posAlnFrom} };
+              my $qShow = a({-title => "$qChar$qPos in query" }, $qChar.$qPos);
+              my $matchChar = $qChar eq $sChar ? "=" : "<span style='color:red'>&ne;</span>";
+              $posShow .= " ($matchChar $qShow)";
+            }
             $posShow = AddMouseOver($posShow, $nHit, $site->{posAlnFrom});
           }
           $posShow = span({-id => "Site${nHit}S" . $site->{iSite} }, $posShow);
@@ -461,18 +466,28 @@ foreach my $hit (@hits) {
           my $site1 = $sitesHere[0];
           my $showPos = "";
           if ($posTo - $posFrom <= 5) {
-            $showPos .= substr($alnS, $site1->{posAlnFrom}-1, $site1->{posAlnTo}-$site1->{posAlnFrom}+1)
-              if $isAligned;
+            my $sSeq;
+            if ($isAligned) {
+              $sSeq = substr($alnS, $site1->{posAlnFrom}-1, $site1->{posAlnTo}-$site1->{posAlnFrom}+1);
+              $showPos .= $sSeq;
+            }
             $showPos .= $posFrom eq $posTo ? $posFrom : " $posFrom:$posTo";
             if ($isAligned) {
-              $showPos .= " (vs. " . substr($alnQ, $site1->{posAlnFrom}-1, $site1->{posAlnTo}-$site1->{posAlnFrom}+1);
-              $showPos .= " " if $posTo ne $posFrom;
-              if (exists $alnPosToQpos{$site1->{posAlnFrom}} && exists $alnPosToQpos{$site1->{posAlnTo}}) {
-                $showPos .= $alnPosToQpos{$site1->{posAlnFrom}};
-                $showPos .= ":" . $alnPosToQpos{$site1->{posAlnTo}}
-                  if $posTo ne $posFrom;
+              my $qSeq = substr($alnQ, $site1->{posAlnFrom}-1, $site1->{posAlnTo}-$site1->{posAlnFrom}+1);
+              if ($qSeq eq $sSeq) {
+                $showPos .= " (= ";
+              } else {
+                $showPos .= " (<span style='color:red'>&ne;</span> ";
               }
-              $showPos .= ")";
+              my $qShow = $qSeq;
+              $qShow .= " " if $posTo ne $posFrom;
+              if (exists $alnPosToQpos{$site1->{posAlnFrom}} && exists $alnPosToQpos{$site1->{posAlnTo}}) {
+                $qShow .= $alnPosToQpos{$site1->{posAlnFrom}};
+                $qShow .= ":" . $alnPosToQpos{$site1->{posAlnTo}}
+                  if $posTo ne $posFrom;
+                $qShow = a({-title => "$qShow in query"}, $qShow);
+              }
+              $showPos .= $qShow . ")";
             }
           } else {
             # large region, report %conserved if aligned
@@ -547,7 +562,7 @@ sub FormatAlnSites($$$$$$) {
         $agree = 1;
       } else {
         $string = "x";
-        $color = "darkred" if $hasSite1;
+        $color = "darkred" if $hasSite1; # not sure that is right
       }
       $class = $agree ? "alnS1" : "alnS0" if $hasSite1;
       my $queryLong = exists $charToLong{$queryChar} ? $charToLong{$queryChar} : $queryChar;
