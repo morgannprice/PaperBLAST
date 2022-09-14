@@ -410,6 +410,9 @@ if (defined $query && $query ne "") {
           die "Unknown curated item $db::$protId for $subject"
             unless defined $info;
           AddCuratedInfo($info);
+          $info->{pmIds} = $dbh->selectcol_arrayref("SELECT pmId FROM CuratedPaper WHERE db = ? AND protId = ?",
+                                                    {}, $db, $protId);
+
           push @curated, $info;
         }
       }
@@ -1105,6 +1108,8 @@ if (defined param('showId') && param('showId') ne "") {
                                          {}, $db, $protId);
       if (defined $info) {
         AddCuratedInfo($info);
+        $info->{pmIds} = $dbh->selectcol_arrayref("SELECT pmId FROM CuratedPaper WHERE db = ? AND protId = ?",
+                                                  {}, $db, $protId);
         push @curated, $info;
       }
     }
