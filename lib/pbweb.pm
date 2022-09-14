@@ -642,24 +642,23 @@ sub start_page {
 .aaD, .aaE, .aaN, .aaQ, .aaK, .aaR, .aaH, .aaF, .aaW, .aaY,
 .aaP, .aaM, .aaC, .aaG, .aaA, .aaV, .aaL, .aaI, .aaS, .aaT, .aaGap,
 .alnS, .alnS1, .alnS0 {
-  padding-left: 1px; padding-right: 1px; font-weight: bold;
+  padding-left: 3px; padding-right: 3px; margin-top: 1px;
 }
 
 /* for an alignment column */
 .alnCol, .alnLabel {
   vertical-align:top; float:left; display:inline-block;
   margin-top: 1.5em;
-  font-family: "Courier New", monospace;
-  font-size: 90%;
+  font-family: "Courier New", monospace; font-size: 90%;
 }
 .alnCol { background-color: #EEEEEE;
-  border-width-left: 1px; border-width-right: 1px;
-  border-width-top: 2px; border-width-bottom: 2px;
+  border-width: 1px;
+  /*border-width-left: 1px; border-width-right: 1px;   border-width-top: 2px; border-width-bottom: 2px;*/
   border-color: #EEEEEE; border-style: solid; }
 
 /* In many browsers, the label prevents the columns from wrapping all the way to the left,
    so, make it subtly smaller */
-.alnLabel { margin-right: 0.5em; padding-top: 0.04em; border: none; font-size: 85% }
+.alnLabel { margin-right: 0.5em; border: none; font-size: 85%; }
 
 END
 ;
