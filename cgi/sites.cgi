@@ -153,7 +153,7 @@ my $nHits = scalar(@hits) || "no";
 $nHits .= " (the maximum)" if $nHits eq $maxHits;
 print p("Found $nHits hits to proteins with known functional sites",
        "(" . a({ -href => "sites.cgi?format=tsv&query=".uri_escape($query),
-                 -title => "tab-delimited format"}, "download") . ")"), "\n"
+                 -title => "SitesBLAST results in a tab-delimited format"}, "download") . ")"), "\n"
   unless $format eq "tsv";
 unlink("$seqFile.out");
 
@@ -503,29 +503,44 @@ foreach my $hit (@hits) {
             $sSeq = substr($alnS, $site1->{posAlnFrom}-1, $site1->{posAlnTo}-$site1->{posAlnFrom}+1);
             $qSeq = substr($alnQ, $site1->{posAlnFrom}-1, $site1->{posAlnTo}-$site1->{posAlnFrom}+1);
           }
+          # If it's a multi-position site, and either the 1st or last position aligns to a gap,
+          # we can't just use the full range to get the range in the query. Instead, we need to
+          # see if there is a corresponding range.
+          my @qPos;
+          foreach my $alnPos ($site1->{posAlnFrom} .. $site1->{posAlnTo}) {
+            push @qPos, $alnPosToQpos{$alnPos} if exists $alnPosToQpos{$alnPos};
+          }
+          my ($qFirst, $qLast);
+          if (@qPos > 0) {
+            $qFirst = $qPos[0];
+            $qLast = $qPos[-1];
+          }
           if ($posTo - $posFrom <= 5) {
             $showPos .= $sSeq if $isAligned;
             $showPos .= $posFrom eq $posTo ? $posFrom : " $posFrom:$posTo";
             if ($isAligned) {
-              if ($qSeq eq $sSeq) {
-                $showPos .= " (= ";
+              if (!defined $qFirst) {
+                $showPos .= " (vs. gap)";
               } else {
-                $showPos .= " (<span style='color:darkred'>&ne;</span> ";
+                if ($qSeq eq $sSeq) {
+                  $showPos .= " (= ";
+                } else {
+                  $showPos .= " (<span style='color:darkred'>&ne;</span> ";
+                }
+                my $qShow = $qSeq;
+                $qShow .= " " if $posTo ne $posFrom;
+                if (@qPos > 0) {
+                  $qShow .= $qFirst;
+                  $qShow .= ":" . $qLast if $qFirst != $qLast;
+                  $qShow = a({-title => "$qShow in query"}, $qShow);
+                }
+                $showPos .= $qShow . ")";
               }
-              my $qShow = $qSeq;
-              $qShow .= " " if $posTo ne $posFrom;
-              if (exists $alnPosToQpos{$site1->{posAlnFrom}} && exists $alnPosToQpos{$site1->{posAlnTo}}) {
-                $qShow .= $alnPosToQpos{$site1->{posAlnFrom}};
-                $qShow .= ":" . $alnPosToQpos{$site1->{posAlnTo}}
-                  if $posTo ne $posFrom;
-                $qShow = a({-title => "$qShow in query"}, $qShow);
-              }
-              $showPos .= $qShow . ")";
             }
           } else {
             # large region, report %conserved if aligned
             $showPos .= "$posFrom:$posTo";
-            if ($isAligned) {
+            if ($isAligned && $qFirst) {
               # compute %conservation and then
               my $regionQ = substr($alnQ, $site1->{posAlnFrom}-1, $site1->{posAlnTo}-$site1->{posAlnFrom}+1);
               my $regionS = substr($alnS, $site1->{posAlnFrom}-1, $site1->{posAlnTo}-$site1->{posAlnFrom}+1);
@@ -537,19 +552,15 @@ foreach my $hit (@hits) {
                 $nMatch++ if substr($regionQ,$i,1) eq substr($regionS,$i,1);
               }
               my $percMatch = int(0.5 + 100 * $nMatch/$n);
-              $showPos .= " (vs. " . $alnPosToQpos{$site1->{posAlnFrom}}
-                . ":" . $alnPosToQpos{$site1->{posAlnTo}}
-                  . ", ${percMatch}% identical)";
+              $showPos .= " (vs. $qFirst:$qLast, ${percMatch}% identical)";
+            } elsif ($isAligned ){
+              $showPos .= " (vs. gap)";
             }
           }
           $showPos = AddMouseOver($showPos, $nHit, $site1->{posAlnFrom})
             if $isAligned;
           my @siteDesc = map span({-id => "Site${nHit}S" . $_->{iSite} }, $_->{longDesc}), @sitesHere;
-          push @bullets, li($showPos, join(br(), @siteDesc));
-          my @qPos;
-          @qPos = ( $alnPosToQpos{$site1->{posAlnFrom}}, $alnPosToQpos{$site1->{posAlnTo}} )
-            if $isAligned;
-
+          push @bullets, li($showPos, join("; ", @siteDesc));
           print join("\t", $header, $db,
                      $db eq "PDB" ? $id.$chain : $id2,
                      sprintf("%.1f", 100 * $hsp->frac_identical),
@@ -558,7 +569,7 @@ foreach my $hit (@hits) {
                      join("; ", map $_->{shortDesc}, @$sitesHere),
                      $posFrom eq $posTo ? $posFrom : "$posFrom..$posTo",
                      $sSeq || "",
-                     $isAligned ? ($qPos[0] == $qPos[1] ? $qPos[0] : "$qPos[0]..$qPos[1]") : "",
+                     defined $qFirst ? ($qFirst == $qLast ? $qFirst : "$qFirst..$qLast") : "",
                      $qSeq || "")."\n"
                        if $format eq "tsv";
         }                       # end loop over PosTo
