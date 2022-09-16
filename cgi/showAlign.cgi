@@ -73,10 +73,15 @@ my $newline = "%0A";
 print
     p("$def1Show: $len1 amino acids", br(),
       "$def2Show: $len2 amino acids"),
+    p("Or try SitesBLAST with",
+      a({ -href => "sites.cgi?query=>$def1$newline$seq1"}, "$def1Show"),
+      "or",
+      a({ -href => "sites.cgi?query=>$def2$newline$seq2"}, "$def2Show")),
     p("Or search the Conserved Domains Database with",
       a({ -href => "$cdd_base$def1$newline$seq1" }, $def1Show),
       "or",
-      a({ -href => "$cdd_base$def2$newline$seq2" }, $def2Show));
+      a({ -href => "$cdd_base$def2$newline$seq2" }, $def2Show)),
+    "\n";
 
 open(FAA1, ">", "$prefix.faa1");
 print FAA1 ">seq1\n$seq1\n";
@@ -123,6 +128,13 @@ print
 $| = 1; # flush STDOUT
 
 print p("acc2 = $acc2; out[0] = $out[0]")."\n" if $debug && defined $acc2;
+
+unlink("$prefix.bl2seq") unless $debug;
+finish_page();
+
+# Old code for the feature report; this is obsolete now that you can run SitesBLAST
+# (but arguably it should look up the hash of the subject and see if there are sites in its database)
+
 if (defined $acc2 && $out[0] !~ m/No hits/i) {
   print p("Looking for uniprot id for $acc2")."\n" if $debug;
   # Make a feature report
