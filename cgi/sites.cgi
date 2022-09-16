@@ -5,6 +5,7 @@ use strict;
 #
 # Optional CGI parameters:
 # query -- this should be the protein sequence in FASTA or UniProt or plain format
+# format -- set to "tsv" to download a tab-delimited table
 #
 # If query is not specified, shows a query box
 
@@ -79,12 +80,17 @@ my $query = $cgi->param('query') || "";
 my $maxHits = 20;
 my $maxE = 0.001;
 
-my $title = "SitesBLAST";
-start_page('title' => $title);
+my $format = $cgi->param('format') || "";
+$format = "" unless $format eq "tsv";
+
+if ($format ne "tsv") {
+  my $title = "SitesBLAST";
+  start_page('title' => $title);
 print <<END
 <SCRIPT src="../static/pb.js"></SCRIPT>
 END
 ;
+}
 
 my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
 autoflush STDOUT 1; # show preliminary results
@@ -92,6 +98,13 @@ my ($header, $seq) = parseSequenceQuery(-query => $query,
                                         -dbh => $dbh,
                                         -blastdb => $blastdb,
                                         -fbdata => $fbdata);
+
+if ($format eq "tsv") {
+  die "No sequence found\n" if !defined $seq;
+  print "Content-Type:text/tab-separated-values\n";
+  print "Content-Disposition: attachment; filename=SitesBLAST.tsv\n\n";
+}
+
 unless (defined $seq) {
   print
     GetMotd(),
@@ -118,7 +131,8 @@ $query = ">$header\n$seq\n";
 
 print p("Comparing $header to proteins with known functional sites using BLASTp with E &le; $maxE."),
   p("Or try", a({-href => "treeSites.cgi?query=".uri_escape($query)}, "Sites on a Tree")),
-  "\n";
+  "\n"
+  unless $format eq "tsv";
 open(my $fhFaa, ">", $seqFile) || die "Cannot write to $seqFile\n";
 print $fhFaa ">$header\n$seq\n";
 close($fhFaa) || die "Error writing to $seqFile\n";
@@ -137,8 +151,16 @@ while (my $result = $searchio->next_result) {
 }
 my $nHits = scalar(@hits) || "no";
 $nHits .= " (the maximum)" if $nHits eq $maxHits;
-print p("Found $nHits hits to proteins with known functional sites"),"\n";
+print p("Found $nHits hits to proteins with known functional sites",
+       "(" . a({ -href => "sites.cgi?format=tsv&query=".uri_escape($query),
+                 -title => "tab-delimited format"}, "download") . ")"), "\n"
+  unless $format eq "tsv";
 unlink("$seqFile.out");
+
+print join("\t", qw{queryId subjectDb subjectId identity queryAlnBegin queryAlnEnd sujectAlnBegin subjectAlnEnd
+                    subjectDescription evalue bits
+                    subjectSite subjectSiteRange subjectSiteSeq querySiteRange querySiteSeq})."\n"
+  if $format eq "tsv";
 
 my $nHit = 0;
 foreach my $hit (@hits) {
@@ -250,7 +272,9 @@ foreach my $hit (@hits) {
           small(a({-title => "$bits bits, E = $eval"},
                   "${identityString}% identity,",
                   "${coverageString}% coverage:",
-                  "${queryBeg}:${queryEnd}/${queryLen} of query aligns to ${hitBeg}:${hitEnd}${fromSubjectString} of ${id}${chain}")));
+                  "${queryBeg}:${queryEnd}/${queryLen} of query aligns to",
+                  "${hitBeg}:${hitEnd}${fromSubjectString} of ${id}${chain}")))
+    if $format ne "tsv";
 
   # Fetch relevant ligand information
   my %ligands = map { $_->{ligandId} => 1 } @$sites;
@@ -388,16 +412,15 @@ foreach my $hit (@hits) {
              join(br(), @alnLabels)),
          "\n",
          @alnColumns),
-           "\n",
-             div({-style => "clear:both;"}, ""),
-               "\n";
+    "\n", div({-style => "clear:both;"}, ""), "\n"
+      if $format ne "tsv";
 
   my @alignedSites = grep $_->{isAligned}, @$sites;
   my @unalignedSites = grep ! $_->{isAligned}, @$sites;
   foreach my $isAligned (1,0) {
     my $sitesThisAlign = $isAligned ? \@alignedSites : \@unalignedSites;
     next unless @$sitesThisAlign > 0;
-    print p("Sites not aligning to the query:") if !$isAligned;
+    print p("Sites not aligning to the query:") if !$isAligned && $format ne "tsv";
     my @bullets = ();
 
     if ($db eq "PDB") {
@@ -428,12 +451,13 @@ foreach my $hit (@hits) {
           $posShow = a({-title => "$site->{pdbFrom} in PDB numbering for $id$chain"},
                        $posShow)
             if $site->{pdbFrom} ne "";
+          my ($qChar, $qPos);
           if ($isAligned) {
-            my $qChar = substr($alnQ, $site->{posAlnFrom}-1, 1);
+            $qChar = substr($alnQ, $site->{posAlnFrom}-1, 1);
             if ($qChar eq "-") {
               $posShow .= " (vs. gap)";
             } else {
-              my $qPos = $alnPosToQpos{ $site->{posAlnFrom} };
+              $qPos = $alnPosToQpos{ $site->{posAlnFrom} };
               my $qShow = a({-title => "$qChar$qPos in query" }, $qChar.$qPos);
               my $matchChar = $qChar eq $sChar ? "=" : "<span style='color:darkred'>&ne;</span>";
               $posShow .= " ($matchChar $qShow)";
@@ -442,6 +466,15 @@ foreach my $hit (@hits) {
           }
           $posShow = span({-id => "Site${nHit}S" . $site->{iSite} }, $posShow);
           push @posShow, $posShow;
+          print join("\t", $header, $db,
+                     $db eq "PDB" ? $id.$chain : $id2,
+                     sprintf("%.1f", 100 * $hsp->frac_identical),
+                     $queryBeg, $queryEnd, $hitBeg, $hitEnd,
+                     $desc, $eval, $bits,
+                     $site->{shortDesc},
+                     $site->{posFrom}, $sChar || "",
+                     $qPos || "", $qChar || "" )."\n"
+                       if $format eq "tsv";
         }
         push @bullets, li($ligShow, join(", ", @posShow));
       }
@@ -465,15 +498,15 @@ foreach my $hit (@hits) {
           die unless @sitesHere > 0;
           my $site1 = $sitesHere[0];
           my $showPos = "";
+          my ($sSeq,$qSeq);
+          if ($isAligned) {
+            $sSeq = substr($alnS, $site1->{posAlnFrom}-1, $site1->{posAlnTo}-$site1->{posAlnFrom}+1);
+            $qSeq = substr($alnQ, $site1->{posAlnFrom}-1, $site1->{posAlnTo}-$site1->{posAlnFrom}+1);
+          }
           if ($posTo - $posFrom <= 5) {
-            my $sSeq;
-            if ($isAligned) {
-              $sSeq = substr($alnS, $site1->{posAlnFrom}-1, $site1->{posAlnTo}-$site1->{posAlnFrom}+1);
-              $showPos .= $sSeq;
-            }
+            $showPos .= $sSeq if $isAligned;
             $showPos .= $posFrom eq $posTo ? $posFrom : " $posFrom:$posTo";
             if ($isAligned) {
-              my $qSeq = substr($alnQ, $site1->{posAlnFrom}-1, $site1->{posAlnTo}-$site1->{posAlnFrom}+1);
               if ($qSeq eq $sSeq) {
                 $showPos .= " (= ";
               } else {
@@ -513,14 +546,32 @@ foreach my $hit (@hits) {
             if $isAligned;
           my @siteDesc = map span({-id => "Site${nHit}S" . $_->{iSite} }, $_->{longDesc}), @sitesHere;
           push @bullets, li($showPos, join(br(), @siteDesc));
+          my @qPos;
+          @qPos = ( $alnPosToQpos{$site1->{posAlnFrom}}, $alnPosToQpos{$site1->{posAlnTo}} )
+            if $isAligned;
+
+          print join("\t", $header, $db,
+                     $db eq "PDB" ? $id.$chain : $id2,
+                     sprintf("%.1f", 100 * $hsp->frac_identical),
+                     $queryBeg, $queryEnd, $hitBeg, $hitEnd,
+                     $desc, $eval, $bits,
+                     join("; ", map $_->{shortDesc}, @$sitesHere),
+                     $posFrom eq $posTo ? $posFrom : "$posFrom..$posTo",
+                     $sSeq || "",
+                     $isAligned ? ($qPos[0] == $qPos[1] ? $qPos[0] : "$qPos[0]..$qPos[1]") : "",
+                     $qSeq || "")."\n"
+                       if $format eq "tsv";
         }                       # end loop over PosTo
       }                         # end loop over PosFrom
     } else {                    # not PDB or SwissProt
       die "Unknown db $db";
     }
-    print start_ul(), @bullets, end_ul(), "\n";
+    print start_ul(), @bullets, end_ul(), "\n" if $format ne "tsv";
   }                             # end loop over isAligned
 }                               # end loop over hits
+
+exit(0) if $format eq "tsv";
+
 my @pieces = $seq =~ /.{1,60}/g;
 print
   h3("Query Sequence"),
@@ -544,27 +595,17 @@ sub FormatAlnSites($$$$$$) {
     my $string = "&nbsp;";
     my $class = "alnS";
     my $title;
-    if ($hitChar ne "-" && exists $hposSite->{$hitAt}) {
+    if ($hitChar ne "-" && exists $hposSite->{$hitAt}) { # site in subject
       my $sitesHere = $hposSite->{$hitAt};
-      my $color = "black";
-
-      my $hasSite1 = 0;
-      if (exists $hposSite->{$hitAt}) {
-        foreach my $site (@{ $hposSite->{$hitAt} }) {
-          if ($site->{posFrom} eq $site->{posTo}) {
-            $hasSite1 = 1;
-          }
-        }
-      }
-      my $agree;
+      # Old logic ste $hasSite1 only if there was a site that covered
+      # this character only. Decided this was wierd.
       if ($queryChar eq $hitChar) {
         $string = "&vert;";
-        $agree = 1;
+        $class = "alnS1";
       } else {
         $string = "x";
-        $color = "darkred" if $hasSite1; # not sure that is right
+        $class = "alnS0";
       }
-      $class = $agree ? "alnS1" : "alnS0" if $hasSite1;
       my $queryLong = exists $charToLong{$queryChar} ? $charToLong{$queryChar} : $queryChar;
       my $hitLong = exists $charToLong{$hitChar} ? $charToLong{$hitChar} : $hitChar;
       $title = "${hitLong}${hitAt} in $hitName: "
