@@ -85,7 +85,9 @@ $format = "" unless $format eq "tsv";
 
 if ($format ne "tsv") {
   my $title = "SitesBLAST";
-  start_page('title' => $title);
+  start_page('title' => $title,
+             'banner' => 'SitesBLAST &ndash; <small>Find functional sites</small>',
+             'bannerURL' => 'sites.cgi');
 print <<END
 <SCRIPT src="../static/pb.js"></SCRIPT>
 END
@@ -120,7 +122,9 @@ unless (defined $seq) {
     p(submit('Search'), reset()),
     end_form,
     p("Or try", a({-href => "treeSites.cgi", -title =>"Sites on a Tree: view functional residues in an alignment"},
-                  "Sites on a Tree"));
+                  "Sites on a Tree"),
+     "or", a({-href => "litSearch.cgi", -title => "PaperBLAST: Find papers about a protein or its homologs"},
+             "PaperBLAST"));
   finish_page();
   exit(0);
 }
