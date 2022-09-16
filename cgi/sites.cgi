@@ -133,8 +133,17 @@ my $hasDef = $header ne "";
 $header = sequenceToHeader($seq) unless $hasDef;
 $query = ">$header\n$seq\n";
 
+my $query2 = $query; $query2 =~ s/[|]/./g;
 print p("Comparing $header to proteins with known functional sites using BLASTp with E &le; $maxE."),
-  p("Or try", a({-href => "treeSites.cgi?query=".uri_escape($query)}, "Sites on a Tree")),
+  p("Or try", a({-href => "treeSites.cgi?query=".uri_escape($query),
+                 -title => "Sites on a Tree: view functional residues in an alignment"},
+                "Sites on a Tree").",",
+    a({-href => "litSearch.cgi?query=".uri_escape($query),
+       -title => "PaperBLAST: find papers about homologs"},
+      "PaperBLAST").",",
+    "or",
+    a({-href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=".uri_escape($query2),
+       -title => "Compare your sequence to NCBI's Conserved Domains Database (CDD)"}, "Conserved Domains")),
   "\n"
   unless $format eq "tsv";
 open(my $fhFaa, ">", $seqFile) || die "Cannot write to $seqFile\n";
@@ -591,7 +600,6 @@ my @pieces = $seq =~ /.{1,60}/g;
 print
   h3("Query Sequence"),
   p({-style => "font-family: monospace;"}, small(join(br(), ">" . HTML::Entities::encode($header), @pieces))),
-  p(a({-href => "litSearch.cgi?query=" . uri_escape($query) }, "Run PaperBLAST on this query")),
   p("Or try a", a({-href => "sites.cgi"}, "new SitesBLAST search")),
   h3("SitesBLAST's Database"),
   p($docstring);
