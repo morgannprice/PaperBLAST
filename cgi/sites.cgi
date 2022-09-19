@@ -172,7 +172,7 @@ unlink("$seqFile.out");
 
 print join("\t", qw{queryId subjectDb subjectId identity queryAlnBegin queryAlnEnd sujectAlnBegin subjectAlnEnd
                     subjectDescription evalue bits
-                    subjectSite subjectSiteRange subjectSiteSeq querySiteRange querySiteSeq})."\n"
+                    subjectSite subjectSiteRange subjectSiteSeq querySiteRange querySiteSeq pubMedIds})."\n"
   if $format eq "tsv";
 
 my $nHit = 0;
@@ -486,7 +486,8 @@ foreach my $hit (@hits) {
                      $desc, $eval, $bits,
                      $site->{shortDesc},
                      $site->{posFrom}, $sChar || "",
-                     $qPos || "", $qChar || "" )."\n"
+                     $qPos || "", $qChar || "",
+                    $site->{pmIds})."\n"
                        if $format eq "tsv";
         }
         push @bullets, li($ligShow, join(", ", @posShow));
@@ -574,6 +575,12 @@ foreach my $hit (@hits) {
             if $isAligned;
           my @siteDesc = map span({-id => "Site${nHit}S" . $_->{iSite} }, $_->{longDesc}), @sitesHere;
           push @bullets, li($showPos, join("; ", @siteDesc));
+          my %pmHere = (); # all pmids across @sitesHere
+          foreach my $site (@sitesHere) {
+            foreach my $pmId (split /,/, $site->{pmIds}) {
+              $pmHere{$pmId} = 1 if $pmId ne "";
+            }
+          }
           print join("\t", $header, $db,
                      $db eq "PDB" ? $id.$chain : $id2,
                      sprintf("%.1f", 100 * $hsp->frac_identical),
@@ -583,7 +590,8 @@ foreach my $hit (@hits) {
                      $posFrom eq $posTo ? $posFrom : "$posFrom..$posTo",
                      $sSeq || "",
                      defined $qFirst ? ($qFirst == $qLast ? $qFirst : "$qFirst..$qLast") : "",
-                     $qSeq || "")."\n"
+                     $qSeq || "",
+                     join(",", sort keys %pmHere))."\n"
                        if $format eq "tsv";
         }                       # end loop over PosTo
       }                         # end loop over PosFrom
