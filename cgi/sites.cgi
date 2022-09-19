@@ -480,7 +480,7 @@ foreach my $hit (@hits) {
           $posShow = span({-id => "Site${nHit}S" . $site->{iSite} }, $posShow);
           push @posShow, $posShow;
           print join("\t", $header, $db,
-                     $db eq "PDB" ? $id.$chain : $id2,
+                     $db eq "PDB" ? "$id:$chain" : $id2,
                      sprintf("%.1f", 100 * $hsp->frac_identical),
                      $queryBeg, $queryEnd, $hitBeg, $hitEnd,
                      $desc, $eval, $bits,
