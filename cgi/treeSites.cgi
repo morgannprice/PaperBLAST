@@ -273,7 +273,7 @@ if (defined $query && $query ne "") {
         $db2 = "SwissProt";
         $id2 = $subjectId;
       } elsif ($subjectDb eq "PDB") {
-        $subjectId =~ m/^([0-9A-Za-z]+):([A-Z0-9]+)$/
+        $subjectId =~ m/^([0-9A-Za-z]+):([A-Z0-9a-z]+)$/
           || die "Invalid subjectId $subjectId from subject $subject";
         $db2 = "biolip";
         $id2 = $1.$2;
