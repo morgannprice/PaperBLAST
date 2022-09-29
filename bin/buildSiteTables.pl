@@ -228,6 +228,9 @@ while(my $line = <$fhFt>) {
 close($fhFt) || die "Error reading $sprotFtFile\n";
 
 my %pdbSeq = (); # pdbId => chain => sequence
+# If both id:A and id:a exist, only use the one that appears first
+my %pdbLC = (); # pdbId => lc(chain) => chain
+
 foreach my $biolipAnnoFile (@biolipAnnoFiles) {
   open(my $fhAnno, "<", $biolipAnnoFile) || die "Cannot read $biolipAnnoFile\n";
   my %seenActive = (); # pdbId => chain => position => 1
@@ -240,6 +243,11 @@ foreach my $biolipAnnoFile (@biolipAnnoFiles) {
         $affinityPM, $affinityMOAD, $affinityPDBBind, $affinityBindingDB,
         $uniprotId, $pubmedIds, $seq) = split /\t/, $line;
     die "Invalid line $line" unless $seq =~ m/^[A-Z]+$/;
+    if (exists $pdbLC{$pdbId}{lc($chain)}) {
+      next unless $pdbLC{$pdbId}{lc($chain)} eq $chain;
+    } else {
+      $pdbLC{$pdbId}{lc($chain)} = $chain;
+    }
     if (exists $pdbSeq{$pdbId}{$chain}) {
       die "Inconsistent sequence for $pdbId:$chain"
         unless $pdbSeq{$pdbId}{$chain} = $seq;
@@ -335,17 +343,21 @@ system($formatdb,"-p","T","-o","F","-i","$outdir/hassites.faa") == 0
 print STDERR "Formatted $outdir/hassites.faa\n";
 
 # Parse $pdbSeqFile
+# This is used only for descriptions, and ReadFastaEntry() fails on some wierd DNA sequences
+# like 7ooo_D -- CT05ATCTTTG
+# So just look at the headers.
 my %pdbDesc; # pdbId => desc (no chain information)
 open(my $fhPdbSeq, "<", $pdbSeqFile) || die "Cannot read $pdbSeqFile\n";
-$state = {};
-while (my ($header,$seq) = ReadFastaEntry($fhPdbSeq, $state)) {
+while (my $line = <$fhPdbSeq>) {
+  chomp $line;
+  next unless $line =~ m/>(.*)$/;
+  my $header = $1;
   $header =~ m/([0-9a-zA-Z]+)_([0-9a-zA-Z]+) mol:[a-z ]+:(\d+) +(.*)$/
     || die "Cannot parse header line from $pdbSeqFile\n$header";
   my ($pdbId, $chain, $seqlen, $desc) = ($1, $2, $3, $4);
-  die "Incorrect sequence length for ${pdbId}_${chain}"
-    unless $seqlen == length($seq);
   if (exists $pdbSeq{$pdbId}{$chain}) {
     # Do not check that sequences match -- having a few extra a.a at beginning or end is very common
+    # Conver all-uppercase to all-lowercase
     $desc = lc($desc) unless $desc =~ m/[a-z]/;
     $pdbDesc{$pdbId} = $desc;
   }

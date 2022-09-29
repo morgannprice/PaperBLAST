@@ -81,7 +81,18 @@ while(my $line = <$fhLigand>) {
 close($fhLigand) || die "Error reading $pdbLigandsFile";
 print STDERR "Read descriptions for " . scalar(keys %ligandDesc) . " ligands\n";
 
+# In rare cases, chain identifiers differ only by case, i.e. 1rxs:A and 1rxs:a
+# These will cause problems downstreai with BLAST tools.
+# So, suppress any ids already seen as lower case
+my %lcidSeen = ();
+my $nSkipLC = 0;
+my $nWritten = 0;
 foreach my $id (sort keys %idInfo) {
+  if (exists $lcidSeen{lc($id)}) {
+    $nSkipLC++;
+    next;
+  }
+  $lcidSeen{lc($id)} = 1;
   my $info = $idInfo{$id};
   my %ligandSeen = ();
   my @ligandIds = grep { my $keep = !exists $ligandSeen{$_};
@@ -97,7 +108,8 @@ foreach my $id (sort keys %idInfo) {
              $info->{desc},
              "", # organism
              $info->{seq}, $comment, $info->{pubmedIds})."\n";
+  $nWritten++;
 }
-
-print STDERR "Wrote " . scalar(keys %idInfo) . " lines in curated_parsed format\n";
+print STDERR "Skipped $nSkipLC entries due to non-uniqueness after matching case\n";
+print STDERR "Wrote $nWritten lines in curated_parsed format\n";
 
