@@ -552,7 +552,8 @@ if ($seqsSet) {
       $id = $1;
       $seqsDesc{$id} = $2;
     }
-    fail("Duplicate sequence for " . encode_entities($id))
+    fail("More than one sequence for the identifier " . encode_entities($id)
+        . " -- this can occur if the original query combined an identifier in the database with a different sequence.")
       if exists $seqs{$id};
     fail(". or - is not allowed in unaligned sequences")
       if $seq =~ m/[.-]/;
