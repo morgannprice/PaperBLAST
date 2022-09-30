@@ -216,8 +216,6 @@ if (defined $query && $query ne "") {
     $id = $1;
     $desc = $2;
   }
-  fail("Sorry, ,(): are not allowed in identifiers")
-    if $id =~ m/[():;]/;
 
   $id = sequenceToHeader($seq)
     if defined $seq && $id eq "";
@@ -227,6 +225,9 @@ if (defined $query && $query ne "") {
           encode_entities($id),
           encode_entities($desc),
           "(". length($seq) . " a.a.)"), "\n";
+
+  # Convert disallwed characters to _ for future analyses
+  $id =~ s/[():;]/_/g;
 
   my $tmpFaa = "$tmpPre.faa";
   open(my $fhFaa, ">", $tmpFaa) || die "Cannot write to $tmpPre.faa";
