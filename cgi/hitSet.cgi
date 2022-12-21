@@ -3,7 +3,7 @@
 # Optional parameters:
 # minIdentity -- default 40
 # minCoverage -- default 75
-# minYear -- defaults to last year
+# minYear -- defaults to this year
 
 use strict;
 use CGI qw(:standard Vars start_ul);
@@ -15,6 +15,7 @@ use lib "../lib";
 use pbweb;
 use pbutils qw{ReadFastaDesc NewerThan};
 use POSIX qw(strftime);
+use HTML::Entities;
 use URI::Escape;
 
 
@@ -37,10 +38,6 @@ my $faaFile = "$setPre.fasta";
 die "No such file: $faaFile" unless -e $faaFile;
 
 start_page('title' => "Recent papers about $set");
-print <<END
-<SCRIPT src="../static/pb.js"></SCRIPT>
-END
-;
 
 autoflush STDOUT 1; # show preliminary results
 
@@ -70,6 +67,17 @@ my $minCoverage = $cgi->param('minCoverage');
 $minCoverage = 75 if !defined $minCoverage || $minCoverage eq "";
 die "Invalid minCoverage" unless $minCoverage =~ m/^\d+$/;
 
+my $thisYear = strftime("%Y", localtime);
+my $minYear = $cgi->param('minYear');
+$minYear = $thisYear if !defined $minYear || $minYear eq "";
+die "Invalid minYear" unless $minYear =~ m/^\d+$/;
+
+my @idOptions = qw{30 40 50 60 70 80 90};
+my %idLabels = map { $_ => $_ . "%" } @idOptions;
+my @covOptions = qw{50 55 60 65 70 75 80 85 90};
+my %covLabels = map { $_ => $_ . "%" } @covOptions;
+my @yrOptions = map $thisYear + $_, (-5..0);
+
 my %hits = (); # id to list of rows
 open(my $fhHits, "<", $hitsFile) || die "Cannot read $hitsFile";
 while (my $line = <$fhHits>) {
@@ -80,21 +88,34 @@ while (my $line = <$fhHits>) {
       $eVal,$bitscore) = @row;
   die "Unknown query $queryId" unless exists $lens->{$queryId};
   next unless $percIdentity >= $minIdentity
-    || ($queryEnd-$queryStart+1) >= $lens->{queryId} & $minCoverage/100.0;
+    && ($queryEnd-$queryStart+1) >= $lens->{$queryId} * $minCoverage/100.0;
   push @{ $hits{$queryId} }, \@row;
 }
 
 print p("Proteins with a hit at ${minIdentity}% identity and ${minCoverage}% coverage:",
         scalar(keys %hits), "of", scalar(keys %$lens)), "\n";
 
+print
+  p( start_form(-name => 'input', -method => 'GET', -action => 'hitSet.cgi'),
+     hidden(-name => 'set', -value => $set, -override => 1),
+     "Or change settings:",
+     "Minimum identity:",
+     popup_menu(-name => 'minIdentity', -values => \@idOptions,
+                -labels => \%idLabels,
+                -default => 40),
+     "Minimum coverage:",
+     popup_menu(-name => 'minCoverage', -values => \@covOptions,
+                -labels => \%covLabels,
+                -default => 75),
+     "Published since:",
+     popup_menu(-name => 'minYear', -values => \@yrOptions, -default => $thisYear),
+     submit('Go'),
+     reset(),
+     end_form );
+
 # Now, show which ones have hits, and link to the full results at litSearch.cgi
-
-my $thisYear = strftime("%Y", localtime);
-my $minYear = $cgi->param('minYear');
-$minYear = $thisYear - 1 if !defined $minYear || $minYear eq "";
-die "Invalid minYear" unless $minYear =~ m/^\d+$/;
-
-my %hasRecent = (); # names with a paper
+print p("Checking for recent papers..."), "\n";
+my %queryPapers = (); # query => # of papers
 
 foreach my $queryId (sort keys %hits) {
   foreach my $row (@{ $hits{$queryId} }) {
@@ -104,32 +125,31 @@ foreach my $queryId (sort keys %hits) {
                                       {}, $uniqId);
     my @subjectIds = $uniqId;
     push @subjectIds, @$dups;
-    my $keep = 0;
     foreach my $subjectId (@subjectIds) {
       my $years = $dbh->selectcol_arrayref(qq{ SELECT DISTINCT year FROM GenePaper WHERE geneId = ? },
                                            {}, $subjectId);
       foreach my $year (@$years) {
-        if ($year >= $minYear) {
-          $keep = 1;
-          last;
-        }
+        $queryPapers{$queryId}++ if $year =~ m/\d/ && $year >= $minYear;
       }
-      last if $keep;
     }
-    $hasRecent{$queryId} = 1 if $keep;
   }
 }
 
-print p("Proteins with papers from $minYear or later:", scalar(keys %hasRecent)), "\n";
+print p("Proteins with papers from $minYear or later:", scalar(keys %queryPapers)), "\n";
 
-if (keys(%hasRecent) > 0) {
-  print start_ul();
-  foreach my $name (sort keys %hasRecent) {
-    my $encodedQuery = uri_escape(">$name $descs->{$name}\n$seqs->{$name}\n");
-    print li(a({ -href => "litSearch.cgi?query=$encodedQuery", -title => "see PaperBLAST hits" },
-               $name), $descs->{$name});
+if (keys(%queryPapers) > 0) {
+  print "<TABLE cellpadding=1 cellspacing=0 border=1 >\n";
+  print Tr( th("Query"), th("#Papers"), th("Description")), "\n";
+  foreach my $name (sort keys %queryPapers) {
+    my $desc = $descs->{$name};
+    $desc =~ s/ OS=.*//;
+    my $encodedQuery = uri_escape(">$name $desc\n$seqs->{$name}\n");
+    print Tr( td( a({ -href => "litSearch.cgi?query=$encodedQuery", -title => "run PaperBLAST"},
+                    encode_entities($name))),
+              td($queryPapers{$name}),
+              td( encode_entities($desc)) ), "\n";
   }
-  print end_ul();
+  print "</TABLE>", "\n";
 }
 
 finish_page();
