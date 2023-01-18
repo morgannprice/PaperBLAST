@@ -79,8 +79,9 @@ if (exists $dosteps{ecocyc}) {
 
 if (exists $dosteps{biolip}) {
   # build work/PDBLigands.tab and static/biolip.curated_parsed
+  &maybe_run("zcat $indir/BioLiP_nr.txt.gz > $workdir/BioLiP_nr.txt");
   &maybe_run("zcat $indir/components.cif.gz | $Bin/parsePdbCdd.pl > $workdir/PDBLigands.tab");
-  my @biolip = ("$indir/BioLiP_2013-03-6_nr.txt", "$indir/BioLiP_UP_nr.txt");
+  my @biolip = ("$workdir/BioLiP_nr.txt");
   my $protNames = "$indir/protnames.lst";
   foreach my $file ($protNames, @biolip) {
     die "No such file: $file\n" unless -e $file || defined $test;

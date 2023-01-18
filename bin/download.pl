@@ -58,10 +58,7 @@ PDB metadata (300 MB):
   ftp://ftp.wwpdb.org/pub/pdb/data/monomers/components.cif.gz
 
 BioLiP annotation files (364 MB):
-  https://zhanglab.ccmb.med.umich.edu/BioLiP/download/BioLiP_nr.tar.bz2
-  (extract BioLiP_2013-03-6_nr.txt)
-  BioLiP_updated_set/*txt
-  (see download_BioLip_updates.pl)
+  https://zhanggroup.org/BioLiP/download/BioLiP_nr.txt.gz
 
 (Most sizes for downloads are as of January 2017; PDB/BioLip sizes are from December 2019)
 
@@ -232,30 +229,8 @@ if (exists $dosteps{"pdb"}) {
 }
 
 if (exists $dosteps{biolip}) {
-  my $biolipCacheDir = "BioLiP_updated_set";
-  mkdir($biolipCacheDir);
-  die "Not a directory: $biolipCacheDir\n" unless -d $biolipCacheDir;
-  my $mainFile = "$dir/BioLiP_2013-03-6_nr.txt";
-  unless (-s $mainFile) {
-    my $tarfile = "$dir/BioLiP_nr.tar";
-    &maybe_wget("https://zhanglab.ccmb.med.umich.edu/BioLiP/download/BioLiP_nr.tar.bz2",
-                "$tarfile.bz2");
-    &maybe_run("bunzip2 -c $tarfile.bz2 | (cd $dir; tar xf -)");
-    unless (defined $test) {
-      die "Failed to create $mainFile from $tarfile.bz2 in the biolip step of download.pl\n"
-        unless -s $mainFile;
-      print STDERR "Successfully created $mainFile\n";
-    }
-  }
-  # Fetch all the weekly updates and combine into BioLiP_UP_nr.txt
-  &maybe_run("$Bin/download_BioLip_updates.pl");
-  unless (defined $test) {
-    die "Failed to assemble $biolipCacheDir/BioLiP_UP_nr.txt\n"
-      unless -s "$biolipCacheDir/BioLiP_UP_nr.txt";
-    print STDERR "Assembled $biolipCacheDir/BioLiP_UP_nr.txt\n";
-  }
-  # Save those in the data directory
-  &maybe_run("cp $biolipCacheDir/BioLiP_UP_nr.txt $dir/");
+  &maybe_wget("https://zhanggroup.org/BioLiP/download/BioLiP_nr.txt.gz",
+              "$dir/BioLiP_nr.txt.gz");
 }
 
 unlink($listfile);
