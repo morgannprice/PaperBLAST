@@ -572,8 +572,7 @@ sub idToSites($$$$$) {
 
 sub getNCBIKey() {
   my $file = $FindBin::RealBin . "/../private/.NCBI.api_key";
-  open(my $fh, "<", $file);
-  if ($fh) {
+  if (open(my $fh, "<", $file)) {
     my $key = <$fh>;
     chomp $key;
     close($fh);
