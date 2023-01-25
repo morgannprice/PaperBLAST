@@ -860,7 +860,7 @@ sub pdbToFasta($) {
   $chainSpec =~ s/_//g; # now it should be a number or a chain letter
   my $URL = "https://www.rcsb.org/fasta/entry/$entry/display"; # either case works
   my $pdbFasta = get($URL);
-  return undef unless $pdbFasta =~ m/>/;
+  return undef unless defined $pdbFasta && $pdbFasta =~ m/>/;
   my @lines = split /\n/, $pdbFasta;
   my %seqs = ();
   my $id;
