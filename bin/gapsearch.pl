@@ -178,7 +178,7 @@ END
                  "-evalue", 0.01, "-id", 0.3,
                  "-blast6out", "$cfile.hits",
                  "-threads", $nCPU);
-  $cmd .= " >& /dev/null" unless defined $verbose;
+  $cmd .= " > /dev/null 2>&1" unless defined $verbose;
   print STDERR "Running $cmd\n" if defined $verbose;
   system($cmd) == 0 || die "$cmd failed: $!\n";
   print STDERR "ublast finished\n";

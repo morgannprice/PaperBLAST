@@ -90,7 +90,7 @@ END
     close($fhIn) || die "Error reading $aaIn\n";
     close($fhCand) || die "Error writing to $faaCand\n";
 
-    my $cmd = "$usearch -ublast $faaCand -db $curatedFile -id 0.3 -evalue 0.01 -blast6out $rhitsFile -qmask $qmask -threads $nCPU >& /dev/null";
+    my $cmd = "$usearch -ublast $faaCand -db $curatedFile -id 0.3 -evalue 0.01 -blast6out $rhitsFile -qmask $qmask -threads $nCPU > /dev/null 2>&1";
 
     system($cmd) == 0 || die "Error running $cmd: $!\n";
     unlink($faaCand);
