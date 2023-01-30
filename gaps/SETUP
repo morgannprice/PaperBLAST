@@ -26,7 +26,7 @@ LWP::Simple JSON IO::String Bio::SeqIO
 software library)
 
 Make sure sqlite3 is on your path and supported by DBI (this may
-require installing the DBI::SQLite perl library). I am currently using
+require installing the DBD::SQLite perl library). I am currently using
 sqlite version 3.7.17.
 
 Put the usearch executable in the bin/ subdirectory. I am
