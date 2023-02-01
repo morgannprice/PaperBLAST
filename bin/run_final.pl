@@ -98,7 +98,7 @@ if (exists $dosteps{db}) {
   my @cmd = ();
   @cmd = ("$Bin/buildSiteTables.pl",
           "-sprot", "$workdir/sprotFt.tab",
-          "-BioLiP", "$indir/BioLiP_2013-03-6_nr.txt", "$indir/BioLiP_UP_nr.txt",
+          "-BioLiP", "$indir/BioLiP_nr.txt",
           "-seqres", "$indir/pdb_seqres.txt",
           "-sprotFasta", "$indir/uniprot_sprot.fasta.gz",
           "-pdbnames", "$indir/protnames.lst",
