@@ -255,8 +255,9 @@ sub csv_quote($);
       my $combid = join("::", $db, $protId);
       if ($desc eq "") {
         $desc = $name || $id2;
-        die "No description, name, or secondary id in $line" if $desc eq "";
-        print STDERR "Warning: no description for curated protein $protId from $db\n";
+        print STDERR "Warning: no description for curated protein $protId from $db\n"
+          if $desc eq "";
+        $desc = $protId;
       }
       print FAA ">$combid\n$seq\n";
       print CGENE join("\t", $db, $protId, $id2, $name, &csv_quote($desc),
