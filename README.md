@@ -19,6 +19,9 @@ the bin/blast/ subdirectory. I am currently using NCBI BLAST 2.2.18.
 Please put the usearch executable in the bin/ subdirectory. I am
 currently using usearch 10.0.
 
+If you want to build a database, put the cd-hit executable in the bin/
+subdirectory. I am currently using cd-hit 4.7.
+
 The cgi/ subdirectory contains the common gateway interface script,
 litSearch.cgi, which is the interface for using PaperBLAST.
 
@@ -26,9 +29,10 @@ For litSearch.cgi to work, the data/ subdirectory must include the
 sqlite3 database and the protein BLAST database. These are both built
 by bin/run_final.pl (which invokes bin/buildLitDb.pl).
 
-Create a tmp/ subdirectory and set it to writable by apache (or
-everyone) so that litSearch.cgi can write to ../tmp/ (relative to the
-directory that it is invoked from, which is usually the cgi directory)
+Create a tmp/ subdirectory and set it to writable by the web server
+(or by everyone) so that litSearch.cgi can write to ../tmp/ (relative
+to the directory that it is invoked from, which is usually the cgi
+directory)
 
 # Dependencies
 
@@ -72,12 +76,12 @@ SitesBLAST (sites.cgi) also requires BioPerl.
 
 # <a name="download"></a>Downloading the database
 
-The April 2017 version of the PaperBLAST database is avalable at
+The April 2017 version of the PaperBLAST database is available at
 
 https://doi.org/10.6084/m9.figshare.4836407
 
 The current database is available as a FASTA file and a sqlite3
-relational database (which is large! 1.5 GB as of July 2017)
+relational database (1.5 GB as of July 2017)
 
 http://papers.genomics.lbl.gov/data/uniq.faa
 
