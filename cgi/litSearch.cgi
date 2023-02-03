@@ -144,7 +144,7 @@ articles:
 <LI>Proteins from <A HREF="http://www.brenda-enzymes.org/index.php">BRENDA</A>,
   a curated database of enzymes, are included if they are linked to a paper in PubMed
   and their full sequence is known.
-<LI>Every protein from
+<LI>Every protein from the non-redundant subset of
   <A HREF="https://seq2fun.dcmb.med.umich.edu/BioLiP/">BioLiP</A>,
   a database
   of ligand-binding sites and catalytic residues in protein structures, is included. Since BioLiP itself
@@ -152,6 +152,9 @@ articles:
   <A HREF="https://www.rcsb.org/" title="Protein Data Bank">Protein Data Bank</A>.
   Descriptions from PDB rely on the original submitter of the
     structure and cannot be updated by others, so they may be less reliable.
+  (For SitesBLAST and Sites on a Tree, we use a larger subset of BioLiP so that every
+   ligand is represented among a group of structures with similar sequences, but for
+   PaperBLAST, we use the non-redundant set provided by BioLiP.)
 <LI>Every protein from <A HREF="http://ecocyc.org">EcoCyc</A>, a curated
   database of the proteins in <i> Escherichia coli</i> K-12, is included, regardless
   of whether they are characterized or not.
@@ -197,6 +200,7 @@ You can download PaperBLAST's database <A HREF="https://github.com/morgannprice/
 <P>Changes to PaperBLAST since the paper was written:
 
 <UL>
+<LI>February 2023: BioLiP changed their download format. PaperBLAST now includes their non-redundant subset. SitesBLAST and Sites on a Tree use a larger non-redundant subset that ensures that every ligand is represented within each cluster. This should ensure that every binding site is represented.
 <LI>June 2022: incorporated some coding sequences from ENA with the /experiment tag.
 <LI>March 2022: incorporated BioLiP.
 <LI>April 2020: incorporated TCDB.
