@@ -57,7 +57,7 @@ while (my $line = <$fhIn>) {
       $affinityPM, $affinityMOAD, $affinityPDBBind, $affinityBindingDB,
       $uniprotId, $pubmedIds, $seq) = split /\t/, $line;
   die "Invalid line $line" unless $seq =~ m/^[A-Za-z]+$/;
-  $seq = uc($seq);
+  next if $seq =~ m/[a-z]/; # ignore any lower-case sequence (rare)
   my $id = $pdbId.$chain;
   if (!exists $idLigands{$id}) {
     print $fhFaa ">" . $id . "\n" . $seq . "\n";
