@@ -80,6 +80,7 @@ if (exists $dosteps{ecocyc}) {
 if (exists $dosteps{biolip}) {
   # build work/PDBLigands.tab and static/biolip.curated_parsed
   &maybe_run("zcat $indir/BioLiP_nr.txt.gz > $workdir/BioLiP_nr.txt");
+  &maybe_run("zcat $indir/BioLiP.txt.gz > $workdir/BioLiP.txt");
   &maybe_run("zcat $indir/components.cif.gz | $Bin/parsePdbCdd.pl > $workdir/PDBLigands.tab");
   my @biolip = ("$workdir/BioLiP_nr.txt");
   my $protNames = "$indir/protnames.lst";
@@ -87,6 +88,7 @@ if (exists $dosteps{biolip}) {
     die "No such file: $file\n" unless -e $file || defined $test;
   }
   &maybe_run("$Bin/biolipCurated.pl -biolip @biolip -pdbnames $protNames -pdbligands $workdir/PDBLigands.tab > static/biolip.curated_parsed");
+  &maybe_run("$Bin/biolipCluster.pl -in $workdir/BioLiP.txt -curated static/biolip.curated_parsed > $workdir/BioLiP_clustered.txt");
 }
 
 if (exists $dosteps{db}) {
@@ -98,7 +100,7 @@ if (exists $dosteps{db}) {
   my @cmd = ();
   @cmd = ("$Bin/buildSiteTables.pl",
           "-sprot", "$workdir/sprotFt.tab",
-          "-BioLiP", "$indir/BioLiP_nr.txt",
+          "-BioLiP", "$workdir/BioLiP_clustered.txt",
           "-seqres", "$indir/pdb_seqres.txt",
           "-sprotFasta", "$indir/uniprot_sprot.fasta.gz",
           "-pdbnames", "$indir/protnames.lst",
