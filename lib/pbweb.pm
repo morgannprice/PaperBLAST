@@ -21,8 +21,8 @@ our (@ISA,@EXPORT);
              commify
              LinkifyComment FormatStepPart DataForStepParts HMMToURL
              parseSequenceQuery sequenceToHeader
-             warning fail runWhileCommenting
-);
+             warning fail
+             runWhileCommenting runTimerHTML);
 
 # Returns a list of entries from SubjectToGene, 1 for each duplicate (if any),
 # sorted by priority
@@ -1250,11 +1250,19 @@ sub sequenceToHeader($) {
   return length($seq) . " a.a. (" . $initial . ")";
 }
 
+my $showTimer = 0;
+
+sub runTimerHTML() {
+  $showTimer = 1;
+  return qq{<SPAN id="TimerText"></SPAN>};
+}
+
 # The caller should ensure that autoflush is on.
 # This will run the specified command while sending HTML comments to prevent
 # Cloudflare timeouts.
 sub runWhileCommenting(@) {
   my (@arg) = @_;
+  my $startTime = [ gettimeofday ];
   my $pid = fork();
   die "Cannot fork: $!" unless defined $pid;
   if ($pid == 0) {
@@ -1270,11 +1278,18 @@ sub runWhileCommenting(@) {
       sleep(2);
       $n += 2;
       print "<!-- waiting for job for $n sec -->\n";
+      if ($showTimer) {
+        print qq{<SCRIPT>document.getElementById("TimerText").innerHTML = $n + " s";</SCRIPT>}, "\n";
+      }
     }
   }
   #else
   wait;
   kill 'KILL', $wid;
+
+  if ($showTimer) {
+    print qq{<SCRIPT>document.getElementById("TimerText").innerHTML = "";</SCRIPT>}, "\n";
+  }
   return ${^CHILD_ERROR_NATIVE};
 }
 
