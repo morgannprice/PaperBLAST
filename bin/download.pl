@@ -53,14 +53,15 @@ From EcoCyc: ecoli.tar.gz (158 MB)
 	or you can put the URL in the file ecocyc.URL
 	or you can download the tar ball manually into ecoli.tar.gz
 
-PDB metadata (300 MB):
+PDB metadata (109 MB):
   http://www.ebi.ac.uk/thornton-srv/databases/pdbsum/data/protnames.lst
   ftp://ftp.wwpdb.org/pub/pdb/data/monomers/components.cif.gz
 
-BioLiP annotation files (364 MB):
+BioLiP annotation files (461 MB):
   https://zhanggroup.org/BioLiP/download/BioLiP_nr.txt.gz
+  https://zhanggroup.org/BioLiP/download/BioLiP.txt.gz
 
-(Most sizes for downloads are as of January 2017; PDB/BioLip sizes are from December 2019)
+(Most sizes for downloads are as of January 2017; PDB/BioLip sizes are from January 2023)
 
 You can set the environment variable PB_DOWNLOAD_PASS = 1 to avoid
 re-downloading files that already exist (as non-empty files) due to a
@@ -231,6 +232,8 @@ if (exists $dosteps{"pdb"}) {
 if (exists $dosteps{biolip}) {
   &maybe_wget("https://zhanggroup.org/BioLiP/download/BioLiP_nr.txt.gz",
               "$dir/BioLiP_nr.txt.gz");
+  &maybe_wget("https://zhanggroup.org/BioLiP/download/BioLiP.txt.gz",
+              "$dir/BioLiP.txt.gz");
 }
 
 unlink($listfile);
