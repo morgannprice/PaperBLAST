@@ -271,7 +271,7 @@ foreach my $biolipAnnoFile (@biolipAnnoFiles) {
       next if scalar(@$list) == 0;
       foreach my $i (0..(scalar(@$list)-1)) {
         my $pos = $list->[$i];
-        $pos =~ s/^[A-Z]//;
+        $pos =~ s/^[A-Za-z]//; # (occasional lower case characters)
         $pos =~ m/^\d+$/ || die "Invalid $type residue $pos in " . join(" ",@$list) . " from \n$line";
         my $posPDB = ""; # not reported if there are mismatches
         if ($lenAgree) {
