@@ -20,7 +20,7 @@ our (@ISA,@EXPORT);
              reverseComplement seqPosToAlnPos
              idToSites idToSiteRows
              ParseClustal ParseStockholm
-             getNCBIKey addNCBIKey!;
+             setNCBIKey getNCBIKey addNCBIKey!;
 
 sub read_list($) {
   my ($file) = @_;
@@ -570,15 +570,25 @@ sub idToSites($$$$$) {
   return \%out;
 }
 
+my $ncbiKey;
+
+sub setNCBIKey($) {
+  my ($key) = @_;
+  $ncbiKey = $key;
+}
+
 sub getNCBIKey() {
-  my $file = $FindBin::RealBin . "/../private/.NCBI.api_key";
-  if (open(my $fh, "<", $file)) {
-    my $key = <$fh>;
-    chomp $key;
-    close($fh);
-    return($key);
+  if (!defined $ncbiKey) {
+    my $file = $FindBin::RealBin . "/../private/.NCBI.api_key";
+    my $key = undef;
+    if (open(my $fh, "<", $file)) {
+      $key = <$fh>;
+      chomp $key;
+      close($fh);
+    }
+    $ncbiKey = $key;
   }
-  return(undef);
+  return $ncbiKey;
 }
 
 # Add NCBI API key to a URL, or no change if the key is not set
