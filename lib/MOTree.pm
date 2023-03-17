@@ -5,6 +5,7 @@ package MOTree;
 require Exporter;
 
 use strict;
+use List::Util qw{min max};
 
 # A MOTree has the following entries:
 # Note all internal_id => objects are arrays not hashes
@@ -1090,5 +1091,74 @@ sub siblings($$) {
     return() if !defined $ancestor;
     return grep {$_ != $node} $self->children($ancestor);
 }
+
+# Builds a layout for each node.
+# Returns a list of lines. Does *not* include the outermost <SVG> or <g> tags.
+# The input hash must include nodeX and nodeY; the others are optional.
+# All arguments should be a hash of node to value.
+sub drawSvg {
+  my $tree = shift;
+  my %param = @_;
+  my $nodeX = $param{nodeX} || die "No nodeX";
+  my $nodeY = $param{nodeY} || die "No nodeY";
+  my $nodeURL = $param{nodeURL} || {};
+  my $nodeTitle = $param{nodeTitle} || {};
+  my $nodeRadius = $param{nodeRadius} || {};
+  my $nodeColor = $param{nodeColor} || {};
+
+  my $nodes = $tree->all_descendents($tree->get_root_node);
+  my @svg;
+  foreach my $node (@$nodes) {
+    my $parent = $tree->ancestor($node);
+    die unless defined $parent;
+    # draw lines left and then up or down to ancestor
+    push @svg, qq{<line x1="$nodeX->{$node}" y1="$nodeY->{$node}" x2="$nodeX->{$parent}" y2="$nodeY->{$node}" stroke="black" />};
+    push @svg, qq{<line x1="$nodeX->{$parent}" y1="$nodeY->{$node}" x2="$nodeX->{$parent}" y2="$nodeY->{$parent}" stroke="black" />};
+    my $radius = $nodeRadius->{$node};
+    $radius = 4 if !defined $radius;
+    my $dotStyle = "";
+    $dotStyle = qq{style="fill:$nodeColor->{$node};"} if $nodeColor->{$node};
+
+    my $circle = qq{<circle cx="$nodeX->{$node}" cy="$nodeY->{$node}" r="$radius" $dotStyle >};
+    my $title = $nodeTitle->{$node};
+    $circle .= "<TITLE>$title</TITLE>" if defined $title && $title ne "";
+    $circle .= "</circle>";
+    $circle = qq{<A xlink:href="$nodeURL->{$node}">$circle</A>}
+      if $nodeURL->{$node};
+    push @svg, $circle;
+  }
+  return @svg;
+}
+
+# Given nodeX and y, draw a scale bar
+# Returns a list of lines
+sub drawSvgScaleBar {
+  my ($tree) = shift;
+  my (%param) = @_;
+  my $maxDepth = max(values %{ $tree->nodeDepth });
+  return if $maxDepth == 0;
+  my $nodeX = $param{nodeX} || die;
+  my $treeLeft = min(values %$nodeX);
+  my $treeWidth = max(values %$nodeX) - $treeLeft;
+  my $y = $param{y};
+  die unless defined $y;
+
+  my @out = ();
+
+  my @scales = reverse qw{0.0001 0.001 0.002 0.005 0.01 0.02 0.05 0.1 0.2 0.5 1};
+  while ($scales[0] > 0.8 * $maxDepth && @scales > 1) {
+    shift @scales;
+  }
+  my $scaleSize = $scales[0];
+  my $scaleLeft = $treeLeft;
+  my $scaleRight = $treeLeft + $treeWidth * $scaleSize/$maxDepth;
+  my $scaleMid = ($scaleLeft+$scaleRight)/2;
+  $y += 4;
+  push @out, qq{<text text-anchor="middle" x="$scaleMid" y="$y">$scaleSize /site</text>};
+  $y += 4;
+  push @out, qq{<line x1="$scaleLeft" y1="$y" x2="$scaleRight" y2="$y" stroke="black" />};
+  return @out;
+}
+
 
 1;
