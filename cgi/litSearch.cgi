@@ -369,27 +369,55 @@ if (!defined $seq && ! $more_subjectId) {
         GetMotd(),
         h3("PaperBLAST Hits for", HTML::Entities::encode($def), $initial);
 
-
+      # Links to many other analysis tools
       my $newline = "%0A";
+      my $defE = uri_escape($def);
+      my $queryE = uri_escape($query);
+      # CDD does not like | characters in the input defline
       my $def2 = $def; $def2 =~ s/[|]/./g;
       my $cdd_url = "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=>"
         . uri_escape($def2) . $newline . $seq;
-      my $sblastURL = "sites.cgi?query=" . uri_escape($query);
-      print qq{ <DIV style="float:right; padding-left: 10px; width:25%; background-color: #EEEEEE;">
-                <P>Also see
-                <A HREF="$cdd_url" TITLE="Compare your sequence to NCBI's Conserved Domains Database">Conserved Domains</A>,
-                <A HREF="$sblastURL" TITLE="Compare to proteins with known functional residues">SitesBLAST</A>,
-                or
-                <A TITLE="Fitness BLAST compares your sequence to bacterial proteins that have mutant phenotypes"
-                   NAME="#fitness">Fitness BLAST:</A>
-                <SPAN ID="fitblast_short"><SMALL>loading...</SMALL></SPAN>
-                <SCRIPT>
-                var server_root = "https://fit.genomics.lbl.gov/";
-                var seq = "$seq";
-                fitblast_load_short("fitblast_short", server_root, seq);
-                </SCRIPT>
-                </DIV>
-             };
+      my @links = ();
+      push @links, a({ -href => "sites.cgi?query=$queryE",
+                       -title => "Compare to proteins with known functional residues" },
+                     "SitesBLAST");
+      push @links, "Search for "
+        . a({ -href => $cdd_url,
+              -title => "Compare your sequence to NCBI's Conserved Domains Database" },
+            "conserved domains");
+      push @links, "Find the "
+        . a({ -href => "https://fast.genomics.lbl.gov/cgi/bestHitUniprot.cgi?query=>${defE}$newline$seq",
+            -title => "See UniProt's annotation, the predicted structure, and protein families from InterPro"},
+          "best match")
+        . " in UniProt";
+      push @links, "Compare to "
+        . a({ -href => "http://www.ebi.ac.uk/thornton-srv/databases/cgi-bin/pdbsum/FindSequence.pl?pasted=$seq",
+              -title => "Find similar proteins with known structures (PDBsum)" },
+            "protein structures");
+      push @links, "Predict transmenbrane helices: "
+        . a({-href => "https://fit.genomics.lbl.gov/cgi-bin/myPhobius.cgi?name=${defE}&seq=${seq}"},
+            "Phobius");
+      push @links, "Predict protein localization: "
+        . a({ -href => "https://fit.genomics.lbl.gov/cgi-bin/myPhobius.cgi?name=${defE}&seq=${seq}",
+              -title => "PSORTb v3.0 for Gram-negative bacteria" },
+            "PSORTb");
+      push @links, "Find homologs in "
+        . a({-title => "A representative genome for each genus of bacteria and archaea",
+             -href => "https://fast.genomics.lbl.gov/cgi/findHomologs.cgi?seqDesc=$defE&seq=$seq"},
+            i("fast.genomics"));
+      push @links, a({-title => "Compare to bacterial proteins that have mutant phenotypes",
+                      -name => "#fitness" }, "Fitness BLAST")
+        .": "
+        . qq{<SPAN ID="fitblast_short"><SMALL>loading...</SMALL></SPAN>}
+        . qq{<SCRIPT>
+             var server_root = "https://fit.genomics.lbl.gov/";
+             var seq = "$seq";
+             fitblast_load_short("fitblast_short", server_root, seq);
+             </SCRIPT>};
+      print
+        qq{<DIV style="float:right; padding-left: 10px; width:25%; background-color: #EEEEEE; font-size: 95%;">},
+        map(p({-style => "margin-top: 0.5em; margin-bottom: 0.5em;"}, $_), "Other sequence analysis tools:", @links),
+        qq{</DIV>};
 
       print join("\n",
                  "<SCRIPT>",
