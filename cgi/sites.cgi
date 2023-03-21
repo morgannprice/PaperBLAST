@@ -134,17 +134,25 @@ $header = sequenceToHeader($seq) unless $hasDef;
 $query = ">$header\n$seq\n";
 
 my $query2 = $query; $query2 =~ s/[|]/./g;
-print p("Comparing $header to proteins with known functional sites using BLASTp with E &le; $maxE."),
-  p("Or try", a({-href => "treeSites.cgi?query=".uri_escape($query),
-                 -title => "Sites on a Tree: view functional residues in an alignment"},
-                "Sites on a Tree").",",
+print
+  p("Comparing $header to proteins with known functional sites using BLASTp with E &le; $maxE."),
+  p("Or try",
+    a({-href => "treeSites.cgi?query=".uri_escape($query),
+       -title => "Sites on a Tree: view functional residues in an alignment"},
+      "Sites on a Tree")
+    .",",
     a({-href => "litSearch.cgi?query=".uri_escape($query),
        -title => "PaperBLAST: find papers about homologs"},
-      "PaperBLAST").",",
-    "or",
+      "PaperBLAST")
+    .",",
     a({-href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=".uri_escape($query2),
-       -title => "Compare your sequence to NCBI's Conserved Domains Database (CDD)"}, "Conserved Domains")),
-  "\n"
+       -title => "Compare your sequence to NCBI's Conserved Domains Database (CDD)"}, "Conserved Domains")
+    .",",
+    "or compare to",
+    a({ -href => "http://www.ebi.ac.uk/thornton-srv/databases/cgi-bin/pdbsum/FindSequence.pl?pasted=$seq",
+              -title => "Find similar proteins with known structures (PDBsum)" },
+            "all protein structures"))
+  . "\n"
   unless $format eq "tsv";
 open(my $fhFaa, ">", $seqFile) || die "Cannot write to $seqFile\n";
 print $fhFaa ">$header\n$seq\n";
