@@ -22,7 +22,8 @@ our (@ISA,@EXPORT);
              LinkifyComment FormatStepPart DataForStepParts HMMToURL
              parseSequenceQuery sequenceToHeader
              warning fail
-             runWhileCommenting runTimerHTML);
+             runWhileCommenting runTimerHTML
+             analysisLinks);
 
 # Returns a list of entries from SubjectToGene, 1 for each duplicate (if any),
 # sorted by priority
@@ -1291,6 +1292,89 @@ sub runWhileCommenting(@) {
     print qq{<SCRIPT>document.getElementById("TimerText").innerHTML = "";</SCRIPT>}, "\n";
   }
   return ${^CHILD_ERROR_NATIVE};
+}
+
+# The arguments should be a hash including desc and seq (not uri escaped)
+# Optional arguments:
+# skip (a hash) -- optionally skip links to PaperBLAST, fast.genomics, or FitnessBLAST
+# psortType -- archaea or positive or negative (defaults to Gram-negative)
+# fbLoad -- if set, loads the fitness blast scripts (defaults to 0)
+sub analysisLinks {
+  my (%param) = @_;
+  die "Must specify seq and desc"
+    unless defined $param{seq} && defined $param{desc};
+  my $seq = uc( $param{seq} );
+  die "Invalid sequence" unless $seq =~ m/^[A-Z*]+$/;
+  $seq =~ s/[*]//g;
+  my $desc = $param{desc};
+  my $descE = uri_escape($desc);
+  my $queryE = uri_escape(">" . $desc . "\n" . $seq);
+  my @out = ();
+  push @out, "Find papers: "
+    . a({ -href => "https://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=$queryE",
+          -title => "PaperBLAST: find papers about a protein or its homologs" },
+        "PaperBLAST")
+    unless $param{skip}{PaperBLAST};
+  push @out, "Find functional residues: "
+    . a({ -href => "sites.cgi?query=$queryE",
+          -title => "Compare to proteins with known functional residues" },
+        "SitesBLAST");
+  my $desc2 = $desc; $desc2 =~ s/[|]/./g; # CDD doesn't like | in the defline
+  push @out, "Search for "
+    . a({ -href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput="
+          . uri_escape(">" . $desc2 . "\n" . $seq),
+          -title => "Compare your sequence to NCBI's Conserved Domains Database" },
+        "conserved domains");
+  push @out, "Find the "
+    . a({ -href => "https://fast.genomics.lbl.gov/cgi/bestHitUniprot.cgi?query=$queryE",
+          -title => "See UniProt's annotation, the predicted structure, and protein families from InterPro"},
+        "best match")
+      . " in UniProt";
+  push @out, "Compare to "
+    . a({ -href => "http://www.ebi.ac.uk/thornton-srv/databases/cgi-bin/pdbsum/FindSequence.pl?pasted=$seq",
+          -title => "Find similar proteins with known structures (PDBsum)" },
+        "protein structures");
+  push @out, "Predict transmenbrane helices: "
+    . a({-href => "https://fit.genomics.lbl.gov/cgi-bin/myPhobius.cgi?name=${descE}&seq=${seq}",
+         -title => 'Phobius predicts transmembrane helices and signal peptides'},
+        "Phobius");
+  my %psortShow = ("negative" => "Gram-negative bacteria",
+                   "positive" => "Gram-positive bacteria",
+                   "archaea" => "archaea");
+  my $psortType = $param{psortType} || "negative";
+  $psortType = "negative" unless exists $psortShow{$psortType};
+  push @out, "Predict protein localization: "
+    . a({ -href => "https://papers.genomics.lbl.gov/cgi-bin/psortb.cgi"
+          . "?type=$psortType&name=${descE}&seq=${seq}",
+          -title => "PSORTb v3.0 for " . $psortShow{$psortType} },
+        "PSORTb");
+  push @out, "Find homologs in "
+    . a({-title => "A representative genome for each genus of bacteria and archaea",
+         -href => "https://fast.genomics.lbl.gov/cgi/findHomologs.cgi?seqDesc=$descE&seq=$seq"},
+        i("fast.genomics"))
+      unless $param{skip}{"fast.genomics"};
+
+#
+# If you are including Fitness BLAST, then you'll need to load
+  unless ($param{skip}{FitnessBLAST}) {
+    my $fb = "";
+    $fb = join("",
+               map qq{<SCRIPT src="$_"></SCRIPT>}."\n",
+               ("https://fit.genomics.lbl.gov/d3js/d3.min.js",
+                "https://fit.genomics.lbl.gov/images/fitblast.js"))
+      if $param{fbLoad};
+    $fb .= a({-title => "Compare to bacterial proteins that have mutant phenotypes",
+                -name => "#fitness" }, "Fitness BLAST")
+      .": "
+      . qq{<SPAN ID="fitblast_short"><SMALL>loading...</SMALL></SPAN>}
+      . qq{<SCRIPT> 
+           var server_root = "https://fit.genomics.lbl.gov/";
+           var seq = "$seq";
+           fitblast_load_short("fitblast_short", server_root, seq);
+           </SCRIPT>};
+    push @out, $fb;
+  }
+  return map $_."\n", @out;
 }
 
 1
