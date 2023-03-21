@@ -1316,7 +1316,7 @@ sub analysisLinks {
         "PaperBLAST")
     unless $param{skip}{PaperBLAST};
   push @out, "Find functional residues: "
-    . a({ -href => "sites.cgi?query=$queryE",
+    . a({ -href => "https://papers.genomics.lbl.gov/cgi-bin/sites.cgi?query=$queryE",
           -title => "Compare to proteins with known functional residues" },
         "SitesBLAST");
   my $desc2 = $desc; $desc2 =~ s/[|]/./g; # CDD doesn't like | in the defline
