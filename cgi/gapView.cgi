@@ -50,7 +50,7 @@ use DBI;
 use lib "../lib";
 use Steps;
 use pbutils;
-use pbweb qw{start_page GetMotd LinkifyComment DataForStepParts FormatStepPart HMMToURL};
+use pbweb qw{start_page GetMotd LinkifyComment DataForStepParts FormatStepPart HMMToURL analysisLinks};
 use FetchAssembly qw{CacheAssembly AASeqToAssembly GetMatchingAssemblies GetMaxNAssemblies};
 use List::Util qw{max};
 use File::stat;
@@ -1172,7 +1172,6 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
 
     # Show sequence analysis tools
     my @seqparts = $seq =~ /.{1,60}/g;
-    my $newline = "%0A";
     print
       h3("Sequence Analysis Tools");
     my $URL = GeneURL($orgId,$locusSpec);
@@ -1181,46 +1180,8 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
             "at", $orgs{$orgId}{gdb})
       if $URL ne "";
     print
-      p(a({-href => "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=>${locusSpec}$newline$seq"},
-          "PaperBLAST"),
-        "(search for papers about homologs of this protein)"),
-      p(a({-href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=>${locusSpec}$newline$seq"},
-          "Search CDD"),
-        "(the Conserved Domains Database, which includes COG and superfam)"),
-      # See documentation of HMMer web server (version 1.0) at
-      # https://hmmer-web-docs.readthedocs.io/en/latest/searches.html
-      # Set E= and domE= to cause weak hits to appear (they are still labeled insignificant)
-#      p(start_form(-name => "PfamForm", -id => "PfamForm",
-#                   -method => "POST", -action => "https://www.ebi.ac.uk/Tools/hmmer/search/hmmscan"),
-#        hidden('seq', ">${locusSpec}\n$seq"),
-#        hidden('hmmdb', 'pfam'),
-#        hidden('E', '1'),
-#        hidden('domE', '1'),
-#        submit(-style => "display: none;", -id => 'PfamButton'),
-#        end_form,
-#        a({-href => "javascript:document.getElementById('PfamForm').submit()"},
-#          "Search PFam"),
-#        "(including for weak hits, up to E = 1)"),
-      p("Predict protein localization: ",
-        a({-href => "psortb.cgi?name=${locusSpec}&type=negative&seq=${seq}"},
-          "PSORTb"),
-        "(Gram negative bacteria)"),
-      p("Predict transmembrane helices and signal peptides:",
-        a({-href => "https://fit.genomics.lbl.gov/cgi-bin/myPhobius.cgi?name=${locusSpec}&seq=$seq"},
-          "Phobius")),
-      p("Check the SEED with",
-      a({-href => "http://pubseed.theseed.org/FIG/seedviewer.cgi?page=FigFamViewer&fasta_seq=>${locusSpec}$newline$seq"},
-        "FIGfam search")),
-      p(a({-title => "Fitness BLAST compares a sequence to bacterial proteins that have mutant phenotypes"},
-          "Fitness BLAST:"),
-        span({-id => "fitblast_short"}, small("loading..."))),
-      qq{<SCRIPT src="https://fit.genomics.lbl.gov/d3js/d3.min.js"></SCRIPT>
-         <SCRIPT src="https://fit.genomics.lbl.gov/images/fitblast.js"></SCRIPT>
-         <SCRIPT>
-         var server_root = "https://fit.genomics.lbl.gov/";
-         var seq = "$seq";
-         fitblast_load_short("fitblast_short", server_root, seq);
-         </SCRIPT>},
+      map(p($_), analysisLinks('seq' => $seq, 'desc' => $locusSpec . " " . $desc,
+                               'fbLoad' => 1)),
       h3("Sequence"),
       join("\n", "<pre>", @seqparts, "</pre>"), "\n";
   } elsif ($locusSpec ne "" && $stepSpec ne "") {

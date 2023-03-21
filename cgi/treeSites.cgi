@@ -1160,46 +1160,9 @@ if (defined param('showId') && param('showId') ne "") {
       }
     }
   }
-  my $defCDD = $id; $defCDD =~ s/[|]/./g;
   print
-    h3("Analysis tools"),
-    p(a({-href => "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=>${id}$newline$seq"},
-        "PaperBLAST"),
-      "(search for papers about homologs of this protein)"),
-    p(a({-href => "http://papers.genomics.lbl.gov/cgi-bin/sites.cgi?query=>$id$newline$seq"},
-        "SitesBLAST"),
-      "(search for homologs with known functional residues)"),
-    p(a({-href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=>${defCDD}$newline$seq"},
-        "Search CDD"),
-      "(the Conserved Domains Database, which includes COG and superfam)"),
-#    p(start_form(-name => "PfamForm", -id => "PfamForm",
-#                 -method => "POST", -action => "https://www.ebi.ac.uk/Tools/hmmer/search/hmmscan"),
-#      hidden('seq', ">$id\n$seq"),
-#      hidden('hmmdb', 'pfam'),
-#      hidden('E', '1'),
-#      hidden('domE', '1'),
-#      submit(-style => "display: none;", -id => 'PfamButton'),
-#      end_form,
-#      a({-href => "javascript:document.getElementById('PfamForm').submit()"},
-#        "Search PFam"),
-#      "(including for weak hits, up to E = 1)"),
-    p(a({ -href => "http://www.ebi.ac.uk/thornton-srv/databases/cgi-bin/pdbsum/FindSequence.pl?pasted=$seq",
-          -title => "Find similar proteins with known structures (PDBsum)"},
-        "Search structures")),
-    qq{<SCRIPT src="https://fit.genomics.lbl.gov/d3js/d3.min.js"></SCRIPT>
-       <SCRIPT src="https://fit.genomics.lbl.gov/images/fitblast.js"></SCRIPT>},
-    p("Fitness BLAST:", qq{<SPAN ID="fitblast_short"><SMALL>loading...</SMALL></SPAN>}),
-    qq{<SCRIPT>
-         var server_root = "https://fit.genomics.lbl.gov/";
-         var seq = "$seq";
-         fitblast_load_short("fitblast_short", server_root, seq);
-       </SCRIPT>},
-    p("Predict transmembrane helices and signal peptides:",
-      a({-href => "http://fit.genomics.lbl.gov/cgi-bin/myPhobius.cgi?name=${id}&seq=${seq}"},
-        "Phobius")),
-    p("Find homologs in the",
-      a({-href => "https://iseq.lbl.gov/genomes/seqsearch?sequence=>${id}%0A$seq"},
-        "ENIGMA genome browser"));
+    h3("Sequence analysis tools"),
+    map(p($_), analysisLinks('seq' => $seq, 'desc' => $id, 'fbLoad' => 1));
 
   my $seqShow = $seq;
   $seqShow =~ s/(.{60})/$1\n/gs;
