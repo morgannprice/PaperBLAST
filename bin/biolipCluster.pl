@@ -55,7 +55,7 @@ while (my $line = <$fhIn>) {
       $siteResiduesPDB, $siteResidues,
       $EC, $GO,
       $affinityPM, $affinityMOAD, $affinityPDBBind, $affinityBindingDB,
-      $uniprotId, $pubmedIds, $seq) = split /\t/, $line;
+      $uniprotId, $pubmedIds, $ligandResidue, $seq) = split /\t/, $line;
   die "Invalid line $line" unless $seq =~ m/^[A-Za-z]+$/;
   next if $seq =~ m/[a-z]/; # ignore any lower-case sequence (rare)
   my $id = $pdbId.$chain;

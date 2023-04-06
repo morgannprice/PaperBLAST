@@ -241,7 +241,7 @@ foreach my $biolipAnnoFile (@biolipAnnoFiles) {
         $siteResiduesPDB, $siteResidues,
         $EC, $GO,
         $affinityPM, $affinityMOAD, $affinityPDBBind, $affinityBindingDB,
-        $uniprotId, $pubmedIds, $seq) = split /\t/, $line;
+        $uniprotId, $pubmedIds, $ligandResidue, $seq) = split /\t/, $line;
     die "Invalid line $line" unless $seq =~ m/^[a-zA-Z]+$/; # not sure why there is occasional lower case
     $seq = uc($seq);
     if (exists $pdbLC{$pdbId}{lc($chain)}) {

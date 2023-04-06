@@ -57,7 +57,7 @@ foreach my $file (@biolipFiles) {
         $siteResiduesPDB, $siteResidues,
         $EC, $GO,
         $affinityPM, $affinityMOAD, $affinityPDBBind, $affinityBindingDB,
-        $uniprotId, $pubmedIds, $seq) = split /\t/, $line;
+        $uniprotId, $pubmedIds, $ligandResidues, $seq) = split /\t/, $line;
     die "Invalid line $line" unless $seq =~ m/^[A-Za-z]+$/;
     $seq = uc($seq); # not sure why there is a lowercase character in 1aw8B
     $pubmedIds =~ m/^[0-9,]*$/ || die "Invalid pubmed ids $pubmedIds in line\n$line";
