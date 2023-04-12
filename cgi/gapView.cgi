@@ -1341,21 +1341,25 @@ sub GetOrgSequence($$$$) {
   my ($faaIn, $orgId, $locusSpec, $faaOut) = @_;
   my $db = "$faaIn.db";
   my $id = $orgId.":".$locusSpec;
-  if (-e $db) {
-    # use DB_File -- faster and more reliable than fastacmd
-    my %seqs;
-    tie %seqs, "DB_File", $db, O_RDONLY, 0666, $DB_HASH
-      || die "Cannot open file $db -- $!";
-    my $seq = $seqs{$id};
-    untie %seqs;
-    die "No sequence for $id in $db" unless defined $seq;
-    open(my $fh, ">", $faaOut) || die "Cannot write to $faaOut";
-    print $fh ">$id\n$seq\n";
-    close($fh) || die "Error writing to $faaOut";
-  } else {
-    # older builds -- this uses fastacmd
-    FetchSeqs("../bin/blast", $faaIn, [$id], $faaOut);
+  if (!-e $db) {
+    # Make the database
+    # (This will always exist for newer databases created by gapView.cgi, but may
+    # not exist for databases created by combineOrgs.pl/combineGaps.pl or possibly older dbs
+    print p("Building a sequence database, this might take a minute"), "\n";
+    FaaToDb($faaIn, $db);
+    # (For older builds, used to use FetchSeqs(), which runs fastacmd.)
+    die "Cannot create $db -- this web server might not have write access to the directory\n" unless -e $db;
   }
+  # use DB_File -- faster and more reliable than fastacmd
+  my %seqs;
+  tie %seqs, "DB_File", $db, O_RDONLY, 0666, $DB_HASH
+    || die "Cannot open file $db -- $!";
+  my $seq = $seqs{$id};
+  untie %seqs;
+  die "No sequence for $id in $db" unless defined $seq;
+  open(my $fh, ">", $faaOut) || die "Cannot write to $faaOut";
+  print $fh ">$id\n$seq\n";
+  close($fh) || die "Error writing to $faaOut";
 }
 
 
