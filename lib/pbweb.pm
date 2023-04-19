@@ -1296,7 +1296,7 @@ sub runWhileCommenting(@) {
 
 # The arguments should be a hash including desc and seq (not uri escaped)
 # Optional arguments:
-# skip (a hash) -- optionally skip links to PaperBLAST, fast.genomics, or FitnessBLAST
+# skip (a hash) -- optionally skip links to PaperBLAST, fast.genomics, UniProt, or FitnessBLAST
 # psortType -- archaea or positive or negative (defaults to Gram-negative)
 # fbLoad -- if set, loads the fitness blast scripts (defaults to 0)
 sub analysisLinks {
@@ -1329,7 +1329,8 @@ sub analysisLinks {
     . a({ -href => "https://fast.genomics.lbl.gov/cgi/bestHitUniprot.cgi?query=$queryE",
           -title => "See UniProt's annotation, the predicted structure, and protein families from InterPro"},
         "best match")
-      . " in UniProt";
+      . " in UniProt"
+        unless $param{skip}{UniProt};
   push @out, "Compare to "
     . a({ -href => "http://www.ebi.ac.uk/thornton-srv/databases/cgi-bin/pdbsum/FindSequence.pl?pasted=$seq",
           -title => "Find similar proteins with known structures (PDBsum)" },
