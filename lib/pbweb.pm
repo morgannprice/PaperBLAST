@@ -22,7 +22,7 @@ our (@ISA,@EXPORT);
              LinkifyComment FormatStepPart DataForStepParts HMMToURL
              parseSequenceQuery sequenceToHeader
              warning fail
-             runWhileCommenting runTimerHTML
+             doWhileCommenting runWhileCommenting runTimerHTML
              analysisLinks);
 
 # Returns a list of entries from SubjectToGene, 1 for each duplicate (if any),
@@ -1258,40 +1258,45 @@ sub runTimerHTML() {
   return qq{<SPAN id="TimerText"></SPAN>};
 }
 
+# Prints stuff every two seconds
+sub doTimer() {
+  my $n = 0;
+  while(1) {
+    sleep(2);
+    $n += 2;
+    print "<!-- waiting for job for $n sec -->\n";
+    if ($showTimer) {
+      print qq{<SCRIPT>document.getElementById("TimerText").innerHTML = $n + " s";</SCRIPT>}, "\n";
+    }
+  }
+}
+
+sub hideTimer() {
+  print qq{<SCRIPT>document.getElementById("TimerText").innerHTML = "";</SCRIPT>}, "\n"
+    if $showTimer;
+}
+
 # The caller should ensure that autoflush is on.
-# This will run the specified command while sending HTML comments to prevent
-# Cloudflare timeouts.
+# This will run the specified command while sending HTML comments to prevent Cloudflare timeouts.
+# Some commands give an "Inappropriate ioctl for device" error when run this way, not sure why.
 sub runWhileCommenting(@) {
   my (@arg) = @_;
-  my $startTime = [ gettimeofday ];
+  return doWhileCommenting(sub { return system(@arg) });
+}
+
+sub doWhileCommenting(&) {
+  my ($code) = @_;
   my $pid = fork();
   die "Cannot fork: $!" unless defined $pid;
   if ($pid == 0) {
-    # Do the work
-    exec(@arg);
+    doTimer(); # runs forever
+    die;
   }
   #else
-  my $wid = fork();
-  die "Cannot fork: $!" unless defined $wid;
-  if ($wid == 0) {
-    my $n = 0;
-    while(1) {
-      sleep(2);
-      $n += 2;
-      print "<!-- waiting for job for $n sec -->\n";
-      if ($showTimer) {
-        print qq{<SCRIPT>document.getElementById("TimerText").innerHTML = $n + " s";</SCRIPT>}, "\n";
-      }
-    }
-  }
-  #else
-  wait;
-  kill 'KILL', $wid;
-
-  if ($showTimer) {
-    print qq{<SCRIPT>document.getElementById("TimerText").innerHTML = "";</SCRIPT>}, "\n";
-  }
-  return ${^CHILD_ERROR_NATIVE};
+  my $value = $code->();
+  kill 'KILL', $pid;
+  hideTimer();
+  return $value;
 }
 
 # The arguments should be a hash including desc and seq (not uri escaped)
