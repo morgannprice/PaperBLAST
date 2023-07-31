@@ -2,7 +2,8 @@ Setting up GapMind:
 
 These scripts should work on any Linux system, and would probably work
 on other Unix or MacOS as well. All of the code is written in perl
-5. (I am using perl v5.10.1 or perl v5.16.3.)
+5. (I am using perl v5.10.1 or perl v5.16.3.) The other major
+requirements are HMMer 3, either usearch or diamond, and sqlite3.
 
 There are three phases for running GapMind: 
 
@@ -16,14 +17,15 @@ setting up phase 3 is described first.
 
 ANALYZE GENOMES (PHASE 3)
 
-Make sure you have the following perl libraries installed:
-DBI FindBin Getopt::Long List::Util
+Make sure you have the following perl modules installed:
+  DBI FindBin Getopt::Long List::Util
 
-If you want to use gapView.cgi, you will also need
-CGI HTML::Entities IO::Handle DB_File File::stat Time::HiRes
-LWP::Simple JSON IO::String Bio::SeqIO
-(Bio::SeqIO is part of bioperl; DB_File depends on the BerkeleyDB
-software library)
+If you want to use the web server CGI (gapView.cgi) to view the
+results, you will also need these perl modules:
+  CGI HTML::Entities IO::Handle DB_File File::stat Time::HiRes
+  LWP::Simple JSON IO::String Bio::SeqIO
+  (Bio::SeqIO is part of bioperl; DB_File depends on the BerkeleyDB
+   software library)
 
 Make sure sqlite3 is on your path and supported by DBI (this may
 require installing the DBD::SQLite perl library). I am currently using
@@ -34,7 +36,8 @@ currently using usearch 10.0, which is available at
 https://www.drive5.com/usearch/download.html
 
 Or, if using diamond, put the diamond executable in the bin/
-subdirectory. I have tested diamond v2.1.6.160.
+subdirectory. I have tested diamond v2.1.6.160. It gives very similar
+results as usearch.
 
 Put the hmmsearch and hmmfetch executables in the bin/
 subdirectory. I am currently using HMMER 3.3.1, which is available at
@@ -44,6 +47,7 @@ Put the BLAST executables (formatdb, blastall, and fastacmd)
 in the bin/blast/ subdirectory. I am currently using NCBI BLAST
 2.2.18 (not BLAST+), which is available at
 ftp://ftp.ncbi.nlm.nih.gov/blast/executables/legacy.NOTSUPPORTED/2.2.18/
+(BLAST is used by gapView.cgi, but is not needed to run GapMind analyses.)
 
 Make sure the steps files are up to date (i.e. from the gaps/aa/
 or gaps/carbon/ subdirectory in github).
@@ -81,6 +85,9 @@ bin/blast/formatdb -p T -o T -i tmp/path.aa/curated.faa
 bin/usearch -makeudb_ublast tmp/path.aa/curated.faa -output tmp/path.aa/curated.faa.udb
   or
 bin/diamond makedb --in tmp/path.aa/curated.faa -d tmp/path.aa/curated.faa.dmnd
+
+(The BLAST database is needed for viewing results on the web site, but
+not for running the GapMind analysis itself.)
 
 To run the analysis using the CGI scripts and your web server
 (this requires usearch):
