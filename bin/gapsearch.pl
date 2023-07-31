@@ -188,10 +188,13 @@ END
   close($fhC) || die "Error writing to $cfile\n";
   my $cmd;
   if (defined $useDiamond) {
+    # By default, diamond returns just 25 alignments, which is not enough if comparing to
+    # many genomes.
     $cmd = join(" ",
                 $diamond, "blastp", "--query", $cfile, "--db", $aaIn.".dmnd",
                  "--evalue", 0.01, "--id", 0.3,
                  "--out", "$cfile.hits", "--very-sensitive", "--outfmt", 6,
+                "--max-target-seqs", 25 * scalar(@orgs),
                  "--threads", $nCPU);
   } else {
     $cmd = join(" ",
