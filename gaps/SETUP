@@ -33,6 +33,9 @@ Put the usearch executable in the bin/ subdirectory. I am
 currently using usearch 10.0, which is available at
 https://www.drive5.com/usearch/download.html
 
+Or, if using diamond, put the diamond executable in the bin/
+subdirectory. I have tested diamond v2.1.6.160.
+
 Put the hmmsearch and hmmfetch executables in the bin/
 subdirectory. I am currently using HMMER 3.3.1, which is available at
 http://eddylab.org/software/hmmer/hmmer-3.3.1.tar.gz
@@ -70,19 +73,24 @@ bin/extractHmms.pl tmp/path.aa/steps.db tmp/path.aa
 # for cabon
 bin/extractHmms.pl tmp/path.carbon/steps.db tmp/path.carbon
 
-Format the database of characterized proteins for usearch and BLAST,
+Format the database of characterized proteins for usearch (or diamond) and BLAST,
 i.e. for amino acid biosynthesis do:
 
-bin/usearch -makeudb_ublast tmp/path.aa/curated.faa -output tmp/path.aa/curated.faa.udb
 bin/blast/formatdb -p T -o T -i tmp/path.aa/curated.faa
+  and then
+bin/usearch -makeudb_ublast tmp/path.aa/curated.faa -output tmp/path.aa/curated.faa.udb
+  or
+bin/diamond makedb --in tmp/path.aa/curated.faa -d tmp/path.aa/curated.faa.dmnd
 
-To run the analysis using the CGI scripts and your web server:
+To run the analysis using the CGI scripts and your web server
+(this requires usearch):
 
 Make sure that the tmp directory is writable by apache (or by
 everyone). Then visit cgi/gapView.cgi to run the analysis and view the
 results.
 
-To run the analysis using the CGI scripts from the command line:
+To run the analysis using the CGI scripts from the command line
+(this requires usearch):
 
 The key script is gapView.cgi. The key arguments are the set (aa or
 carbon), gdb (which genome database), and gid (which genome
@@ -124,7 +132,7 @@ sequences. But, analyzing more than ~100 genomes at a time will cause
 usearch to run out of memory unless you have the 64-bit version. If
 you want to analyze a larger number of genomes, split them into groups
 and use bin/combineOrgs.pl and bin/combineGaps.pl to combine the
-results.
+results. (Or use diamond with the step-by-step instructions below.)
 
 To run the analysis from the command line, step by step:
 
@@ -134,9 +142,16 @@ To run the analysis from the command line, step by step:
 # the proteins.
 bin/gapsearch.pl -orgs tmp/DvH/orgs -set aa -out tmp/DvH/aa.hits -nCPU 4
 
+# or if using diamond:
+diamond makedb --in tmp/DvH/orgs.faa -d tmp/DvH/orgs.aa.dmnd
+bin/gapsearch.pl -diamond -orgs tmp/DvH/orgs -set aa -out tmp/DvH/aa.hits -nCPU 4
+
 # Use bin/gaprevsearch.pl to see if the candidates are similar to
 # characterized proteins that have other functions.
 bin/gaprevsearch.pl -orgs tmp/DvH/orgs -hits tmp/DvH/aa.hits -curated tmp/path.aa/curated.faa.udb -out tmp/DvH/aa.revhits -nCPU 4
+
+#  or if using diamond:
+bin/gaprevsearch.pl -diamond -orgs tmp/DvH/orgs -hits tmp/DvH/aa.hits -curated tmp/path.aa/curated.faa.dmnd -out tmp/DvH/aa.revhits -nCPU 4
 
 # Use bin/gapsummary.pl to score all the candidates and steps and to
 # find the best-scoring path for each pathway. This produces three
@@ -156,7 +171,6 @@ bin/orgsVsMarkers.pl -orgs tmp/DvH/orgs -vs gaps/aa/aa.known.gaps.markers.faa -o
 # Optionally, use buildGapsDb.pl to combine the results into a sqlite3
 # database.
 bin/buildGapsDb.pl -gaps tmp/DvH/aa.sum -requirements tmp/DvH/aa.sum.warn -steps tmp/path.aa/steps.db -out tmp/DvH/aa.sum.db -markersim tmp/DvH/aa.sum.knownsim
-
 
 CONVERT PATHWAY DESCRIPTIONS TO A STEPS DATABASE (PHASE 2)
 

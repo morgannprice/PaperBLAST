@@ -37,10 +37,12 @@ Optional arguments:
     (by bit score)
  -maxWeak $maxWeak -- maximum number of blast-only hits of under 40%
     identity to keep for each step
+ -diamond -- use diamond instead of usearch; prefix.faa.dmnd
+    should be created first with diamond makedb
 END
 ;
 
-  my ($orgprefix, $set, $outFile, $pathSpec, $inDir, $verbose);
+  my ($orgprefix, $set, $outFile, $pathSpec, $inDir, $verbose, $useDiamond);
   die $usage
     unless GetOptions('orgs=s' => \$orgprefix,
                       'set=s' => \$set,
@@ -50,7 +52,8 @@ END
                       'nCPU=i' => \$nCPU,
                       'verbose' => \$verbose,
                       'maxCand=i' => \$maxCand,
-                      'maxWeak=i' => \$maxWeak)
+                      'maxWeak=i' => \$maxWeak,
+                      'diamond' => \$useDiamond)
       && defined $orgprefix
       && defined $set
       && defined $outFile;
@@ -63,7 +66,14 @@ END
   my $binDir = $RealBin;
   my $hmmsearch = "$binDir/hmmsearch";
   my $usearch = "$binDir/usearch";
-  foreach my $b ($hmmsearch, $usearch) {
+  my $diamond = "$binDir/diamond";
+  my @exe = ($hmmsearch);
+  if (defined $useDiamond) {
+    push @exe, $diamond;
+  } else {
+    push @exe, $usearch;
+  }
+  foreach my $b (@exe) {
     die "No such file or not executable: $b\n" unless -x $b;
   }
   foreach my $suffix (qw{org faa}) {
@@ -76,7 +86,10 @@ END
   die "The organism table $orgprefix.org has no rows\n" unless @orgs > 0;
   my %orgs = map { $_->{orgId} => $_ } @orgs;
   my $aaIn = "$orgprefix.faa";
-
+  if (defined $useDiamond) {
+    die "No such file: $aaIn.dmnd -- use\n  $diamond makedb --in $aaIn -d $aaIn.dmnd\nto create it\n"
+      unless -e "$aaIn.dmnd";
+  }
   if (defined $pathSpec) {
     my $pathObj = $dbhS->selectall_arrayref("SELECT * FROM Pathway WHERE pathwayId = ?",
                                            {}, $pathSpec);
@@ -173,16 +186,25 @@ END
     print $fhC join("", ">", $id, "\n", $row->{seq}, "\n");
   }
   close($fhC) || die "Error writing to $cfile\n";
-  my $cmd = join(" ",
-                 $usearch, "-ublast", $cfile, "-db", $aaIn,
-                 "-evalue", 0.01, "-id", 0.3,
-                 "-blast6out", "$cfile.hits",
-                 "-threads", $nCPU);
+  my $cmd;
+  if (defined $useDiamond) {
+    $cmd = join(" ",
+                $diamond, "blastp", "--query", $cfile, "--db", $aaIn.".dmnd",
+                 "--evalue", 0.01, "--id", 0.3,
+                 "--out", "$cfile.hits", "--very-sensitive", "--outfmt", 6,
+                 "--threads", $nCPU);
+  } else {
+    $cmd = join(" ",
+                $usearch, "-ublast", $cfile, "-db", $aaIn,
+                "-evalue", 0.01, "-id", 0.3,
+                "-blast6out", "$cfile.hits",
+                "-threads", $nCPU);
+  }
   $cmd .= " > /dev/null 2>&1" unless defined $verbose;
   print STDERR "Running $cmd\n" if defined $verbose;
   system($cmd) == 0 || die "$cmd failed: $!\n";
-  print STDERR "ublast finished\n";
-  open(my $fhH, "<", "$cfile.hits") || die "usearch did not create $cfile.hits\n";
+  print STDERR (defined $useDiamond ? "diamond" : "ublast") . " finished\n";
+  open(my $fhH, "<", "$cfile.hits") || die "usearch or diamond did not create $cfile.hits\n";
   while(my $line = <$fhH>) {
     chomp $line;
     my ($queryId, $hitId, $identity, $alen, $mm, $gap, $qbeg, $qend, $sbeg, $send, $eval, $bits)

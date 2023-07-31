@@ -21,7 +21,7 @@ use Steps qw{ReadOrgTable ReadOrgProtein};
   my @outfields = qw{locusId otherId bits locusBegin locusEnd otherBegin otherEnd otherIdentity};
 
   my $usage = <<END
-Usage: gaprevsearch.pl -hits hitsfile -orgs orgsprefix -curated curated.udb -out outfile
+Usage: gaprevsearch.pl -hits hitsfile -orgs orgsprefix -curated curatedDb -out outfile
 
 Write to outfile, tab-delimited with 1 row per entry from the hits file.
 The hits file must includes fields
@@ -30,8 +30,9 @@ This script writes a new table with the fields
   @outfields
 with all the hits for each hitId in the curated database
 
-The curated file (in fasta or udb format) should be from
-  running curatedFaa.pl with -curatedids
+The curated file should be in fasta or udb format if using usearch, or
+should be a diamond database if using diamond. The sequences should be
+from running curatedFaa.pl with -curatedids
 
 Optional arguments:
 -maxKeep $maxKeep -- maximum number of curated hits to retain
@@ -40,24 +41,33 @@ Optional arguments:
    usearch/ublast, which is equivalent to -qmask fastamino)
 -nCPU $nCPU -- number of CPUs to use (defaults to the MC_CORES
                 environment variable, or 4)
+-diamond -- use diamond instead of usearch
 END
 ;
 
-  my ($hitsFile, $orgprefix, $curatedFile, $outFile);
+  my ($hitsFile, $orgprefix, $curatedFile, $outFile, $useDiamond);
   die $usage
     unless GetOptions('hitsFile=s' => \$hitsFile,
                       'orgs=s' => \$orgprefix,
                       'curated=s' => \$curatedFile,
                       'out=s' => \$outFile,
                       'qmask=s' => \$qmask,
-                      'nCPU=i' => \$nCPU)
+                      'nCPU=i' => \$nCPU,
+                     'diamond' => \$useDiamond)
       && @ARGV == 0
       && defined $hitsFile && defined $orgprefix && defined $outFile;
   foreach my $file ($hitsFile, $curatedFile) {
     die "No such file: $file\n" unless -e $file;
   }
   my $usearch = "$Bin/usearch";
-  foreach my $x ($usearch) {
+  my $diamond = "$Bin/diamond";
+  my @exe;
+  if (defined $useDiamond) {
+    push @exe, $diamond;
+  } else {
+    push @exe, $usearch;
+  }
+  foreach my $x (@exe) {
     die "No such executable: $x\n" unless -x $x;
   }
   die "Must specify at least 1 CPU\n" unless $nCPU >= 1;
@@ -90,8 +100,13 @@ END
     close($fhIn) || die "Error reading $aaIn\n";
     close($fhCand) || die "Error writing to $faaCand\n";
 
-    my $cmd = "$usearch -ublast $faaCand -db $curatedFile -id 0.3 -evalue 0.01 -blast6out $rhitsFile -qmask $qmask -threads $nCPU > /dev/null 2>&1";
-
+    my $cmd;
+    if (defined $useDiamond) {
+      $cmd = "$diamond blastp --query $faaCand --db $curatedFile --id 0.3 --evalue 0.01 --out $rhitsFile --very-sensitive --outfmt 6 --masking $qmask --threads $nCPU";
+    } else {
+      $cmd = "$usearch -ublast $faaCand -db $curatedFile -id 0.3 -evalue 0.01 -blast6out $rhitsFile -qmask $qmask -threads $nCPU";
+    }
+    $cmd .= " > /dev/null 2>&1";
     system($cmd) == 0 || die "Error running $cmd: $!\n";
     unlink($faaCand);
   }
