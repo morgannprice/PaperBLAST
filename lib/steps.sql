@@ -56,7 +56,8 @@ CREATE TABLE StepPart(
   pathwayId TEXT NOT NULL,
   stepId TEXT NOT NULL,
   partId INT NOT NULL, /* increasing in order in the steps file */
-  /* partType must be EC, curated, uniprot, term, hmm, ignore, ignore_other, or ignore_hmm */
+  /* partType must be EC, curated, predicted, uniprot, term,
+     hmm, ignore, ignore_other, or ignore_hmm */
   partType TEXT NOT NULL,
   value TEXT NOT NULL,
   PRIMARY KEY (pathwayId, stepId, partId)
@@ -68,14 +69,14 @@ CREATE TABLE StepQuery(
   pathwayId TEXT NOT NULL,
   stepId TEXT NOT NULL,
   queryId INT NOT NULL, /* increasing in order */
-  /* queryType must be curated, curated2, hmm, uniprot, or ignore.
+  /* queryType must be hmm, curated, uniprot, predicted, curated2, or ignore.
      (curated2 refers to curated annotations of unchracterized proteins;
       ignore means that similarity to a characterized protein that is
       not part of the step does not lower the score) */
   queryType TEXT NOT NULL,
   /* Use empty instead of NULL for missing fields */
   curatedIds TEXT NOT NULL,
-  uniprotId TEXT NOT NULL,
+  uniprotId TEXT NOT NULL, /* for uniprot or predicted */
   protId TEXT NOT NULL, /* for curated2 */
   hmmId TEXT NOT NULL, /* i.e., PF02965 */
   hmmFileName TEXT NOT NULL, /* i.e., PF02965.17.hmm */
