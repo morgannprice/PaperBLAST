@@ -187,6 +187,8 @@ sub MergeHits($$$$$$);
         $id = "uniprot:" . ($row->{uniprotId} || die);
       } elsif ($row->{queryType} eq "curated2") {
         $id = "curated2:" . ($row->{protId} || die);
+      } elsif ($row->{queryType} eq "predicted") {
+        $id = "predicted:" . ($row->{uniprotId} || die);
       } else {
         die "Unknown query type $row->{queryType}";
       }
@@ -209,11 +211,11 @@ sub MergeHits($$$$$$);
   # This is converted to an orgId and a locusId below
   my @hitFields = qw{locusId type queryId bits locusBegin locusEnd qBegin qEnd qLength identity};
   my @hits = ReadTable($hitsFile, \@hitFields);
-  # add the fromCurated2 field to all blast hits -- these are lower priority because
+  # add the lowerConf field to all blast hits -- set if lower priority because
   # the reference protein is not actually characterized
   foreach my $hit (@hits) {
     if ($hit->{type} eq "blast") {
-      $hit->{fromCurated2} = $hit->{queryId} =~ m/^curated2:/ ? 1 : 0;
+      $hit->{lowerConf} = $hit->{queryId} =~ m/^(curated2|predicted):/ ? 1 : 0;
     }
   }
   my @revFields = qw{locusId otherId bits locusBegin locusEnd otherBegin otherEnd otherIdentity};
@@ -324,7 +326,7 @@ sub MergeHits($$$$$$);
           $cand->{maxBits} = max($cand->{blastBits} || 0, $cand->{hmmBits} || 0);
         }
         @cand = sort { $b->{score} <=> $a->{score}
-                         || $a->{fromCurated2} <=> $b->{fromCurated2}
+                         || $a->{lowerConf} <=> $b->{lowerConf}
                          || $b->{maxBits} <=> $a->{maxBits}
                          || $b->{locusId} cmp $a->{locusId} } @cand;
         @cand = splice(@cand, 0, $maxCand) if @cand > $maxCand;
@@ -334,10 +336,10 @@ sub MergeHits($$$$$$);
           my %locusCand = map { $_->{locusId} => $_ } @cand;
           my $merge = FindSplit($locushash, \%locusRev, \%locusCand);
           if (defined $merge) {
-            # Put the HMM and fromCurated2 info from 1st (higher scoring) locus into $merge
+            # Put the HMM and lowerConf info from 1st (higher scoring) locus into $merge
             my $cand1 = $locusCand{ $merge->{locusId} };
             die unless defined $cand1;
-            foreach my $key (qw{hmmBits hmmId hmmCoverage hmmScore fromCurated2}) {
+            foreach my $key (qw{hmmBits hmmId hmmCoverage hmmScore lowerConf}) {
               $merge->{$key} = $cand1->{$key};
             }
             $merge->{maxBits} = max($merge->{blastBits}, $merge->{hmmBits} || 0);
@@ -347,7 +349,7 @@ sub MergeHits($$$$$$);
             push @cand, $merge;
             # Re-sort and re-truncate the list
             @cand = sort { ($b->{score} || 0) <=> ($a->{score} || 0)
-                             || ($a->{fromCurated2} || 0) <=> ($b->{fromCurated2}||0)
+                             || ($a->{lowerConf} || 0) <=> ($b->{lowerConf}||0)
                              || $b->{maxBits} <=> $a->{maxBits}
                              || $b->{locusId} cmp $a->{locusId} } @cand;
             @cand = splice(@cand, 0, $maxCand) if @cand > $maxCand;
@@ -645,11 +647,11 @@ sub ScoreCandidate($$) {
     } elsif ($hit->{identity} >= 40 && $hit->{coverage} >= 0.7) {
       $score = 1;
     }
-    $score = 1 if $score == 2 && $hit->{fromCurated2};
+    $score = 1 if $score == 2 && $hit->{lowerConf};
     unless (defined $bestBlastHit && $score <= $bestBlastHit->{blastScore}) {
       $bestBlastHit = { 'blastBits' => $hit->{bits},
                         'curatedIds' => $hit->{queryId},
-                        'fromCurated2' => $hit->{fromCurated2},
+                        'lowerConf' => $hit->{lowerConf},
                         'identity' => $hit->{identity},
                         'blastCoverage' => $hit->{coverage},
                         'blastScore' => $score,
@@ -701,7 +703,7 @@ sub ScoreCandidate($$) {
   }
   $out->{score} = max($bestBlastHit ? $bestBlastHit->{blastScore} : 0,
                       $bestHMMHit ? $bestHMMHit->{hmmScore} : 0);
-  $out->{fromCurated2} = 0 unless defined $out->{fromCurated2};
+  $out->{lowerConf} = 0 unless defined $out->{lowerConf};
   return $out;
 }
 
@@ -729,7 +731,7 @@ sub FindSplit($$$) {
   my %locusTarget = (); # locusId => queryId => best hit object
   while (my ($locusId, $hits) = each %$hithash) {
     my @hits = grep { $_->{type} eq "blast" && $_->{identity} >= 30 } @$hits;
-    @hits = sort { $a->{fromCurated2} <=> $b->{fromCurated2}
+    @hits = sort { $a->{lowerConf} <=> $b->{lowerConf}
                      || $b->{bits} <=> $a->{bits} } @hits;
     @hits = splice(@hits, 0, $maxCand) if @hits > $maxCand;
     $locusBest{$locusId} = \@hits if @hits > 0;
@@ -814,7 +816,7 @@ sub MergeHits($$$$$$){
   my $combIdentity = ($alnLen1 * $hit1->{identity} + $alnLen2 * $hit2->{identity}) / ($alnLen1 + $alnLen2);
   my $combCoverage = $combLen / $hit1->{qLength};
   my $combScore = $combIdentity >= 40 && $combCoverage >= 0.8 ? 2 : 1;
-  $combScore = 1 if $combScore == 2 && $hit1->{fromCurated2};
+  $combScore = 1 if $combScore == 2 && $hit1->{lowerConf};
 
   return undef unless $combScore > $bestscore1 && $combScore > $bestscore2;
 

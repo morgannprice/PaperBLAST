@@ -37,6 +37,7 @@ step lines, which are tab-delimited with fields step name, step description,
     EC:1.1.1.1	                   term:search string
     hmm:PF00001	hmm:TIGR0001       ignore_hmm:TIGR00519
     uniprot:Q8TPT3_METAC	   curated:reanno::Miya:8499492
+    predicted:Q8TUL3
     ignore:CharProtDB::CH_123581   ignore_other:EC 2.2.1.6
 
   The step name and step description are arbitrary.
@@ -61,11 +62,12 @@ This script considers only the step lines.
 
 Writes to dir/steps.query, a tab-delimited file with the fields
 step, type, query, desc, file (optional), sequence (optional).
-  type is one of: curated (which usually means characterized), curated2
-    (just curated), hmm, uniprot, or ignore.
+  type is one of: curated (which usually means characterized),
+    predicted (by GapMind curators), curated2 (just curated),
+    hmm, uniprot, or ignore.
   query is the sequence identifier(s), HMM identifier, or the uniprot
     identifier (If multiple curated items have the same sequence, all
-    identifiers are joined by ",") sequence is not set for hmm items;
+    identifiers are joined by ",".) sequence is not set for hmm items;
     those have file set instead (i.e., PF02965.17.hmm)
 Also creates the HMM files in dir.
 
@@ -73,10 +75,11 @@ The hmm directory must contain these files:
 @hmmIn
 
 Optional arguments:
--curated curated.faa -- the file of characterized sequences. By
+-curated curated.faa -- fasta file of characterized sequences. By
   default, it looks for this in dir/curated.faa
--curatedDb curated.db -- the file of characterized
-  sequences. By default, it looks for this in dir/curated.db
+-curatedDb curated.db -- sqlite3 database of characterized
+  sequences (schema in lib/curated.sql). By default, uses
+  dir/curated.db
 -uniprot dir/uniprot.tsv -- tab-delimited file with cache of uniprot
   sequences.
 -debug
@@ -163,6 +166,10 @@ END
   # Ignore HMMs that might be matched by EC terms
   my %stepIgnoreHmm = (); # step => hmm => 1
   my %stepCurated = (); # step => curated id => info
+  # predict:uniprot items are ultimately reported as curated2, but
+  # the do not come from the Curated2 table in curated.db,
+  # and the sequence must be fetched from UniProt
+  my %stepPredicted = (); # step => uniprot => 1
   my %stepCurated2 = (); # step => curated2 id => info
   my %stepUniprot = (); # step => uniprot => 1
   my %stepIgnore = (); # step => curated id => info
@@ -206,6 +213,8 @@ END
         if (exists $stepIgnore{$step}{$curatedIds}) {
           print STDERR "Warning: for step $step, $curatedIds was ignored and then added -- it is still ignored\n";
         }
+      } elsif ($type eq "predicted") {
+        $stepPredicted{$step}{$value} = 1;
       } elsif ($type eq "hmm") {
         $stepHmm{$step}{$value} = 1;
       } elsif ($type eq "uniprot") {
@@ -242,8 +251,10 @@ END
     }
 
     # Ensure that there are some items that match the step
-    if (keys(%{ $stepHmm{$step} }) == 0 && !exists $stepUniprot{$step}) {
-      die "No curated, curated2, hmm, or uniprot items for $step\n"
+    if (keys(%{ $stepHmm{$step} }) == 0
+        && !exists $stepUniprot{$step}
+        && !exists $stepPredicted{$step}) {
+      die "No curated, curated2, uniprot, predicted, or hmm items for $step\n"
         unless exists $stepCurated{$step} || exists $stepCurated2{$step};
       my @ids = grep { !exists $stepIgnore{$step}{$_} } keys %{ $stepCurated{$step} };
       print STDERR "No hmm or uniprot items for $step, and the only curated items are ignored\n"
@@ -255,15 +266,20 @@ END
 
   print STDERR "Fetching UniProt sequences (not already cached)\n" if $debug;
   # Collect descriptions and sequences of uniprot ids not already known
-  while (my ($step, $uniprotHash) = each %stepUniprot) {
-    foreach my $uniprotId (keys %$uniprotHash) {
-      next if exists $uniprot{$uniprotId};
-      my ($seq, $desc) = FetchUniProtSequence($uniprotId);
-      die "Cannot fetch uniprot sequence for identifier $uniprotId, is it invalid?\n" unless $seq;
-      $uniprot{$uniprotId} = { 'uniprotId' => $uniprotId,
-                               'desc' => $desc,
-                               'seq' => $seq };
-    }
+  my @uniprotFetch = ();
+  foreach my $uniprotHash (values %stepUniprot) {
+    push @uniprotFetch, keys %$uniprotHash;
+  }
+  foreach my $uniprotHash (values %stepPredicted) {
+    push @uniprotFetch, keys %$uniprotHash;
+  }
+  foreach my $uniprotId (sort @uniprotFetch) {
+    next if exists $uniprot{$uniprotId};
+    my ($seq, $desc) = FetchUniProtSequence($uniprotId);
+    die "Cannot fetch uniprot sequence for identifier $uniprotId, is it invalid?\n" unless $seq;
+    $uniprot{$uniprotId} = { 'uniprotId' => $uniprotId,
+                             'desc' => $desc,
+                             'seq' => $seq };
   }
 
   print STDERR "Rewriting the UniProt cache\n" if $debug;
@@ -361,6 +377,12 @@ END
       my $info = $stepCurated2{$step}{$id};
       print $fhO join("\t", $step, "curated2",
                       $id, $info->{desc}, "", $info->{seq})."\n";
+    }
+    foreach my $uniprotId (sort keys %{ $stepPredicted{$step} }) {
+      die unless exists $uniprot{$uniprotId};
+      print $fhO join("\t", $step, "predicted",
+                      $uniprotId, $uniprot{$uniprotId}{desc},
+                      "", $uniprot{$uniprotId}{seq})."\n";
     }
     foreach my $id (sort keys %{ $stepIgnore{$step} }) {
       my $info = $stepIgnore{$step}{$id};

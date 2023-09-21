@@ -114,11 +114,15 @@ END
       my $hmmId = $row->{hmmId};
       $queryHmm{$hmmId} = $row;
       $row->{queryId} = $hmmId;
-    } elsif ($queryType eq "curated" || $queryType eq "curated2" || $queryType eq "uniprot") {
+    } elsif ($queryType eq "curated" || $queryType eq "curated2"
+             || $queryType eq "uniprot"
+             || $queryType eq "predicted") {
       my $id;
       $id = $row->{curatedIds} if $queryType eq "curated";
       $id = "uniprot:" . $row->{uniprotId} if $queryType eq "uniprot";
+      # Hits to these are treated as lower confidence by gapsummary.pl
       $id = "curated2:" . $row->{protId} if $queryType eq "curated2";
+      $id = "predicted:" . $row->{uniprotId} if $queryType eq "predicted";
       $querySeq{$id} = $row;
       $row->{queryId} = $id;
     } else {

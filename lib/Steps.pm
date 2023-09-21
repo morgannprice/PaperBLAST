@@ -40,7 +40,7 @@ sub ReadSteps2($$) {
   my ($stepsFile, $doimport) = @_;
   my $debug = $ENV{DEBUG};
   my %imports = (); # filepathname to step object
-  my @stepTypes = qw{term hmm EC uniprot ignore ignore_hmm ignore_other curated};
+  my @stepTypes = qw{term hmm EC uniprot ignore ignore_hmm ignore_other curated predicted};
   my %stepTypes = map { $_ => 1 } @stepTypes;
   my $steps = {}; # step name to hash of name, desc, and search, which is a list of pairs
   my $rules = {}; # rule name to list of lists, each element is a step name or another rule name

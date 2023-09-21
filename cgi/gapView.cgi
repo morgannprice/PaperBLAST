@@ -1829,7 +1829,8 @@ sub CuratedToLink($$$) {
     my $protId = $1;
     ($curatedDesc) = $dbhC->selectrow_array("SELECT desc FROM Curated2 WHERE protId = ?",
                                             {}, $protId);
-    die $protId unless defined $curatedDesc;
+  } elsif ($curatedIds =~ m/^predicted:/) {
+    $curatedDesc = "Annotated by GapMind curators";
   } elsif ($curatedIds =~ m/^uniprot:(.*)$/) {
     my $uniprotId = $1;
     ($curatedDesc) = $dbhS->selectrow_array("SELECT desc FROM StepQuery WHERE uniprotId = ?",
@@ -1864,6 +1865,8 @@ sub CuratedToLink($$$) {
                     It was manually added to GapMind's database and may not be in PaperBLAST.};
     $charTitle =~ s/\s+/ /g;
     $charLabel .= ", see " . a({-href => $stepDefURL, -title => $charTitle}, "rationale");
+  } elsif ($first =~ m/^predicted:/) {
+    $first =~ s/^predicted://;
   }
   my $URL = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=" . $first;
   my $link = a({-href => $URL, -title => "View $idShowHit in PaperBLAST"}, $curatedDesc);

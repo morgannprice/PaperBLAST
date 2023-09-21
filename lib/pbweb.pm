@@ -1029,7 +1029,7 @@ sub DataForStepParts($$$) {
       foreach my $id (split /,/, $sq->{curatedIds}) {
         $curatedQuery{$id} = $sq;
       }
-    } elsif ($sq->{queryType} eq "uniprot") {
+    } elsif ($sq->{queryType} eq "uniprot" || $sq->{queryType} eq "predicted") {
       $uniprotQuery{$sq->{uniprotId}} = $sq;
     }
   }
@@ -1081,6 +1081,13 @@ sub FormatStepPart($$$$$) {
     my $URL = "https://www.uniprot.org/uniprot/".$value;
     return "UniProt sequence " . a({-href => $URL, -title => "View in UniProt"}, $value)
       . ": " . $data->{uniprotQuery}{$value}{desc};
+  } elsif ($type eq "predicted") {
+    my $URL = "https://www.uniprot.org/uniprot/".$value;
+    my $desc = $data->{uniprotQuery}{$value}{desc};
+    return a({-title => "This prediction lacks experimental evidence,"
+             . " so similar proteins can only be moderate-confidence candidates"}, "Predicted") . ":"
+      . " UniProt sequence " . a({-href => $URL, -title => "View in UniProt"}, $value)
+      . ($desc ? ": $desc" : "");
   } elsif ($type eq "ignore_other") {
     my $URL = "http://papers.genomics.lbl.gov/cgi-bin/curatedSearch.cgi?word=1"
       . "&query=" . uri_escape($value); # value could contain %

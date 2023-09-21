@@ -226,7 +226,7 @@ foreach my $pathwayId (sort keys %queries) {
       $curatedIds = $row->{query};
     } elsif ($queryType eq "curated2") {
       $protId = $row->{query};
-    } elsif ($queryType eq "uniprot") {
+    } elsif ($queryType eq "uniprot" || $queryType eq "predicted") {
       $uniprotId = $row->{query};
     } elsif ($queryType eq "hmm") {
       $hmmId = $row->{query};
