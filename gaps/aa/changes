@@ -9,7 +9,8 @@ lys: Improved the lysW-based pathway to include genes from
 Thermococcus kodakarensis.
 
 met: Added the core methionine synthase mesB, the mesD-mesX system,
-and renamed metE' to mesA.
+and renamed metE' to mesA. Added the predicted synthases mesC and
+split metE.
 
 phe: Improved definition of prephenate dehydratase.
 

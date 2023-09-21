@@ -69,6 +69,17 @@ metZ	O-succinylhomoserine sulfhydrylase	term:O-succinylhomoserine sulfhydrylase	
 
 metE	vitamin B12-independent methionine synthase	EC:2.1.1.14
 
+# In many thermophilic archaea, MetE seems to be split into two pieces (PMC7857596). There
+# is experimental support for a protein complex (PMC2668238), and the two pieces
+# often appear to form an operon, but there is no experimental evidence that they
+# are a methionine synthase.
+split_metE_1	vitamin B12-independent methionine synthase, folate-binding component	predicted:G0EDA1_PYRF1
+
+# In many thermophilic archaea, MetE seems to be split into two pieces (see PMC7857596).
+# The catalytic component has the necessary zinc-binding residues (H219, C221, C307)
+# and homocysteine-binding residues (S20, E71, D185).
+split_metE_2	vitamin B12-independent methionine synthase, catalytic component	predicted:G0EFB7_PYRF1
+
 # Desulfovibrio have a somewhat diverged MetH, without the activation domain, but confirmed by
 # cofitness (DVU1585 = uniprot:Q72BP9_DESVH is cofit with MetF; DvMF_0476 = uniprot:B8DKK4_DESVM is cofit with a RamA-
 # like activation protein).
@@ -116,6 +127,12 @@ mesA	Methylcobalamin:homocysteine methyltransferase MesA	curated:SwissProt::P552
 # We named this family MesB (PMID:33534785).
 mesB	Methylcobalamin:homocysteine methyltransferase MesB	uniprot:A0A0V8M4G6
 
+# MesC is another family of core methionine synthases, without experimental evidence, but
+# with the correct functional residues, and linked to the Wood-Ljungdahl pathway
+# by the gene neighbor method
+# (PMC7857596). The corrinoid protein of the Wood-Ljungdahl pathway is probably the methyl donor.
+mesC	Methylcobalamin:homocysteine methyltransferase MesC	predicted:Q8TUL3_METAC
+
 # Genetic evidence shows that ACIAD3523 and Ga0059261_2929 are methionine synthases,
 # see PMC2290942 and PMID:33534785.
 # They require mesX (ACIAD3524 or Ga0059261_2928) and oxygen for activity, but not
@@ -154,18 +171,21 @@ B12-reactivation: B12-reactivation-domain
 B12-reactivation: ramA
 
 # Besides MetH (with B-12 reactivation) or 3-part MetH as in Phaeobacter (PMC5764234), or MetE,
-# GapMind also includes the folate-independent systems MesA, MesB, and MesD/MesX (PMC7857596).
-# It is possible that the corrinoid-dependent methionine synthases (MesA or MesB) would require B12 reactivation,
+# or MetE split into two parts (PMC7857596),
+# GapMind also includes the folate-independent systems MesA, MesB,
+# MesC, and MesD/MesX (PMC7857596).
+# It is possible that the corrinoid-dependent methionine synthases (MesA, MesB, or MesC) would require B12 reactivation,
 # but this is not proven, and some methanogens with MesA seem to lack RamA, so
 # B12 reactivation is not included.
-# Also, we proposed that many archaea use split MetE-like methionine synthases or another
-# corrinoid-dependent methionine synthase (MesC), but there is no experimental evidence, so
-# these are not included in GapMind.
+# The role of split MetE or MesC lacks experimental evidence, and is based on
+# gene neighborhoods and functional residues only (PMC7857596).
 methionine_synthase: metH B12-reactivation
 methionine_synthase: split_metH_1 split_metH_2 split_metH_3 B12-reactivation
 methionine_synthase: metE
+methionine_synthase: split_metE_1 split_metE_2
 methionine_synthase: mesA
 methionine_synthase: mesB
+methionine_synthase: mesC
 methionine_synthase: mesD mesX
 
 all: homocysteine methionine_synthase 
