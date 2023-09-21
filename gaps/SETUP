@@ -205,6 +205,12 @@ bin/buildStepsDb.pl -set carbon -doquery
 
 You should now be ready to run gapsearch.pl or gapView.cgi.
 
+The optional -doquery option will run gapquery.pl for each
+pathway. Or, run gapquery.pl on each pathway before running
+buildStepsDb without the -doquery option. Here is an example of
+running gapquery.pl for pathway phenylacetate in set = carbon:
+
+  bin/gapquery.pl -hmm hmm -steps gaps/carbon/phenylacetate.steps -out tmp/path.carbon
 
 BUILD THE CURATED DATABASE (PHASE 1)
 
@@ -235,16 +241,18 @@ pathwayId and desc. It should include a row for each pathwayId that
 has a pathwayId.steps file and for pathwayId = all. For an example,
 see gaps/aa/aa.table
 
-Optional -- create a tab-delimited file of curated gaps in
+Optional: create a tab-delimited file of curated gaps in
 gaps/setName/setName.curated.gaps.tsv. It must have a header line the
 fields gdb gid pathway step class comment. (gdb is the genome
 database, such as "NCBI", and gid is the genome identifier.) There
 need not be any other rows. For an example, see
 gaps/aa/aa.curated.gaps.tsv
 
-If you will be using gapView.cgi to view the results, or if you want
-to note dependencies between pathways, create a tab-delimited file of
-dependencies. See gaps/aa/requires.tsv for an example. The required
-fields are rule, requires, and comment. Dependencies are optional but
-the header line is required.
+Optional: if you will be using gapView.cgi to view the results, or
+if you want to note dependencies between pathways, create a
+tab-delimited file of dependencies. See gaps/aa/requires.tsv for an
+example. The required fields are rule, requires, and
+comment. Dependencies are optional but the header line is required.
 
+Once these files are created, you can create a steps database as
+described above using buildStepsDb.pl.
