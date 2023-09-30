@@ -441,7 +441,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
   my $title = $setDesc;
   $title = "Potential Gaps in $setDesc" if param('gaps');
   if ($locusSpec ne "") {
-    $title = $stepSpec ne "" ? "Aligments for a candidate for $stepSpec" : "Protein $locusSpec";
+    $title = $stepSpec ne "" ? "Alignments for a candidate for $stepSpec" : "Protein $locusSpec";
   } elsif ($pathSpec ne "") {
     $title = $pathDesc{$pathSpec};
   }
