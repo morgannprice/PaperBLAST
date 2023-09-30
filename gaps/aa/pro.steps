@@ -30,8 +30,11 @@ OAT	L-ornithine 5-aminotransferase	EC:2.6.1.13	curated:CharProtDB::CH_124176
 # Pathway II involves ornithine aminotransferase (OAT).
 all: ornithine OAT proC
 
-cyclodeaminase	ornithine cyclodeaminase	EC:4.3.1.12
+# In many archaea, proline is formed from ornithine via a cyclodeaminase (PMID:11489875).
+# Mls2 (uniprot:Q6LXX7, MMP1218, MMP_RS06270) was identified as an
+# ornithine cyclodeaminase (PMID:30636068), and
+# it is required for proline synthesis (Leslie Day, personal communication).
+cyclodeaminase	ornithine cyclodeaminase	EC:4.3.1.12	uniprot:Q6LXX7
 
 # Some methanogens synthesize proline via ornithine cyclodeaminase (PMID:11489875).
-# Unfortunately, the cyclodeaminase has only been linked to sequence in bacteria.
 all: ornithine cyclodeaminase

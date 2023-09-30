@@ -5,6 +5,9 @@
 # Pathway II from methylene-tetrahydrofolate, CO2, and ammonia
 # (metacyc:GLYSYN-PWY) is not included because it is not clear that bacteria really
 # run this in reverse (although apparently budding yeast can).
+# Glcyine synthiesis by glyXL/glyXS, whose biochemical function is not known, is also represented.
+# Another pathway not listed is the formation of glycine from glycolate
+# as in Pelagibacter (see PMID:23096402). This is an unusual nutritional requirement.
 
 # Some methanogens use tetrahydromethanopterin instead of tetrahydrofolate as the folate carrier,
 # which is annotated as "Serine hydroxymethyltransferase" but with a different EC number.
@@ -15,8 +18,18 @@ agx1	alanine--glyoxylate aminotransferase	EC:2.6.1.44
 
 gly1	L-threonine aldolase	EC:4.1.2.5	EC:4.1.2.48
 
-# Another pathway not listed is the formation of glycine from glycolate
-# as in Pelagibacter (see PMID:23096402). This is an unusual nutritional requirement.
+# Glycine synthesis by Bifidobacterium breve or Methanococcus maripaludis requires two genes:
+# a putative enzyme (distantly related to anaerobic ribonucleotide reductase), which we call glyXL, and an ACT domain protein,
+# which we call glyXS (BBR_RS12920 and BBR_RS12915 or MMP_RS07345 and MMP_RS03450, Anthony Shiver and Leslie Day, personal communication).
+# These proteins are usually encoded next to each other (although not in in Methanococcus).
+# A homolog of glyXL from Streptococcus (spr0218, uniprot:Q8DRD2) is also required for glycine synthesis (PMC2739083).
+# And similar operon is regulated by glycine riboswitches (see BMMGA3_03000, discussed in PMC4342826).
+glyXL	putative glycine synthesis enzyme, catalytic component	predicted:Q8G510	predicted:Q6LXC5	predicted:Q8DRD2
+
+# Required for glycine synthesis along with glyXL in Bifodobacterium breve and Methanococcus maripaludis.
+# ACT domain proteins often bind amino acids to regulate the activity of enzymes, so we
+# predict that glyXL is the catalytic component.
+glyXS	putative glycine synthesis enzyme, ACT domain component	predicted:Q8G509	predicted:Q6LZH1
 
 from_serine: glyA
 
@@ -29,3 +42,4 @@ from_threonine: gly1
 all: from_serine
 all: via_glyoxylate
 all: from_threonine
+all: glyXL glyXS

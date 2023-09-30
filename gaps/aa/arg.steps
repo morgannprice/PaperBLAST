@@ -12,13 +12,12 @@
 
 # Bacteroidetes have a divergent N-acylglutamate synthase, see BT3761 (uniprot:Q8A1A5_BACTN)
 # or Echvi_3845 (uniprot:L0G3H4_ECHVK).
-# Also see the related protein Cabys_1732 (uniprot:H1XRZ0_9BACT) which is reported to form
-# N-acetylglutamate (PMID:28265262).
 # Bacteroides use succinylated intermediates (PMID:16704984), so their proteins are probably
 # N-succinylglutamate synthases.
+# (These enzymes are also known as argA2, see PMC9026213.)
 # uniprot:A0A0H2X8L7 is annotated as argB in BRENDA, but it is also argA (a fusion protein).
 # N515DRAFT_3768 (uniprot:A0A1I2DIM7) is similar to ArgAB fusion proteins and mutants are rescued by arginine.
-argA	N-acylglutamate synthase	EC:2.3.1.1	uniprot:Q8A1A5_BACTN	uniprot:L0G3H4_ECHVK	uniprot:H1XRZ0_9BACT	curated:BRENDA::A0A0H2X8L7	uniprot:A0A1I2DIM7
+argA	N-acylglutamate synthase	EC:2.3.1.1	uniprot:Q8A1A5_BACTN	uniprot:L0G3H4_ECHVK	curated:BRENDA::A0A0H2X8L7	uniprot:A0A1I2DIM7
 
 # ArgB includes Bacteroides proteins that act on N-succinylglutamate instead
 # of the usual N-acetylglutamate (i.e. BT3395).
@@ -29,7 +28,8 @@ argA	N-acylglutamate synthase	EC:2.3.1.1	uniprot:Q8A1A5_BACTN	uniprot:L0G3H4_ECH
 # In the version of BRENDA we are using,
 # lpxC from Aquifex aeolicus is erroneously given as uniprot:O67848 (which is probably argB), not uniprot:O67648.
 # (This has since been corrected in BRENDA.)
-argB	N-acylglutamate kinase	EC:2.7.2.8	ignore:BRENDA::O67848
+# A similar error affects Q8P8J7.
+argB	N-acylglutamate kinase	EC:2.7.2.8	ignore:BRENDA::O67848	ignore:BRENDA::Q8P8J7
 
 # ArgC includes Bacteroides proteins that probably act
 # on N-succinylglutamylphosphate instead of N-acetylglutamylphosphate (i.e. BT3759)
@@ -41,9 +41,15 @@ argD	N-acetylornithine aminotransferase	EC:2.6.1.11	ignore_other:EC 2.6.1.81
 
 # This EC number also includes N-acetylcitrulline deacetylase, which is part of pathway III.
 # N515DRAFT_3767 (uniprot:A0A1I2DJB5_9GAMM) is a putative argE and is quite diverged
-# (the closest characterized protein is 25% identity to E. coli argE).
-# Mutants are auxotrophic and rescued by arginine.
-argE	N-acetylornithine deacetylase	EC:3.5.1.16	uniprot:A0A1I2DJB5_9GAMM
+# (the closest characterized protein is 25% identity to E. coli argE);
+# mutants are auxotrophic and rescued by arginine.
+# A putative amidohydrolase "ArgA3" (W3Y6L2) is in a conserved
+# operon with ornithine carbamoyltransferase (the next step) in Veillonella and
+# related genera (PMC9026213). The genome context includes other
+# arginine synthesis genes as well. Although ArgA3 was proposed to be a N-acetylglutamate
+# synthase, it is related to N-acetyl-cysteine deacetylase, and the genomes with "ArgA3"
+# are lacking argE as well; so we think argE is the more likely function.
+argE	N-acetylornithine deacetylase	EC:3.5.1.16	uniprot:A0A1I2DJB5_9GAMM	predicted:W3Y6L2
 
 # This could obtain the amino group from glutamine (EC:6.3.5.5) or from ammonia (EC:6.3.4.16)
 carA	carbamoyl phosphate synthase subunit alpha	term:carbamoyl-phosphate synthase%small	ignore_other:EC 6.3.5.5	ignore_other:EC 6.3.4.16	hmm:TIGR01368

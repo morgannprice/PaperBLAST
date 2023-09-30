@@ -2,7 +2,7 @@
 # This begins with the initial steps of
 # valine biosynthesis (see metacyc:VALSYN-PWY), up to 3-methyloxobutanoate.
 
-import val.steps:ilvH ilvI ilvC ilvD
+import ile.steps:ilvH ilvI ilvC ilvD
 
 # Ignore CharProtDB entries with no EC number.
 # Add Echvi_3833 (uniprot:L0G5E1_ECHVK) and CA265_RS15855 (uniprot:A0A1X9Z750_9SPHI), which are supported by fitness data

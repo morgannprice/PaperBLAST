@@ -1,22 +1,7 @@
 # Valine biosynthesis in GapMind is based on MetaCyc pathway L-valine biosynthesis
 # (metacyc:VALSYN-PWY).
 
-# ilvIH (or ilvGM) is a two-subunit enzyme that forms acetolactate or acetohydroxybutanoate.
-# BRENDA often annotates both subunits the same, so it is unclear which is which.
-# CH_124129 and CH_123884 are probably correct but have limited data and vaguer annotations.
-#
-ilvH	acetohydroxybutanoate synthase catalytic subunit	hmm:TIGR00118	term:acetohydroxy-acid synthase%large	term:acetohydroxy acid synthase%large	term:acetohydroxybutanoate synthase, catalytic subunit	term:acetohydroxybutanoate synthase, catalytic subunit	term:acetohydroxyacid synthase subunit B	ignore_other:EC 2.2.1.6	ignore:CharProtDB::CH_124219	ignore:CharProtDB::CH_123884
-
-# The isolated catalytic subunit has some activity so it's not clear if the regulatory
-# subunit should be required.
-ilvI	acetohydroxybutanoate synthase regulatory subunit 	hmm:TIGR00119	term:acetohydroxy-acid synthase%small	term:acetohydroxybutanoate synthase, regulatory subunit	term:small subunit of acetolactate synthase	ignore_other:EC 2.2.1.6
-
-# The various EC numbers vary in their preference for NAD(P)H.
-ilvC	ketol-acid reductoisomerase	EC:1.1.1.86	EC:1.1.1.382	EC:1.1.1.383
-
-# The ignored enzyme is involved in salinosporamide A biosynthesis but does a very similar reaction
-# and is >50% identical to N515DRAFT_0569, which is confirmed by fitness data to be biosynthetic.
-ilvD	(R)-2,3-dihydroxy-3-methylbutanoate dehydratase	EC:4.2.1.9	ignore:metacyc::MONOMER-15882
+import ile.steps:ilvH ilvI ilvC ilvD
 
 ilvE	valine transaminase	EC:2.6.1.42
 

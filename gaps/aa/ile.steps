@@ -12,26 +12,41 @@
 # is not included because the first step (glutamate mutase, EC:5.4.99.1)
 # has not been linked to sequence and because no organism has been
 # demonstrated to rely on this pathway to form oxobutanoate.
-# Pathway V, from 2-methylbutanoate (metacyc:PWY-5108),
-# is not included.
+# MetaCyc L-isoleucine biosynthesis V describes biosynthesis from 2-methylbutanoate, which
+# is a fermentation end product in the rumen; this is an an unusual precursor
+# so we did not include it.
 
 # (Ignore some CharProtDB annotations with threonine deaminase but no EC)
 ilvA	threonine deaminase	EC:4.3.1.19	ignore_other:threonine deaminase
 # ilvIH (or ilvGM) is a two-subunit enzyme that forms acetolactate or acetohydroxybutanoate
 # CH_124129 is probably correct but has limited data and vaguer annotations
-#
-ilvH	acetohydroxybutanoate synthase catalytic subunit	hmm:TIGR00118	term:acetohydroxy-acid synthase%large	term:acetohydroxy acid synthase%large	term:acetohydroxybutanoate synthase, catalytic subunit	term:acetohydroxybutanoate synthase, catalytic subunit	term:acetohydroxyacid synthase subunit B	ignore_other:EC 2.2.1.6	ignore:CharProtDB::CH_124219
+
+# (S)-2-aceto-2-hydroxybutanoate synthesis is part of isoleucine biosynthesis.
+# Acetolactate synthesis is part of valine or leucine biosynthesis.
+ilvI	acetolactate/acetohydroxybutanoate synthase catalytic subunit	hmm:TIGR00118	term:acetohydroxy-acid synthase%large	term:acetohydroxy acid synthase%large	term:acetohydroxybutanoate synthase, catalytic subunit	term:acetohydroxybutanoate synthase, catalytic subunit	term:acetohydroxyacid synthase subunit B	ignore_other:EC 2.2.1.6	ignore:CharProtDB::CH_124219
 
 # The isolated catalytic subunit has some activity so it's not clear if the regulatory
-# subunit should be required.
-ilvI	acetohydroxybutanoate synthase regulatory subunit 	hmm:TIGR00119	term:acetohydroxy-acid synthase%small	term:acetohydroxybutanoate synthase, regulatory subunit	term:small subunit of acetolactate synthase	ignore_other:EC 2.2.1.6
+# subunit (ilvH) should be required.
+# In Rhodanobacter and related genera, IlvH is truncated and has lost the C-terminal
+# domain (i.e., LRK54_RS10305, which is nearly identical to A0A154R0Y7).
+# Based on sequence analysis, short ilvH probably maintains the ability to bind
+# valine and to bind the catalytic subunit, but not the ability to bind ATP or other regulatory subunits.
+# Mutant fitness data confirms that LRK54_RS10305 is involved in amino acid biosynthesis.
 # 
+ilvH	acetolactate/acetohydroxybutanoate synthase regulatory subunit 	hmm:TIGR00119	term:acetohydroxy-acid synthase%small	term:acetohydroxybutanoate synthase, regulatory subunit	term:small subunit of acetolactate synthase	ignore_other:EC 2.2.1.6	uniprot:A0A154R0Y7
+ 
 # The three EC numbers correspond to different preferences for NAD(P)H as the cofactor;
 # the transformations to the carbon skeleton are the same.
 ilvC	2-hydroxy-3-ketol-acid reductoisomerase	EC:1.1.1.86	EC:1.1.1.382	EC:1.1.1.383
+
+# IlvD is involved in the biosynthesis of isoleucine, with
+# (R)-2,3-dihydroxy-3-methylpentanoate as the substrate, and in the
+# biosynthesis of valine and leucine, with 
+# (R)-2,3-dihydroxy-3-methylbutanoate as the substrate.
 # The ignored enzyme is involved in salinosporamide A biosynthesis but does a very similar reaction
 # and is >50% identical to N515DRAFT_0569, which is confirmed by fitness data to be biosynthetic
-ilvD	(R)-2,3-dihydroxy-3-methylpentanoate dehydratase	EC:4.2.1.9	ignore:metacyc::MONOMER-15882
+ilvD	dihydroxy-acid dehydratase	EC:4.2.1.9	ignore:metacyc::MONOMER-15882
+
 ilvE	isoleucine transaminase	EC:2.6.1.42
 
 # 2-oxobutanoate is formed by deaminating threonine (pathway I, ilvA), via citramalate synthase (pathway II, cimA), or via propionyl-CoA (pathway III, prpE)
@@ -80,9 +95,5 @@ ofoa	2-oxobutanoate:ferredoxin oxidoreductase, alpha subunit	uniprot:OFOA1_SULTO
 ofob	2-oxobutanoate:ferredoxin oxidoreductase, beta subunit	uniprot:OFOB1_SULTO	uniprot:OFOB_SULSP	uniprot:OFOB_SACSO	uniprot:OFOB2_SULTO	uniprot:OFOB1_AERPE	uniprot:OFOB2_AERPE
 
 oxobutanoate: prpE ofoa ofob
-
-# MetaCyc L-isoleucine biosynthesis V describes biosynthesis from 2-methylbutanoate, which
-# is a fermentation end product in the rumen. This is an anusual precursor
-# so I did not include it.
 
 all: oxobutanoate ilvI ilvH ilvC ilvD ilvE

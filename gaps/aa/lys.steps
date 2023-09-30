@@ -29,10 +29,14 @@ dapC	N-succinyldiaminopimelate aminotransferase	EC:2.6.1.17	EC:2.6.1.52
 
 dapE	succinyl-diaminopimelate desuccinylase	EC:3.5.1.18
 
-# L,L-diaminopimelate to meso-diaminopimelate
-dapF	diaminopimelate epimerase	EC:5.1.1.7
+# L,L-diaminopimelate to meso-diaminopimelate.
+# A putative amino acid racemase (W1W731) is in a conserved operon with lysA ("dapF2" in PMC9026213);
+# it is likely to be a diaminopimelate epimerase.
+dapF	diaminopimelate epimerase	EC:5.1.1.7	predicted:W1W731
 
-lysA	diaminopimelate decarboxylase	EC:4.1.1.20
+# A0A0H3H393 is reported to be a lysine decarboxylase but is 87% identical to E. coli's
+# diaminopimelate decarboxylase, so .
+lysA	diaminopimelate decarboxylase	EC:4.1.1.20	ignore:BRENDA::A0A0H3H393
 
 # Also known as ykuQ
 dapH	tetrahydrodipicolinate acetyltransferase	EC:2.3.1.89
@@ -40,12 +44,14 @@ dapH	tetrahydrodipicolinate acetyltransferase	EC:2.3.1.89
 # Also known as patA in Bacillus subtilis
 dapX	acetyl-diaminopimelate aminotransferase	term:N-acetyl-LL-diaminopimelate aminotransferase
 
-# Also known as ykuR
-dapL	N-acetyl-diaminopimelate deacetylase	EC:3.5.1.47
+# Also known as ykuR or DapeL. The putative amidohydrolase
+# AA076_RS07060 (Q2FH40) from Staphylococcus is conserved near dapX
+# and/or lysA and is similar to N-acetylcysteine deacetylase, so we
+# predict that it is a N-acetyl-diaminopimelate deacetylase.
+dapL	N-acetyl-diaminopimelate deacetylase	EC:3.5.1.47	predicted:Q2FH40
 
 # In reverse, this converts tetrahydrodipicolinate to meso-DAP.
 ddh	meso-diaminopimelate D-dehydrogenase	EC:1.4.1.16
-
 
 # This enzyme is sometimes known as dapL. In reverse, it converts tetrahydrodipicolinate to L,L-DAP.
 DAPtransferase	L,L-diaminopimelate aminotransferase	EC:2.6.1.83

@@ -20,8 +20,10 @@ asd	aspartate semi-aldehyde dehydrogenase	EC:1.2.1.11
 # The homoserine dehydrogenase portion is somewhat diverged. Its role is confirmed by strong cofitness with
 # threonine synthase (the defined media for B. thetaiotaomicron included methionine).
 # DvMF_1412 from Desulfovibrio vulgaris Miyazaki F (uniprot:B8DRS3_DESVM) is a somewhat
-# diverged homoserine dehydrogenase. It has auxotrophic phenotypes.
-hom	homoserine dehydrogenase	EC:1.1.1.3	uniprot:A0A1L6J6Q3	uniprot:Q8A541_BACTN	uniprot:B8DRS3_DESVM
+# diverged homoserine dehydrogenase; it has auxotrophic phenotypes.
+# uniprot:A0A168MV81 from Brevundimonas is a somewhat diverged homoserine dehydrogenase (fused to aspartate kinase);
+# it has auxotrophic phenotypes.
+hom	homoserine dehydrogenase	EC:1.1.1.3	uniprot:A0A1L6J6Q3	uniprot:Q8A541_BACTN	uniprot:B8DRS3_DESVM	uniprot:A0A168MV81
 
 # As discussed in PMID:28581482, many homologs of MetA family are
 # actually homoserine O-acetyltransferases, and many homologs of MetX

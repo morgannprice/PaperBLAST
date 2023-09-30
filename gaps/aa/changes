@@ -1,21 +1,29 @@
 Changes to amino acid biosynthesis since the original 2019
 publication:
 
-arg: Better describe the lysW-based pathway and argX.
+arg: Better describe the lysW-based pathway and argX; propose that "argA3" substitutes for argE. Ignore a mis-curated argB.
 
-ile: Improved definition of cimA.
+gly: add glyXL/glyXS
+
+his: add Bifidobacterium hisN
+
+ile: Improved definition of cimA. Fix names of ilvI/ilvH. Add short Rhodanobacter ilvH.
 
 lys: Improved the lysW-based pathway to include genes from
-Thermococcus kodakarensis.
+Thermococcus kodakarensis. Add predicted dapL and dapF2 from Staphylococcus. For lysA, ignore a lysine decarboxylase.
 
 met: Added the core methionine synthase mesB, the mesD-mesX system,
 and renamed metE' to mesA. Added the predicted synthases mesC and
-split metE.
+split metE. Added a diverged homoserine dehydrogenase from Brevundimonas.
 
-phe: Improved definition of prephenate dehydratase.
+phe: Improved definition of prephenate dehydratase, including a diverged enzyme from Brevundimonas.
 
 pro: Added synthesis via ornithine gamma-aminotransferase (EC
 2.6.1.13), and allow more options for ornithine biosynthesis (such as
-the lysW pathway).
+the lysW pathway). Add archaeal ornithine cyclodeaminase.
+
+ser: Add serA from Thermococcus. Add serC from Methanocaldococcus and from Staphylococcus. Add predicted serC from Clostridia ("serC3") and some related enzymes. Add serB from Entamoeba histolytica, as this is similar to some putative bacterial serB. Add a subfamily of DUF1015 as a predicted replacement for serB.
+
+thr: Add the putative alternative to homoserine kinase, homK/thrB2/TIGR02535.
 
 tyr: Improved definition of prephenate dehydrogenase.
