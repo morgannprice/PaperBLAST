@@ -42,6 +42,11 @@ sub UniqToGenes($$) {
 # Given a row from the CuratedGene table, add fields for
 # subjectId, source, curated, curateId, priority, URL, and showName,
 # and clean up the comment field for presentation
+#
+# The priority order of the data sources is:
+# reanno (1), ecocyc (2), metacyc (3), SwissProt (4), BRENDA (5), CAZy (6),
+# prodoric (7), TCDB (8), REBASE (9), biolip (10), CharProtDB (11), ENA (12),
+# regprecise (13), UniProt (14)
 sub AddCuratedInfo($) {
   my ($gene) = @_;
   my $db = $gene->{db};
@@ -55,9 +60,9 @@ sub AddCuratedInfo($) {
   if ($db eq "CAZy") {
     $gene->{source} = "CAZy via dbCAN";
     $gene->{URL} = "http://www.cazy.org/search?page=recherche&lang=en&recherche=$protId&tag=4";
-    $gene->{priority} = 4;
+    $gene->{priority} = 6;
   } elsif ($db eq "CharProtDB") {
-    $gene->{priority} = 4;
+    $gene->{priority} = 11;
     # their site is not useful, so just link to the paper
     $gene->{URL} = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245046/";
     if ($gene->{comment}) {
@@ -68,7 +73,7 @@ sub AddCuratedInfo($) {
     }
   } elsif ($db eq "SwissProt") {
     $gene->{URL} = "http://www.uniprot.org/uniprot/$protId";
-    $gene->{priority} = 2;
+    $gene->{priority} = 4;
     # and clean up the comments
     my @comments = split /_:::_/, $gene->{comment};
     @comments = map { s/[;. ]+$//; $_; } @comments;
@@ -105,7 +110,7 @@ sub AddCuratedInfo($) {
   } elsif ($db eq "ecocyc") {
     $gene->{source} = "EcoCyc";
     $gene->{URL} = "https://ecocyc.org/gene?orgid=ECOLI&id=$protId";
-    $gene->{priority} = 1;
+    $gene->{priority} = 2;
   } elsif ($db eq "metacyc") {
     $gene->{source} = "MetaCyc";
     $gene->{URL} = "https://metacyc.org/gene?orgid=META&id=$protId";
@@ -113,23 +118,23 @@ sub AddCuratedInfo($) {
   } elsif ($db eq "reanno") {
     $gene->{source} = "Fitness-based Reannotations";
     $gene->{comment} = b("mutant phenotype:") . " " . $gene->{comment};
-    $gene->{priority} = 5;
+    $gene->{priority} = 1;
     my ($orgId, $locusId) = split /:/, $protId;
     die "Invalid protId $protId" unless $locusId;
     $gene->{URL} = "http://fit.genomics.lbl.gov/cgi-bin/domains.cgi?orgId=$orgId&locusId=$locusId";
   } elsif ($db eq "REBASE") {
-    $gene->{priority} = 4;
+    $gene->{priority} = 9;
     $gene->{URL} = "http://rebase.neb.com/rebase/enz/$protId.html";
   } elsif ($db eq "BRENDA") {
-    $gene->{priority} = 2.5; # just behind Swiss-Prot
+    $gene->{priority} = 5; # just behind Swiss-Prot
     $gene->{source} = "BRENDA";
     $gene->{URL} = "http://www.brenda-enzymes.org/sequences.php?AC=" . $protId;
   } elsif ($db eq "UniProt") { # used in GapMind, i.e. see curatedClusters.cgi
-    $gene->{priority} = 6;
+    $gene->{priority} = 14;
     $gene->{source} = "UniProt";
     $gene->{URL} = "http://www.uniprot.org/uniprot/$protId";
   } elsif ($db eq "TCDB") {
-    $gene->{priority} = 2.8; # just behind Brenda
+    $gene->{priority} = 8;
     $gene->{source} = "TCDB";
     if ($gene->{id2} =~ m/,/) { # in more than one system
       $gene->{URL} = "http://www.tcdb.org/search/result.php?acc=$protId";
@@ -149,7 +154,7 @@ sub AddCuratedInfo($) {
     @out = sort @out if $db eq "TCDB"; # substrates before comments
     $gene->{comment} = join("<BR>\n", @out);
   } elsif ($db eq "biolip") {
-    $gene->{priority} = 5; # behind most, but ahead of UniProt entries
+    $gene->{priority} = 10;
     my $entry = $protId; # i.e., 101mA
     # Remove the chain identifier from teh end
     if ($entry =~ m/^pdb/i) {
@@ -164,8 +169,17 @@ sub AddCuratedInfo($) {
     $gene->{comment} .= " " . "(" . a({ -href => $gene->{URL} }, $protId) . ")";
   } elsif ($db eq "ENA") {
     $gene->{source} = "European Nucleotide Archive /experiment tag";
-    $gene->{priority} = 5.5; # behind biolip
+    $gene->{priority} = 12;
     $gene->{URL} = "https://www.ebi.ac.uk/ena/browser/view/$protId";
+  } elsif ($db eq "regprecise") {
+    $gene->{source} = "RegPrecise (curated prediction)";
+    $gene->{priority} = 13;
+    $gene->{URL} = "https://regprecise.lbl.gov/regulon.jsp?regulon_id=$protId";
+  } elsif ($db eq "prodoric") {
+    $gene->{source} = "PRODORIC";
+    $gene->{priority} = 7;
+    my $protId2 = $protId; $protId2 =~ s/[.]\d+$//;
+    $gene->{URL} = "http://www.prodoric.de/matrix/$protId2.html";
   } else {
     die "Unexpected curated database $db";
   }
@@ -202,7 +216,7 @@ sub SubjectToGene($$) {
   my $gene = $dbh->selectrow_hashref("SELECT * FROM Gene WHERE geneId = ?", {}, $subjectId);
   if ($gene) {
     $gene->{subjectId} = $subjectId;
-    $gene->{priority} = 6; # literature mined is lowest
+    $gene->{priority} = 100; # literature mined is lowest
     if ($subjectId =~ m/^VIMSS(\d+)$/) {
       my $locusId = $1;
       $gene->{source} = "MicrobesOnline";
@@ -236,7 +250,7 @@ sub SubjectToGene($$) {
     } else {
       die "Cannot build a URL for subject $subjectId -- unhandled db $db";
     }
-    $gene->{priority} = 4.5; # above literature mined
+    $gene->{priority} = 10; # as in biolip
   } else {
     die "Cannot handle subject $subjectId not in Gene table";
   }
