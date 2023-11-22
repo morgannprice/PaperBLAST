@@ -127,8 +127,7 @@ the full text, we try to select a snippet from the abstract, but
 unfortunately, unique identifiers such as locus tags are rarely
 provided in abstracts.
 
-<P>PaperBLAST also incorporates manually-curated links between protein sequences and
-articles:
+<P>PaperBLAST also incorporates manually-curated protein functions:
 <UL>
 <LI>Proteins from NCBI's RefSeq are included if a
   <A HREF="https://www.ncbi.nlm.nih.gov/gene/about-generif">GeneRIF</A>
@@ -174,6 +173,13 @@ articles:
   of restriction enzymes are included if they have known specificity.
 <LI>Every protein with an evidence-based reannotation (based on mutant phenotypes)
   in the <A HREF="http://fit.genomics.lbl.gov/">Fitness Browser</A> is included.
+<LI>Sequence-specific transcription factors (including sigma factors and DNA-binding response regulators)
+with experimentally-determined DNA binding sites from the
+<A HREF="https://www.prodoric.de/">PRODORIC</A> database of gene regulation in prokaryotes.
+<LI>Putative transcription factors from <A HREF="https://regprecise.lbl.gov/">RegPrecise</A>
+that have manually-curated predictions for their binding sites. These predictions are based on
+conserved putative regulatory sites across genomes that contain similar transcription factors,
+so PaperBLAST clusters the TFs at 70% identity and retains just one member of each cluster.
 <LI>Coding sequence (CDS) features from the
     <A HREF="https://www.ebi.ac.uk/ena/browser/about">European Nucleotide Archive</A> (ENA)
     are included if the /experiment tag is set (implying that there is experimental evidence for the annotation),
@@ -200,6 +206,7 @@ You can download PaperBLAST's database <A HREF="https://github.com/morgannprice/
 <P>Changes to PaperBLAST since the paper was written:
 
 <UL>
+<LI>November 2023: incorporated PRODORIC and RegPrecise. Many PRODORIC entries were not linked to a protein sequence (no UniProt identifier), so we added this information.
 <LI>February 2023: BioLiP changed their download format. PaperBLAST now includes their non-redundant subset. SitesBLAST and Sites on a Tree use a larger non-redundant subset that ensures that every ligand is represented within each cluster. This should ensure that every binding site is represented.
 <LI>June 2022: incorporated some coding sequences from ENA with the /experiment tag.
 <LI>March 2022: incorporated BioLiP.
