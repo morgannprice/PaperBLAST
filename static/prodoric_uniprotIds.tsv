@@ -1,0 +1,135 @@
+organism	strain	name	uniprotIds	subunits
+Pseudomonas aeruginosa	PAO1	IHF	IHFA_PSEAE,IHFB_PSEAE	alpha,beta
+Helicobacter pylori	26695	HP166	ARSR_HELPY	
+Listeria monocytogenes	EGD-e	CtsR	Q7AP89_LISMO	
+Bacillus subtilis	168	CcpC	A0A6M3ZAG3_BACSU	
+Escherichia coli	K12 MG1655	IHF	IHFA_ECOLI,IHFB_ECOLI	alpha,beta
+Pseudomonas aeruginosa	PAO1	PvdS	G3XCV1_PSEAE	
+Streptococcus pyogenes		RofA	Q4QSQ0_STRPY	
+Bradyrhizobium japonicum	5038	RegR	O86125_BRAJP	
+Bacillus subtilis	168	AhrC	ARGR_BACSU	
+Listeria monocytogenes	EGD-e	PrfA	PRFA_LISMO	
+Bacillus subtilis	168	SigH	RPSH_BACSU	
+Escherichia coli	K12 MG1655	Sigma54	RP54_ECOLI	
+Pseudomonas aeruginosa	PAO1	Dnr	G3XCW6_PSEAE	
+Pseudomonas aeruginosa	PAO1	NarL	Q9HXD3_PSEAE	
+Pseudomonas aeruginosa	PAO1	OxyR	Q9HTL4_PSEAE	
+Pseudomonas aeruginosa	PAO1	PhhR	Q9I572_PSEAE	
+Escherichia coli	K12 MG1655	FlhD-FlhC	FLHD_ECOLI,FLHC_ECOLI	flhD,flhC
+Escherichia coli	K12 MG1655	Sigma28	FLIA_ECOLI	
+Escherichia coli	K12 MG1655	RcsA-RcsB	RCSA_ECOLI,P0DMC7	rcsA,rcsB
+Escherichia coli	K12 MG1655	PlaR	YIAJ_ECOLI	
+Pseudomonas aeruginosa	PAO1	PsrA	Q9HZJ9_PSEAE	
+Rhodobacter sphaeroides	ATH 2.4.1	PpsR	Q9S301_CERSP	
+Rhodobacter sphaeroides	ATH 2.4.1	NnrR	Q53240_CERSP	
+Streptococcus agalactiae		CovR	X5KI93_STRAG	
+Campylobacter jejuni	5636/77 Lucitt	CmeR	Q0PBE2_CAMJE	
+Corynebacterium glutamicum	534	McbR	H7C662_CORGT	
+Synechococcus sp.	PCC 7002	NtcA	NTCA_SYNE7	
+Pseudomonas aeruginosa	PAO1	Sigma54	RP54_PSEAE	
+Corynebacterium glutamicum	534	AmtR	H7C699_CORGT	
+Dinoroseobacter shibae		CtrA	A8LK51_DINSH	
+Dinoroseobacter shibae		FnrL	A8LQC0_DINSH	
+Dinoroseobacter shibae		DnrD	A8LM13_DINSH	
+Dinoroseobacter shibae		DnrE	A8LM15_DINSH	
+Dinoroseobacter shibae		DnrF	A8LMS8_DINSH	
+Dinoroseobacter shibae		PpsR	A8LQ24_DINSH	
+Clostridioides difficile	630	RgaR	A0A031WEC1_CLODI	
+Clostridioides difficile	630	CodY	Q18BE1_CLOD6	
+Clostridioides difficile	630	Fur	Q18BE9_CLOD6	
+Bradyrhizobium japonicum	5038	Fur	H7C6Q1_BRADU	
+Campylobacter jejuni	5636/77 Lucitt	CosR	Q0PBF4_CAMJE	
+Clostridioides difficile	630	CcpA	A0A125V3V0_CLODI	
+Corynebacterium glutamicum	534	ClgR	A0A160PRL1_9CORY	
+Corynebacterium glutamicum	534	Zur	A0A0U4XRM7_CORGT	
+Helicobacter pylori	26695	NikR	NIKR_HELPY	
+Listeria monocytogenes	EGD-e	Fur	A0A3Q0NG11_LISMG	
+Listeria monocytogenes	EGD-e	LexA	LEXA_LISMO	
+Pseudomonas aeruginosa	PAO1	AlgZ	A0A0H2ZEB1_PSEAB	
+Pseudomonas aeruginosa	PAO1	CueR	A0A485G1N1_PSEAI	
+Pseudomonas aeruginosa	PAO1	DesT	Q9HUS3_PSEAE	
+Pseudomonas aeruginosa	PAO1	IscR	G4V4Z6_PSEAI	
+Pseudomonas aeruginosa	PAO1	LexA	LEXA_PSEAB	
+Pseudomonas aeruginosa	PAO1	MexT	Q9I0Z0_PSEAE	
+Pseudomonas aeruginosa	PAO1	OhrR	Q9HZZ4_PSEAE	
+Pseudomonas aeruginosa	PAO1	RsaL	G3XD78_PSEAE	
+Pseudomonas aeruginosa	PAO1	VqsR	Q9I0P6_PSEAE	
+Clostridioides difficile	630	SigB	Q18C92_CLOD6	
+Clostridioides difficile	630	SigD	Q18D09_CLOD6	
+Clostridioides difficile	630	SigE	Q182X7_CLOD6	
+Clostridioides difficile	630	SigF	Q189W8_CLOD6	
+Clostridioides difficile	630	SigG	Q182X5_CLOD6	
+Clostridioides difficile	630	SigH	Q18CD8_CLOD6	
+Clostridioides difficile	630	SigK	X1W3M1_CLOD6	
+Synechocystis sp.	PCC 6803	Crp	P74171_SYNY3	
+Bacillus licheniformis	Gibson 46 	XylR	P70928_BACLI	
+Bacillus megaterium		LitR	D5DRI7_PRIM1	
+Bacillus subtilis	168	BkdR	YQIR_BACSU	
+Campylobacter jejuni	5636/77 Lucitt	HspR	A0A0B6V559_CAMJU	
+Clostridium acetobutylicum	2291 W	Cap37	Q97TR1_CLOAB	
+Clostridium beijerinckii		AdhR	A6LVG7_CLOB8	
+Corynebacterium glutamicum	534	SsuR	Q8NUC9_CORGL	
+Pseudomonas aeruginosa	PAO1	CzcR	Q9RLJ1_PSEAI	
+Listeria monocytogenes	EGD-e	DegU	A0A0E1R8N5_LISMN	
+Pseudomonas aeruginosa	PAO1	BfmR	Q9HWS7_PSEAE	
+Pseudomonas aeruginosa	PAO1	QscR	G3XD77_PSEAE	
+Pseudomonas aeruginosa	PAO1	ErfA	A0A9Q9K0R7_PSEAI	
+Pseudomonas aeruginosa	PAO1	MvaT	Q9HW86_PSEAE	
+Salmonella enterica		ArcA	Q7CP63_SALTY	
+Salmonella enterica		CpxR	Q8ZKR6_SALTY	
+Salmonella enterica		CsgD	CSGD_SALTY	
+Salmonella enterica		Fis	FIS_SALTI	
+Salmonella enterica		Fur	Q7CQY3_SALTY	
+Salmonella enterica		H-NS	HNS_SALT1	
+Salmonella enterica		HilC	SIRC_SALTS	
+Salmonella enterica		HilD	HILD_SALTY	
+Salmonella enterica		OmpR	OMPR_SALTY	
+Salmonella enterica		PhoP	PHOP_SALTY	
+Salmonella enterica		RamA	C0PVM8_SALPC	
+Streptococcus pyogenes		Rgg3	A0A0H3BW82_STRPZ	
+Salmonella enterica		SlyA	SLYA_SALTY	
+Salmonella enterica		CysB	CYSB_SALTY	
+Salmonella enterica		FruR	CRA_SALTY	
+Salmonella enterica		MetR	METR_SALTY	
+Streptococcus pyogenes		PerR	Q1JIU5_STRPD	
+Streptococcus pyogenes		Rgg2	Q9A132_STRP1	
+Thermotoga maritima	MSB8 	GluR	Q9X2G2_THEMA	
+Thermotoga maritima	MSB8 	ManR	Q9X0V1_THEMA	
+Thermotoga maritima	MSB8 	TreR	Q9WYM4_THEMA	
+Thermotoga maritima	MSB8 	UxaR	Q9WYS0_THEMA	
+Thermotoga maritima	MSB8 	XylR	Q9WXW5_THEMA	
+Helicobacter pylori	26695	HspR	O25669_HELPY	
+Vibrio cholerae	10432-62	HapR	A0A0H3Q915_VIBCE	
+Vibrio cholerae	10432-62	AphA	C3LRV8_VIBCM	
+Vibrio cholerae	10432-62	AphB	Q9XC54_VIBCL	
+Vibrio cholerae	10432-62	IgrB	IRGB_VIBCH	
+Vibrio cholerae	10432-62	CRP	A0A8B5ZP86_VIBCL	
+Vibrio cholerae	10432-62	PhoB	O85089_VIBCL	
+Yersinia pestis		YbtA	Q56951_YERPE	
+Yersinia pestis		CRP	A0A2U2GZI4_YERPE	
+Yersinia pestis		PhoP	P74992_YERPE	
+Yersinia pestis		RovA	A0A9X2Y789_YERPE	
+Yersinia pestis		Zur	A0A9X2Y333_YERPE	
+Rhizobium leguminosarum	3D1K2 	Px	DBH5_RHILE	
+Rhizobium leguminosarum	3D1K2 	Mur	FUR_RHILV	
+Rhizobium leguminosarum	3D1K2 	RosR	Q1MJI4_RHIL3	
+Rhizobium leguminosarum	3D1K2 	PhoB	A0A4R0B6C6_RHILV	
+Rhizobium leguminosarum	3D1K2 	Fnr	A0A2K9Z407_RHILE	
+Klebsiella pneumoniae	Kp52.145	NAC	A0A0J4RKQ9_KLEPN	
+Klebsiella pneumoniae	Kp52.145	RcsA-RcsB	W1DR32_KLEPN,W1DMM9_KLEPN	rcsA,rcsB
+Klebsiella pneumoniae	Kp52.145	CpxR	A0A4P0XHL0_KLEPN	
+Klebsiella pneumoniae	Kp52.145	CRP	Q9F435_KLEPN	
+Klebsiella pneumoniae	Kp52.145	PecS	A0A9P2SAW3_KLEPN	
+Klebsiella pneumoniae	Kp52.145	UlaR	A0A0E1CL58_KLEPN	
+Salmonella enterica		Lrp	A0A737RS10_SALET	
+Pseudomonas aeruginosa	PAO1	CopR	A0A0D7N810_PSEAI	
+Vibrio cholerae	10432-62	VarR	Q9KRS5_VIBCH	
+Bradyrhizobium japonicum	5038	Irr	O85719_BRAJP	
+Synechocystis sp.	PCC 6803	NdhR	P73862_SYNY3	
+Dinoroseobacter shibae		RirA	A8LLM4_DINSH	
+Clostridioides difficile	630	RstA	A0A9P2LGA8_CLODI	
+Corynebacterium glutamicum	534	BioQ	A0A6L2RHB4_CORGT	
+Corynebacterium glutamicum	534	CsoR	A4QB25_CORGB	
+Corynebacterium glutamicum	534	NanR	Q8NMC7_CORGL	
+Streptococcus agalactiae		FabT	X5KF21_STRAG	
+Streptomyces pristinaespiralis		PapR2	A4PHL8_STRVG	
