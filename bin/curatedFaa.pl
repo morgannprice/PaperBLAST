@@ -10,29 +10,34 @@ use Getopt::Long;
 my $usage = <<END
 Usage: curatedFaa.pl -db litsearch.db -uniq uniq.faa -out curated.faa
 Filters out curated entries that are probably not actually characterized.
+Optional arguments:
   -filter filteredFile -- save the non-curated entries to filteredFile
-  -showdesc -- include definitions of the curated entries
   -curatedids -- report the curated ids rather than the unique id,
      and save metadata to an out.info file in tab-delimited format
      with fields ids, length, id2s, descs, and orgs.
      multiple ids are separated by commas; (protein) length is a single number,
      and multiple values for other fields are separated by ";; "
+  -showdesc -- include definitions of the curated entries
+  -skipdb -- list of databases to ignore (as multiple arguments)
 END
 ;
 
 my ($dbfile, $uniqfile, $outfile, $filterfile, $showdesc, $showCuratedInfo);
+my @skipDbs;
 die $usage
   unless GetOptions('db=s' => \$dbfile,
                     'uniq=s' => \$uniqfile,
                     'out=s' => \$outfile,
                     'filter=s' => \$filterfile,
                     'showdesc' => \$showdesc,
-                    'curatedids' => \$showCuratedInfo)
+                    'curatedids' => \$showCuratedInfo,
+                    'skipdb=s{1,}' => \@skipDbs)
   && defined $dbfile && defined $uniqfile && defined $outfile
   && @ARGV ==0;
 die "No such file: $dbfile\n" unless -e $dbfile;
 die "No such file: $uniqfile\n" unless -e $uniqfile;
 my $dbh = DBI->connect("dbi:SQLite:dbname=$dbfile","","",{ RaiseError => 1 }) || die $DBI::errstr;
+my %skipDbs = map { $_ => 1 } @skipDbs;
 
 my %curatedIds = (); # db::protId => row from curated gene
 my $genes = $dbh->selectall_arrayref("SELECT db,protId,id2,desc,organism FROM CuratedGene",
@@ -41,6 +46,7 @@ my %filtered = (); # db => protId => desc
 
 foreach my $gene (@$genes) {
   my $db = $gene->{db};
+  next if exists $skipDbs{$db};
   my $desc = $gene->{desc};
   # Curated annotations for proteins that are not actually characterized often match these patterns
   # [DUPF]+ matches PF or UPF or DUF, which together with numbers are common uninformative annotations
