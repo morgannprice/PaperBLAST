@@ -18,6 +18,8 @@ our (@ISA,@EXPORT);
               DomToPMCId
 );
 
+sub removePMCComment($);
+
 sub RemoveWideCharacters($) {
     my ($text) = @_;
     $text =~ s/\P{IsASCII}//g;
@@ -349,7 +351,8 @@ sub ReadXMLArticle($$) {
     # could be continuation lines
     die "xml file entry does not begin with < -- $line"
       unless $line =~ m/^</;
-    while ($line !~ m/>\s*$/) {
+    # Because of the weird PMC comments, don't add extra lines if </article> appears anywhere
+    while ($line !~ m/>\s*$/ && $line !~ m!</article>!) {
       my $extraLine = <$fh>
         || die "Cannot read successor line in xml -- bad header?";
       $extraLine =~ s/[\r\n]+$//;
@@ -367,15 +370,17 @@ sub ReadXMLArticle($$) {
 
     return undef if $line eq "</articles>"; # end of file
 
-    # now line should be empty or should be the article, or the beginning of an article
+    # now line should be the article, or the beginning of an article
 
     $line =~ m/^<article[> ]/ || die "xml entry does not begin with <article> -- " . substr($line, 0, 100);
+    $line = removePMCComment($line);
     my @lines = ( $line );
     until ($lines[-1] =~ m!</article>!) {
       $line = <$fh>;
       if (defined $line) {
         $line =~ s/[\r\n]+$//;
         $line =~ s/\r/ /g;
+        $line = removePMCComment($line);
         push @lines, $line;
       } else {
         last;
@@ -393,5 +398,15 @@ sub ReadXMLArticle($$) {
   }
   return undef;
 }
+
+sub removePMCComment($) {
+  my ($line) = @_;
+  # Work-around for a strange bug in some PMC files where the string
+  # <!-- PMCEdits, 09/14/2023 (davenpor),
+  # appears after the <article> tag
+  # (This should not affect valid comments such as for release delay or for license.)
+  $line =~ s|</article><!-- PMC.*$|</article>|;
+  return $line;
+}  
 
 1;
