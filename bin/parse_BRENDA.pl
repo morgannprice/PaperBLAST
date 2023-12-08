@@ -76,6 +76,7 @@ while(my $record = <$fhIn>) {
       die "Duplicate identifier for $id" if $id;
       # ignore transferred records -- these should have no proteins anyway
       next if $value =~ m/tr[ae]ns?ferred/ || $value =~ m/deleted/i;
+      next if $value eq "spontaneous";
       $id = $value;
       # The one time I checked, a "preliminary" EC number was valid, so allow those
       $id =~ s/ *[(]preliminary.*[)]$//;
