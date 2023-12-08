@@ -979,6 +979,7 @@ sub commify($) {
 # PMID:7523119
 # PMC179677
 # metacyc:PHENOLDEG-PWY
+# ecocyc:G6759-MONOMER
 # URL:https://mspace.lib.umanitoba.ca/handle/1993/30289
 # EC:2.8.3.6
 sub LinkifyComment($) {
@@ -1012,6 +1013,12 @@ sub LinkifyComment($) {
       $word =~ s/^metacyc:([0-9A-Z][A-Z0-9-]+)//i;
       push @out, $pre. a({ -href => "https://metacyc.org/META/NEW-IMAGE?object=$metacycId" },
                          "link") . $word;
+    } elsif ($word =~ m/^ecocyc:([0-9A-Z][A-Z0-9-]+)/i) {
+      my $ecocycId = $1;
+      $word =~ s/^ecocyc:([0-9A-Z][A-Z0-9-]+)//i;
+      push @out, $pre. a({ -href => "https://ecocyc.org/gene?orgid=ECOLI&id=$ecocycId" },
+                         "link") . $word;
+
     } elsif ($word =~ m!^URL:(http[A-Za-z0-9_,:./?&-]+)!i) {
       my $URL = $1;
       $word =~ s!^URL:(http[A-Za-z0-9_,:./?&-]+)!!;
