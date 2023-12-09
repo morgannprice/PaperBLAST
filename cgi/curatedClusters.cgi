@@ -362,7 +362,7 @@ if ($query =~ m/^transporter:(.+)$/) {
         }
       }
       close($fhHits) || die "Error reading $hitsFile";
-    } elsif ($query->{queryType} eq "uniprot") {
+    } elsif ($query->{queryType} eq "uniprot" || $query->{queryType} eq "predicted") {
       my $id = "UniProt::" . $query->{uniprotId};
       my $desc = $query->{desc};
       $desc =~ s/^(rec|sub)name: full=//i;
