@@ -1573,28 +1573,35 @@ Gaps may be due to:
 </UL>
 
 <P>GapMind relies on the predicted proteins in the genome and does not search the six-frame translation. In most cases, you can search the six-frame translation by clicking on links to Curated BLAST for each step definition (in the per-step page).
+
+<P>For more information, see:
+<UL>
 END
     ;
 
-  my @info = ("For more information, see the",
-              a({ -href => "https://msystems.asm.org/content/5/3/e00291-20",
-                  -title => "GapMind: Automated annotation of amino acid biosynthesis" },
-                "paper from 2019"),
-              "on GapMind for amino acid biosynthesis, the",
-              a({ -href => "https://doi.org/10.1371/journal.pgen.1010156",
+  my @info = ( li("the",
+                  a({ -href => "https://msystems.asm.org/content/5/3/e00291-20",
+                      -title => "GapMind: Automated annotation of amino acid biosynthesis" },
+                    "paper from 2019"),
+                  "on GapMind for amino acid biosynthesis"),
+               li("the",
+                  a({ -href => "https://doi.org/10.1371/journal.pgen.1010156",
                   -title => "Filling gaps in bacterial catabolic pathways with computation and high-throughput genetics" },
                 "paper from 2022"),
-              "on GapMind for carbon sources,",
-              "or view the",
-              a({ -href => "https://github.com/morgannprice/PaperBLAST" }, "source code"));
+                  "on GapMind for carbon sources"),
+               li("the",
+                  a({ -href => "https://github.com/morgannprice/PaperBLAST" }, "source code")),
+               li(a({ -href => "https://github.com/morgannprice/PaperBLAST/blob/master/gaps/SETUP"},
+                    "instructions"),
+                  "for running GapMind on your computer")
+             );
   my $changesFile = "../gaps/$set/changes";
   if (defined $setDesc && -e $changesFile) {
-    $info[-1] .= ",";
-    push @info, ("or see", a({ -href => $changesFile }, "changes"), "to", i($setDesc), "since the publication.");
-  } else {
-    $info[-1] .= ".";
+    push @info,
+      li(a({ -href => $changesFile }, "changes"), "to", i($setDesc), "since the publication.");
   }
-  print p(@info);
+  print join("\n", @info);
+  print "</UL>\n";
   print p("If you notice any errors or omissions in the step descriptions, or any questionable results, please",
           a( { -href => "mailto:$email" }, "let us know"));
   print p({ -align => 'center' }, "by",
