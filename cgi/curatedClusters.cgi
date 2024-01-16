@@ -385,6 +385,8 @@ if ($query =~ m/^transporter:(.+)$/) {
 
   # Remove hits that match ignore (this should only happen for HMM hits)
   @hits = grep { !exists $ignore{ $_->{curatedIds} } } @hits;
+  print p("Sorry, no hits are left after the ignore filter."), "\n"
+    if @hits == 0;
 } elsif ($pathSpec ne "") {
   die "Unknown pathway $pathSpec" unless exists $pathInfo{$pathSpec};
   my $steps = $dbhS->selectall_arrayref("SELECT * from Step WHERE pathwayId = ?",
