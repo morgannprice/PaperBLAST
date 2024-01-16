@@ -223,7 +223,8 @@ If you have the PaperBLAST database (usually in data/) and the
 ind/uniprot_sprot.dat.gz file from downloading Swiss-Prot, then you
 can set up the various databases that are needed by running:
 
-bin/setupGaps.pl  -ind ind -set setName -data data
+zcat ind/uniprot_sprot.dat.gz | bin/sprotCharacterized.pl > sprot.curated_parsed
+bin/setupGaps.pl  -ind ind -set setName -data data -sprot sprot.curated_parsed
 
 where setName would be aa for the amino acid biosynthesis pathways
 
