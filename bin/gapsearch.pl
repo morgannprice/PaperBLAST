@@ -153,7 +153,7 @@ END
       # the child process
       my @cmd = ($hmmsearch, "--cut_tc", "-o", "/dev/null", "--domtblout", $tmpfile, $hmmFileName, $aaIn);
       print STDERR "Running $hmmId\n" if defined $verbose;
-      system(@cmd) == 0 || die "$@cmd failed: $!";
+      system(@cmd) == 0 || die "@cmd failed: $!";
       print STDERR "$hmmId finished\n" if defined $verbose;
       exit(0);
     }
