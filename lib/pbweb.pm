@@ -1397,7 +1397,7 @@ sub analysisLinks {
                ("https://fit.genomics.lbl.gov/d3js/d3.min.js",
                 "https://fit.genomics.lbl.gov/images/fitblast.js"))
       if $param{fbLoad};
-    $fb .= a({-title => "Compare to bacterial proteins that have mutant phenotypes",
+    $fb .= a({-title => "Compare to bacterial and archaeal proteins that have mutant phenotypes",
                 -name => "#fitness" }, "Fitness BLAST")
       .": "
       . qq{<SPAN ID="fitblast_short"><SMALL>loading...</SMALL></SPAN>}
