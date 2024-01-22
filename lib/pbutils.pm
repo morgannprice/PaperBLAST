@@ -306,6 +306,22 @@ sub CuratedMatch($$$) {
                                      { Slice => {} }, "%" . $query . "%", $limit);
 }
 
+sub TestWordCuratedMatch($$$$) {
+  my ($in, $field, $quotedRegexp, $sub) = @_;
+  my $test = $in->{$field};
+  die "Missing desc field in CuratedWordMatch()" unless defined $test;
+  $test =~ s/$sub//g;
+  return 0 unless $test =~ m/\b$quotedRegexp\b/i;
+  # If $field is descs then split on ;; and make sure
+  # one part matches
+  return 1 if $field ne "descs";
+  my @parts = split /;;/, $test;
+  foreach my $part (@parts) {
+    return 1 if $part =~ m/\b$quotedRegexp\b/i;
+  }
+  return 0;
+}
+
 # Given rows that include the desc field, return a reference to a
 # list with the rows whose desc matches the query as words
 # % is the wild card; all other characters are treated literally
@@ -326,10 +342,7 @@ sub CuratedWordMatch {
   my $quoted = quotemeta($query); # this will quote % as well
   # turn % into a separation of words; note quoting of \\ so that \b it appears in the new string
   $quoted =~ s/\\%/\\b.*\\b/g;
-  my @keep = grep { my $test = $_->{$field};
-                    die "Missing desc field in CuratedWordMatch()" unless defined $test;
-                    $test =~ s/$sub//g;
-                    $test =~ m/\b$quoted\b/i } @$chits;
+  my @keep = grep TestWordCuratedMatch($_, $field, $quoted, $sub), @$chits;
   return \@keep;
 }
 
