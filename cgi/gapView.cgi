@@ -58,7 +58,7 @@ use DB_File;
 use URI::Escape;
 
 # This uses the DB_File in $org.faa.db if that exists,
-# or else tries to use fastacmd against the blast database.
+# or else creates it.
 # (Added DB_File because fastacmd fails for some uploaded fasta files.)
 sub GetOrgSequence($$$$);
 sub FaaToDb($$); # fasta file to db (from DB_File)
@@ -332,7 +332,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
       my @cmd = ("../bin/buildorgs.pl", "-out", $orgPre, "-orgs", $gdb.":".$gid);
       system(@cmd) == 0
         || die "command @cmd\nfailed with error: $!";
-      FaaToDb("$orgPre.faa", "$orgPre.faa.db");
+      # FaaToDb("$orgPre.faa", "$orgPre.faa.db"); # save space by not doing this if not requested
     }
     my @orgs = ReadOrgTable("$orgPre.org");
     die "No organisms for $orgPre.org" unless @orgs > 0;
