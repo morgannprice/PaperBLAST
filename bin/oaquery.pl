@@ -1,18 +1,14 @@
 #!/usr/bin/perl -w
 use strict;
-use lib "$ENV{HOME}/Genomics/Perl/modules";
-use GenomicsUtils;
-use Gene;
+use FindBin qw{$RealBin};
+use lib "$RealBin/../lib";
+use pbutils qw{getMicrobesOnlineDbh};
 
 die "Run as a filter\n" unless @ARGV==0;
 
-my %seen = ();
+my $dbh = getMicrobesOnlineDbh() || die "No local copy of MicrobesOnline\n";
 
-GenomicsUtils::connect('-host' => $ENV{MO_HOST} || 'pub.microbesonline.org',
-                       '-user' => 'guest',
-                       '-pass' => 'guest',
-                       '-dbname' => 'genomics')
-  || die "Cannot connect to pub.microbesonline.org";
+my %seen = ();
 
 while(<STDIN>) {
     chomp;
@@ -22,14 +18,24 @@ while(<STDIN>) {
     foreach my $moId (@moIds) {
         next if exists $seen{$moId};
         $seen{$moId} = 1;
-        my $gene = Gene::new('locusId' => $moId);
+        my $gene = $dbh->selectrow_hashref("SELECT * from Locus JOIN Scaffold USING (scaffoldId)
+                                             JOIN Taxonomy USING (taxonomyId)
+                                             WHERE locusId = ? AND priority = 1 AND isActive = 1",
+                                            { Slice => {} }, $moId);
         if (!defined $gene) {
-            print STDERR "No gene found in MicrobesOnline for $moId\n";
-            next;
+          print STDERR "No gene found in MicrobesOnline for $moId\n";
+          next;
         }
-        next unless $gene->type() eq "1";
-        my $aaseq = $gene->protein();
-        my $organism = $gene->taxonomyName();
-        print join("\t", $organism, $locustag, "VIMSS".$moId, $aaseq, $gene->description())."\n";
+        next unless $gene->{type} eq "1";
+        my ($aaseq) = $dbh->selectrow_array("SELECT sequence from AASeq
+                                             WHERE locusId = ? AND version = ?",
+                                            {}, $moId, $gene->{version});
+        next unless $aaseq;
+        my $organism = $gene->{name};
+        my ($description) = $dbh->selectrow_array("SELECT description FROM Description
+                                                   WHERE locusId = ? AND version = ?",
+                                                  {}, $moId, $gene->{version});
+        print join("\t", $organism, $locustag, "VIMSS".$moId, $aaseq,
+                   $description || "")."\n";
     }
 }

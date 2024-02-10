@@ -433,8 +433,8 @@ sub GetMatchingAssemblies($$) {
     }
     return @hits;
   } elsif ($gdb eq "MicrobesOnline") {
-    my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
-      || return fail("Cannot connect to MicrobesOnline: " . $DBI::errstr);
+    my $mo_dbh = getMicrobesOnlineDbh()
+      || return fail("No local copy of MicrobesOnline");
     my $hits = $mo_dbh->selectall_arrayref("SELECT taxonomyId, shortName FROM Taxonomy
                                               WHERE shortName LIKE ? OR shortName LIKE ? ORDER BY shortName LIMIT $maxAssemblyList",
                                            { Slice => {} }, $gquery."%", "% ${gquery}");
@@ -555,8 +555,8 @@ sub CacheAssembly($$$) {
     $assembly->{gdb} = $gdb;
     return $assembly;
   } elsif ($gdb eq "MicrobesOnline") {
-    my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
-      || return fail("Cannot connect to MicrobesOnline: " . $DBI::errstr);
+    my $mo_dbh = getMicrobesOnlineDbh()
+      || return fail("No local copy of MicrobesOnline");
     my $taxId = $gid;
     my ($genomeName) = $mo_dbh->selectrow_array(qq{ SELECT shortName FROM Taxonomy WHERE taxonomyId = ? },
                                                  {}, $taxId);

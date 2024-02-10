@@ -10,7 +10,8 @@ use DBI;
 use IO::String;
 use Bio::SeqIO;
 use URI::Escape;
-use pbutils qw{addNCBIKey};
+use FindBin qw{$RealBin};
+use pbutils qw{addNCBIKey getMicrobesOnlineDbh};
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
@@ -707,13 +708,15 @@ END
   exit(0);
 }
 
-
 # Given a locus tag or VIMSSnnnn query, get it in FASTA format
 sub VIMSSToFasta($) {
   my ($short) = @_;
   die unless defined $short;
-  my $mo_dbh = DBI->connect('DBI:mysql:genomics:pub.microbesonline.org', "guest", "guest")
-    || die $DBI::errstr;
+  my $mo_dbh = getMicrobesOnlineDbh();
+  if (!defined $mo_dbh) {
+    print p("Warning, no MicrobesOnline sqlite3 database is installed");
+    return undef;
+  }
   my $locusId;
   if ($short =~ m/^VIMSS(\d+)$/i) {
     $locusId = $1;
@@ -1229,7 +1232,7 @@ sub parseSequenceQuery {
 
     # is it in VIMSS as a locus tag or other synonym?
     if (!defined $query) {
-      $query = &VIMSSToFasta($short);
+      $query = &VIMSSToFasta($short) if $short !~ /^VIMSS\d+/;
     }
 
     # is it in Nucleotide/RefSeq? (Locus tags not in refseq may not be indexed)

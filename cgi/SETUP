@@ -46,6 +46,10 @@ have a clean pipeline yet, but is available in the code repository)
 Optionally, use motd to show a "message of the day" at the top of the
 main page and some other pages.
 
+For fetching gene or genomes from MicrobesOnline, it is necessary to
+have a local sqlite3 copy of MicrobesOnline, in
+static/MicrobesOnline.sqlite3
+
 For fetching genomes from JGI's IMG (such as to search within them
 with Curated BLAST), it is necessary for private/.JGI.info to contain
 a valid IMG username and password (on the 1st two lines).  Make sure

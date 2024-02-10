@@ -3,6 +3,7 @@ package pbutils;
 require Exporter;
 use strict;
 use File::stat;
+use DBI;
 use Digest::MD5 qw{md5_hex};
 require FindBin;
 
@@ -20,7 +21,8 @@ our (@ISA,@EXPORT);
              reverseComplement seqPosToAlnPos
              idToSites idToSiteRows
              ParseClustal ParseStockholm
-             setNCBIKey getNCBIKey addNCBIKey!;
+             setNCBIKey getNCBIKey addNCBIKey
+             getMicrobesOnlineDbh!;
 
 sub read_list($) {
   my ($file) = @_;
@@ -610,6 +612,17 @@ sub addNCBIKey($) {
   my $key = getNCBIKey();
   $url .= "&api_key=$key" if defined $key;
   return $url;
+}
+
+my $moDbh;
+sub getMicrobesOnlineDbh() {
+  if (!defined $moDbh) {
+    my $moDbFile = $FindBin::RealBin . "/../static/MicrobesOnline.sqlite3";
+    return undef unless -e $moDbFile;
+    $moDbh = DBI->connect("dbi:SQLite:dbname=$moDbFile")
+      || die "Cannot read MicrobesOnline sqlite3 database $moDbFile -- $DBI::errstr";
+  }
+  return $moDbh;
 }
 
 1;

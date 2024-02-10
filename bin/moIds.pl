@@ -1,24 +1,22 @@
 #!/usr/bin/perl -w
 use strict;
-use lib "$ENV{HOME}/Genomics/Perl/modules";
-use GenomicsUtils;
+use FindBin qw{$RealBin};
+use lib "$RealBin/../lib";
+use pbutils qw{getMicrobesOnlineDbh};
 
 die "Usage: moIds.pl < words > words.filtered\n"
     unless @ARGV==0;
 
 {
-    GenomicsUtils::connect('-host' => $ENV{MO_HOST} || 'pub.microbesonline.org',
-                           '-user' => 'test',
-                           '-pass' => 'test',
-                           '-dbname' => 'genomics_test')
-        || die "Cannot connect to pub.microbesonline.org";
+    my $moDbh = getMicrobesOnlineDbh() || die "No local copy of MicrobesOnline\n";
     my $rows;
     # type 1 for standard locus tag
     # type 3 for NCBI accession
     # type 4 for alternate locus tag
     # type 6 for deprecated locus tag
-    $rows = query("SELECT locusId,Synonym.type,name FROM Locus JOIN Synonym USING (locusId,version)
-                          WHERE priority=1 AND Synonym.type IN (1,3,4,6);");
+    $rows = $moDbh->selectall_arrayref("SELECT locusId,Synonym.type,name
+                                        FROM Locus JOIN Synonym USING (locusId,version)
+                                        WHERE priority=1 AND Synonym.type IN (1,3,4,6);");
     my %nameToLocus = ();
     foreach my $row (@$rows) {
         my ($locusId,$type,$name) = @$row;
