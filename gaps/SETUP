@@ -40,7 +40,8 @@ subdirectory. I have tested diamond v2.1.6.160. It gives very similar
 results as usearch.
 
 Put the hmmsearch and hmmfetch executables in the bin/
-subdirectory. I am currently using HMMER 3.3.1, which is available at
+subdirectory. I am currently using HMMER 3.3.1. Source code for that
+version is available at
 http://eddylab.org/software/hmmer/hmmer-3.3.1.tar.gz
 
 Put the BLAST executables (formatdb, blastall, and fastacmd)
