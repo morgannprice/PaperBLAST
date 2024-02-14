@@ -758,7 +758,13 @@ sub RefSeqToFasta($) {
   return undef unless $short =~ m/^[A-Za-z][A-Za-z0-9]+_[A-Za-z0-9]+[.]?\d?$/;
 
   my $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.cgi?db=Nucleotide&retmode=json&term=$short";
-  my $json = from_json(get(addNCBIKey($url)));
+  my $url2 = addNCBIKey($url);
+  my $result = get($url2);
+  if (!defined $result) {
+    print p(small("Sorry, NCBI eutils failed:", a({-href => $url}, "url"))) . "\n";
+    return undef;
+  }
+  my $json = from_json($result);
   return undef unless defined $json;
   my $id = $json->{esearchresult}{idlist}[0];
   return undef unless $id;
