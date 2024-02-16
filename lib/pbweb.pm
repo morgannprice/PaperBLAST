@@ -811,6 +811,11 @@ sub UniProtToFasta($) {
   # size limits #results returned
   my $url = "https://rest.uniprot.org/uniprotkb/search?query=${short}&format=fasta&includeIsoform=false&size=2";
   my $results = get($url);
+  if (!defined $results) {
+    print p(small("Sorry, could not reach",
+                  a({ -href => $url }, "uniprot.org"))) . "\n";
+    return undef;
+  }
   if (defined $results && $results =~ m/^>/) {
     # select the first hit only
     my @lines = split /\n/, $results;
