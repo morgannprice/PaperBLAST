@@ -15,7 +15,7 @@ determine if a genome is bacteria or archaea).
 The fasta input must have headers of the form gdb__gid:locusid (with
 optional whitespace after that which is ignored)
 
-Optional arugments:
+Optional arguments:
 -markers $markersFile -- must include Domain (Bacteria or Archaea), Name, and acc
 -verbose -- additional logging output
 END
