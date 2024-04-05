@@ -7,7 +7,7 @@ use Steps qw{WriteAssemblyAsOrgProteins WriteSixFrameAsOrgProteins};
 use FetchAssembly qw{CacheAssembly SetFitnessBrowserPath SetPrivDir AASeqToAssembly};
 use pbutils qw{ReadFastaEntry ReadFastaDesc};
 
-my $cachedir = "$Bin/../tmp";
+my $cachedir = "$Bin/../tmp/downloaded";
 my $privdir = "$Bin/../private"; # for JGI access key
 my $febadata = "$Bin/../fbrowse_data";
 my $usearch = "$Bin/usearch";

@@ -326,7 +326,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
       $orgsSpec =~ m/^([^_]+)__(.*)$/ || die "Invalid organism specifier $orgsSpec";
       my ($gdb,$gid) = ($1,$2);
       print p("Fetching assembly $gid from $gdb"), "\n";
-      CacheAssembly($gdb, $gid, $dataDir) || die;
+      CacheAssembly($gdb, $gid, "$dataDir/downloaded") || die;
       mkdir("$dataDir/$orgsSpec");
       # buildorgs.pl creates $orgPre.org and $orgPre.faa and runs formatdb
       my @cmd = ("../bin/buildorgs.pl", "-out", $orgPre, "-orgs", $gdb.":".$gid);
@@ -584,7 +584,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
         }
       }
       $totals .= ".";
-      $totals .= " $nCurated of $nTot gaps have been manually classified."
+      $totals .= " $nCurated of $nTot gaps have been classified."
         if $nCurated > 0;
       my $stringThis = $nThis > 0 ? "this or" : "";
       $totals .= " " . ($nThis + $nKnown) . " of $nLo low-confidence steps are known gaps in $stringThis related organisms."
@@ -810,7 +810,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
     # a table of all of the steps, and the dependency warnings.
     if (exists $knownGaps{$orgId}{$pathSpec}{""}) {
       my $kg = $knownGaps{$orgId}{$pathSpec}{""};
-      print p(i("Manual classification of gap:"), $kg->{gapClass},
+      print p(i("Classification of gap:"), $kg->{gapClass},
                 br(),
               i("Rationale:"), $kg->{comment});
     }
@@ -928,7 +928,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
       my $knownGap = StepScoreToKnownGap($stepScore);
       if ($knownGap && $knownGap->{stepId} ne "") {
         if ($knownGap->{orgId} eq $orgId && $knownGap->{gapClass} ne "") {
-          print p(i("Manual classification of gap:"), $knownGap->{gapClass},
+          print p(i("Classification of gap:"), $knownGap->{gapClass},
                   br(),
                   i("Rationale:"), $knownGap->{comment});
         } elsif ($knownGap->{orgId} eq $orgId) {
@@ -1494,7 +1494,7 @@ sub OrgToAssembly($) {
   my $gid = $orgs{$orgId}{gid};
 
   if (!defined $assembly || $assembly->{gdb} ne $gdb || $assembly->{gid} ne $gid) {
-    $assembly = CacheAssembly($gdb, $gid, $dataDir)
+    $assembly = CacheAssembly($gdb, $gid, "$dataDir/downloaded")
       || die "Cannot fetch assembly $gid from database $gdb\n";
   }
   return $assembly;

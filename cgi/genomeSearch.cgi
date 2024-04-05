@@ -107,7 +107,7 @@ SetFitnessBrowserPath("../fbrowse_data");
 # Should include .JGI.info
 SetPrivDir("../private");
 
-my $tmpDir = "../tmp";
+my $tmpDir = "../tmp/tmp";
 my $procId = $$;
 my $timestamp = int (gettimeofday() * 1000);
 my $basefile = $tmpDir . "/" . $procId . $timestamp;
@@ -146,7 +146,7 @@ if ($gdb && $gquery) {
   print p("Try", a({ -href => "genomeSearch.cgi?gdb=$gdb" }, "another genome"));
   finish_page();
 } elsif ($gdb && $gid && $query) {
-  $assembly = CacheAssembly($gdb, $gid, "../tmp")
+  $assembly = CacheAssembly($gdb, $gid, "../tmp/downloaded")
     || fail("Cannot fetch assembly $gid from database $gdb");
   $genomeName = $assembly->{genomeName};
   my $link2 = $assembly->{gid};
@@ -157,7 +157,7 @@ if ($gdb && $gquery) {
   # finish searching down below
 } elsif ($gdb && $gid) {
   # assembly chosen but no query was entered
-  $assembly = CacheAssembly($gdb, $gid, "../tmp")
+  $assembly = CacheAssembly($gdb, $gid, "../tmp/downloaded")
     || fail("Cannot fetch assembly $gid from database $gdb");
   warning("Please enter a search term")
     if $cgi->param('Search');
