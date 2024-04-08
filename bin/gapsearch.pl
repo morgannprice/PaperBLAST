@@ -167,6 +167,7 @@ END
   my %hits = (); # orgId => queryId => list of hits
   # (same fields as output)
   foreach my $hmmId (sort keys %queryHmm) {
+    my $nHmm = 0;
     open(my $fhIn, "<", $hmmTmp{$hmmId})
       || die "hmmsearch failed to create $hmmTmp{$hmmId}\n";
     while (my $line = <$fhIn>) {
@@ -174,11 +175,15 @@ END
       next if $line =~ m/^#/;
       my @F = split /\s+/, $line;
       my ($hitId, undef, $hitlen, $hmmName, undef, $hmmLen, $seqeval, $seqscore, undef, undef, undef, undef, $domeval, $domscore, undef, $qbeg, $qend, $hitbeg, $hitend) = @F;
+      die "Invalid line\n$line\nin $hmmTmp{$hmmId}\n" unless defined $hitend && $hitend =~ m/^\d+$/;
       my $orgId = $hitId; $orgId =~ s/:.*//;
       die "Unknown orgId $orgId in hmm hits from $aaIn" unless exists $orgs{$orgId};
       push @{ $hits{$orgId}{$hmmId} }, [ $hitId, "hmm", $hmmId, $domscore, $hitbeg, $hitend, $qbeg, $qend, $hmmLen, "" ];
+      $nHmm++;
     }
+    close($fhIn) || die "Error reading $hmmTmp{$hmmId}";
     unlink($hmmTmp{$hmmId});
+    print STDERR "Read $nHmm hits for $hmmId\n" if defined $verbose;
   }
 
   my $cfile = "/tmp/gapsearch.$$.curated";
@@ -196,7 +201,7 @@ END
     # many genomes.
     $cmd = join(" ",
                 $diamond, "blastp", "--query", $cfile, "--db", $aaIn.".dmnd",
-                 "--evalue", 0.01, "--id", 0.3,
+                 "--evalue", 0.01 * scalar(@orgs), "--id", 0.3,
                  "--out", "$cfile.hits", "--very-sensitive", "--outfmt", 6,
                 "--max-target-seqs", 25 * scalar(@orgs),
                  "--threads", $nCPU);
@@ -216,7 +221,7 @@ END
     chomp $line;
     my ($queryId, $hitId, $identity, $alen, $mm, $gap, $qbeg, $qend, $sbeg, $send, $eval, $bits)
       = split /\t/, $line;
-    die "ublast found hit for unknown item $queryId\n" unless exists $queryLen{$queryId};
+    die "ublast or diamond found hit for unknown item $queryId\n" unless exists $queryLen{$queryId};
     $hitId =~ s/ .*//; # the first part of the header line is the locusId
     my $orgId = $hitId; $orgId =~ s/:.*//;
     die "Unknown org $orgId in hits from $aaIn" unless exists $orgs{$orgId};
@@ -253,12 +258,13 @@ END
           push @keep, $row if $nWeak <= $maxWeak;
         }
       }
-      print STDERR "$queryId -- from $old to " . scalar(@sorted) . " entries\n"
+      print STDERR "$queryId $orgId -- from $old to " . scalar(@sorted) . " entries\n"
         if defined $verbose;
       $shortHits{$queryId} = \@keep;
     }
 
     # Identify the top candidates for each pathway:step
+    # (But, always keep all the hmm hits)
     my %hitsByStep = ();
     foreach my $query (@$queries) {
       my $queryId = $query->{queryId};
@@ -279,7 +285,6 @@ END
           $locusKeep{$locusId} = 1;
           $locusThisStep{$locusId} = 1;
           $nThisStep++;
-          last if  $nThisStep >= $maxCand;
         }
       }
     }
@@ -290,7 +295,7 @@ END
       foreach my $row (@{ $shortHits{$query} }) {
         my $locusId = $row->[0];
         print $fhOut join("\t", @$row)."\n"
-          if exists $locusKeep{$locusId};
+          if exists $locusKeep{$locusId} || $row->[1] eq "hmm";
       }
     }
   } # end loop over orgId
