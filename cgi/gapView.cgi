@@ -1415,7 +1415,7 @@ sub ProcessUpload($) {
 
   return('error' => "Uploaded protein sequences are limited to 10MB")
     if $totLen > 10e6;
-  my $assembly = AASeqToAssembly(\%seq, $dataDir) || die;
+  my $assembly = AASeqToAssembly(\%seq, "$dataDir/downloaded") || die;
   return ('gdb' => $assembly->{gdb}, 'gid' => $assembly->{gid});
 }
 
