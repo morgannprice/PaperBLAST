@@ -1150,11 +1150,12 @@ sub drawSvgScaleBar {
     shift @scales;
   }
   my $scaleSize = $scales[0];
-  my $scaleLeft = $treeLeft;
-  my $scaleRight = $treeLeft + $treeWidth * $scaleSize/$maxDepth;
+  my $scaleWidth = $treeWidth * $scaleSize/$maxDepth;
+  my $scaleLeft = $treeLeft + ($treeWidth - $scaleWidth)/2;
+  my $scaleRight = $treeLeft + ($treeWidth + $scaleWidth)/2;
   my $scaleMid = ($scaleLeft+$scaleRight)/2;
   $y += 4;
-  push @out, qq{<text text-anchor="middle" x="$scaleMid" y="$y">$scaleSize /site</text>};
+  push @out, qq{<text x="$scaleMid" text-anchor="middle" y="$y">$scaleSize /site</text>};
   $y += 4;
   push @out, qq{<line x1="$scaleLeft" y1="$y" x2="$scaleRight" y2="$y" stroke="black" />};
   return @out;
