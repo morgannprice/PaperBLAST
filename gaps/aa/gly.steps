@@ -13,23 +13,33 @@
 # which is annotated as "Serine hydroxymethyltransferase" but with a different EC number.
 glyA	serine hydroxymethyltransferase	EC:2.1.2.1	term:Serine hydroxymethyltransferase
 
-aceA	isocitrate lyase	EC:4.1.3.1
-agx1	alanine--glyoxylate aminotransferase	EC:2.6.1.44
+# CH_123497 is isocitrate lyase but is annotated without the EC number.
+# uniprot:Q05957 is misannotated in BRENDA as this function; it prefers other substrates (PMID:16342929)
+# uniprot:P28467 is annotated as this by two resources but is only 15 amino acids, so it is ignored.
+aceA	isocitrate lyase	EC:4.1.3.1	curated:CharProtDB::CH_123497	ignore:BRENDA::Q05957	ignore:SwissProt::P28467
 
-gly1	L-threonine aldolase	EC:4.1.2.5	EC:4.1.2.48
+# uniprot:P84188 and uniprot:P84187 are ignored because they appear to be sequence fragments
+# and do not contain the full aminotransferase domain
+agx1	alanine--glyoxylate aminotransferase	EC:2.6.1.44	ignore:SwissProt::P84188	ignore:SwissProt::P84187
+
+# E. coli serA (uniprot:P0A825) is annotated in BRENDA as threonine aldolase, but other resources
+# report that it is active on allothreonine only.
+# CH_123166 is L-threonine aldolase but was annotated without the EC number, so it is added manually.
+# uniprot:O07051 is ignored because it specific for L-allothreonine.
+gly1	L-threonine aldolase	EC:4.1.2.5	EC:4.1.2.48	ignore:BRENDA::P0A825	curated:CharProtDB::CH_123166	ignore:SwissProt::O07051
 
 # Glycine synthesis by Bifidobacterium breve or Methanococcus maripaludis requires two genes:
 # a putative enzyme (distantly related to anaerobic ribonucleotide reductase), which we call glyXL, and an ACT domain protein,
-# which we call glyXS (BBR_RS12920 and BBR_RS12915 or MMP_RS07345 and MMP_RS03450, Anthony Shiver and Leslie Day, personal communication).
-# These proteins are usually encoded next to each other (although not in in Methanococcus).
+# which we call glyXS (BBR_RS12920 and BBR_RS12915 or MMP_RS07345 and MMP_RS03450, Anthony Shiver and Leslie Day).
+# These proteins are usually encoded next to each other (although not in Methanococcus).
 # A homolog of glyXL from Streptococcus (spr0218, uniprot:Q8DRD2) is also required for glycine synthesis (PMC2739083).
-# And similar operon is regulated by glycine riboswitches (see BMMGA3_03000, discussed in PMC4342826).
-glyXL	putative glycine synthesis enzyme, catalytic component	predicted:Q8G510	predicted:Q6LXC5	predicted:Q8DRD2
+# And a similar operon is regulated by glycine riboswitches (see BMMGA3_03000, discussed in PMC4342826).
+glyXL	putative glycine synthesis enzyme, catalytic component	uniprot:Q8G510	uniprot:Q6LXC5	uniprot:Q8DRD2
 
 # Required for glycine synthesis along with glyXL in Bifodobacterium breve and Methanococcus maripaludis.
 # ACT domain proteins often bind amino acids to regulate the activity of enzymes, so we
 # predict that glyXL is the catalytic component.
-glyXS	putative glycine synthesis enzyme, ACT domain component	predicted:Q8G509	predicted:Q6LZH1
+glyXS	putative glycine synthesis enzyme, ACT domain component	uniprot:Q8G509	uniprot:Q6LZH1
 
 from_serine: glyA
 

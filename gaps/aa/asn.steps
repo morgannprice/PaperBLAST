@@ -5,9 +5,17 @@
 # In pathways I or II, aspartate is amidated directly, with glutamine or ammonia as the nitrogen source.
 # In pathway III, aspartate is ligated to tRNA(Asn) and then amidated to Asn-tRNA(Asn).
 
-asnB	asparagine synthase (glutamine-hydrolysing)	EC:6.3.5.4
+# In BRENDA, uniprot:A4I213 is misannotated as asnB.
+# Many asparagine synthases are bifunctional (obtaining nitrogen from either ammonia or glutamine)
+# so similarity to EC:6.3.1.1 is ignored.
+# CH_123066 has a vague annotation and it is not clear if it is actually characterized.
+asnB	asparagine synthase (glutamine-hydrolysing)	EC:6.3.5.4	ignore:BRENDA::A4I213	ignore_other:EC 6.3.1.1	ignore:CharProtDB::CH_123066
 
-asnA	aspartate--ammonia ligase	EC:6.3.1.1
+# In BRENDA, uniprot:A4I213 (asnA) is misannotated as asnB.
+# Many asparagine synthases are bifunctional (obtaining nitrogen from either ammonia or glutamine)
+# so similarity to EC:6.3.5.4 is ignored.
+# CH_123066 has a vague annotation and it is not clear if it is actually characterized.
+asnA	aspartate--ammonia ligase	EC:6.3.1.1	curated:BRENDA::A4I213	ignore_other:EC 6.3.5.4	ignore:CharProtDB::CH_123066
 
 to_asparagine: asnB
 to_asparagine: asnA
@@ -21,7 +29,7 @@ to_asparagine: asnA
 # However, if aspargine synthase and asparginyl-tRNA synthetase (asnRS) are absent,
 # then we can conclude that the aspartyl-tRNA synthetase is non-discriminatory.
 # This is the basis for annotating CCNA_01969 (uniprot:A0A0H3C7V8_CAUVN), Dshi_2633 (uniprot:SYDND_DINSH),
-# and PGA1_c24530 (uniprot:I7EPB8).
+# and PGA1_c24530 (uniprot:A0A2I7KAZ8).
 #
 # In Desulfovibrio vulgaris (2 strains) and in Synechococcus, the situation is more complicated
 # -- there is an asnRS, but it is not essential, or even improtant for fitness in most conditions.
@@ -29,7 +37,14 @@ to_asparagine: asnA
 # (It is also doubtful whether any of those genomes encode asnB or asnA.)
 # This is the basis for annotating DvMF_2038 (uniprot:B8DMM5_DESVM),
 # DVU3367 (uniprot:SYDND_DESVH), and Synpcc7942_1313 (uniprot:SYDND_SYNE7).
-aspS2	aspartyl-tRNA(Asp/Asn) synthetase	EC:6.1.1.23	uniprot:A0A0H3C7V8_CAUVN	uniprot:SYDND_DINSH	uniprot:I7EPB8	uniprot:B8DMM5_DESVM	uniprot:SYDND_DESVH	uniprot:SYDND_SYNE7
+#
+# Although the asp-tRNA synthetase from Mycobacterium
+# tuberculosis (uniprot:P9WFW3) is annotated as aspartate-specific in BRENDA, this organism
+# seems to lack asparaginyl-tRNA synthetase, so this is ignored.
+# MetaCyc annotates E.coli aspS (metacyc:ASPS-MONOMER) as both discriminating and non-discriminating,
+# which is incorrect, so this is ignored.
+# And MetaCyc gives erdS (metacyc:MONOMER-124420) this EC number, but it is not reported to act on asparagine.
+aspS2	aspartyl-tRNA(Asp/Asn) synthetase	EC:6.1.1.23	uniprot:A0A0H3C7V8_CAUVN	uniprot:SYDND_DINSH	uniprot:A0A2I7KAZ8	uniprot:B8DMM5_DESVM	uniprot:SYDND_DESVH	uniprot:SYDND_SYNE7	ignore:BRENDA::P9WFW3	ignore:metacyc::ASPS-MONOMER	ignore:metacyc::MONOMER-124420
 
 import gln.steps:gatA gatB gatC # aspartyl-tRNA(Asn) amidotransferase complex
 

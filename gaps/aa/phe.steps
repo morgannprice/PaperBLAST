@@ -5,26 +5,44 @@
 # amino acids providing the amino group for the conversion to phenylalanine.
 # In pathway II, L-arogenate is the intermediate (the aminotransferase reaction occurs before the dehydratase reaction).
 
-PPYAT	tyrosine:phenylpyruvate aminotransferase	EC:2.6.1.57
+# These enzymes are usually annotated as aromatic-amino-acid transaminase, but only
+# the activity on phenylpyruvate (to form phenylalanine) is relevant here.
+# Phenylalanine is also considered a substrate for aspartate aminotransferases, 
+# uniprot:P39643 is annotated with this EC number but is involved in bacilysin biosynthesis and
+# probably wouldn't form phenylalanine.
+# uniprot:H7CE71 is misannotated as this in BRENDA.
+# metacyc:PHETRANTHAUERA-MONOMER has this activity but is annotated with a different EC number.
+# uniprot:A0A060PQX5 has this activity but is given a different EC number in BRENDA.
+# metacyc:MONOMER-15918 and uniprot:Q93QX0 probably do not have this activity.
+# Many branched-chain or tryptophan transaminases are also active on phenylalanine so any similarity to them is ignored.
+# Ignore the very short protein uniprot:P12343
+PPYAT	phenylpyruvate aminotransferase	EC:2.6.1.57	EC:2.6.1.1	EC:2.6.1.5	ignore:SwissProt::P39643	ignore:BRENDA::H7CE71	curated:metacyc::PHETRANTHAUERA-MONOMER	curated:BRENDA::A0A060PQX5	ignore_other:EC 2.6.1.27	ignore_other:2.6.1.42	ignore:SwissProt::P12343	ignore:metacyc::MONOMER-15918	ignore:SwissProt::Q93QX0
 
 # Chorismate mutase is usually fused to prephenate dehydratase, which
-# makes it difficult to find this activity when it is fused to something else. 
-# As of March 2019, the PFam does not have any characterized members with other functions
-cmutase	chorismate mutase	EC:5.4.99.5	hmm:PF01817
+# makes it difficult to find this activity when it is fused to something else, so
+# we included the entire pfam in the step's definition. 
+# The only other function for this family that we are aware of is
+# 4-amino-4-deoxychorismate mutase, which is involved in the biosynthesis of some antibiotics.
+# (Proteins that are similar to 4-amino-4-deoxychorismate mutases will be marked as medium-confidence
+# in the results.)
+# Several fusion proteins are missing this EC number in their annotations
+# (uniprot:P43902, uniprot:Q74NC4, uniprot:A8AAX2)
+cmutase	chorismate mutase	EC:5.4.99.5	hmm:PF01817	curated:BRENDA::P43902	curated:BRENDA::Q74NC4	curated:BRENDA::A8AAX2
 
 # prephenate dehydratase and arogenate dehydratase can be difficult to distinguish.
 # BT3936 (uniprot:Q8A0T5_BACTN) is diverged but has auxotrophic phenotypes (as do homologs Echvi_0123, CA265_RS11630).
 # HVO_0449 (uniprot:D4GRZ0) is a phenylalanine auxotroph and is probably prephenate dehydratase (PMC4300041).
 # uniprot:A0A160HWY7 from Brevundimonas is a somewhat diverged prephenate dehydratase; it has auxotrophic phenotypes.
-preph-dehydratase	prephenate dehydratase	EC:4.2.1.51	uniprot:Q8A0T5_BACTN	ignore_other:EC 4.2.1.91	uniprot:D4GRZ0	uniprot:A0A160HWY7
-
-ilvE	phenylalanine transaminase	EC:2.6.1.1	EC:2.6.1.27	EC:2.6.1.57
+# The putative prephenate dehydratase from Carboxydothermus pertinax (A0A1L8CUL6) is lacking
+# the regulatory (ACT) domain but has the active site residues and is often encoded near aromatic amino
+# acid synthesis genes (it might be an arogenate dehydratase instead).
+preph-dehydratase	prephenate dehydratase	EC:4.2.1.51	uniprot:Q8A0T5_BACTN	ignore_other:EC 4.2.1.91	uniprot:D4GRZ0	uniprot:A0A160HWY7	predicted:A0A1L8CUL6
 
 # This enzyme forms arogenate, also known as pretyrosine.
-ptransferase	prephenate aminotransferase	EC:2.6.1.79	EC:2.6.1.78	ignore_other:EC 2.6.1.5	ignore_other:EC 2.6.1.27	ignore_other:EC 2.6.1.57	ignore_other:EC 2.6.1.1
+# Similarity to uniprot:O50434 is ignored because it is not acutally characterized.
+ptransferase	prephenate aminotransferase	EC:2.6.1.79	EC:2.6.1.78	ignore_other:EC 2.6.1.5	ignore_other:EC 2.6.1.27	ignore_other:EC 2.6.1.57	ignore_other:EC 2.6.1.1	ignore:SwissProt::O50434
 
 aro-dehydratase	arogenate dehydratase	EC:4.2.1.91	ignore_other:EC 4.2.1.51
 
-all: cmutase preph-dehydratase ilvE
 all: cmutase ptransferase aro-dehydratase
 all: cmutase preph-dehydratase PPYAT

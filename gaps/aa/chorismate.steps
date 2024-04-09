@@ -6,21 +6,34 @@
 # II (metacyc:PWY-6165), from D-glyceraldeyde-3-phosphate and L-asparatate.
 # Both pathways are identical after they reach 3-dehydroquinate.
 
-# 4.1.2.15 is an obsolete EC number, but it appears in a few entries.
-# This is also known as DAHP (3-deoxy-D-arabino-heptulosonate 7-phosphate) synthase .
-# Add Echvi_0120 because it is diverged, is confirmed by cofitness, and is essential in other Bacteroidetes.
-# (Echvi_0120 is a fusion with chorismate mutase.)
-aroG	3-deoxy-7-phosphoheptulonate synthase	EC:2.5.1.54	uniprot:L0FSZ3_ECHVK	ignore_other:EC 4.1.2.15
+# This is also known as DAHP (3-deoxy-D-arabino-heptulosonate 7-phosphate) synthase.
+# Add CA265_RS11635 (a fusion with chorismate mutase) because it is diverged,
+# is confirmed by cofitness, and is essential in other Bacteroidetes.
+# uniprot:P39912 (Bacillus subtilis aroA) is annotated in BRENDA as chorismate mutase but it also has this activity
+# (PMC1198938).
+# CH_123440 is annotated as this but without the EC number.
+# 4.1.2.15 is an obsolete EC number, but it appears in a few entries, so is ignored.
+# uniprot:C9K7C8 is annotated as this in SwissProt but its function is uncertain, so it is ignored.
+aroG	3-deoxy-7-phosphoheptulonate synthase	EC:2.5.1.54	curated:BRENDA::P39912	curated:CharProtDB::CH_123440	curated:reanno::Pedo557:CA265_RS11635	ignore_other:EC 4.1.2.15	ignore:SwissProt::C9K7C8
 
 # (There's also the obsolete EC number 4.6.1.3, no longer used.)
 aroB	3-dehydroquinate synthase	EC:4.2.3.4
 
-aroD	3-dehydroquinate dehydratase	EC:4.2.1.10
+# uniprot:B9CK59 may be misannotated in BRENDA. Several plant shikimate dehydrogenases may also be
+# 3-dehydroquinate dehydratases (fusion proteins), so any similarity to shikimate dehydrogenase
+# (EC 1.1.1.24 or 1.1.1.25 or 1.1.1.282) is ignored.
+# PYRFU_RS04235 (uniprot:G0EDV3) from Pyrolobus fumarii is diverged, especially at the C terminal part,
+# but has conserved functional residues, and a homolog from Sedimentisphaera salicampi is fused to
+# aroE, so it is probably the missing aroD.
+aroD	3-dehydroquinate dehydratase	EC:4.2.1.10	ignore:BRENDA::B9CK59	ignore_other:EC 1.1.1.24	ignore_other:EC 1.1.1.25	ignore_other:EC 1.1.1.282	predicted:G0EDV3
 
 # EC:1.1.1.282 is with NAD(P)H instead of NADPH.
-# Manually add the B. theta gene (BT4215, uniprot:Q8A006_BACTN) because it is diverged, is the only good candidate,
-# and is essential in various Bacteroidetes
-aroE	shikimate dehydrogenase	EC:1.1.1.25	EC:1.1.1.282	uniprot:Q8A006_BACTN
+# BT4215 from Bacteroides thetaiotaomicron (uniprot:Q8A006_BACTN) is diverged, is the only good candidate,
+# and is essential in various Bacteroidetes.
+# Ga0059261_2194 / BDW16_RS10815 (uniprot:A0A2M8WD96) has auxotrophic phenotypes in RB-TnSeq data and
+# can complement an aroE- strain of E. coli (Bradley Biggs).
+# CH_122204 in CharProtDB is ignored because it is probably quinate dehydrogenase, not shikimate dehydrogenase.
+aroE	shikimate dehydrogenase	EC:1.1.1.25	EC:1.1.1.282	uniprot:Q8A006_BACTN	uniprot:A0A2M8WD96	ignore:CharProtDB::CH_122204
 
 # In E. coli, AroL and AroK are isozymes.
 # In Bacillus subtilis, this gene was known as AroI, and it was cloned by complementation
@@ -31,12 +44,18 @@ aroE	shikimate dehydrogenase	EC:1.1.1.25	EC:1.1.1.282	uniprot:Q8A006_BACTN
 # Similarly for Echvi_0140 (uniprot:L0FT15_ECHVK) from Echinicola vietnamensis.
 # And DVU0892 (uniprot:AROK_DESVH) from D. vulgaris Hildenborough is confirmed by cofitness
 # CCNA_03103 (uniprot:AROK_CAUVN) is confirmed by cofitness and similar proteins
-# such as SMc00695 (uniprot:AROK_RHIME) and PGA1_c14090 (uniprot:I7EWF3_PHAIB) are essential.
-aroL	shikimate kinase	EC:2.7.1.71	uniprot:AROK_BACSU	uniprot:AROK_BACTN	uniprot:L0FT15_ECHVK	uniprot:AROK_DESVH	uniprot:AROK_CAUVN	uniprot:AROK_RHIME	uniprot:I7EWF3_PHAIB
+# such as SMc00695 (uniprot:AROK_RHIME) and PGA1_c14090 (uniprot:A0A135IJ25) are essential.
+aroL	shikimate kinase	EC:2.7.1.71	uniprot:AROK_BACSU	uniprot:AROK_BACTN	uniprot:L0FT15_ECHVK	uniprot:AROK_DESVH	uniprot:AROK_CAUVN	uniprot:AROK_RHIME	uniprot:A0A135IJ25
 
 # Add AroA from Desulfovibrio vulgaris (DVU0463) because it is a bit diverged, is conserved essential,
-# and clusters with aromatic amino acid biosynthesis genes
-aroA	3-phosphoshikimate 1-carboxyvinyltransferase	EC:2.5.1.19	uniprot:Q72EV5_DESVH
+# and clusters with aromatic amino acid biosynthesis genes.
+# HMPREF1058_RS13970 (uniprot:I9A2E3) is cofit with chorismate synthase (Surya Tripathi); also, it is 71% identical to
+# BT2186 / BT_RS11065, which can complement an aroA- strain of E. coli (Bradley Biggs).
+# PYRFU_RS00635 (uniprot:G0EEF0) from Pyrolobus fumarii is from this family, has similar active site residues
+# (alignment to Q83E11 shows three conserved residues, and D315 => R331), and
+# its closest homologs are in chorisomate synthesis operons (but, these are under 30% identity);
+# it is probably the missing aroA.
+aroA	3-phosphoshikimate 1-carboxyvinyltransferase	EC:2.5.1.19	uniprot:Q72EV5_DESVH	uniprot:I9A2E3	uniprot:L0FR45	predicted:G0EEF0
 
 # (There's also obsolete EC 4.6.1.4, no longer used)
 aroC	chorismate synthase	EC:4.2.3.5
@@ -44,20 +63,29 @@ aroC	chorismate synthase	EC:4.2.3.5
 # The triose-phosphate isomerase tpiA is also thought to convert D-glyceraldehyde 3-phosphate to enolaldehyde, which
 # spontaneously converts to methylglyoxal.
 # (Alternatively, methylglyoxal might be formed by methylgyoxal synthase, EC 4.2.3.3?)
-tpiA	D-glyceraldehyde-3-phosphate phospholyase	EC:5.3.1.1
+# Ignore uniprot:P00941, which is misannotated in BRENDA.
+tpiA	D-glyceraldehyde-3-phosphate phospholyase	EC:5.3.1.1	ignore:BRENDA::P00941
 
 # 6-deoxy-5-ketofructose-1-phosphate synthase is an activity of some fructose-bisphosphate aldolases
 # (which are usually annotated as 4.1.2.13). To find the fbp in Desulfovibrio vulgaris Hildenborough
 # and Miyazaki F, it is necessary to match more broadly.
-# And ignore CharProtDB items with incorrect EC.
-fbp	6-deoxy-5-ketofructose 1-phosphate synthase	EC:2.2.1.11	EC:4.1.2.13	ignore_other:fructose%bisphosphate aldolase
+# MetaCyc reports that AroA' from Methanococcus jannaschii (metacyc:MONOMER-14592)
+# also has activity as a fructose-bisphosphate aldolase, but it's not clear that
+# it carries out this reaction.
+# The bifunctional fructose-1,6-bisphosphate aldolase/phosphatases are ignored because it
+# is not obvious that they would carry out this reaction; this includes
+# uniprot:Q980K6, uniprot:A3MSD2, uniprot:Q8NKR9, uniprot:A0RV30, uniprot:A4YIZ5, uniprot:A8A9E4,
+# uniprot:B1YAL1, uniprot:B6YTP6, uniprot:D9PUH5, uniprot:F9VMT6, uniprot:Q2RG86, uniprot:Q72K02.
+# And ignore CharProtDB items with incorrect EC and very short SwissProt entries.
+fbp	6-deoxy-5-ketofructose 1-phosphate synthase	EC:2.2.1.11	EC:4.1.2.13	ignore:metacyc::MONOMER-14592	ignore_other:fructose%bisphosphate aldolase	ignore:SwissProt::P84722	ignore:SwissProt::P86979	ignore:SwissProt::P86980	ignore:BRENDA::Q980K6	ignore:BRENDA::A3MSD2	ignore:SwissProt::Q8NKR9	ignore:SwissProt::A0RV30	ignore:SwissProt::A4YIZ5	ignore:SwissProt::A8A9E4	ignore:SwissProt::B1YAL1	ignore:SwissProt::B6YTP6	ignore:SwissProt::D9PUH5	ignore:SwissProt::F9VMT6	ignore:SwissProt::Q2RG86	ignore:SwissProt::Q72K02
 
 import met.steps:aspartate-semialdehyde
 
 # aroA' condenses 6-deoxy-5-ketofructose 1-phosphate with L-aspartate 4-semialdehyde
 aroA'	2-amino-3,7-dideoxy-D-threo-hept-6-ulosonate synthase	EC:2.2.1.10
 
-aroB'	dehydroquinate synthase II	EC:1.4.1.24
+# Ignore uniprot:P81230, which is misannotated as this in BRENDA
+aroB'	dehydroquinate synthase II	EC:1.4.1.24	ignore:BRENDA::P81230
 
 # Pathway I uses aroG and aroB, while pathway II uses non-canonical activities of triose-phosphate
 # isomerase (tpiA) and fructose-bisphosphate aldolase (fbp)

@@ -10,15 +10,25 @@
 # in the proteome of Cupriavidus necator (strain JMP 134 / LMG 1197) [see proteome UP000002697]
 # and is 96% identical to the essential protein RR42_RS12995 from Cupriavidus basilensis 4G11.
 # It is probably a glutamine synthetase.
-# SYNPCC7942_2156-MONOMER is annotated with the same reaction, but was not originally given this EC number.
-glnA	glutamine synthetase	EC:6.3.1.2	ignore_other:EC 5.4.4.3	curated:metacyc::SYNPCC7942_2156-MONOMER
+# metacyc:SYNPCC7942_2156-MONOMER is annotated with the same reaction, but was not originally given this EC number.
+# In SwissProt, uniprot:P81643 and uniprot:P85087 are annotated with this activity but they are very short,
+# so are ignored.
+# CKL_RS00630 (uniprot:A5N4G9) from Clostridium kluyveri is distantly related to
+# characterized glutamine synthetases, but the active site residues and transition state binding
+# residues are conserved (see alignment to 2whiA), so it is probably
+# the missing glnA.
+glnA	glutamine synthetase	EC:6.3.1.2	ignore_other:EC 5.4.4.3	curated:metacyc::SYNPCC7942_2156-MONOMER	ignore:SwissProt::P81643	ignore:SwissProt::P85087	predicted:A5N4G9	predicted:A5N4G9
 
 # Glutamyl-tRNA(Glu/Gln) is usually formed by a nondescriminating glutamyl-tRNA synthetase.
 # CCNA_01982 (uniprot:A0A0H3C8P5_CAUVN) from Caulobacter crescentus is the sole glutamyl-tRNA
 # synthetase, there is no glutaminyl-tRNA synthetase, and gatABC are present,
 # so we annotated it as non-discriminating. In contrast, as of March 2019, unirule
 # UR000075658 labeled it as EC:6.1.1.17 (the discriminating kind).
-gltX	glutamyl-tRNA(Glx) synthetase	EC:6.1.1.24	uniprot:A0A0H3C8P5_CAUVN
+# E. coli glutamine-tRNA ligase (uniprot:P00962) is misannotated in BRENDA as the non-discriminating ligase.
+# uniprot:Q8DLI5 is a non-discriminating glutamyl-tRNA synthetase
+# (PMID:16876193)  but is not given this EC number
+# in SwissProt.
+gltX	glutamyl-tRNA(Glx) synthetase	EC:6.1.1.24	uniprot:A0A0H3C8P5_CAUVN	ignore:BRENDA::P00962	curated:SwissProt::Q8DLI5
 
 # The amidotransferase often acts on both glutamyl-tRNA(Gln) and aspartyl-tRNA(Asn) --
 # do not try to distinguish.
@@ -29,8 +39,8 @@ gatA	aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit A	hmm:TIGR00132	te
 gatB	aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit B	hmm:TIGR00133	term:aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit B	term:glutamyl-tRNA(Gln) amidotransferase subunit B	curated:metacyc::MONOMER-13956	ignore_other:EC 6.3.5.7
 gatC	aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit C	hmm:TIGR00135	term:aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit C	term:glutamyl-tRNA(Gln) amidotransferase subunit C	curated:metacyc::MONOMER-13957	ignore_other:EC 6.3.5.7
 
-gatD	glutamyl-tRNA(Gln) amidotransferase, subunit D	hmm:TIGR02153	ignore_other:EC 6.3.5.7
-gatE	glutamyl-tRNA(Gln) amidotransferase, subunit E	hmm:TIGR00134	ignore_other:EC 6.3.5.7
+gatD	glutamyl-tRNA(Gln) amidotransferase, subunit D	hmm:TIGR02153	term:glutamyl-tRNA(Gln) amidotransferase subunit D	ignore_other:EC 6.3.5.7
+gatE	glutamyl-tRNA(Gln) amidotransferase, subunit E	hmm:TIGR00134	term:glutamyl-tRNA(Gln) amidotransferase subunit E	ignore_other:EC 6.3.5.7
 
 # Two types of glutamyl-tRNA amidotransferases are known, GatABC or GatDE.
 # GatABC are generally thought to act on both glutamyl-tRNA and aspartyl-tRNA, while

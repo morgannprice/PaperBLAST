@@ -8,13 +8,16 @@
 # such as 5-methyltetrahydrofolate or methyl corrinoid proteins.
 
 # For BRENDA::O63067 -- the paper describes a monofunctional hom but the sequence of uniprot:O63067 is
-# much longer and has a close homolog of functional aspartate kinase (due to alternative splicing?)
-asp-kinase	aspartate kinase	EC:2.7.2.4	ignore:BRENDA::O63067
+# much longer and has a close homolog of functional aspartate kinase (due to alternative splicing?).
+# In Corynebacterium, aspartate kinase has two subunits, both apparently encoded by the same gene by
+# using start codons  (PMID:1956296); Q46133 is the shorter regulatory subunit and lacks the catalytic domain,
+# so it does not suffice for activity and is ignored.
+asp-kinase	aspartate kinase	EC:2.7.2.4	ignore:BRENDA::O63067	ignore:BRENDA::Q46133
 asd	aspartate semi-aldehyde dehydrogenase	EC:1.2.1.11
 
-# Ga0059261_2711 from Sphingomonas koreensis DSMZ 15582 is distant from characterized homoserine dehydrogenases
-# and is confirmed by  fitness data. It is identical to uniprot:A0A1L6J6Q3.
-# It has been updated in the reannotations so need not be mentioned here.
+# Ga0059261_2711 (uniprot:A0A1L6J6Q3) from Sphingomonas koreensis DSMZ 15582
+# is distant from characterized homoserine dehydrogenases
+# and is confirmed by  fitness data.
 # BT2403 from Bacteroides thetaiotaomicron (uniprot:Q8A541_BACTN)
 # is a fusion of aspartate kinase and homoserine dehydrogenase.
 # The homoserine dehydrogenase portion is somewhat diverged. Its role is confirmed by strong cofitness with
@@ -25,62 +28,70 @@ asd	aspartate semi-aldehyde dehydrogenase	EC:1.2.1.11
 # it has auxotrophic phenotypes.
 hom	homoserine dehydrogenase	EC:1.1.1.3	uniprot:A0A1L6J6Q3	uniprot:Q8A541_BACTN	uniprot:B8DRS3_DESVM	uniprot:A0A168MV81
 
-# As discussed in PMID:28581482, many homologs of MetA family are
-# actually homoserine O-acetyltransferases, and many homologs of MetX
+# As discussed in PMID:28581482, many members of the MetA family are
+# actually homoserine O-acetyltransferases, and many members of the MetX family
 # are actually homoserine O-succinyltransferases.  Fortunately, many
 # enzymes of both types have been curated in Swiss-Prot.
 metA	homoserine O-succinyltransferase	EC:2.3.1.46
 
-# MetX is often found alongside a methyltransferase-like protein MetW.
-# Because MetW is not consistently required for MetX's activity, it is not included in GapMind.
-# Details on MetW: PMID:28581482 briefly mention that
-# MetX proteins lacked activity when expressed in E. coli unless MetW
-# was cloned along with it. They purified MetX by adding an N-terminal
-# hexahistidine tag; MetW would not necessarily be purified along with
-# it. Most likely, MetW is either modifying MetX and improving its
-# activity, or forming a complex with MetX and stabilizing it.  Mutant
-# fitness data for MetW from various Proteobacteria shows that MetW need
-# not be required for MetX activity (see Herbaspirillum seropedicae or
-# Cupriavidus necator). In other organisms, MetW mutants have milder
-# phenotypes than MetX mutants, or MetX mutants do not have a defect
-# in some conditions, which suggests that MetW is only sometimes
-# required (Burkholderia phytofirmans, Acidovorax 3H11, Dechlorosoma
-# suillum PS, Marinobacter adhaerens). This might suggest that any
-# modification has a regulatory role. In many other organisms, there
-# is tight cofitness between MetX and MetW, suggesting that MetW is
-# required for MetX's activity (Paraburkholderia bryophila, many
+# MetX is often encoded next to a methyltransferase-like protein MetW.
+# Because MetW is not consistently required for MetX's activity, it is
+# not included in GapMind.  MetW can bind MetX and increase its
+# activity (PMID:33604638), and in some bacteria, there is tight
+# cofitness between MetX and MetW, which suggests that MetW is
+# required for MetX's activity (i.e., Paraburkholderia bryophila, many
 # Pseudomonas, Caulobacter crescentus, or Sphingomonas koreensis).
+# But in other diverse bacteria, metW mutants can still grow in minimal media
+# (i.e., Herbaspirillum seropedicae or Cupriavidus necator), or have
+# milder phenotypes than metX mutants (i.e., Burkholderia
+# phytofirmans, Acidovorax 3H11, Dechlorosoma suillum PS, Marinobacter
+# adhaerens).
 metX	homoserine O-acetyltransferase	EC:2.3.1.31
 
 hom_kinase	homoserine kinase	EC:2.7.1.39
 
+# Many metB proteins have some activity as O-succinylhomoserine sulfhydrylase (metZ) as well,
+# and many metZ proteins are annotated with this EC number. So this step
+# may include both enzymes.
 # METI_BACSU (uniprot:O31631) has activity as CGS but is given a more vague EC number.
-metB	cystathionine gamma-synthase	curated:SwissProt::O31631	EC:2.5.1.48
+# uniprot:Q1M0P5 is now thought to be a gamma-lyase instead (see metacyc:HP_RS00540-MONOMER), so it
+# is ignored.
+metB	cystathionine gamma-synthase	EC:2.5.1.48	curated:SwissProt::O31631	ignore:SwissProt::Q1M0P5
 
-metC	cystathionine beta-lyase	EC:4.4.1.13	
+# BRENDA annotates Q84UD0 with this EC number but it may be a cystine lyase only (PMID:12525491).
+# BRENDA annotates Q9EYM7 with this EC but it appears to be a cystathionine beta synthase (PMID:12101301).
+# uniprot:Q9SIV0 appears to be specific to glucosinolate biosynthesis.
+# CH_088676 is annotated as this but with a different EC number, so it is ignored.
+# uniprot:Q4606 is annotated as cysteine desulfidase but is nearly identical to uniprot:Q93QC6, which is
+# a cystathionine beta-lyase, so it is ignored.
+# XoMetC (uniprot:Q5H4T8) is annotated as a gamma-lyase by BRENDA, but it also has beta-lyase activity
+# (PMID:24531493).
+metC	cystathionine beta-lyase	EC:4.4.1.13	ignore:BRENDA::Q84UD0	ignore:BRENDA::Q9EYM7	ignore:SwissProt::Q9SIV0	ignore:CharProtDB::CH_088676	ignore:BRENDA::Q46061	curated:BRENDA::Q5H4T8
 
 # METI_BACSU (uniprot:O31631) has activity as OAS but is given a more vague EC number.
-metY	O-acetylhomoserine sulfhydrylase	EC:2.5.1.49	curated:SwissProt::O31631	ignore_other:O-succinylhomoserine sulfhydrylase
+# CH_123612, uniprot:Q9WZY4, and uniprot:Q5SK88 are annotated as this but without the EC number.
+metY	O-acetylhomoserine sulfhydrylase	EC:2.5.1.49	curated:SwissProt::O31631	ignore_other:O-succinylhomoserine sulfhydrylase	curated:CharProtDB::CH_123612	curated:SwissProt::Q9WZY4	curated:SwissProt::Q5SK88
 
 # No EC number for metZ, so use "O-succinylhomoserine sulfhydrylase", which matches
 # uniprot:METZ_PSEAE and uniprot:METZ_MYCTU.
-# Two related proteins, Ac3H11_2452 (uniprot:A0A165KUI5_9BURK) and HSERO_RS16440 (uniprot:D8J1Y3_HERSS)
-# are diverged metZ -- strongly cofit with homoserine succinyltransferases and similar to either
-# sulfhydrylases or methionine gamma-lyases (but the latter function would not explain their phenotype).
-metZ	O-succinylhomoserine sulfhydrylase	term:O-succinylhomoserine sulfhydrylase	ignore_other:EC 2.5.1.49	uniprot:A0A165KUI5_9BURK	uniprot:D8J1Y3_HERSS
+metZ	O-succinylhomoserine sulfhydrylase	term:O-succinylhomoserine sulfhydrylase	ignore_other:EC 2.5.1.49
 
 metE	vitamin B12-independent methionine synthase	EC:2.1.1.14
 
 # In many thermophilic archaea, MetE seems to be split into two pieces (PMC7857596). There
 # is experimental support for a protein complex (PMC2668238), and the two pieces
 # often appear to form an operon, but there is no experimental evidence that they
-# are a methionine synthase.
-split_metE_1	vitamin B12-independent methionine synthase, folate-binding component	predicted:G0EDA1_PYRF1
+# are a methionine synthase. We added the gene from Haloferax volcanii (uniprot:D4GW95) as it is
+# diverged but is conserved next to a catalytic component with correct functional residues (uniprot:D4GW90).
+split_metE_1	vitamin B12-independent methionine synthase, folate-binding component	predicted:G0EDA1_PYRF1	predicted:D4GW95
 
 # In many thermophilic archaea, MetE seems to be split into two pieces (see PMC7857596).
 # The catalytic component has the necessary zinc-binding residues (H219, C221, C307)
 # and homocysteine-binding residues (S20, E71, D185).
-split_metE_2	vitamin B12-independent methionine synthase, catalytic component	predicted:G0EFB7_PYRF1
+# We added the gene from Haloferax volcanii (uniprot:D4GW90) as it
+# has the correct functional residues and is conserved next to a potential folate-binding component
+# (uniprot:D4GW90).
+split_metE_2	vitamin B12-independent methionine synthase, catalytic component	predicted:G0EFB7_PYRF1	predicted:D4GW90
 
 # Desulfovibrio have a somewhat diverged MetH, without the activation domain, but confirmed by
 # cofitness (DVU1585 = uniprot:Q72BP9_DESVH is cofit with MetF; DvMF_0476 = uniprot:B8DKK4_DESVM is cofit with a RamA-
@@ -97,23 +108,36 @@ split_metH_3	Methionine synthase component, pterin-binding domain	curated:reanno
 # but other ATP-dependent (ramA-like) activation proteins are also thought to exist.
 # Ignore MetH proteins, as they often contain the reactivation domain and this
 # creates confusion when checking for reverse hits.
-B12-reactivation-domain	MetH reactivation domain	hmm:PF02965	ignore_other:EC 2.1.1.13
+# In Heliobacterium modesticaldum, the missing reactivation domain is probably provided
+# by H1S01_RS06050 (very similar to A0A6I3SQJ4), which does not hit the HMM but for PF02965 but is found by PFam-N
+# or foldseek, and is usually encoded to next to MetH.
+B12-reactivation-domain	MetH reactivation domain	hmm:PF02965	ignore_other:EC 2.1.1.13	predicted:A0A6I3SQJ4
 
 # As of April 2019, all characterized members of the RamA family or PF14574 are involved in the reactivation
 # of co(II)balamin. This includes RamA (uniprot:B8Y445), DvMF_1398, PGA1_c15200, and ELI_0370 (part of a O-demethylase).
 # Many bacteria contain MetH and probably rely on a distant homolog of RamA for reactivation of B-12.
-# pfam:PF14574 describes only the C-terminal putative ATPase domain of RamA, but no other functions are known.
+# pfam:PF14574 describes only the C-terminal putative ATPase domain of RamA, but no other functions are known,
+# except for the reactivation of Co(II) corrinoid proteins (i.e. RamQ, uniprot:P0DX10).
 ramA	ATP-dependent reduction of co(II)balamin	hmm:PF14574	term:ATP-dependent reduction of co(II)balamin
 
-# reductive sulfuration of aspartate semi-aldehyde
+# In the reductive sulfuration of aspartate semialdehyde, the
+# sulfurtransferase component is
+# MA1821 or DvMF_1464 (see PMID:25315403 and PMC5764234) or uniprot:Q57564 (from SwissProt).
+# Although this reaction has not been biochemically demonstrated, a distant homolog performs a similar
+# reaction, converting sulfoacetaldehyde to coenzyme M (see MJ1681 and PMID:30932481).
+# (This family was formerly DUF39.)
+asd-S-transferase	sulfuration of L-aspartate semialdehyde, persulfide component	curated:SwissProt::Q8TPT4	curated:reanno::Miya:8500721	curated:SwissProt::Q57564
 
-# MA1821 or DvMF_1464 (see PMID:25315403 and PMC5764234)
-asd-S-transferase	sulfuration of L-aspartate semialdehyde, persulfide component	uniprot:Q8TPT4_METAC	curated:reanno::Miya:8500721
-# MA1822 or DvMF_0262 (see PMID:25315403 and PMC5764234)
-asd-S-ferredoxin	reductive sulfuration of L-aspartate semialdehyde, ferredoxin component	uniprot:Q8TPT3_METAC	curated:reanno::Miya:8499492
-# MA1715 or DvMF_0044 (see PMID:25315403 and PMC5764234)
-# This putative persulfide forming component is not 100% required in Methanosarcina acetivorans (possible redundancy).
-asd-S-perS	putative persulfide forming protein	uniprot:Y1715_METAC	curated:reanno::Miya:8499265
+# The NIL/ferredoxin component is MA1822 or DvMF_0262 (see PMID:25315403 and PMC5764234).
+# In Methanococcus, the persulfide component (MEVAN_RS03425, uniprot:A6UQ02) is diverged but
+# is in a conserved operon with the sulfurtransferase component.
+asd-S-ferredoxin	reductive sulfuration of L-aspartate semialdehyde, ferredoxin component	curated:SwissProt::Q8TPT3	curated:reanno::Miya:8499492	predicted:A6UQ02
+
+# The putative persulfide forming component is MA1715 or DvMF_0044 (see PMID:25315403 and PMC5764234).
+# A conserved cysetien in MA1821 is modified to a persulfide in vivo (PMID:28165724).
+# This component is not 100% required in Methanosarcina acetivorans (possible redundancy).
+# In Hippea alviniae, this protein (G415_RS0107280, similar to uniprot:F2LX84) is diverged but is in an operon with the other components.
+asd-S-perS	putative persulfide forming protein	uniprot:Y1715_METAC	curated:reanno::Miya:8499265	predicted:F2LX84
 
 # Methanogens have a short homolog of MetE that transfers methyl groups from methylcobalamin
 # (not 5-methyltetrahydrofolates) to homocysteine to form methionine (PMID:10469143).
@@ -127,7 +151,7 @@ mesA	Methylcobalamin:homocysteine methyltransferase MesA	curated:SwissProt::P552
 # It probably obtains methyl groups from the iron-sulfur corrinoid protein of the
 # Wood-Ljungdahl pathway (CoFeSP), but this is not proven.
 # We named this family MesB (PMID:33534785).
-mesB	Methylcobalamin:homocysteine methyltransferase MesB	uniprot:A0A0V8M4G6
+mesB	Methylcobalamin:homocysteine methyltransferase MesB	curated:metacyc::MONOMER-21502
 
 # MesC is another family of core methionine synthases, without experimental evidence, but
 # with the correct functional residues, and linked to the Wood-Ljungdahl pathway
@@ -139,9 +163,9 @@ mesC	Methylcobalamin:homocysteine methyltransferase MesC	predicted:Q8TUL3_METAC
 # see PMC2290942 and PMID:33534785.
 # They require mesX (ACIAD3524 or Ga0059261_2928) and oxygen for activity, but not
 # 5-methyltetrahydrofolates or cobalamin.
-mesD	oxygen-dependent methionine synthase, methyltransferase component MesD	uniprot:Q6F6Z8	uniprot:A0A2M8WFA5
+mesD	oxygen-dependent methionine synthase, methyltransferase component MesD	uniprot:Q6F6Z8	curated:reanno::Korea:Ga0059261_2929
 # MesX is required for the activity of MesD, see PMC2290942.
-mesX	oxygen-dependent methionine synthase, putative oxygenase component MesX	uniprot:Q6F6Z7	uniprot:A0A2M8WFB3
+mesX	oxygen-dependent methionine synthase, putative oxygenase component MesX	uniprot:Q6F6Z7	curated:reanno::Korea:Ga0059261_2928
 
 aspartate-semialdehyde: asp-kinase asd
 

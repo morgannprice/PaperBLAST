@@ -1,29 +1,53 @@
-Changes to amino acid biosynthesis since the original 2019
+Major changes to amino acid biosynthesis since the original 2019
 publication:
 
-arg: Better describe the lysW-based pathway and argX; propose that "argA3" substitutes for argE. Ignore a mis-curated argB.
+arg: Better described the lysW-based pathway and argX. Added putative
+Steroidobacter dgcN-like argA. Proposed that "argA3" substitutes for
+argE.
 
-gly: add glyXL/glyXS
+chorismate: Added putative aroA and aroD from Pyrolobus.
 
-his: add Bifidobacterium hisN
+gln: Added putative glnA from Clostridium kluyveri.
 
-ile: Improved definition of cimA. Fix names of ilvI/ilvH. Add short Rhodanobacter ilvH.
+gly: Added glyXL/glyXS from Bifidobacterium and Methanococcus
+
+his: Added Bifidobacterium hisN
+
+ile: Improved definition of cimA.
 
 lys: Improved the lysW-based pathway to include genes from
-Thermococcus kodakarensis. Add predicted dapL and dapF2 from Staphylococcus. For lysA, ignore a lysine decarboxylase.
+Thermococcus kodakarensis. Added predicted dapL and dapF2 from
+Staphylococcus.q
 
 met: Added the core methionine synthase mesB, the mesD-mesX system,
 and renamed metE' to mesA. Added the predicted synthases mesC and
-split metE. Added a diverged homoserine dehydrogenase from Brevundimonas.
+split metE. Added a homoserine dehydrogenase from Brevundimonas. Added
+a putative B12 reactivation protein from Heliobacterium. Added a
+putative NIL/ferredoxin component (for reductive sulfuration of
+L-aspartate semialdehyde) from Methanococcus. Added a putative
+persulfide-forming protein (for reductive sulfuration of L-aspartate
+semialdehyde) from Hippea.
 
-phe: Improved definition of prephenate dehydratase, including a diverged enzyme from Brevundimonas.
+phe: Improved definition of prephenate dehydratase, including a
+diverged enzyme from Brevundimonas and a putative enzyme from
+Carboxydothermus.
 
 pro: Added synthesis via ornithine gamma-aminotransferase (EC
-2.6.1.13), and allow more options for ornithine biosynthesis (such as
-the lysW pathway). Add archaeal ornithine cyclodeaminase.
+2.6.1.13), and allowed more options for ornithine biosynthesis (such as
+the lysW pathway). Added archaeal ornithine cyclodeaminase.
 
-ser: Add serA from Thermococcus. Add serC from Methanocaldococcus and from Staphylococcus. Add predicted serC from Clostridia ("serC3") and some related enzymes. Add serB from Entamoeba histolytica, as this is similar to some putative bacterial serB. Add a subfamily of DUF1015 as a predicted replacement for serB.
+ser: Added serA from Thermococcus and a predicted serA from
+Roseburia. Added serC from Methanocaldococcus and from
+Staphylococcus. Added predicted serC from Clostridia ("serC3") and some
+related enzymes. Added serB from Entamoeba histolytica, as this is
+similar to some putative bacterial serB. Added a subfamily of DUF1015 as
+a predicted replacement for serB.
 
-thr: Add the putative alternative to homoserine kinase, homK/thrB2/TIGR02535.
+thr: Added the putative alternative to homoserine kinase,
+homK/thrB2/TIGR02535.
 
-tyr: Improved definition of prephenate dehydrogenase.
+tyr: Improved the definition of prephenate dehydrogenase, including a
+predicted enzyme from Desulfarculus.
+
+val: Fixed names of ilvI/ilvH (which had been swapped). Added various
+short ilvH proteins (with an ACT domain only).

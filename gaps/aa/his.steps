@@ -1,35 +1,50 @@
 # Histidine biosynthesis in GapMind is based on the MetaCyc pathway (metacyc:HISTSYN-PWY).
 
 prs	ribose-phosphate diphosphokinase	EC:2.7.6.1
+
 hisG	ATP phosphoribosyltransferase	EC:2.4.2.17
-# Genetic evidence suggests that DVU1186 (uniprot:Q72CU7_DESVH) is phosphoribosyl-ATP pyrophosphatase (PMC5764234).
-# CH_123581 probably does all three: hisD, hisE, and hisI.
-hisI	phosphoribosyl-ATP pyrophosphatase	EC:3.6.1.31	uniprot:Q72CU7_DESVH	ignore:CharProtDB::CH_123581
-hisE	phosphoribosyl-AMP cyclohydrolase	EC:3.5.4.19	hmm:PF01502	ignore:CharProtDB::CH_123581
-hisA	isomerase HisA	EC:5.3.1.16
-hisF	IGP synthase, cyclase subunit	term:hisF	hmm:TIGR00735	ignore_other:imidazole glycerol phosphate synthase
-hisH	IGP synthase, amidotransferase subunit	term:hisH	hmm:TIGR01855	ignore_other:imidazole glycerol phosphate synthase
+
+# CH_123581 and uniprot:A1BPP9 probably do all three: hisD, hisE, and hisI.
+hisI	phosphoribosyl-ATP pyrophosphatase	EC:3.6.1.31	ignore:CharProtDB::CH_123581	ignore:BRENDA::A1BPP9
+
+# uniprot:A1BPP9 is annotated as hisD but is likely multifunctional, so similarity to it is ignored.
+hisE	phosphoribosyl-AMP cyclohydrolase	EC:3.5.4.19	hmm:PF01502	ignore:CharProtDB::CH_123581	ignore:BRENDA::A1BPP9
+
+hisA	1-(5-phosphoribosyl)-5-[(5-phosphoribosylamino)methylideneamino]imidazole-4-carboxamide isomerase	EC:5.3.1.16
+
+# Subunits are not always annotated consistently, so are added manually, and uniprot:Q9SZ30 is a fusion protein of the two subunits
+hisF	imidazole glycerol phosphate synthase, cyclase subunit	term:hisF	hmm:TIGR00735	ignore_other:imidazole glycerol phosphate synthase	curated:BRENDA::Q5NMD6	curated:BRENDA::Q8ZY16	curated:BRENDA::A4WHB6	curated:BRENDA::Q9SZ30
+
+# Subunits are not always annotated consistently, so are added manually, and uniprot:Q9SZ30 is a fusion protein of the two subunits
+hisH	imidazole glycerol phosphate synthase, amidotransferase subunit	term:hisH	term:IGP synthase, amidotransferase subunit	hmm:TIGR01855	ignore_other:imidazole glycerol phosphate synthase	curated:BRENDA::Q5NMD4	curated:BRENDA::Q8ZY40	curated:BRENDA::Q9SZ30	curated:BRENDA::A4WHA5
+
 # Fitness data showed that BPHYT_RS17700 (B2SZ63) from Burkholderia phytofirmans is required for histidine biosynthesis.
 # PA5143 (Q9HU41) from Pseudomonas aeruginosa is required for histidine biosynthesis (PMC7028973).
-# as 
-hisB	IGP dehydratase	EC:4.2.1.19	uniprot:B2SZ63	uniprot:Q9HU41
+hisB	imidazoleglycerol-phosphate dehydratase	EC:4.2.1.19	uniprot:B2SZ63	uniprot:Q9HU41
 
 # In Bacillus subtilis, the histidinol-phosphate aminotransferase activity is provided by a gene that is in a cluster of
 # genes for tyrosine and phenylalanine biosynthesis (PMID:4431). Homology suggests that this
 # activity is provided by "HisH" (BSU22620), which indeed is just upstream of tyrA (PMID:6092865).
-# This protein is now usually referred to as "HisC" (uniprot:HIS8_BACSU)
-hisC	histidinol-phosphate aminotransferase	EC:2.6.1.9	uniprot:HIS8_BACSU
+# This protein is now usually referred to as "HisC" (uniprot:HIS8_BACSU).
+# GAMENC_05715 from Acidovorax sp. FHTAMBA (nearly identical to uniprot:A0A2R7PAQ8) can complement a hisC- strain of E. coli (Bradley Biggs) and is in a histidine synthesis gene cluster.
+# GW822FHT02A01_217 from Rhodoferax sp. GW822-FHT02A01 (similar to uniprot:A0A975E8Y9) can complement a hisC- strain of E. coli (Bradley Biggs) and is in a histidine synthesis gene cluster.
+# Fitness data for BPHYT_RS14905 from Burkholderia phytofirmans suggests that it is an aromatic amino acid transaminase,
+# but it is 55% identical to TK06_RS12685, which can complement a hisC- mutant of E.coli (Bradley Biggs),
+# so any similarity to it is ignored.
+hisC	histidinol-phosphate aminotransferase	EC:2.6.1.9	uniprot:HIS8_BACSU	uniprot:A0A2R7PAQ8	uniprot:A0A975E8Y9	ignore:reanno::BFirm:BPHYT_RS14905
 
 # In Bacillus subtilis and some related bacteria, histidinol-phosphate phosphatase is known as HisJ
 # and has been confirmed by biochemical assays of purified proteins (PMC3570733).
 # The identifiers given (see their Table 3) are
 # MCCL_0344 BBR47_00270 BCE_1533 BcerKBAB4_1335 BcerKBAB4_1335 BSU29620 BH3206 GK2799 SMU_1486c
-# (uniprot:B9E9Z0_MACCJ uniprot:C0ZH63_BREBN uniprot:Q73B87_BACC1 uniprot:A9VLI0_BACWK uniprot:HIS9_BACHD
+# (uniprot:B9E9Z0_MACCJ uniprot:C0ZH63_BREBN uniprot:Q73B87_BACC1 uniprot:A9VLI0_BACMK uniprot:HIS9_BACHD
 # uniprot:Q5KW52_GEOKA uniprot:Q8DT80_STRMU uniprot:HIS9_BACSU).
-# In Bifidobacterium breve, the phosphatase activity is provided by Bbr_0982 (uniprot:A0A0L7BRC5, see
-# https://doi.org/10.1101/2023.08.29.555234).
-hisN	histidinol-phosphate phosphatase	EC:3.1.3.15	uniprot:B9E9Z0_MACCJ	uniprot:C0ZH63_BREBN	uniprot:Q73B87_BACC1	uniprot:A9VLI0_BACWK	uniprot:HIS9_BACHD	uniprot:Q5KW52_GEOKA	uniprot:Q8DT80_STRMU	uniprot:HIS9_BACSU	uniprot:A0A0L7BRC5
+# In Bifidobacterium breve, the phosphatase activity is provided by Bbr_0982 (uniprot:A0A0L7BRC5,
+# URL:https://doi.org/10.1101/2023.08.29.555234).
+# uniprot:S5FT07 and uniprot:S5FU55 are misannotated as this in BRENDA.
+# E. coli phoA (ecocyc:ALKAPHOSPHA-MONOMER) has this activity but is ignored because it is periplasmic.
+hisN	histidinol-phosphate phosphatase	EC:3.1.3.15	uniprot:B9E9Z0_MACCJ	uniprot:C0ZH63_BREBN	uniprot:Q73B87_BACC1	uniprot:A9VLI0_BACMK	uniprot:HIS9_BACHD	uniprot:Q5KW52_GEOKA	uniprot:Q8DT80_STRMU	uniprot:HIS9_BACSU	uniprot:A0A0L7BRC5	ignore:BRENDA::S5FT07	ignore:BRENDA::S5FU55	ignore:ecocyc::ALKAPHOSPHA-MONOMER
 
-hisD	histidinol dehydrogenase	EC:1.1.1.23	ignore:CharProtDB::CH_123581
+hisD	histidinal/histidinol dehydrogenase	EC:1.1.1.23	ignore:CharProtDB::CH_123581
 
 all: prs hisG hisI hisE hisA hisF hisH hisB hisC hisN hisD

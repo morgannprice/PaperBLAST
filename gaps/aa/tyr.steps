@@ -23,15 +23,26 @@ import phe.steps:cmutase ptransferase # chorismate mutase and prephenate aminotr
 # and Ga0059261_2298 (uniprot:A0A1L6J750) are auxotrophic
 # and have prephenate dehydrogenase domains (pfam:PF02153), but their specificity is unclear.
 # HVO_1312 (uniprot:D4GXG3) is auxotrophic for tyrosine and is probably a prephenate dehydrogenase (PMC4300041).
-pre-dehydr	prephenate dehydrogenase	EC:1.3.1.12	EC:1.3.1.13	uniprot:Q8A0T8_BACTN	uniprot:Q72EV4_DESVH	uniprot:D8IR44_HERSS	uniprot:A0A1L6J750	ignore_other:EC 1.3.1.78	ignore_other:EC 1.3.1.43	ignore_other:EC 1.3.1.78	uniprot:D4GXG3
+# uniprot:P06959 is misannotated in BRENDA and is ignored.
+# Ac3H11_2575 (uniprot:A0A162F6L0) has auxotrophic phenotypes but its specificity is unclear.
+# uniprot:Q92MG1 was confirmed by binding tyrosine in a crystal structure (PDB:4wji).
+# In Desulfarculus, the enzyme is a bit diverged (E1QE65), but has conserved tyrosine binding residues and
+#  is in a conserved operon with aromatic amino acid biosynthesis genes.
+pre-dehydr	prephenate dehydrogenase	EC:1.3.1.12	EC:1.3.1.13	uniprot:Q8A0T8_BACTN	curated:reanno::DvH:209400	uniprot:D8IR44_HERSS	uniprot:A0A1L6J750	ignore_other:EC 1.3.1.78	ignore_other:EC 1.3.1.43	ignore_other:EC 1.3.1.78	uniprot:D4GXG3	ignore:BRENDA::P06959	uniprot:Q92MG1	predicted:E1QE65
 
 # The specificity of the aminotransferase is difficult to predict.
 # Include EC:2.6.1.1 (aspartate amnotransferase) because it is reported to act on aromatic amino acids including tyrosine.
-tyrB	tyrosine aminotransferase	EC:2.6.1.5	EC:2.6.1.27	EC:2.6.1.57	EC:2.6.1.1	ignore_other:EC 2.6.1.79	ignore_other:EC 2.6.1.78
+# uniprot:P12343 is a fragment.
+# metacyc:MONOMER-15919 and metacyc:MONOMER-15918 are involved in phosphoserine formation and it is not clear if they
+# would act on an aromatic amino acid.
+# uniprot:H7CE71 appears to be misannotated in BRENDA and is ignored.
+# uniprot:A0A060PQX5 and uniprot:Q845W8 are very similar to proteins with this activity, and might have
+# this activity even though they are given other EC numbers, so similarity to them is ignored.
+tyrB	tyrosine aminotransferase	EC:2.6.1.5	EC:2.6.1.27	EC:2.6.1.57	EC:2.6.1.1	ignore_other:EC 2.6.1.79	ignore_other:EC 2.6.1.78	ignore:SwissProt::P12343	ignore:metacyc::MONOMER-15919	ignore:metacyc::MONOMER-15918	ignore:BRENDA::H7CE71	ignore:BRENDA::A0A060PQX5	ignore:BRENDA::Q845W8
 
 # Multiple EC numbers for varying use of NAD(P)H
 # BT3933 and DVU0464 and HSERO_RS18425 are included but their specificity is uncertain
-aro-dehydr	arogenate dehydrogenase	EC:1.3.1.78	EC:1.3.1.43	EC:1.3.1.78	uniprot:Q8A0T8_BACTN	uniprot:Q72EV4_DESVH	uniprot:D8IR44_HERSS	uniprot:A0A1L6J750	ignore_other:EC 1.3.1.12	ignore_other:EC 1.3.1.13
+aro-dehydr	arogenate dehydrogenase	EC:1.3.1.78	EC:1.3.1.43	EC:1.3.1.78	uniprot:Q8A0T8_BACTN	curated:reanno::DvH:209400	uniprot:D8IR44_HERSS	uniprot:A0A1L6J750	ignore_other:EC 1.3.1.12	ignore_other:EC 1.3.1.13
 
 # This enzyme requires oxygen
 PAH	phenylalanine hydroxylase	EC:1.14.16.1

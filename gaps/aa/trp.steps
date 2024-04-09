@@ -40,16 +40,28 @@ PRAI	phosphoribosylanthranilate isomerase	EC:5.3.1.24	uniprot:Q8AAD7_BACTN	unipr
 # Ignore BRENDA::P24920 because annotated as phosphoribosylanthranilate isomerase but is also believed to be IGPS.
 # And based on presence in Trp clusters and auxotrophic or cofit phenotypes, annotate somewhat diverged IGPS:
 # HP15_3291 (uniprot:E4PQZ8_MARAH), DvMF_1743 (uniprot:B8DM44_DESVM), BT0529 (uniprot:TRPC_BACTN),
-# AZOBR_RS07450 (uniprot:G8AL05_AZOBR), Pf1N1B4_2549 (uniprot:A0A166NT80_PSEFL), AO353_07210 (uniprot:A0A0N9WG05_PSEFL).
-IGPS	indole-3-glycerol phosphate synthase	EC:4.1.1.48	uniprot:E4PQZ8_MARAH	uniprot:B8DM44_DESVM	uniprot:TRPC_BACTN	uniprot:G8AL05_AZOBR	uniprot:A0A166NT80_PSEFL	uniprot:A0A166NT80_PSEFL	ignore_other:EC 4.1.3.27	ignore:BRENDA::P24920
+# AZOBR_RS07450 (uniprot:A0A560BXT3), Pf1N1B4_2549 (uniprot:A0A166NT80_PSEFL), AO353_07210 (uniprot:A0A0N9WG05_PSEFL).
+IGPS	indole-3-glycerol phosphate synthase	EC:4.1.1.48	uniprot:E4PQZ8_MARAH	uniprot:B8DM44_DESVM	uniprot:TRPC_BACTN	uniprot:A0A560BXT3	uniprot:A0A166NT80_PSEFL	uniprot:A0A166NT80_PSEFL	ignore_other:EC 4.1.3.27	ignore:BRENDA::P24920
 
-# This reaction is 4.1.2.8 by itself or part of 4.2.1.20
-trpA	indoleglycerol phosphate aldolase	hmm:TIGR00262	ignore_other:EC 4.2.1.20	ignore_other:EC 4.1.2.8
+# This reaction is 4.1.2.8 by itself or part of 4.2.1.20.
+# The enzyme from Pyrolobus is not matched by the HMM, but is similar to the characterized trpA
+# from Thermococcus (uniprot:Q9YGA9, see PMID:11029579)
+# APJEIK_06300 from Pedobacter sp. FW305-3-2-15-E-R2A2 (uniprot:A0A3N7DTH5) can complement a trpA- strain of E. coli (Bradley Biggs).
+# GAMENC_07330 from Acidovorax sp. FHTAMBA (uniprot:H0BV16) can complement a trpA- strain of E. coli (Bradley Biggs);
+# also it is very similar to Ac3H11_1535, which has auxotrophic phenotypes.
+# LRK54_RS01680 from Rhodanobacter sp. FW104-10B01 (uniprot:M4NLA4) can complement a trpA- strain of E. coli (Bradley Biggs);
+# also it is similar to N515DRAFT_0116, which has
+# auxotrophic pheonotypes.
+trpA	indoleglycerol phosphate aldolase	hmm:TIGR00262	curated:BRENDA::Q9YGA9	uniprot:A0A3N7DTH5	uniprot:H0BV16	uniprot:M4NLA4	ignore_other:EC 4.2.1.20	ignore_other:EC 4.1.2.8
 
 # Some members of TIGR01415 might also have this activity.
 # The family also includes indole-scavenging "trpB-2" proteins, whose presence generally indicates
-# tryptophan synthesis (EC 4.2.1.122)
-trpB	tryptophan synthase	hmm:TIGR00263	ignore_other:EC 4.2.1.20	ignore_other:EC 4.2.1.122
+# tryptophan synthesis (EC 4.2.1.122).
+# The enzyme from Pyrolobus is not matched by the HMM, but is similar to the characterized trpB
+# from Sulfolobus (uniprot:P50383, see PMID:11029579) or Saccharolobus (uniprot:Q97TX6)
+# "TrpB2" proteins are reported to use phosphoserine (an intermediate in serine synthesis) rather than serine
+# as a substrate (PMID:25184516); GapMind does not try to distinguish them from TrpB.
+trpB	tryptophan synthase	hmm:TIGR00263	uniprot:P50383	curated:BRENDA::Q97TX6	ignore_other:EC 4.2.1.20	ignore_other:EC 4.2.1.122
 
 # Anthranilate synthase usually has two components, as in E. coli, but single-protein systems are also known.
 # (In E. coli, trpD is the second component fused to anthranilate phosphoribosyltransferase.) 

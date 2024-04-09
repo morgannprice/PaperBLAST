@@ -5,13 +5,14 @@
 # Pathway II from arginine (metacyc:PWY-4981) should perhaps be included, but is not;
 # it is reported in nitrogen-fixing cyanobacteria and the bacteria it was reported in also have pathway I.
 # Pathway IV is not included because it is not reported in prokaryotes (metacyc:PWY-4281).
-# Also, pathway III is described in MetaCyc as occuring only in plants, but it also is reported
+# Also, pathway III is described in MetaCyc as occuring only in plants, but it has been reported
 # in the archaeon Thermococcus kodakarensis (PMC5846162).
 
-import lys.steps:lysW lysZ lysY lysJ lysK # shared with ornithine biosynthesis
+import lys.steps:lysW
 import arg.steps:ornithine
 
-proB	glutamate 5-kinase	EC:2.7.2.11
+# APJEIK_11370 from Pedobacter sp. FW305-3-2-15-E-R2A2 (uniprot:A0A1H0J514) can complement a proB- strain of E. coli (Bradley Biggs).
+proB	glutamate 5-kinase	EC:2.7.2.11	uniprot:A0A1H0J514
 
 # glutamyl-5-phosphate to glutamate 5-semialdehyde, which spontaneously dehydrates to 1-pyrroline-5-carboxylate
 proA	gamma-glutamylphosphate reductase	EC:1.2.1.41
@@ -25,7 +26,10 @@ all: proB proA proC
 # Converts ornithine to glutamate semialdehyde.
 # CH_124176 is annotated as ornithine transaminase but without the EC number; it probably
 # has the same activity.
-OAT	L-ornithine 5-aminotransferase	EC:2.6.1.13	curated:CharProtDB::CH_124176
+# BRENDA annotates AruC from Pseudomonas aeruginosa (uniprot:O30508) has naving this activity as well,
+# but it's probably not physiologically relevant and the Km is high (10 mM, PMID:238949); so
+# O30508 considered an OAT in GapMind.
+OAT	L-ornithine 5-aminotransferase	EC:2.6.1.13	curated:CharProtDB::CH_124176	ignore:BRENDA::O30508
 
 # Pathway II involves ornithine aminotransferase (OAT).
 all: ornithine OAT proC
@@ -33,7 +37,7 @@ all: ornithine OAT proC
 # In many archaea, proline is formed from ornithine via a cyclodeaminase (PMID:11489875).
 # Mls2 (uniprot:Q6LXX7, MMP1218, MMP_RS06270) was identified as an
 # ornithine cyclodeaminase (PMID:30636068), and
-# it is required for proline synthesis (Leslie Day, personal communication).
+# it is important for fitness unless proline is added (Leslie Day).
 cyclodeaminase	ornithine cyclodeaminase	EC:4.3.1.12	uniprot:Q6LXX7
 
 # Some methanogens synthesize proline via ornithine cyclodeaminase (PMID:11489875).

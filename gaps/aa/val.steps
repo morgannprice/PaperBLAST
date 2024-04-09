@@ -1,8 +1,61 @@
 # Valine biosynthesis in GapMind is based on MetaCyc pathway L-valine biosynthesis
 # (metacyc:VALSYN-PWY).
 
-import ile.steps:ilvH ilvI ilvC ilvD
+# ilvIH (or ilvGM) is a two-subunit enzyme that forms acetolactate or acetohydroxybutanoate.
+# (S)-2-aceto-2-hydroxybutanoate synthesis is part of isoleucine biosynthesis.
+# Acetolactate synthesis is part of valine or leucine biosynthesis.
+# CH_124129 is probably correct but has limited data and vaguer annotations.
+# IlvX from Mycobacterium tuberculosis (uniprot:O53554) is ignored because, although
+# annotated with this activity by both SwissProt and BRENDA, we could not find
+# experimental evidence, and it is reported to
+# lack activity (PMID:20884690).
+ilvI	acetolactate/acetohydroxybutanoate synthase catalytic subunit	hmm:TIGR00118	term:acetohydroxy-acid synthase%large	term:acetohydroxy acid synthase%large	term:acetohydroxybutanoate synthase, catalytic subunit	term:acetohydroxybutanoate synthase, catalytic subunit	term:acetohydroxyacid synthase subunit B	ignore_other:EC 2.2.1.6	ignore:CharProtDB::CH_124219	ignore:SwissProt::O53554
 
-ilvE	valine transaminase	EC:2.6.1.42
+# The isolated catalytic subunit can have some activity on its own, so it's not clear if the regulatory
+# subunit (ilvH) is always required, but ilvH does always seem to be present.
+# uniprot:P0ADG1 is annotated with this EC number but not explicitly as the small regulatory subunit,
+# so it was added manually.
+# uniprot:Q93YZ7 is annotated as this but without the EC number, so is added manually.
+# Most regulatory subunits have an N-terminal ACT domain and a C-terminal ACT-like domain,
+# but E. coli IlvM, which is required for the activity of E. coli acetohydroxyacid synthase isoenzyme II,
+# has the N-terminal ACT domain only.
+# We identified several other short (one-domain) regulatory subunits.
+# In Rhodanobacter and related genera, the putative regulatory subunit has
+# just one ACT domain (i.e., LRK54_RS10305, which is nearly identical to A0A154R0Y7).
+# Based on sequence analysis, short ilvH probably maintains the ability to bind
+# valine and to bind the catalytic subunit, but not the ability to bind ATP or other regulatory subunits.
+# Mutant fitness data confirms that LRK54_RS10305 is involved in amino acid biosynthesis.
+# In Xanthomonas campestris, the one ACT-domain protein Xcc-8004.1058.1 (uniprot:A0A0H2X4P1), which
+# is conserved next to ilvI, has a similar fitness pattern as ilvI (Alice Castaing, unpublished data).
+# Furthermore, its AlphaFold structure is
+# very similar to that of E. coli IlvM (TM-score 0.89, RMSD 1.49 A, foldseek).
+# So Xcc-8004.1058.1 is another short regulatory subunit.
+# Similarly, in Brevundimonas sp. GW460-12-10-14-LB2, the putative ilvH has the ACT domain only
+# (Brev2_1981 = A0A161J739).
+# Many Thermoproteota seem to have a diverged short regulatory subunit, such as the ACT domain protein
+# KCR_RS03285 (uniprot:A0A7J3AYJ4), which is conserved next to ilvI. Foldseek shows that this protein
+# is similar to the ACT domain of (p)ppGpp synthase but also to IlvH of Staphylococcus aureus,
+# so we predict that it is the regulatory subunit.
+ilvH	acetolactate/acetohydroxybutanoate synthase regulatory subunit 	hmm:TIGR00119	term:acetohydroxy-acid synthase%small	term:acetohydroxybutanoate synthase, regulatory subunit	term:small subunit of acetolactate synthase	curated:BRENDA::P0ADG1	ignore_other:EC 2.2.1.6	uniprot:A0A154R0Y7	curated:SwissProt::Q93YZ7	uniprot:A0A0H2X4P1	predicted:A0A7J3AYJ4	predicted:A0A161J739
 
-all: ilvH ilvI ilvC ilvD ilvE
+# The three EC numbers correspond to different preferences for NAD(P)H as the cofactor;
+# the transformations to the carbon skeleton are the same.
+# CH_123630 is added because it is annotated as this but with no EC number.
+ilvC	2-hydroxy-3-ketol-acid reductoisomerase	EC:1.1.1.86	EC:1.1.1.382	EC:1.1.1.383	curated:CharProtDB::CH_123630
+
+# IlvD is involved in the biosynthesis of isoleucine, with
+# (R)-2,3-dihydroxy-3-methylpentanoate as the substrate, and in the
+# biosynthesis of valine and leucine, with 
+# (R)-2,3-dihydroxy-3-methylbutanoate as the substrate.
+# The ignored enzyme is involved in salinosporamide A biosynthesis but does a very similar reaction
+# and is >50% identical to N515DRAFT_0569, which is confirmed by fitness data to be biosynthetic
+ilvD	dihydroxy-acid dehydratase	EC:4.2.1.9	ignore:metacyc::MONOMER-15882
+
+# Q8NS92 is ignored because it is primarily a transcriptional regulator.
+# Similarity to aromatic amino acid transaminases or tyrosine transaminases is ignored as they
+# are often non-specific.
+ilvE	valine transaminase	EC:2.6.1.42	EC:2.6.1.66	ignore:SwissProt::Q8NS92	ignore_other:2.6.1.57	ignore_other:2.6.1.5
+
+3-methyl-2-oxobutanoate: ilvH ilvI ilvC ilvD
+
+all: 3-methyl-2-oxobutanoate ilvE

@@ -13,30 +13,47 @@
 
 import met.steps:aspartate-semialdehyde
 
-dapA	4-hydroxy-tetrahydrodipicolinate synthase	EC:4.3.3.7
+# uniprot:Q3MFY8, uniprot:Q3M723, and many proteins form Agrobacterium tumefaciens are misannotated in BRENDA,
+# and are ignored.
+# (The reference for those points at gene 1133062 = Atu1024 as the synthase instead, and states that
+# the other Agrobacterium dapA-like proteins lack this activity, see PMID:24677246.)
+# uniprot:Q8A3Z0 is annotated as this in BRENDA, but the cited paper does not demonstrate this activity,
+# and another protein (BT0895) appears to be the major dapA in Bacteroides thetaiotaomicron,
+# (it is essentail), so Q8A3Z0 is ignored.
+dapA	4-hydroxy-tetrahydrodipicolinate synthase	EC:4.3.3.7	EC:4.2.1.52	ignore:BRENDA::Q3MFY8	ignore:BRENDA::Q3M723	ignore:BRENDA::A9CGZ4	ignore:BRENDA::A9CHR2	ignore:BRENDA::A9CL94	ignore:BRENDA::A9CL97	ignore:BRENDA::Q7D0E8	ignore:BRENDA::Q7D313	ignore:BRENDA::Q8A3Z0
 
 # Formerly known as dihydrodipicolinate reductase.
 # Echvi_2395 (uniprot:L0G028_ECHVK) and CA265_RS15670 (uniprot:A0A1X9Z7Q6_9SPHI) are somewhat diverged,
 # but conserved essentiality confirms they are dapB.
-dapB	4-hydroxy-tetrahydrodipicolinate reductase	EC:1.17.1.8	uniprot:L0G028_ECHVK	uniprot:A0A1X9Z7Q6_9SPHI
+# uniprot:Q3MFY8 is misannotated in BRENDA, so it is added manually.
+# uniprot:Q3M723 is misannotated in BRENDA, so it is ignored.
+dapB	4-hydroxy-tetrahydrodipicolinate reductase	EC:1.17.1.8	uniprot:L0G028_ECHVK	uniprot:A0A1X9Z7Q6_9SPHI	curated:BRENDA::Q3MFY8	ignore:BRENDA::Q3M723
 
 # Formerly known as 2,3,4,5-tetrahydropyridine-2-carboxylate N-succinyltransferase
 dapD	tetrahydrodipicolinate succinylase	EC:2.3.1.117
 
 # 2.6.1.52 is the EC number for 3-phosphoserine aminotransferase (serC), which catalyzes
-# this reaction in E. coli
-dapC	N-succinyldiaminopimelate aminotransferase	EC:2.6.1.17	EC:2.6.1.52
+# this reaction in E. coli.
+# The function of uniprot:O50434 is not known, so similarity to it is ignored.
+# E.coli's succinylornithine transaminase has this activity as well (PMID:25243376), so
+# similarity to succinylornithine transaminases (EC:2.6.1.81) is ignored.
+dapC	N-succinyldiaminopimelate aminotransferase	EC:2.6.1.17	EC:2.6.1.52	ignore:SwissProt::O50434	ignore_other:EC 2.6.1.81
 
 dapE	succinyl-diaminopimelate desuccinylase	EC:3.5.1.18
 
 # L,L-diaminopimelate to meso-diaminopimelate.
-# A putative amino acid racemase (W1W731) is in a conserved operon with lysA ("dapF2" in PMC9026213);
+# A putative amino acid racemase (A0A9Q5JK70) is in a conserved operon with lysA ("dapF2" in PMC9026213);
 # it is likely to be a diaminopimelate epimerase.
-dapF	diaminopimelate epimerase	EC:5.1.1.7	predicted:W1W731
+dapF	diaminopimelate epimerase	EC:5.1.1.7	predicted:A0A9Q5JK70
 
 # A0A0H3H393 is reported to be a lysine decarboxylase but is 87% identical to E. coli's
-# diaminopimelate decarboxylase, so .
-lysA	diaminopimelate decarboxylase	EC:4.1.1.20	ignore:BRENDA::A0A0H3H393
+# diaminopimelate decarboxylase, so it is ignored.
+# CALK_RS03395 (uniprot:U7D9L6) has conserved functional residues (see alignment to 1ko0A) and is in an operon with
+# meso-diaminopimelate D-dehydrogenase (ddh), so it must be the missing lysA.
+# MetaCyc annotates THAPSDRAFT_20613 (metacyc:MONOMER-21197), which is probably a diaminopimelate decarboxylase,
+# as a dimethylsulfonio-2-hydroxybutanoate hydroxylase/decarboxylase, but there is no experimental evidence, so
+# it is ignored.
+lysA	diaminopimelate decarboxylase	EC:4.1.1.20	ignore:BRENDA::A0A0H3H393	predicted:U7D9L6	ignore:metacyc::MONOMER-21197
 
 # Also known as ykuQ
 dapH	tetrahydrodipicolinate acetyltransferase	EC:2.3.1.89
@@ -67,27 +84,32 @@ lysU	homoaconitase small subunit	term:homoaconitase small subunit	ignore_other:E
 # which often have multiple subunits in eukaryotes; this is not represented here.
 hicdh	homo-isocitrate dehydrogenase	EC:1.1.1.87	EC:1.1.1.286
 
-# 2-oxoadipate to 2-aminoadipate
-lysN	2-aminoadipate:2-oxoglutarate aminotransferase	EC:2.6.1.39
+# 2-oxoadipate to 2-aminoadipate.
+# uniprot:Q06191 is very simlar to SMc04386, which seems to have this activity 
+# (it is required for lysine utilization), and as far as we know, Q06191 has not been tested
+# for activity on 2-aminoadipate, so it is ignored
+lysN	2-aminoadipate:2-oxoglutarate aminotransferase	EC:2.6.1.39	ignore:SwissProt::Q06191
 
-# LysW is a carrier protein for intermediates in lysine or ornithine biosynthesis.
+# LysW is a carrier protein for intermediates in lysine and/or ornithine biosynthesis.
+# It is sometimes called the amino group carrier protein.
 # TK0279 (uniprot:Q5JFV9) from Thermococcus kodakarensis was characterized, see PMC5076833.
 lysW	2-aminoadipate/glutamate carrier protein	term:alpha-aminoadipate%carrier	uniprot:Q5JFV9
 
-# TK0278 (uniprot:Q5JFW0) is described in PMC5076833.
-lysX	2-aminoadipate-LysW ligase	EC:6.3.2.43	uniprot:Q5JFW0
+# A5U2Z7 and BRENDA::P9WFU7 are misannotated in BRENDA.
+# TK0278 from Thermococcus kodakarensis (uniprot:Q5JFW0) is bifunctional, for lysine and ornithine synthesis (PMC5076833).
+lysX	2-aminoadipate-LysW ligase	EC:6.3.2.43	ignore:BRENDA::A5U2Z7	ignore:BRENDA::P9WFU7	uniprot:Q5JFW0
 
-# TK0276 (uniprot:Q5JFW2) has also been characterized (PMC5076833).
-lysZ	[LysW]-2-aminoadipate 6-kinase / [LysW]-glutamate kinase	term:[LysW]-aminoadipate kinase	term:[LysW]-aminoadipate/[LysW]-glutamate kinase	uniprot:Q5JFW2
+# TK0276 from Thermococcus kodakarensis (uniprot:Q5JFW2) is bifunctional, for lysine and ornithine synthesis (PMC5076833).
+lysZ	[LysW]-2-aminoadipate 6-kinase	EC:2.7.2.17	uniprot:Q5JFW2
 
-# TK0277 (uniprot:Q5JFW1) has also been characterized (PMC5076833).
-lysY	[LysW]-2-aminoadipate 6-phosphate reductase / [LysW]-glutamylphosphate reductase	term:[LysW]-L-2-aminoadipate 6-phosphate reductase	term:[LysW]-L-2-aminoadipate/[LysW]-L-glutamate phosphate reductase	uniprot:Q5JFW1
+# TK0277 (uniprot:Q5JFW1) is bifunctional, for lysine and arginine synthesis (PMC5076833).
+lysY	[LysW]-2-aminoadipate 6-phosphate reductase	EC:1.2.1.103	curated:BRENDA::Q5JFW1
 
-# TK0275 (uniprot:Q5JFW3) has also been characterized (PMC5076833).
-lysJ	[LysW]-2-aminoadipate semialdehyde transaminase / [LysW]-glutamate semialdehyde transaminase	term:[LysW]-aminoadipate semialdehyde transaminase	term:[LysW]-aminoadipate semialdehyde/glutamate semialdehyde transaminase	uniprot:Q5JFW3
+# TK0275 from Thermococcus kodakarensis (uniprot:Q5JFW3) has also been characterized (PMC5076833).
+lysJ	[LysW]-2-aminoadipate semialdehyde transaminase	EC:2.6.1.118	EC:2.6.1.124	uniprot:Q5JFW3
 
-# TK0274 (uniprot:Q5JFW4) has also been characterized (PMC5076833).
-lysK	[LysW]-lysine hydrolase / [LysW]-ornithine hydrolase	term:LysW%lysine%hydrolase	term:aminoadipate carrier protein%lysine%hydrolase	uniprot:Q5JFW4
+# TK0274 from Thermococcus kodakarensis (uniprot:Q5JFW4) is bifunctional, for lysine and ornithine synthesis (PMC5076833).
+lysK	[LysW]-lysine hydrolase	EC:3.5.1.130	uniprot:Q5JFW4
 
 # (S)-2,3,4,5-tetrahydrodipicolinate is formed from aspartate semialdehyde by dapAB.
 # In pathway I (dapDCE), it is succinylated, transaminated, and desuccinyulated, to L,L-DAP,

@@ -11,7 +11,13 @@
 # is annotated as 3-phosphoglycerate dehydrogenase
 # and has auxotrophic phenotypes. In particular, mutants are partially rescued by glycine or serine.
 # Also it is adjacent to the putative serC.
-serA	3-phosphoglycerate dehydrogenase	EC:1.1.1.95	uniprot:A0A1X9ZCD3	ignore:BRENDA::Q4JDI4
+# MMP1588 (uniprot:Q6LWW6) was identified as the serA of Methanococcus (PMC1797378).
+# Ignore metacyc:HP_RS05420-MONOMER which has this EC but has a different function.
+# Ignore similarity to sll1908 (metacyc:SGL_RS08600-MONOMER) which seems likely to be serA but
+# was proposed (without experimental evidence) to be hydroxpyruvate reductase.
+# In Roseburia faecis, the putative serA (uniprot:A0A374I5P9) is diverged but is similar to the serA part of Echvi_2777
+# and is conserved next to serC and DUF1015 (putative serB).
+serA	3-phosphoglycerate dehydrogenase	EC:1.1.1.95	uniprot:A0A1X9ZCD3	uniprot:Q6LWW6	ignore:BRENDA::Q4JDI4	ignore:metacyc::HP_RS05420-MONOMER	ignore:metacyc::SGL_RS08600-MONOMER	predicted:A0A374I5P9
 
 # MJ0959 (uniprot:Y959_METJA) is phosphoserine transaminase (PMID:17071763).
 # A mutant in the putative aminotransferase SAUSA300_1669 = Q2FXK2
@@ -23,28 +29,29 @@ serA	3-phosphoglycerate dehydrogenase	EC:1.1.1.95	uniprot:A0A1X9ZCD3	ignore:BREN
 # (A3204_00420, similar to A0A843E9R6; G452_RS0102660, similar to A0A1T4W7T3)
 serC	3-phosphoserine aminotransferase	EC:2.6.1.52	uniprot:Y959_METJA	uniprot:Q2FXK2	predicted:A5I0W7	predicted:A0A843E9R6	predicted:A0A1T4W7T3
 
-# CA265_RS22635 (uniprot:A0A1X9ZBA8_9SPHI) is diverged serB and is auxotrophic. It also appears to be fused to 
+# CA265_RS22635 (see Fitness Browser) is diverged serB and is auxotrophic. It also appears to be fused to 
 # diverged serA, but there is another serA in the genome (CA265_RS09010), so
 # CA265_RS22635 may not be a functional dehydrogenase.
-# Echvi_2777 (uniprot:L0G228_ECHVK) from Echinicola vietnamensis KMM 6221 is a diverged serB and is auxotrophic,
+# Echvi_2777 (see Fitness Browser) from Echinicola vietnamensis KMM 6221 is a diverged serB and is auxotrophic,
 # rescued by serine.
 # It is fused to serA and probably provides that activity as well.
 # Hits to serA are ignored because of serAB fusions.
 # Some curated resources link this EC number to protein phosphatases, or to
 # non-specific periplasmic phosphatases, that are unlikely to play a role in serine biosynthesis.
-# These are all marked ignore (P60487, Q96GD0, Q3ZBF9, P00634, P0AE22, Q9P376).
-# Similarly, Swiss-Prot annotates RsbX (P17906) and RsbU (P40399) with this EC number, but
+# These are all marked ignore (uniprot:P60487, uniprot:Q96GD0, uniprot:Q3ZBF9, uniprot:P00634,
+# uniprot:P0AE22, uniprot:Q9P376, uniprot:O07014).
+# Similarly, Swiss-Prot annotates RsbX (uniprot:P17906) and RsbU (uniprot:P40399) with this EC number, but
 # they probably act on proteins.
-# And, AraL (P94526) is ignored because although it does have activity on phosphoserine, it is a
+# And, AraL (uniprot:P94526) is ignored because although it does have activity on phosphoserine, it is a
 # promiscuous phosphatase (supplementary material of PMC4413258).
-# PMID:25848029 does show that Q9K8N3 and X3MFA4 (A0A1R2PVY2) have this activity.
-# 5zr2C (N9V397) is serB in Entamoeba histolytica (see PMID:30935984)
+# PMID:25848029 does show that BH2972 (uniprot:Q9K8N3) and X3MFA4 (now uniprot:A0A1R2PVY2) have this activity.
+# 5zr2C (uniprot:N9V397) is serB in Entamoeba histolytica (see PMID:30935984)
 # In Clostridiodes difficile, the serine synthesis operon includes CDIF630erm_01132, a DUF1015
 # protein which is speculated to replace serB (PMC6110889). This subfamily is usually colocated
-# with serA or serC3 (see ADT23_RS05570 or A0A6B4WGC7),
+# with serA or serC3 (see uniprot:ADT23_RS05570 or uniprot:A0A6B4WGC7),
 # and is structurally related to the N-terminal domain of
 # serine kinases (using foldseek). Furthermore, genomes that encode this subfamily usually lack
 # any known form of serB.
-serB	phosphoserine phosphatase	EC:3.1.3.3	uniprot:A0A1X9ZBA8_9SPHI	uniprot:L0G228_ECHVK	ignore_other:EC 1.1.1.95	ignore:SwissProt::P60487	ignore:SwissProt::Q96GD0	ignore:SwissProt::Q9P376	ignore:SwissProt::Q3ZBF9	ignore:BRENDA::P00634	ignore:SwissProt::P0AE22	ignore:SwissProt::Q9P376	ignore:SwissProt::P17906	ignore:SwissProt::P40399	ignore:SwissProt::P94526	uniprot:Q9K8N3	uniprot:A0A1R2PVY2	uniprot:N9V397	predicted:A0A6B4WGC7
+serB	phosphoserine phosphatase	EC:3.1.3.3	ignore_other:EC 1.1.1.95	ignore:SwissProt::P60487	ignore:SwissProt::Q96GD0	ignore:SwissProt::Q9P376	ignore:BRENDA::O07014	ignore:SwissProt::Q3ZBF9	ignore:BRENDA::P00634	ignore:SwissProt::P0AE22	ignore:SwissProt::P17906	ignore:SwissProt::P40399	ignore:SwissProt::P94526	uniprot:Q9K8N3	uniprot:A0A1R2PVY2	uniprot:N9V397	predicted:A0A6B4WGC7
 
 all: serA serC serB

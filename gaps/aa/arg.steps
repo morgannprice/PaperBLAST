@@ -15,55 +15,76 @@
 # Bacteroides use succinylated intermediates (PMID:16704984), so their proteins are probably
 # N-succinylglutamate synthases.
 # (These enzymes are also known as argA2, see PMC9026213.)
-# uniprot:A0A0H2X8L7 is annotated as argB in BRENDA, but it is also argA (a fusion protein).
+# uniprot:Q8P8J6 is annotated as argB in BRENDA, but it is also argA (a fusion protein).
 # N515DRAFT_3768 (uniprot:A0A1I2DIM7) is similar to ArgAB fusion proteins and mutants are rescued by arginine.
-argA	N-acylglutamate synthase	EC:2.3.1.1	uniprot:Q8A1A5_BACTN	uniprot:L0G3H4_ECHVK	curated:BRENDA::A0A0H2X8L7	uniprot:A0A1I2DIM7
+# It is not clear if mnaT (ecocyc:G6759-MONOMER) would acetylate arginine, so it is ignored.
+# Some EC 2.3.1.35 enzymes are probably dedicated for converting N-acetylornithine back to ornithine,
+# while others are bifunctional for N-acetylglutamate formation as well (argJ);
+# so similarity to this EC number is inconclusive.
+# For some CharProtDB entries it is unclear if they have this activity or not, while others are
+# labeled with this function but without the EC number.
+# uniprot:Q9I3W7 is annotated as this in BRENDA but we did not find experimental evidence of its activity
+# on glutamate, so it is ignored.
+# In Steroidobacter denitrificans, argA is missing but the arginine synthesis cluster includes a
+# potential N-acetyltransferase ACG33_RS14135 (uniprot:A0A127FCT3). Homologs of this protein are
+# conserved in the cluster, and it is never found together with argA; it is distantly related to
+# D-glutamate acetyltransferase dgcN (formerly DUF1611, see PMC10030869).
+argA	N-acylglutamate synthase	EC:2.3.1.1	term:N-succinylglutamate synthase	uniprot:Q8A1A5_BACTN	uniprot:L0G3H4_ECHVK	curated:BRENDA::A0A0H2X8L7	curated:BRENDA::Q8P8J6	ignore:ecocyc::G6759-MONOMER	ignore_other:EC 2.3.1.35	ignore:CharProtDB::CH_123299	curated:CharProtDB::CH_122594	ignore:BRENDA::Q9I3W7	ignore:BRENDA::Q8P8J6	predicted:A0A127FCT3
 
 # ArgB includes Bacteroides proteins that act on N-succinylglutamate instead
 # of the usual N-acetylglutamate (i.e. BT3395).
 # See "Discovery of novel pathways of microbial arginine biosynthesis" (2010),
 # PhD thesis of Juan Manuel Cabrera Luque, which shows that argB from B. fragilis is
 # N-succinylglutamate kinase.
+# uniprot:O67848 in BRENDA seems likely to be argB but is misannotated as a deacetylase;
+# also, uniprot:Q87EL2 is likely to be argB as well as argA.
+# CH_123299 has a broader annotation but probably has this activity.
 #
-# In the version of BRENDA we are using,
-# lpxC from Aquifex aeolicus is erroneously given as uniprot:O67848 (which is probably argB), not uniprot:O67648.
-# (This has since been corrected in BRENDA.)
-# A similar error affects Q8P8J7.
-argB	N-acylglutamate kinase	EC:2.7.2.8	ignore:BRENDA::O67848	ignore:BRENDA::Q8P8J7
+argB	N-acylglutamate kinase	EC:2.7.2.8	term:N-succinylglutamate kinase	ignore:BRENDA::O67848	ignore:BRENDA::Q87EL2	curated:CharProtDB::CH_123299
 
 # ArgC includes Bacteroides proteins that probably act
-# on N-succinylglutamylphosphate instead of N-acetylglutamylphosphate (i.e. BT3759)
-argC	N-acylglutamylphosphate reductase	EC:1.2.1.38
+# on N-succinylglutamylphosphate instead of N-acetylglutamylphosphate (i.e. BT3759).
+# CH_123299 has a broader annotation but probably has this activity.
+# HP15_352 (uniprot:E4PLW0) from Marinobacter adhaerens HP15 is important for fitness in most
+# minimal media, unless arginine is provided.
+argC	N-acylglutamylphosphate reductase	EC:1.2.1.38	term:N-succinylglutamylphosphate reductase	curated:CharProtDB::CH_123299	uniprot:E4PLW0
 
 # This aminotransferase for converting N-acetylglutamate semialdehyde to acetylornithine is
-# often similar to succinylornithine transaminases (EC:2.6.1.81)
-argD	N-acetylornithine aminotransferase	EC:2.6.1.11	ignore_other:EC 2.6.1.81
+# often similar to succinylornithine transaminases (EC:2.6.1.81),
+# 4-aminobutyrate aminotransferases (EC:2.6.1.19), or 
+# 5-aminovalerate transaminases (EC:2.6.1.48). (Succinylornithine and 4-aminobutyrate transaminases
+# are also reported to be active on N-acetylornithine and this seems likely for 5-aminovalerate
+# transaminases as well.)
+# metacyc:MONOMER-18314 is given this EC nmber but is actually LysW-lysine/ornithine aminotransferase (LysJ).
+# PMID:A0A806JQF3 show that Rv1655 (uniprot:A0A806JQF3) from Mycobacterium tuberculosis is argD.
+argD	N-acetylornithine aminotransferase	EC:2.6.1.11	ignore_other:EC 2.6.1.81	ignore_other:EC 2.6.1.19	ignore:metacyc::MONOMER-18314	ignore_other:EC 2.6.1.48	uniprot:A0A806JQF3
 
 # This EC number also includes N-acetylcitrulline deacetylase, which is part of pathway III.
-# N515DRAFT_3767 (uniprot:A0A1I2DJB5_9GAMM) is a putative argE and is quite diverged
-# (the closest characterized protein is 25% identity to E. coli argE);
-# mutants are auxotrophic and rescued by arginine.
 # A putative amidohydrolase "ArgA3" (W3Y6L2) is in a conserved
 # operon with ornithine carbamoyltransferase (the next step) in Veillonella and
 # related genera (PMC9026213). The genome context includes other
 # arginine synthesis genes as well. Although ArgA3 was proposed to be a N-acetylglutamate
 # synthase, it is related to N-acetyl-cysteine deacetylase, and the genomes with "ArgA3"
 # are lacking argE as well; so we think argE is the more likely function.
-argE	N-acetylornithine deacetylase	EC:3.5.1.16	uniprot:A0A1I2DJB5_9GAMM	predicted:W3Y6L2
+argE	N-acetylornithine deacetylase	EC:3.5.1.16	term:N-acetylcitrulline deacetylase	predicted:W3Y6L2
 
 # This could obtain the amino group from glutamine (EC:6.3.5.5) or from ammonia (EC:6.3.4.16)
 carA	carbamoyl phosphate synthase subunit alpha	term:carbamoyl-phosphate synthase%small	ignore_other:EC 6.3.5.5	ignore_other:EC 6.3.4.16	hmm:TIGR01368
-carB	carbamoyl phosphate synthase subunit beta	term:carbamoyl-phosphate synthase%large	ignore_other:EC 6.3.5.5	ignore_other:EC 6.3.4.16	hmm:TIGR01369
+carB	carbamoyl phosphate synthase subunit beta	term:carbamoyl-phosphate synthetase%large	term:carbamoyl-phosphate synthase%large	ignore_other:EC 6.3.5.5	ignore_other:EC 6.3.4.16	hmm:TIGR01369
 
-# ArgI converts ornithine to citrulline. (E. coli has two paralogs, argI and argF)
-argI	ornithine carbamoyltransferase	EC:2.1.3.3
+# ArgI converts ornithine to citrulline. (E. coli has two paralogs, argI and argF.)
+# Some putrescine carbamoyltransferases (EC 2.1.3.6) are also active on ornithine (uniprot:Q837U7) so
+# any similarity to those is ignored.
+argI	ornithine carbamoyltransferase	EC:2.1.3.3	ignore_other:EC 2.1.3.6
 
 # ArgG converts citrulline + aspartate to arginosuccinate.
 # N515DRAFT_3766 (uniprot:A0A1I2DIG3_9GAMM) and BT3768 (uniprot:Q8A1A6_BACTN) are diverged
 # and mutants are auxotrophic & rescued by arginine
 argG	arginosuccinate synthetase	EC:6.3.4.5	uniprot:A0A1I2DIG3_9GAMM	uniprot:Q8A1A6_BACTN
 
-argH	arginosuccinate lyase	EC:4.3.2.1
+# Some ArgH proteins also funciton as Delta crystallin I, so ignore any similarity to those (even
+# proteins not so annotated may be bifuncational).
+argH	argininosuccinate lyase	EC:4.3.2.1	term:argininosuccinate lyase	term:arginosuccinate lyase	ignore_other:Delta crystallin
 
 ### Bacteroidetes pathway with succinylated intermediates
 # This pathway is inferrred from a N-succinylornithine
@@ -97,7 +118,7 @@ argF'B	N-succinylornithine carbamoyltransferase	EC:2.1.3.11	uniprot:L0G4Z0_ECHVK
 # Mutants in these genes are rescued by added arginine and they are
 # distantly related to succinyl-diaminopimelate desuccinylase.
 # And these bacteria have ordinary argG/argH, so citrulline is expected to be an intermediate.
-argE'B	N-succinylcitrulline desuccinylase	uniprot:Q8A1V9	uniprot:L0G443_ECHVK	uniprot:A0A1X9Z8E1_9SPHI
+argE'B	N-succinylcitrulline desuccinylase	term:N-succinylcitrulline desuccinylase
 
 # In pathway II (acetyl cycle), instead of an acetylornithine deacetylase,
 # the acetyltransferase argJ converts N-acetylornithine to ornithine.
@@ -107,24 +128,38 @@ argJ	ornithine acetyltransferase	EC:2.3.1.35	ignore:CharProtDB::CH_122594
 
 # MetaCyc pathway L-arginine biosynthesis III via N-acetyl-L-citrulline
 
-# Instead of deacetylating N-acetyl-ornithine, it is carbamoylated and then deacetylated
-# The deacetylation reaction has the same EC number as acetylornithine deacetylase so do not distinguish
-
+# Instead of deacetylating N-acetyl-ornithine, it is carbamoylated to N-succinylcitrulline and then deacetylated.
+# (This deacetylation reaction has the same EC number as acetylornithine deacetylase,
+# so both are included in argE.)
 argF'	acetylornithine transcarbamoylase	EC:2.1.3.9
+
+# LysW is amino group carrier protein
+import lys.steps:lysW
 
 # There is also an archaeal pathway from glutamate to ornithine with LysW as the carrier protein, instead
 # of N-acyl intermediates. This pathway is analogous to the conversion of alpha-aminoadipate to
-# lysine, and most of the enzymes are bifunctional. The initial ligation of LysW to arginine
-# has a dedicated enzyme in many archaea, but in Thermococcus kodakarensis, the ligase is
-# also bifunctional (see PMC5076833).
+# lysine, and many of the enzymes are bifunctional. But the initial ligation of LysW to arginine
+# has a dedicated enzyme in many archaea.
+# uniprot:Q970U6 is given a generic EC number in SwissProt, but has this function.
+# EC:6.4.2.43 (LysW-2-aminoadipate ligases) are ignored because some are bifunctional (PMC5076833).
+argX	glutamate--LysW ligase	EC:6.3.2.60	curated:SwissProt::Q970U6	ignore_other:6.3.2.43
 
-# TK0278 (uniprot:Q5JFW0) is also a glutamate--LysW ligase, see PMC5076833.
-# EC:6.4.2.43 (LysW-2-aminoadipate ligases) are ignored because some are bifunctional.
-argX	glutamate--LysW ligase	term:Glutamate--LysW ligase	uniprot:Q5JFW0	ignore_other:6.3.2.43
+# TK0276 from Thermococcus kodakarensis (uniprot:Q5JFW2) is bifunctional, for lysine and ornithine synthesis (PMC5076833).
+# In Haloferax volcanii, the putative [LysW]-glutamate kinase (HVO_RS04915, uniprot:D4GYN9) is in a
+# conserved operon with LysW and with other arginine synthesis genes; this protein is more similar to
+# a characterized [LysW]-2-aminoadipate 6-kinase, but haloarchaea do not use the aminoadipate pathway
+# (PMC93780, PMC8305020).
+lysZ	[LysW]-glutamate kinase	EC:2.7.2.19	uniprot:Q5JFW2	predicted:D4GYN9
 
-# lysZ is the kinase, lysY is the reductase, lysJ is the aminotransferase, and lysK is the hydrolase,
-# forming LysW and ornithine
-import lys.steps:lysW lysZ lysY lysJ lysK
+# TK0277 from Thermococcus kodakarensis (uniprot:Q5JFW1) is bifunctional, for lysine and ornithine synthesis (PMC5076833).
+lysY	[LysW]-glutamate-6-phosphate reductase	EC:1.2.1.106	uniprot:Q5JFW1
+
+# TK0275 from Thermococcus kodakarensis (uniprot:Q5JFW3) is bifunctional, for lysine and ornithine synthesis (PMC5076833).
+# Similarity to EC:2.6.1.118 ([LysW]-aminoadipate semialdehyde aminotransferase) is ignored because some are bifunctional (PMC5076833).
+lysJ	[LysW]-glutamate-semialdehyde aminotransferase	EC:2.6.1.124	ignore_other:2.6.1.118
+
+# TK0274 from Thermococcus kodakarensis (uniprot:Q5JFW4) is bifunctional, for lysine and ornithine synthesis (PMC5076833).
+lysK	[LysW]-ornithine hydrolase	EC:3.5.1.132
 
 # In L-arginine biosynthesis I, ornithine forms via acetylated intermediates, argA, and argE (metacyc:ARGSYN-PWY).
 ornithine: argA argB argC argD argE

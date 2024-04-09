@@ -18,8 +18,10 @@
 # are both essential which suggests that they are correctly annotated.
 cysE	serine acetyltransferase	EC:2.3.1.30	uniprot:Q72EB6_DESVH	uniprot:B8DIT5_DESVM
 
-# E. coli also has cysM (same EC number)
-cysK	O-acetylserine sulfhydrylase	EC:2.5.1.47
+# E. coli also has cysM (same EC number).
+# BRENDA misannotates uniprot:O22682 and uniprot:Q9YBL2 with this activity.
+# CH_123612 maybe have this activity but is annotated more vaguely.
+cysK	O-acetylserine or O-succinylserine sulfhydrylase	EC:2.5.1.47	ignore:BRENDA::O22682	ignore:BRENDA::Q9YBL2	ignore:CharProtDB::CH_123612
 
 # Cysteine can be formed from serine via O-acetylserine as in pathway I (cysE and cysK),
 # via O-succinylserine (SST), or via serine kinase (serK) as in pathway IX.
@@ -31,9 +33,23 @@ from-serine: cysE cysK
 SST	serine O-succinyltransferase	term:serine O-succinyltransferase
 from-serine: SST cysK
 
-CBS	cystathionine beta-synthase	EC:4.2.1.22
+# Q3TWN3 and Q5SK23 are misannotated in BRENDA.
+# uniprot:Q9EYM7 may well have this activity (PMID:12101301).
+# Human CGL is given this EC number as well by metacyc (metacyc:HS04050-MONOMER),
+# but is not expected to form cystathionine from serine + homocysteine.
+CBS	cystathionine beta-synthase	EC:4.2.1.22	ignore:BRENDA::Q3TWN3	ignore:BRENDA::Q5SK23	ignore:BRENDA::Q9EYM7	ignore:metacyc::HS04050-MONOMER
+
 # EC:4.4.1.1 includes some other reactions, so it is not used to define CGL.
-CGL	cystathionine gamma-lyase	term:cystathionine gamma-lyase
+# uniprot:Q9M1R1 is misannotated in BRENDA.
+# SwissProt annotates the cysteine desulfurase DES1 (uniprot:F4K5T2) with this activity, but we did
+# not find evidence for it, so it is ignored.
+# "MetB" from Helicobacter pylori was originally reported to be a cystathionine gamma-synthase
+# (i.e., uniprot:Q1M0P5 in BRENDA), but was later identified as a CGL (PMC2820867), so Q1M0P5 is ignored.
+# Similarly, "MetC" from Lactoccus lactis (uniprot:A2RM21) is reported to be a CGL and a cystathionine
+# beta-lyase (PMID:10620674); another paper proposed that it is a CBL but did not distinguish between
+# the two activities (PMC91783, cited by CharProtDB, which is ignored).
+CGL	cystathionine gamma-lyase	term:cystathionine gamma-lyase	term:cystathionine-gamma-lyase	ignore:BRENDA::Q9M1R1	ignore:SwissProt::F4K5T2	ignore:BRENDA::Q1M0P5	ignore:CharProtDB::CH_088676
+
 # In many organisms, the sulfhydryl group of cysteine is used to form homocysteine and methionine, but
 # this pathway can also run in reverse.
 # GapMind uses a pathway requirement to warn if an organism is modeled as
@@ -50,16 +66,22 @@ from-phosphoserine: sepS pscS
 
 Mt_cysM	CysO-thiocarboxylate-dependent cysteine synthase	EC:2.5.1.113
 mec	[CysO sulfur-carrier protein]-S-L-cysteine hydrolase	EC:3.13.1.6
-moeZ	[sulfur carrier protein CysO]--sulfur ligase	curated:metacyc::G185E-7476-MONOMER
+
+# uniprot:A0A2R3ZBG9 (metacyc:MONOMER-21317) is not reported to be involved in cysteine biosynthesis,
+# but it has a similar chemical activity, so similarity to it is ignored.
+moeZ	[sulfur carrier protein CysO]--sulfur ligase	curated:metacyc::G185E-7476-MONOMER	ignore:metacyc::MONOMER-21317
+
 cysO	sulfur carrier protein CysO	curated:SwissProt::P9WP33
 from-phosphoserine: cysO moeZ Mt_cysM mec 
 
-# PSSH is similar to cysK or Mt_cysM, so might need ignore clauses?
-PSSH	O-phosphoserine sulfhydrylase	EC:2.5.1.65
+# BRENDA misannotates Mt_cysM (uniprot:P9WP53) as this.
+# Trichomonas cysteine synthase (uniprot:A2GMG5) probably has this activity as well, so similarity to it
+# is ignored.
+PSSH	O-phosphoserine sulfhydrylase	EC:2.5.1.65	ignore:BRENDA::P9WP53	ignore:BRENDA::A2GMG5
 
 from-phosphoserine: PSSH
 
-serK	serine kinase (ADP-dependent)	uniprot:Q5JD03
+serK	serine kinase (ADP-dependent)	EC:2.7.1.226
 from-serine: serK PSSH
 
 all: from-serine
