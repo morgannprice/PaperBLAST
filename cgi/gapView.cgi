@@ -236,13 +236,15 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
     start_page('title' => "GapMind: Automated annotation of $setDesc",
                'banner' => $banner,
                'bannerURL' => "gapView.cgi?set=${set}");
-    my $exampleURL = "gapView.cgi?set=${set}&orgs=orgsFit";
-    $exampleURL .= "&gaps=1" if $set eq "aa";
-    my $exampleTitle = $set eq "aa" ? "View 'gaps' in" : "View results for";
+    my $exampleOrgs = $set eq "aa" ? "orgsDef_201" : "orgs_carbon276";
+    my $exampleOrgsDesc = $set eq "aa" ? "201 diverse prokaryotes that grow in minimal media"
+      : "276 diverse prokaryotes with known carbon source usage";
+    my $exampleURL = "gapView.cgi?set=${set}&orgs=${exampleOrgs}";
+    my $exampleTitle = "View results for";
     print
       GetMotd(),
       p($exampleTitle,
-        a({ -href => $exampleURL }, "35 bacteria that grow in minimal media,"),
+        a({ -href => $exampleURL }, $exampleOrgsDesc).",",
         "or choose a genome to analyze:"),
       start_form(-method => 'get', -action => "gapView.cgi", -autocomplete => 'on'),
       hidden(-name => 'set', -value => $set, -override => 1),
