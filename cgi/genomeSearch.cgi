@@ -639,7 +639,7 @@ sub ProteinLink($) {
     } elsif ($gdb eq "UniProt") {
       # either sp|accession|identifier description OS=organism GN=genename (and other attributes)
       # or tr|...
-      # or for non reference proteomes, a different format (do not try to modify)
+      # or for non reference proteomes, something like UPI0000359798 status=active
       if ($input =~ m/^[a-z][a-z][|]([A-Z90-9_]+)[|]([A-Z90-9_]+) (.*)$/) {
         my ($acc, $id, $desc) = ($1,$2,$3);
         my $gn = "";
@@ -651,6 +651,9 @@ sub ProteinLink($) {
         $inputlink = a({ -href => "http://www.uniprot.org/uniprot/" . $acc },
                        $acc) . " $desc";
         $inputlink .= " ($gn)" if $gn ne "";
+      } elsif ($input =~ m/ /) {
+        $input =~ s/ .*//;
+        $inputlink = a({ -href => "https://www.uniprot.org/uniparc/$input/entry" }, $input);
       }
     } elsif ($gdb eq "NCBI") {
       # remove trailing organism descriptor

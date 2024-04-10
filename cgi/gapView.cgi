@@ -1461,6 +1461,8 @@ sub GeneURL($$) {
   } elsif ($gdb eq "MicrobesOnline") {
     return "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=$locusId";
   } elsif ($gdb eq "UniProt") {
+    return "https://www.uniprot.org/uniparc/$locusId/entry" if $locusId =~ m/^UPI/;
+    #else
     return "http://www.uniprot.org/uniprot/$locusId";
   } elsif ($gdb eq "NCBI") {
     my $assembly = OrgToAssembly($orgId);

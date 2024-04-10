@@ -664,17 +664,13 @@ sub CacheAssembly($$$) {
     my $assembly = UniProtProteomeInfo($gid);
     $assembly->{faafile} = "$dir/uniprot_${gid}.faa";
     unless (-e $assembly->{faafile}) {
-      # First try getting from https://www.uniprot.org/uniprot/?query=proteome:UP000002886&format=fasta
-      # This is a bit slow, so I considered using links like
-      # ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/reference_proteomes/Archaea/UP000000242_399549.fasta.gz
-      # but those are also surprisingly slow, and would need to figure out which section to look in.
+      # The URL changed, should now use links like
+     # https://rest.uniprot.org/uniparc/stream?format=fasta&query=((upid:UP000001496))
       print p("Loading proteome",
               a({-href => "https://www.uniprot.org/proteomes/$gid"}, $gid),
               "from UniProt"), "\n";
-      my $refURL = "https://www.uniprot.org/uniprot/?query=proteome:${gid}&format=fasta";
-      my $uniparcURL = "https://www.uniprot.org/uniparc/?query=proteome:${gid}&format=fasta";
-      my $faa = get($refURL);
-      $faa = get($uniparcURL) unless $faa;
+      my $uniparcURL = "https://rest.uniprot.org/uniparc/stream?format=fasta&query=((upid:$gid))";
+      my $faa = get($uniparcURL);
       return fail("Proteome $gid seems to be empty, see " . a({href => $uniparcURL}, "here"))
         unless $faa;
       my $tmpfile = $assembly->{faafile} . ".$$.tmp";

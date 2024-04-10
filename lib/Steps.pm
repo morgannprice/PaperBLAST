@@ -329,15 +329,20 @@ sub WriteAssemblyAsOrgProteins($$) {
       # remove trailing organism descriptor
       $desc =~ s/ *\[[^\]]+\]$//;
     } elsif ($assembly->{gdb} eq "UniProt") {
-      my @ids = split /[|]/, shift @words;
-      shift @ids;
-      ($locusId, $sysName) = @ids if @ids == 2;
-      $desc = join(" ", @words);
-      if ($desc =~ m/^(.*) OS=(.*)/) {
-        $desc = $1;
-        my $rest = $2;
-        my $gn = $1 if $rest =~ m/ GN=(\S+) /;
-        $desc .= " ($gn)" if $gn;
+      # typical UniParc entry is something like "UPI00000B0965 status=active"
+      if ($header =~ m/^(UPI[A-Za-z0-9_]+) /) {
+        $locusId = $1;
+      } else {
+        my @ids = split /[|]/, shift @words;
+        shift @ids;
+        ($locusId, $sysName) = @ids if @ids == 2;
+        $desc = join(" ", @words);
+        if ($desc =~ m/^(.*) OS=(.*)/) {
+          $desc = $1;
+          my $rest = $2;
+          my $gn = $1 if $rest =~ m/ GN=(\S+) /;
+          $desc .= " ($gn)" if $gn;
+        }
       }
     } elsif ($assembly->{gdb} eq "local") {
       $locusId = shift @words;
