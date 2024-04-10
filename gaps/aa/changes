@@ -32,9 +32,9 @@ phe: Improved definition of prephenate dehydratase, including a
 diverged enzyme from Brevundimonas and a putative enzyme from
 Carboxydothermus.
 
-pro: Added synthesis via ornithine gamma-aminotransferase (EC
-2.6.1.13), and allowed more options for ornithine biosynthesis (such as
-the lysW pathway). Added archaeal ornithine cyclodeaminase.
+pro: Added synthesis via ornithine 5-aminotransferase (EC 2.6.1.13),
+and allowed more options for ornithine biosynthesis (such as the lysW
+pathway). Added archaeal ornithine cyclodeaminase.
 
 ser: Added serA from Thermococcus and a predicted serA from
 Roseburia. Added serC from Methanocaldococcus and from
