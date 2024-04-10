@@ -1841,7 +1841,7 @@ sub CuratedToLink($$$) {
     ($curatedDesc) = $dbhC->selectrow_array("SELECT desc FROM Curated2 WHERE protId = ?",
                                             {}, $protId);
   } elsif ($curatedIds =~ m/^predicted:/) {
-    $curatedDesc = "Annotated by GapMind curators";
+    $curatedDesc = "Predicted $stepId by GapMind curators";
   } elsif ($curatedIds =~ m/^uniprot:(.*)$/) {
     my $uniprotId = $1;
     ($curatedDesc) = $dbhS->selectrow_array("SELECT desc FROM StepQuery WHERE uniprotId = ?",
@@ -1855,6 +1855,7 @@ sub CuratedToLink($$$) {
   $curatedDesc =~ s/;;.*//;
   my ($first) = split /,/, $curatedIds;
   my $charLabel = "characterized";
+  $charLabel = "no experimental data" if $curatedIds =~ m/^predicted:/;
   my $idShowHit = $first;
   $idShowHit =~ s/^.*://;
   my $charTitle = "$idShowHit has been studied experimentally.";
