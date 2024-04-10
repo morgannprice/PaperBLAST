@@ -562,7 +562,8 @@ sub PrintHits($$$$) {
   my ($input, $seq, $hits, $sixframe) = @_;
   my $inputlink = $sixframe ? SixFrameLink($input, $hits) : ProteinLink($input);
   my $seqtype = $sixframe ? "reading frame" : "protein";
-  my $pblink = small(a({ -href => "litSearch.cgi?query=>${input}%0A${seq}",
+  my $input2 = uri_escape($input);
+  my $pblink = small(a({ -href => "litSearch.cgi?query=>${input2}%0A${seq}",
                          -title => "full PaperBLAST results for this $seqtype"},
                        "PaperBLAST"));
 
