@@ -48,7 +48,7 @@ serC	3-phosphoserine aminotransferase	EC:2.6.1.52	uniprot:Y959_METJA	uniprot:Q2F
 # 5zr2C (uniprot:N9V397) is serB in Entamoeba histolytica (see PMID:30935984)
 # In Clostridiodes difficile, the serine synthesis operon includes CDIF630erm_01132, a DUF1015
 # protein which is speculated to replace serB (PMC6110889). This subfamily is usually colocated
-# with serA or serC3 (see uniprot:ADT23_RS05570 or uniprot:A0A6B4WGC7),
+# with serA or serC3 (see ADT23_RS05570 or uniprot:A0A6B4WGC7),
 # and is structurally related to the N-terminal domain of
 # serine kinases (using foldseek). Furthermore, genomes that encode this subfamily usually lack
 # any known form of serB.
