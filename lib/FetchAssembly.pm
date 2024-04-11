@@ -620,14 +620,21 @@ sub CacheAssembly($$$) {
     my $dbh = &FitnessBrowserDbh();
     my $assembly = $dbh->selectrow_hashref("SELECT * FROM Organism WHERE orgId = ?",
                                          {}, $gid);
-    return fail("Genome $gid in the Fitness Browser is not known")
-      unless defined $assembly->{orgId};
     $assembly->{gdb} = $gdb;
     $assembly->{gid} = $gid;
     $assembly->{faafile} = "$dir/fbrowse_${gid}.faa";
     $assembly->{fnafile} = "$dir/fbrowse_${gid}.fna";
-    $assembly->{genomeName} = join(" ", $assembly->{genus}, $assembly->{species}, $assembly->{strain});
-    $assembly->{URL} = "http://fit.genomics.lbl.gov/cgi-bin/org.cgi?orgId=$gid";
+    if (defined $assembly->{orgId}) {
+      $assembly->{genomeName} = join(" ", $assembly->{genus}, $assembly->{species}, $assembly->{strain});
+      $assembly->{URL} = "http://fit.genomics.lbl.gov/cgi-bin/org.cgi?orgId=$gid";
+    } elsif (-e $assembly->{faafile} && -e $assembly->{fnafile}) {
+      # This is a hack to allow private genomes, which were set up using buildorgs.pl,
+      # to be analyzed by Curated BLAST for Genomes, even if they are not in the Fitness Browser
+      $assembly->{genomeName} = $gid;
+      $assembly->{URL} = "";
+    } else {
+      return fail("Genome $gid in the Fitness Browser is not known");
+    }
     unless (-e $assembly->{faafile}) {
       my $tmpfile = $assembly->{faafile} . ".$$.tmp";
       open(my $fh, ">", $tmpfile) || return fail("Cannot write to $tmpfile");
