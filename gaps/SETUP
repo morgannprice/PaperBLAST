@@ -115,7 +115,25 @@ The results will be in tmp/NCBI__GCF_902167245.1/aa.sum.* --
 aa.sum.rules, aa.sum.steps, and aa.sum.cand are tab-delimited tables
 with one row per rule, per step, or per candidate for a step, and
 aa.sum.db is a sqlite3 database. The first thing I usually look at is
-the results for rule=all for each pathway.
+the results for rule=all for each pathway. nHi, nMed, and nLo show the
+total number of high-confidence, medium-confidence, and low-confidence
+steps. In particular, if nMed = 0 and nLo = 0 that means that every
+step in the pathway is high-confidence, and the entire pathway can be
+considered high confidence. If there are no low-confidence steps
+(nLo=0), or if the only low-confidence steps are known gaps, then the
+pathway is probably present. expandedPath has the list of steps for
+the highest-confidence path.
+
+aa.sum.steps has one line per step; look there to see what the actual
+best candidates are. For more details about the scoring of the
+candidates, see aa.sum.cand, which has one row per candidate for each
+step.
+
+If you're interested in known gaps, then aa.sum.knownsim will report
+which organisms in your data set ("orgId") are similar to organisms
+with known gaps ("orgId2"). For the actual known gaps see
+gaps/aa/aa,known.steps.gaps and gaps/aa/aa.known.gaps.orgs (both
+tab-delimited).
 
 To analyze your own genomes, use bin/buildorgs.pl to convert the
 genome(s) of interest to a table of organisms and their proteins, in
