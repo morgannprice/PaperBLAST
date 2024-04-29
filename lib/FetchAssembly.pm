@@ -19,9 +19,7 @@ our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
 @EXPORT = qw(GetMatchingAssemblies CacheAssembly AASeqToAssembly
              SetPrivDir GetPrivDir
-             GetFitnessBrowserPath SetFitnessBrowserPath FitnessBrowserDbh
-             FetchNCBIInfo FetchNCBIFaa FetchNCBIFna FetchNCBIFeatureFile ParseNCBIFeatureFile
-             SearchJGI CreateJGICookie FetchJGI SearchUniProtProteomes UniProtProteomeInfo
+             GetFitnessBrowserPath SetFitnessBrowserPath
              GetMaxNAssemblies
 );
 
@@ -44,66 +42,73 @@ sub FetchWithRetry($$) {
   return undef;
 }
 
-# Note -- arguably should be using an API key for NCBI
-# One argument: the query
-# Returns a list of results (up to maxAssemblyList) as a hash; each "assembly" includes
-# uid (the assembly uid), id (an identifier like GCF_000195755.1), ftp (the URL for the ftp site),
-# and org
+my $datasetsAPI = "https://api.ncbi.nlm.nih.gov/datasets/v2alpha";
+
+# One argument: the query, either a text string or a GCF/GCA identifier
+# Returns a list of results (up to maxAssemblyList), with each row a hash including
+# gid (an identifier like GCF_000195755.1) and genomeName
 sub FetchNCBIInfo($) {
   my ($query) = @_;
-  # First run the query using esearch
-  my $URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=assembly&retmax=${maxAssemblyList}&term=" . $query;
+  my $URL;
+  if ($query =~ m/^G[A-Z]+_\d+[.]\d+$/) {
+    # A single assembly identifier. Use /genome/accession/Acccession/dataset_report
+    $URL = "$datasetsAPI/genome/accession/$query/dataset_report";
+  } elsif ($query =~ m/^[a-zA-Z]+$/ && ($query =~ m/a$/ || length($query) >= 6)) {
+    # Use taxonomy search, no search text
+    # Checking for ending-in-a or being long is a hack to avoid all-letter strain names
+    $URL = "$datasetsAPI/genome/taxon/$query/dataset_report"
+      . "?filters.has_annotation=true"
+      . "&filters.exclude_paired_reports=true"
+      . "&page_size=" . GetMaxNAssemblies();
+  } else {
+    # Use /genome/taxon/Bacteria,Archaea/dataset_report with search_text=$query
+    $URL = "$datasetsAPI/genome/taxon/Bacteria,Archaea/dataset_report"
+      . "?filters.search_text=" . uri_escape($query)
+      . "&filters.has_annotation=true"
+      . "&filters.exclude_paired_reports=true"
+      . "&page_size=" . GetMaxNAssemblies();
+  }
   my $nRetry = 2;
   my $string = FetchWithRetry(addNCBIKey($URL), $nRetry);
-  die "Failed to contact NCBI eutils at $URL\n" unless $string;
-  my $fxml = XML::LibXML->load_xml(string => $string, recover => 1);
-  my @idnodes = $fxml->findnodes("//IdList/Id");
-  my @ids = map { $_->textContent } @idnodes;
-  @ids = grep { defined && $_ ne "" } @ids;
-  return () if @ids == 0;
+  die "Failed to contact NCBI datasets API at $URL\n" unless $string;
+  my $json = from_json($string);
+  die "Not a JSON response from $URL" unless $json;
+  return () unless exists $json->{reports}; # no hits
+  my $hits = $json->{reports};
 
-  # Now fetch metadata for these ids.
-  @ids = $ids[0..($maxAssemblyList-1)] if scalar(@ids) > $maxAssemblyList;
-  my $idspec= join(",",@ids);
-  $URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=assembly&id=$idspec";
-  $string = FetchWithRetry(addNCBIKey($URL), $nRetry);
-  die "Failed to contact NCBI eutils at $URL\n" unless $string;
-  my $sxml = XML::LibXML->load_xml(string => $string, recover => 1);
-  my @obj = $sxml->findnodes("//DocumentSummary");
-  die "Failed to fetch summaries for assembly ids using NCBI's eutils: @ids\n"
-    unless scalar(@ids) == scalar(@obj);
   my @out = ();
-  foreach my $obj (@obj) {
-    my $out = {};
-    foreach my $attr ($obj->attributes) {
-      $out->{uid} = $attr->getValue if $attr->nodeName eq "uid";
+  my @queryWords = split /\s+/, $query;
+  foreach my $hit (@$hits) {
+    my %out = ();
+    $out{gid} = $hit->{accession};
+    my $genomeName = $hit->{organism}{organism_name};
+    my $strain = $hit->{organism}{infraspecific_names}{strain}
+      || $hit->{organism}{infraspecific_names}{isolate};
+    # Sometimes the strain is already at the end of organism_name
+    $genomeName .= " ". $strain
+      if $strain && substr($genomeName, length($genomeName)-length($strain)) ne $strain;
+    $out{genomeName} = $genomeName;
+    $out{refseq_category} = $hit->{assembly_info}{refseq_category} || "";
+    $out{URL} = "https://www.ncbi.nlm.nih.gov/datasets/genome/" . $hit->{accession} . "/";
+    my $sortBy;
+    if ($out{refseq_category} =~ m/reference/) {
+      $sortBy = 0;
+    } elsif ($out{refseq_category} =~ m/representative/) {
+      $sortBy = 1;
+    } elsif ($out{gid} =~ m/^GCF/) {
+      $sortBy = 2;
+    } else {
+      $sortBy= 3;
     }
-    die "No uid attribute in results from NCBI's eutils for @ids\n"
-      if !exists $out->{uid};
-    my @part = $obj->findnodes("AssemblyAccession");
-    $out->{id} = $part[0]->textContent if @part;
-    @part = $obj->findnodes("SpeciesName");
-    $out->{org} = $part[0]->textContent if @part;
-    @part = $obj->findnodes("Biosource/InfraspeciesList/Infraspecie/Sub_value");
-    foreach my $part (@part) {
-      my $extra = $part->textContent;
-      # Avoid adding the suffix if it is already there
-      # which happens for organisms with names like Genus sp. strain
-      $out->{org} .= " " . $extra
-        if $extra ne "" && $out->{org} !~ m/ $extra/;
-    }
-    @part = $obj->findnodes("FtpPath_RefSeq");
-    $out->{ftp} = $part[0]->textContent if @part;
-    if (!defined $out->{ftp} || $out->{ftp} eq "") {
-      @part = $obj->findnodes("FtpPath_GenBank");
-      $out->{ftp} = $part[0]->textContent if @part;
-    }
-    push @out, $out;
+    # As of April 2024, searches like "Desulfovibrio piger" will return other species ahead of D. piger!
+    # So, check if the strain name matches all the words in the query, and if it does, lower sortBy by 10
+    my %gnWords = map { lc($_) => 1 } split / /, $genomeName;
+    my @found = grep exists $gnWords{lc($_)}, @queryWords;
+    $sortBy -= 10 if scalar(@found) == scalar(@queryWords);
+    $out{sortBy} = $sortBy;
+    push @out, \%out;
   }
-  # Put the refseq assemblies (GCF...) first
-  my @outRefSeq = grep { $_->{id} =~ m/^GCF/ } @out;
-  my @outOther = grep { $_->{id} !~ m/^GCF/ } @out;
-  return (@outRefSeq,@outOther);
+  return sort { $a->{sortBy} <=> $b->{sortBy} } @out;
 }
 
 # Given the assembly hash, fetch protein fasta, uncompress it, and write it to the given file
@@ -427,9 +432,7 @@ sub GetMatchingAssemblies($$) {
     my @hits = FetchNCBIInfo($gquery);
     foreach my $hit (@hits) {
       $hit->{gdb} = $gdb;
-      $hit->{gid} = $hit->{id};
-      $hit->{genomeName} = $hit->{org};
-      $hit->{URL} = "https://www.ncbi.nlm.nih.gov/assembly/" . $hit->{id};
+      #gid and genomeName should already be set
     }
     return @hits;
   } elsif ($gdb eq "MicrobesOnline") {
@@ -485,6 +488,22 @@ sub GetPrivDir() {
   return $saved_privdir;
 }
 
+sub NCBIAssemblyToFtp($) {
+  my ($gid) = @_;
+  my $URL = "$datasetsAPI/genome/accession/$gid/links";
+  my $nRetry = 2;
+  my $string = FetchWithRetry(addNCBIKey($URL), $nRetry);
+  die "No response from $URL\n" unless $string;
+  my $json = from_json($string);
+  die "Not JSON from $URL\n" unless defined $json;
+  my $links = $json->{assembly_links};
+  foreach my $link (@$links) {
+    return $link->{resource_link} if $link->{assembly_link_type} eq "FTP_LINK";
+  }
+  return undef;
+}
+
+
 sub CacheAssembly($$$) {
   my ($gdb, $gid, $dir) = @_;
   return undef unless $gdb && $gid;
@@ -511,14 +530,14 @@ sub CacheAssembly($$$) {
     return fail("Do not recognize NCBI assembly $gid")
       unless @hits;
     my $assembly = $hits[0];
-    # note redundancy with code above
-    $assembly->{gid} = $assembly->{id};
-    $assembly->{genomeName} = $assembly->{org};
-    $assembly->{URL} = "https://www.ncbi.nlm.nih.gov/assembly/" . $assembly->{id};
-
+    $assembly->{gdb} = "NCBI";
+    # Fetch the URL using /genome/accession/gid}/links
+    $assembly->{ftp} = NCBIAssemblyToFtp($assembly->{gid});
+    fail("Sorry, failed to fetch ftp information for " . $assembly->{gid})
+      unless $assembly->{ftp};
     my $faafile = "$dir/refseq_" . $assembly->{gid} . ".faa";
     my $fnafile = "$dir/refseq_" . $assembly->{gid} . ".fna";
-    my $featurefile = "$dir/refseq_" . $assembly->{id} . ".features.tab";
+    my $featurefile = "$dir/refseq_" . $assembly->{gid} . ".features.tab";
     unless (-e $faafile && -e $fnafile && -e $featurefile) {
       print "<P>Fetching assembly $assembly->{gid}\n";
     }
