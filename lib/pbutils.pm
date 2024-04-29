@@ -610,7 +610,13 @@ sub getNCBIKey() {
 sub addNCBIKey($) {
   my ($url) = @_;
   my $key = getNCBIKey();
-  $url .= "&api_key=$key" if defined $key;
+  if (defined $key) {
+    if ($url =~ m/[?]/) {
+      $url .= "&api_key=$key";
+    } else {
+      $url .= "?api_key=$key";
+    }
+  }
   return $url;
 }
 
