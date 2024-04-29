@@ -251,7 +251,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
       p("Genome database to search:",
         popup_menu(-name => 'gdb', -values => \@gdbs, -labels => \%gdb_labels, -default => $gdbs[0])),
       p(textfield(-name => 'gquery', -value => '', -size => 50, -maxlength => 200)),
-      p(small("Example:", a({-href => "gapView.cgi?set=${set}&gdb=NCBI&gquery=Desulfovibrio vulgaris"}, "Desulfovibrio vulgaris"))),
+      p(small("Example:", a({-href => "gapView.cgi?set=${set}&gdb=NCBI&gquery=Nitratidesulfovibrio"}, "Nitratidesulfovibrio"))),
       p(submit(-name => "findgenome", -value => 'Find Genome')),
       end_form,
       start_form(-method => 'post', -action => "gapView.cgi", -autocomplete => 'on'),
