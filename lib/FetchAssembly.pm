@@ -20,7 +20,7 @@ our (@ISA,@EXPORT);
 @EXPORT = qw(GetMatchingAssemblies CacheAssembly AASeqToAssembly
              SetPrivDir GetPrivDir
              GetFitnessBrowserPath SetFitnessBrowserPath
-             GetMaxNAssemblies
+             GetMaxNAssemblies ParseNCBIFeatureFile
 );
 
 # Local routine to handle failing
