@@ -26,8 +26,8 @@ hisB	imidazoleglycerol-phosphate dehydratase	EC:4.2.1.19	uniprot:B2SZ63	uniprot:
 # genes for tyrosine and phenylalanine biosynthesis (PMID:4431). Homology suggests that this
 # activity is provided by "HisH" (BSU22620), which indeed is just upstream of tyrA (PMID:6092865).
 # This protein is now usually referred to as "HisC" (uniprot:HIS8_BACSU).
-# GAMENC_05715 from Acidovorax sp. FHTAMBA (nearly identical to uniprot:A0A2R7PAQ8) can complement a hisC- strain of E. coli (Bradley Biggs) and is in a histidine synthesis gene cluster.
-# GW822FHT02A01_217 from Rhodoferax sp. GW822-FHT02A01 (similar to uniprot:A0A975E8Y9) can complement a hisC- strain of E. coli (Bradley Biggs) and is in a histidine synthesis gene cluster.
+# AAFF19_12795 from Acidovorax sp. FHTAMBA (nearly identical to uniprot:A0A2R7PAQ8) can complement a hisC- strain of E. coli (Bradley Biggs) and is in a histidine synthesis gene cluster.
+# AAGF34_01100 from Rhodoferax sp. GW822-FHT02A01 (similar to uniprot:A0A975E8Y9) can complement a hisC- strain of E. coli (Bradley Biggs) and is in a histidine synthesis gene cluster.
 # Fitness data for BPHYT_RS14905 from Burkholderia phytofirmans suggests that it is an aromatic amino acid transaminase,
 # but it is 55% identical to TK06_RS12685, which can complement a hisC- mutant of E.coli (Bradley Biggs),
 # so any similarity to it is ignored.

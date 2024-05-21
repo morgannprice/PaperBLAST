@@ -9,15 +9,15 @@
 # involved in 3-nitrophenol degradation. That is the only glutamine synthetase-like protein
 # in the proteome of Cupriavidus necator (strain JMP 134 / LMG 1197) [see proteome UP000002697]
 # and is 96% identical to the essential protein RR42_RS12995 from Cupriavidus basilensis 4G11.
-# It is probably a glutamine synthetase.
-# metacyc:SYNPCC7942_2156-MONOMER is annotated with the same reaction, but was not originally given this EC number.
+# It is probably a glutamine synthetase, so any similarity to this type of enzyme (EC 5.4.4.3) is ignored.
+# metacyc:SYNPCC7942_2156-MONOMER is annotated with the glutamine synthetase reaction, but was not originally given this EC number.
 # In SwissProt, uniprot:P81643 and uniprot:P85087 are annotated with this activity but they are very short,
 # so are ignored.
 # CKL_RS00630 (uniprot:A5N4G9) from Clostridium kluyveri is distantly related to
 # characterized glutamine synthetases, but the active site residues and transition state binding
 # residues are conserved (see alignment to 2whiA), so it is probably
 # the missing glnA.
-glnA	glutamine synthetase	EC:6.3.1.2	ignore_other:EC 5.4.4.3	curated:metacyc::SYNPCC7942_2156-MONOMER	ignore:SwissProt::P81643	ignore:SwissProt::P85087	predicted:A5N4G9	predicted:A5N4G9
+glnA	glutamine synthetase	EC:6.3.1.2	ignore_other:EC 5.4.4.3	curated:metacyc::SYNPCC7942_2156-MONOMER	ignore:SwissProt::P81643	ignore:SwissProt::P85087	predicted:A5N4G9
 
 # Glutamyl-tRNA(Glu/Gln) is usually formed by a nondescriminating glutamyl-tRNA synthetase.
 # CCNA_01982 (uniprot:A0A0H3C8P5_CAUVN) from Caulobacter crescentus is the sole glutamyl-tRNA

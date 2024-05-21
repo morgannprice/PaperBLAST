@@ -129,7 +129,7 @@ ramA	ATP-dependent reduction of co(II)balamin	hmm:PF14574	term:ATP-dependent red
 asd-S-transferase	sulfuration of L-aspartate semialdehyde, persulfide component	curated:SwissProt::Q8TPT4	curated:reanno::Miya:8500721	curated:SwissProt::Q57564
 
 # The NIL/ferredoxin component is MA1822 or DvMF_0262 (see PMID:25315403 and PMC5764234).
-# In Methanococcus, the persulfide component (MEVAN_RS03425, uniprot:A6UQ02) is diverged but
+# In Methanococcus, this component (MEVAN_RS03425, uniprot:A6UQ02) is diverged but
 # is in a conserved operon with the sulfurtransferase component.
 asd-S-ferredoxin	reductive sulfuration of L-aspartate semialdehyde, ferredoxin component	curated:SwissProt::Q8TPT3	curated:reanno::Miya:8499492	predicted:A6UQ02
 
