@@ -74,6 +74,9 @@ foreach my $key (qw{nSeq nPaper}) {
 
 my $documentation = <<END
 
+For advice on how to use these tools together, see
+<A HREF="https://www.biorxiv.org/content/10.1101/2024.04.15.589591v1">Interactive tools for functional annotation of bacterial genomes</A>.
+
 <H3><A NAME="stats">Statistics</A></H3>
 
 The PaperBLAST database links $stats{nSeq} different protein sequences to $stats{nPaper} scientific articles. Searches against EuropePMC were last performed on $stats{date}.
@@ -217,6 +220,8 @@ You can download PaperBLAST's database <A HREF="https://github.com/morgannprice/
 <LI>December 2017: incorporated MetaCyc, CharProtDB, CAZy, REBASE, and the reannotations from the Fitness Browser.
 <LI>September 2017: EuropePMC no longer returns some table entries in their search results. This has shrunk PaperBLAST's database, but has also reduced the number of low-relevance hits.
 </UL>
+
+<P>Many of these changes are described in <A HREF="https://www.biorxiv.org/content/10.1101/2024.04.15.589591v1">Interactive tools for functional annotation of bacterial genomes</A>.
 
 <H3><A NAME="secret">Secrets</A></H3>
 
