@@ -69,6 +69,7 @@ my $sqldb = "$base/litsearch.db";
 my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
 my $usearch = "../bin/usearch";
 die "No such executable: $usearch" unless -x $usearch;
+my $nCPU = $ENV{CPU_USE} || 4;
 my $blastdir = "../bin/blast";
 die "No such directory: $blastdir" unless -d $blastdir;
 my $blastdb = "$base/uniq.faa";
@@ -383,7 +384,7 @@ unless($isNuc) {
   my %parsed = (); # input sequence to list of hits
 
   print p("Running ublast with E &le; $maxEvalue\n");
-  system("$usearch -ublast $chitsfaaFile -db $seqFile -evalue $maxEvalue -blast6out $ublastFile >& /dev/null") == 0
+  system("$usearch -ublast $chitsfaaFile -db $seqFile -threads $nCPU -evalue $maxEvalue -blast6out $ublastFile >& /dev/null") == 0
     || die "usearch failed: $!";
   unlink($seqFile);
   my $uhits = ParseUblast($ublastFile, \%seqs, \%idToChit);
@@ -467,7 +468,7 @@ close($fhx) || die "Error reading $xfile";
 
 print p("Running ublast against the 6-frame translation.",
         "All reading frames of at least $minCodons codons are included."), "\n";
-system("$usearch -ublast $chitsfaaFile -db $xfile -evalue $maxEvalue -blast6out $ublastFile >& /dev/null") == 0
+system("$usearch -ublast $chitsfaaFile -db $xfile -threads $nCPU -evalue $maxEvalue -blast6out $ublastFile >& /dev/null") == 0
   || die "usearch failed: $!";
 
 my $uhits = ParseUblast($ublastFile, \%seqsx, \%idToChit);
