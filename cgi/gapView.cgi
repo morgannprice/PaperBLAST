@@ -50,12 +50,14 @@ use DBI;
 use lib "../lib";
 use Steps;
 use pbutils;
-use pbweb qw{start_page GetMotd LinkifyComment DataForStepParts FormatStepPart HMMToURL analysisLinks};
+use pbweb qw{start_page GetMotd LinkifyComment DataForStepParts FormatStepPart HMMToURL analysisLinks
+             runWhileCommenting};
 use FetchAssembly qw{CacheAssembly AASeqToAssembly GetMatchingAssemblies GetMaxNAssemblies};
 use List::Util qw{max};
 use File::stat;
 use DB_File;
 use URI::Escape;
+use Digest::MD5 qw{md5_hex};
 
 # This uses the DB_File in $org.faa.db if that exists,
 # or else creates it.
@@ -323,6 +325,24 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
                'banner' => $banner,
                'bannerURL' => "gapView.cgi?set=${set}");
     print "\n";
+
+    # Check if the load is high
+    my $uptime = `uptime`;
+    my $load = $1 if $uptime =~ m/load average: ([0-9.]+)/;
+    my $maxLoad = `cat ../maxload` || $ENV{MAXLOAD} || 100;
+    if (defined $load && $load > $maxLoad) {
+      my $URL = "gapView.cgi?set=${set}&orgs=${orgsSpec}";
+      my $key = getNCBIKey() || "";
+      my $confirm = md5_hex($key . $URL);
+      unless (param('confirm') && param('confirm') eq $confirm) {
+        print p("The load on this server is high, do you really want load run this analysis now?",
+                "It will take longer than usual."),
+              p(a({-href => "${URL}&confirm=${confirm}"}, "Yes")),
+              p(a({-href => "gapView.cgi?set=${set}"}, "No"));
+        Finish(); # exits
+      }
+      $nCPU = 2;
+    }
     unless (-e "$orgPre.org") {
       # Try to load the organism
       $orgsSpec =~ m/^([^_]+)__(.*)$/ || die "Invalid organism specifier $orgsSpec";
@@ -341,9 +361,9 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
     die "No such file: $orgPre.faa" unless -e "$orgPre.faa";
     system("touch", "$sumPre.begin");
     my $timeStart = time();
-    my $nSec = scalar(@orgs) * ($set eq "aa" ? 12 : 30);
+    my $nSec = scalar(@orgs) * ($set eq "aa" ? 12 : 30) * (12/$nCPU);
     print p("Analyzing $setDesc in", scalar(@orgs), "genomes.",
-            "This should take around", $nSec, "seconds.")."\n";
+            "This might take around", $nSec, "seconds.")."\n";
     my @cmds = ();
     push @cmds, ["../bin/gapsearch.pl", "-orgs", $orgPre, "-set", $set,
                  "-out", "$dataDir/$orgsSpec/$set.hits",
@@ -382,7 +402,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
     foreach my $cmd (@cmds) {
       my $show = $cmd->[0]; $show =~ s!.*/!!;
       print p($label{$show})."\n" if exists $label{$show};
-      system(@$cmd) == 0 || die "Command failed\n@$cmd\nError code: $!";
+      runWhileCommenting(@$cmd) == 0 || die "Command failed\n@$cmd\nError code: $!";
     }
     unlink("$sumPre.begin");
     my $timeDiff = time() - $timeStart;
