@@ -90,6 +90,11 @@ bin/diamond makedb --in tmp/path.aa/curated.faa -d tmp/path.aa/curated.faa.dmnd
 (The BLAST database is needed for viewing results on the web site, but
 not for running the GapMind analysis itself.)
 
+Streamlined instructions for all the setup steps above, including
+getting some of the perl libraries, are described here.
+
+  https://github.com/morgannprice/PaperBLAST/issues/16#issuecomment-2141157340
+
 To run the analysis using the CGI scripts and your web server
 (this requires usearch):
 
