@@ -161,10 +161,11 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
   autoflush STDOUT 1; # show preliminary results
   my $banner = "GapMind for $setDesc";
 
-  my @gdbs = ("NCBI", "IMG", "UniProt", "MicrobesOnline", "FitnessBrowser");
+  my @gdbs = ("NCBI", "UniProt", "MicrobesOnline", "FitnessBrowser");
   my %gdb_labels1 = ("NCBI" => "NCBI assemblies",
                      "UniProt" => "UniProt proteomes",
-                     "IMG" => "JGI/IMG genomes", "FitnessBrowser" => "Fitness Browser genomes",
+                     # "IMG" => "JGI/IMG genomes",
+		     "FitnessBrowser" => "Fitness Browser genomes",
                      "local" => "Uploaded proteome");
   my %gdb_labels = map { $_ => exists $gdb_labels1{$_} ? $gdb_labels1{$_} : "$_ genomes"} @gdbs;
 
@@ -238,8 +239,8 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
     start_page('title' => "GapMind: Automated annotation of $setDesc",
                'banner' => $banner,
                'bannerURL' => "gapView.cgi?set=${set}");
-    my $exampleOrgs = $set eq "aa" ? "orgsDef_201" : "orgs_carbon276";
-    my $exampleOrgsDesc = $set eq "aa" ? "201 diverse prokaryotes that grow in minimal media"
+    my $exampleOrgs = $set eq "aa" ? "orgsDef" : "orgs_carbon276";
+    my $exampleOrgsDesc = $set eq "aa" ? "&gt;200 diverse prokaryotes that grow in minimal media"
       : "276 diverse prokaryotes with known carbon source usage";
     my $exampleURL = "gapView.cgi?set=${set}&orgs=${exampleOrgs}";
     my $exampleTitle = "View results for";
