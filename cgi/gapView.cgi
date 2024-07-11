@@ -330,7 +330,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
     # Check if the load is high
     my $uptime = `uptime`;
     my $load = $1 if $uptime =~ m/load average: ([0-9.]+)/;
-    my $maxLoad = `cat ../maxload` || $ENV{MAXLOAD} || 100;
+    my $maxLoad = (-e "../maxload" ? `cat ../maxload` : "") || $ENV{MAXLOAD} || 100;
     if (defined $load && $load > $maxLoad) {
       my $URL = "gapView.cgi?set=${set}&orgs=${orgsSpec}";
       my $key = getNCBIKey() || "";
