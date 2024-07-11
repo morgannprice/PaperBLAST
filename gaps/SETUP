@@ -58,6 +58,7 @@ Create some subdirectories:
 mkdir fbrowse_data
 mkdir private
 mkdir tmp
+mkdir tmp/downloaded
 
 Download the curated and steps databases, i.e. from
   https://papers.genomics.lbl.gov/tmp/path.aa/curated.faa
@@ -98,9 +99,9 @@ getting some of the perl libraries, are described here.
 To run the analysis using the CGI scripts and your web server
 (this requires usearch):
 
-Make sure that the tmp directory is writable by apache (or by
-everyone). Then visit cgi/gapView.cgi to run the analysis and view the
-results.
+Make sure that the tmp and tmp/downloaded directories are writable by
+apache (or by everyone). Then visit cgi/gapView.cgi to run the
+analysis and view the results.
 
 To run the analysis using the CGI scripts from the command line
 (this requires usearch):
