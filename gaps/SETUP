@@ -31,9 +31,10 @@ Make sure sqlite3 is on your path and supported by DBI (this may
 require installing the DBD::SQLite perl library). I am currently using
 sqlite version 3.7.17.
 
-Put the usearch executable in the bin/ subdirectory. I am
-currently using usearch 10.0, which is available at
-https://www.drive5.com/usearch/download.html
+Put the usearch executable in the bin/ subdirectory. I am currently
+using usearch 11.0.667. The 64-bit executables for usearch are now
+freely available, see
+https://github.com/rcedgar/usearch_old_binaries
 
 Or, if using diamond, put the diamond executable in the bin/
 subdirectory. I have tested diamond v2.1.6.160. It gives very similar
@@ -160,10 +161,9 @@ bin/buildorgs.pl -out tmp/DvH/orgs -orgs 'file:GCF_902167245.1_DSV_KAUST_v1_prot
 You can also use buildorgs.pl to set up many genomes at once (all in
 one directory). The out.org file will have a resulting table of
 genomes and the out.faa file will have the combined fasta protein
-sequences. But, analyzing more than ~100 genomes at a time will cause
-usearch to run out of memory unless you have the 64-bit version. If
-you want to analyze a larger number of genomes, split them into groups
-and use bin/combineOrgs.pl and bin/combineGaps.pl to combine the
+sequences. If you want to analyze thousands of genomes, or if you're
+using a 32-bit version of usearch, you should split them into groups
+and then use bin/combineOrgs.pl and bin/combineGaps.pl to combine the
 results. (Or use diamond with the step-by-step instructions below.)
 
 To run the analysis from the command line, step by step:
