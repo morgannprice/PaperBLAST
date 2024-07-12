@@ -145,12 +145,19 @@ sub FetchNCBIFileGz($$$) {
   return 0 unless $URL =~ m!/([^/]+)$!;
   my $prefix = $1;
   $URL = join("", $URL, "/", $prefix, "_", $suffix, ".gz");
-  unless(system("wget", "-o", "/dev/null", "-nv", "-O", $tmpfilegz, $URL) == 0) {
-    print qq{<P style="color:red;">Failed to fetch $URL</P>\n};
-    return 0;
+  my $nRetry = 3;
+  for (my $i = 0; $i < $nRetry; $i++) {
+    if ($i > 0) {
+      print qq{<P>Retrying</P>\n};
+      sleep(1);
+    }
+    if(system("wget", "-o", "/dev/null", "-nv", "-O", $tmpfilegz, $URL) == 0) {
+      system("gunzip", $tmpfilegz) == 0 || return 0;
+      return rename($tmpfile, $outfile);
+    }
   }
-  system("gunzip", $tmpfilegz) == 0 || return 0;
-  return rename($tmpfile, $outfile) || return 0;
+  print qq{<P style="color:red;">Failed to fetch $URL</P>\n};
+  return 0;
 }
 
 # From a file to a reference to a list of hashes
