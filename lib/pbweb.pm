@@ -808,8 +808,11 @@ sub RefSeqToFasta($) {
 sub UniProtToFasta($) {
   my ($short) = @_;
   die unless defined $short;
+  # Make sure there are no " or &
+  $short = $1 if $short =~ m/^"([^"]+)"$/;
+  return if $short =~ m/^["&]/;
   # size limits #results returned
-  my $url = "https://rest.uniprot.org/uniprotkb/search?query=${short}&format=fasta&includeIsoform=false&size=2";
+  my $url = qq{https://rest.uniprot.org/uniprotkb/search?query="${short}"&format=fasta&includeIsoform=false&size=2};
   my $results = get($url);
   if (!defined $results) {
     print p(small("Sorry, could not reach",
