@@ -104,7 +104,8 @@ END
     if (defined $useDiamond) {
       $cmd = "$diamond blastp --query $faaCand --db $curatedFile --id 0.3 --evalue 0.01 --out $rhitsFile --very-sensitive --outfmt 6 --masking $qmask --threads $nCPU";
     } else {
-      $cmd = "$usearch -ublast $faaCand -db $curatedFile -id 0.3 -evalue 0.01 -blast6out $rhitsFile -qmask $qmask -threads $nCPU";
+      # usearch at E=0.01 misses some hits with low actual E-values, so use a waaker e-value threshold
+      $cmd = "$usearch -ublast $faaCand -db $curatedFile -id 0.3 -evalue 0.05 -blast6out $rhitsFile -qmask $qmask -threads $nCPU";
     }
     $cmd .= " > /dev/null 2>&1";
     system($cmd) == 0 || die "Error running $cmd: $!\n";

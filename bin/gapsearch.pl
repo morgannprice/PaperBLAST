@@ -206,9 +206,11 @@ END
                 "--max-target-seqs", 25 * scalar(@orgs),
                  "--threads", $nCPU);
   } else {
+    # For short queries (characterized proteins), usearch at E-0.01 misses some hits with very low actual
+    # evalues, so use a weaker e-value threshold.
     $cmd = join(" ",
                 $usearch, "-ublast", $cfile, "-db", $aaIn,
-                "-evalue", 0.01, "-id", 0.3,
+                "-evalue", 0.02 * scalar(@orgs), "-id", 0.3,
                 "-blast6out", "$cfile.hits",
                 "-threads", $nCPU);
   }
