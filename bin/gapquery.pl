@@ -5,8 +5,8 @@
 use strict;
 use Getopt::Long;
 use DBI;
-use FindBin qw($Bin);
-use lib "$Bin/../lib";
+use FindBin qw($Bin $RealBin);
+use lib "$RealBin/../lib";
 use Steps qw{ReadSteps FetchUniProtSequence};
 use pbutils qw{ReadTable ReadFastaEntry CuratedWordMatch};
 
@@ -80,7 +80,7 @@ Optional arguments:
 -curatedDb curated.db -- sqlite3 database of characterized
   sequences (schema in lib/curated.sql). By default, uses
   dir/curated.db
--uniprot dir/uniprot.tsv -- tab-delimited file with cache of uniprot
+-uniprot static/uniprotCache.tsv -- tab-delimited file with cache of uniprot
   sequences.
 -debug
 END
@@ -101,7 +101,7 @@ END
   }
   $curatedFaa = "$outDir/curated.faa" unless defined $curatedFaa;
   $curatedDb = "$outDir/curated.db" unless defined $curatedDb;
-  $uniprotFile = "$outDir/uniprot.tsv" unless defined $uniprotFile;
+  $uniprotFile = "$RealBin/../static/uniprotCache.tsv" unless defined $uniprotFile;
 
   @hmmIn = map "$hmmDir/$_", @hmmIn;
   foreach my $file ($stepsFile, @hmmIn, $curatedFaa, $curatedDb) {
@@ -273,8 +273,8 @@ END
   foreach my $uniprotHash (values %stepPredicted) {
     push @uniprotFetch, keys %$uniprotHash;
   }
+  @uniprotFetch = grep !exists $uniprot{$_}, @uniprotFetch;
   foreach my $uniprotId (sort @uniprotFetch) {
-    next if exists $uniprot{$uniprotId};
     my ($seq, $desc) = FetchUniProtSequence($uniprotId);
     die "Cannot fetch uniprot sequence for identifier $uniprotId, is it invalid?\n" unless $seq;
     $uniprot{$uniprotId} = { 'uniprotId' => $uniprotId,
@@ -282,14 +282,16 @@ END
                              'seq' => $seq };
   }
 
-  print STDERR "Rewriting the UniProt cache\n" if $debug;
-  open (my $fhCache, ">", $uniprotFile)
-    || die "Cannot write to $uniprotFile\n";
-  print $fhCache join("\t", qw{uniprotId desc seq})."\n";
-  foreach my $uniprotId (sort keys %uniprot) {
-    print $fhCache join("\t", $uniprotId, $uniprot{$uniprotId}{desc}, $uniprot{$uniprotId}{seq})."\n";
+  if (@uniprotFetch > 0) {
+    print STDERR "Rewriting the UniProt cache\n" if $debug;
+    open (my $fhCache, ">", $uniprotFile)
+      || die "Cannot write to $uniprotFile\n";
+    print $fhCache join("\t", qw{uniprotId desc seq})."\n";
+    foreach my $uniprotId (sort keys %uniprot) {
+      print $fhCache join("\t", $uniprotId, $uniprot{$uniprotId}{desc}, $uniprot{$uniprotId}{seq})."\n";
+    }
+    close($fhCache) || die "Error writing $uniprotFile";
   }
-  close($fhCache) || die "Error writing $uniprotFile";
 
   print STDERR "Collect metadata about HMMs and fetch them\n" if $debug;
   my %hmmInfo = (); # hmmId => hash of file, desc
