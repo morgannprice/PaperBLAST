@@ -844,6 +844,12 @@ sub FBrowseToFasta($$) {
   my $fbdbh = DBI->connect("dbi:SQLite:dbname=$fbdata/feba.db","","",{ RaiseError => 1 }) || die $DBI::errstr;
   my $gene = $fbdbh->selectrow_hashref("SELECT * FROM Gene WHERE locusId = ? OR sysName = ? OR gene = ? LIMIT 1",
                                        {}, $short, $short, $short);
+  # Exclude Xref to uniprot because those are sometimes not exactly the same sequence, and
+  # UniProtToFasta() can resolve those anyways
+  $gene = $fbdbh->selectrow_hashref("SELECT * FROM Gene JOIN LocusXref USING (orgId,locusId)
+                                     WHERE xrefId = ? AND xrefDb <> 'uniprot' LIMIT 1",
+                                    {}, $short)
+    if !defined $gene;
   my $fasta;
   if ($gene) {
     my $seqId = $gene->{orgId} . ":" . $gene->{locusId};
