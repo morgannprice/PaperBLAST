@@ -70,7 +70,11 @@ metC	cystathionine beta-lyase	EC:4.4.1.13	ignore:BRENDA::Q84UD0	ignore:BRENDA::Q
 
 # METI_BACSU (uniprot:O31631) has activity as OAS but is given a more vague EC number.
 # CH_123612, uniprot:Q9WZY4, and uniprot:Q5SK88 are annotated as this but without the EC number.
-metY	O-acetylhomoserine sulfhydrylase	EC:2.5.1.49	curated:SwissProt::O31631	ignore_other:O-succinylhomoserine sulfhydrylase	curated:CharProtDB::CH_123612	curated:SwissProt::Q9WZY4	curated:SwissProt::Q5SK88
+# In Mucilaginibacter yixingensis YX-36, C8P68_RS15690 is important for fitness in minimal media;
+# it is usually annotated as O-succinylhomoserine sulfhydrylase, but the acylating enzmye (C8P68_RS13005)
+# is similar to O-acetyltransferases and has the correct functional residues (i.e., similar to H1YC36 in
+# supplementary data set 3 of PMID:28581482); so it must be an o-acetylhomoserine sulfhydrylase.
+metY	O-acetylhomoserine sulfhydrylase	EC:2.5.1.49	curated:SwissProt::O31631	ignore_other:O-succinylhomoserine sulfhydrylase	curated:CharProtDB::CH_123612	curated:SwissProt::Q9WZY4	curated:SwissProt::Q5SK88	uniprot:A0A2T5J8K7
 
 # No EC number for metZ, so use "O-succinylhomoserine sulfhydrylase", which matches
 # uniprot:METZ_PSEAE and uniprot:METZ_MYCTU.
@@ -126,18 +130,18 @@ ramA	ATP-dependent reduction of co(II)balamin	hmm:PF14574	term:ATP-dependent red
 # Although this reaction has not been biochemically demonstrated, a distant homolog performs a similar
 # reaction, converting sulfoacetaldehyde to coenzyme M (see MJ1681 and PMID:30932481).
 # (This family was formerly DUF39.)
-asd-S-transferase	sulfuration of L-aspartate semialdehyde, persulfide component	curated:SwissProt::Q8TPT4	curated:reanno::Miya:8500721	curated:SwissProt::Q57564
+asd-S-transferase	L-aspartate semialdehyde sulfurtransferase, persulfide component	curated:SwissProt::Q8TPT4	curated:reanno::Miya:8500721	curated:SwissProt::Q57564
 
 # The NIL/ferredoxin component is MA1822 or DvMF_0262 (see PMID:25315403 and PMC5764234).
 # In Methanococcus, this component (MEVAN_RS03425, uniprot:A6UQ02) is diverged but
 # is in a conserved operon with the sulfurtransferase component.
-asd-S-ferredoxin	reductive sulfuration of L-aspartate semialdehyde, ferredoxin component	curated:SwissProt::Q8TPT3	curated:reanno::Miya:8499492	predicted:A6UQ02
+asd-S-ferredoxin	L-aspartate semialdehyde sulfurtransferase, NIL/ferredoxin component	curated:SwissProt::Q8TPT3	curated:reanno::Miya:8499492	predicted:A6UQ02
 
 # The putative persulfide forming component is MA1715 or DvMF_0044 (see PMID:25315403 and PMC5764234).
 # A conserved cysetien in MA1821 is modified to a persulfide in vivo (PMID:28165724).
 # This component is not 100% required in Methanosarcina acetivorans (possible redundancy).
 # In Hippea alviniae, this protein (G415_RS0107280, similar to uniprot:F2LX84) is diverged but is in an operon with the other components.
-asd-S-perS	putative persulfide forming protein	uniprot:Y1715_METAC	curated:reanno::Miya:8499265	predicted:F2LX84
+asd-S-perS	L-aspartate semialdehyde sulfurtransferase, persulfide-forming component	uniprot:Y1715_METAC	curated:reanno::Miya:8499265	predicted:F2LX84
 
 # Methanogens have a short homolog of MetE that transfers methyl groups from methylcobalamin
 # (not 5-methyltetrahydrofolates) to homocysteine to form methionine (PMID:10469143).

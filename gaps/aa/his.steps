@@ -43,7 +43,11 @@ hisC	histidinol-phosphate aminotransferase	EC:2.6.1.9	uniprot:HIS8_BACSU	uniprot
 # URL:https://doi.org/10.1101/2023.08.29.555234).
 # uniprot:S5FT07 and uniprot:S5FU55 are misannotated as this in BRENDA.
 # E. coli phoA (ecocyc:ALKAPHOSPHA-MONOMER) has this activity but is ignored because it is periplasmic.
-hisN	histidinol-phosphate phosphatase	EC:3.1.3.15	uniprot:B9E9Z0_MACCJ	uniprot:C0ZH63_BREBN	uniprot:Q73B87_BACC1	uniprot:A9VLI0_BACMK	uniprot:HIS9_BACHD	uniprot:Q5KW52_GEOKA	uniprot:Q8DT80_STRMU	uniprot:HIS9_BACSU	uniprot:A0A0L7BRC5	ignore:BRENDA::S5FT07	ignore:BRENDA::S5FU55	ignore:ecocyc::ALKAPHOSPHA-MONOMER
+# HVO_0431 (uniprot:D4GRX2) from Haloferax has auxotrophic phenotypes and must be the missing hisN (PMC4300041; PMC8305020).
+# uniprot:A0A1I1YPH6 ("Beta1") and Nmar_1556 (uniprot:A9A5X4) were shown biochemically to be hisN (PMC10804674);
+#   Beta1 is similar to BPHYT_RS03625, which has auxotrophic phenotypes; Nmar_1556 lies in a histidine synthesis operon
+#   and must be the missing hisN.
+hisN	histidinol-phosphate phosphatase	EC:3.1.3.15	uniprot:B9E9Z0_MACCJ	uniprot:C0ZH63_BREBN	uniprot:Q73B87_BACC1	uniprot:A9VLI0_BACMK	uniprot:HIS9_BACHD	uniprot:Q5KW52_GEOKA	uniprot:Q8DT80_STRMU	uniprot:HIS9_BACSU	uniprot:A0A0L7BRC5	ignore:BRENDA::S5FT07	ignore:BRENDA::S5FU55	ignore:ecocyc::ALKAPHOSPHA-MONOMER	uniprot:D4GRX2	uniprot:A0A1I1YPH6	uniprot:A9A5X4
 
 hisD	histidinal/histidinol dehydrogenase	EC:1.1.1.23	ignore:CharProtDB::CH_123581
 

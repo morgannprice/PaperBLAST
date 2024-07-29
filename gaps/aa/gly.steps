@@ -33,7 +33,7 @@ gly1	L-threonine aldolase	EC:4.1.2.5	EC:4.1.2.48	ignore:BRENDA::P0A825	curated:C
 # which we call glyXS (BBR_RS12920 and BBR_RS12915 or MMP_RS07345 and MMP_RS03450, Anthony Shiver and Leslie Day).
 # These proteins are usually encoded next to each other (although not in Methanococcus).
 # A homolog of glyXL from Streptococcus (spr0218, uniprot:Q8DRD2) is also required for glycine synthesis (PMC2739083).
-# And a similar operon is regulated by glycine riboswitches (see BMMGA3_03000, discussed in PMC4342826).
+# Also, glyXS:glyXL is regulated by a glycine riboswitch in Bacillus methanolicus (see BMMGA3_03000 in PMC4342826).
 glyXL	putative glycine synthesis enzyme, catalytic component	uniprot:Q8G510	uniprot:Q6LXC5	uniprot:Q8DRD2
 
 # Required for glycine synthesis along with glyXL in Bifodobacterium breve and Methanococcus maripaludis.

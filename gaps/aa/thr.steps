@@ -6,14 +6,17 @@ import met.steps:homoserine
 # ThrB from B. subtilis (uniprot:P04948) can complement a thrB- strain of E. coli (PMC1167255; Bradley Biggs).
 thrB	homoserine kinase	EC:2.7.1.39	uniprot:P04948
 
-# BT2402 (uniprot:Q8PX04) is required for threonine synthesis (PMC7311316) and belongs to a family
-# (TIGR02535) that was proposed replace the missing homoserine kinase. It is
-# often encoded next to aspartate kinase and threonine synthase.
-# It is related to phosphoglycerate mutases and might transfer phosphate groups
-# from a donor such as phosphoenolpyruvate to homoserine.
-# This family is also known as ThrB2 (PMC9026213).
-# In GapMind, HomK is described separately from ThrB because it probably carries out a different reaction.
-homK	putative homoserine phosphotransferase	predicted:Q8PX04
+# BT2402 (uniprot:Q8PX04) is required for threonine synthesis
+# (PMC7311316) and belongs to a family (TIGR02535) that was proposed
+# replace the missing homoserine kinase. This family is also known as
+# ThrB2 (PMC9026213). Homologs from Phocaeicola are also required for
+# threonine synthesis (Surya Tripathi, personal communication).  The
+# HomK family is often encoded next to aspartate kinase and threonine
+# synthase.  It is related to phosphoglycerate mutases and might
+# transfer phosphate groups from a donor such as phosphoenolpyruvate
+# to homoserine.  In GapMind, HomK is described separately from ThrB
+# because it probably carries out a different reaction.
+homK	putative homoserine phosphotransferase	uniprot:Q8PX04
 
 # N515DRAFT_0575 (uniprot:A0A1I2JHD2_9GAMM) from Dyella japonica UNC79MFTsu3.2 is somewhat
 # diverged; mutants in this gene are auxotrophic.

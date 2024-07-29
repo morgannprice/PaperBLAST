@@ -56,6 +56,6 @@ ilvD	dihydroxy-acid dehydratase	EC:4.2.1.9	ignore:metacyc::MONOMER-15882
 # are often non-specific.
 ilvE	valine transaminase	EC:2.6.1.42	EC:2.6.1.66	ignore:SwissProt::Q8NS92	ignore_other:2.6.1.57	ignore_other:2.6.1.5
 
-3-methyl-2-oxobutanoate: ilvH ilvI ilvC ilvD
+3-methyl-2-oxobutanoate: ilvI ilvH ilvC ilvD
 
 all: 3-methyl-2-oxobutanoate ilvE

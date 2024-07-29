@@ -5,18 +5,14 @@ Azospirillum brasilense Sp245	5488	FitnessBrowser	azobra	chorismate	aroL
 Echinicola vietnamensis KMM 6221, DSM 17526	4625	FitnessBrowser	Cola	ser	serC
 Dinoroseobacter shibae DFL-12	4192	FitnessBrowser	Dino	thr	thrB
 Desulfovibrio vulgaris Hildenborough JW710	3403	FitnessBrowser	DvH	ser	serB
-Desulfovibrio vulgaris Hildenborough JW710	3403	FitnessBrowser	DvH	ser	serA
 Desulfovibrio vulgaris Hildenborough JW710	3403	FitnessBrowser	DvH	ser	serC
 Dyella japonica UNC79MFTsu3.2	4330	FitnessBrowser	Dyella79	ser	serB
 Desulfovibrio vulgaris Miyazaki F	3180	FitnessBrowser	Miya	ser	serB
-Desulfovibrio vulgaris Miyazaki F	3180	FitnessBrowser	Miya	ser	serA
-Pedobacter sp. GW460-11-11-14-LB5	4964	FitnessBrowser	Pedo557	lys	dapE
 Phaeobacter inhibens BS107	3875	FitnessBrowser	Phaeo	thr	thrB
 Pseudomonas fluorescens FW300-N1B4	5972	FitnessBrowser	pseudo1_N1B4	his	prs
 Chlorobium phaeobacteroides BS1	2559	IMG	ChlphaBS1_FD	his	hisI
 Chlorobium phaeobacteroides BS1	2559	IMG	ChlphaBS1_FD	tyr	pre-dehydr
 Trichodesmium erythraeum IMS101 Annotated Metagenome-Assembled Genome	5447	IMG	TrieryIMS101_FD	met	asd-S-perS
-Trichodesmium erythraeum IMS101 Annotated Metagenome-Assembled Genome	5447	IMG	TrieryIMS101_FD	ser	serB
 Trichodesmium erythraeum IMS101 Annotated Metagenome-Assembled Genome	5447	IMG	TrieryIMS101_FD	his	hisN
 Chlorobaculum tepidum TLS	1999	NCBI	GCF_000006985.1	tyr	pre-dehydr
 Chlorobaculum tepidum TLS	1999	NCBI	GCF_000006985.1	his	hisI
@@ -70,7 +66,6 @@ Persephonella marina EX-H1	2044	NCBI	GCF_000021565.1	met	metB
 Persephonella marina EX-H1	2044	NCBI	GCF_000021565.1	met	metC
 Persephonella marina EX-H1	2044	NCBI	GCF_000021565.1	chorismate	fbp
 Persephonella marina EX-H1	2044	NCBI	GCF_000021565.1	his	hisN
-Desulfitobacterium hafniense DCB-2	4837	NCBI	GCF_000021925.1	ser	serB
 Methylobacterium nodulans ORS 2060	7984	NCBI	GCF_000022085.1	leu	ilvC
 Methylobacterium nodulans ORS 2060	7984	NCBI	GCF_000022085.1	ile	ilvC
 Methylobacterium nodulans ORS 2060	7984	NCBI	GCF_000022085.1	val	ilvC
@@ -99,7 +94,6 @@ Desulfotalea psychrophila LSv54	3115	NCBI	GCF_000025945.1	lys	DAPtransferase
 Desulfotalea psychrophila LSv54	3115	NCBI	GCF_000025945.1	ser	serB
 Arcobacter nitrofigilis DSM 7299	3118	NCBI	GCF_000092245.1	ser	serC
 Kyrpidia tusciae DSM 2912	3195	NCBI	GCF_000092905.1	his	hisN
-Desulfarculus baarsii DSM 2075	3301	NCBI	GCF_000143965.1	ser	serA
 Desulfarculus baarsii DSM 2075	3301	NCBI	GCF_000143965.1	his	hisN
 Caminibacter mediatlanticus TB-2	1753	NCBI	GCF_000170735.1	ser	serC
 Anaerobutyricum hallii DSM 3353	2847	NCBI	GCF_000173975.1	thr	thrB
@@ -109,14 +103,12 @@ Calditerrivibrio nitroreducens DSM 19672	2109	NCBI	GCF_000183405.1	his	hisN
 Calditerrivibrio nitroreducens DSM 19672	2109	NCBI	GCF_000183405.1	ser	serB
 Sulfuricurvum kujiense DSM 16994	2795	NCBI	GCF_000183725.1	ser	serC
 Thermovibrio ammonificans HB-1	1826	NCBI	GCF_000185805.1	his	hisN
-Thermovibrio ammonificans HB-1	1826	NCBI	GCF_000185805.1	ser	serC
 Thermovibrio ammonificans HB-1	1826	NCBI	GCF_000185805.1	chorismate	fbp
 Nitratifractor salsuginis DSM 16511	2108	NCBI	GCF_000186245.1	ser	serC
 Methanobacterium lacus AL-21	2507	NCBI	GCF_000191585.1	his	hisN
 Archaeoglobus veneficus SNP6	2103	NCBI	GCF_000194625.1	his	hisN
 Desulfobacca acetoxidans DSM 11109	2874	NCBI	GCF_000195295.1	his	hisN
 Desulfobacca acetoxidans DSM 11109	2874	NCBI	GCF_000195295.1	his	hisI
-Desulfobacca acetoxidans DSM 11109	2874	NCBI	GCF_000195295.1	ser	serB
 Trichormus variabilis ATCC 29413	5769	NCBI	GCF_000204075.1	his	hisN
 Trichormus variabilis ATCC 29413	5769	NCBI	GCF_000204075.1	leu	ilvE
 Trichormus variabilis ATCC 29413	5769	NCBI	GCF_000204075.1	ile	ilvE
@@ -126,15 +118,12 @@ Pyrolobus fumarii 1A	1947	NCBI	GCF_000223395.1	met	hom
 Pyrolobus fumarii 1A	1947	NCBI	GCF_000223395.1	his	hisN
 Pyrolobus fumarii 1A	1947	NCBI	GCF_000223395.1	thr	hom
 Pyrolobus fumarii 1A	1947	NCBI	GCF_000223395.1	pro	cyclodeaminase
-Pyrolobus fumarii 1A	1947	NCBI	GCF_000223395.1	ser	serB
 Pyrolobus fumarii 1A	1947	NCBI	GCF_000223395.1	trp	trpA
 Thioalkalivibrio paradoxus ARh 1	3381	NCBI	GCF_000227685.2	thr	thrB
 Leptospirillum ferrooxidans C2-3	2389	NCBI	GCF_000284315.1	his	hisN
 Leptospirillum ferrooxidans C2-3	2389	NCBI	GCF_000284315.1	ser	serB
-Halococcus hamelinensis 100A6	3409	NCBI	GCF_000336675.1	his	hisN
 Halococcus hamelinensis 100A6	3409	NCBI	GCF_000336675.1	lys	DAPtransferase
 Halococcus hamelinensis 100A6	3409	NCBI	GCF_000336675.1	chorismate	aroD
-Haloferax volcanii DS2	3766	NCBI	GCF_000337315.1	his	hisN
 Nocardiopsis lucentensis DSM 44048	5708	NCBI	GCF_000341125.1	arg	argC
 Nocardiopsis lucentensis DSM 44048	5708	NCBI	GCF_000341125.1	ile	ilvI
 Nocardiopsis lucentensis DSM 44048	5708	NCBI	GCF_000341125.1	leu	ilvI
@@ -150,32 +139,26 @@ Thioalkalivibrio thiocyanodenitrificans ARhD 1	3440	NCBI	GCF_000378965.1	ser	ser
 Methylovulum miyakonense HT12	4117	NCBI	GCF_000384075.1	lys	dapF
 Methylovulum miyakonense HT12	4117	NCBI	GCF_000384075.1	thr	thrB
 Methyloferula stellata AR4T	3858	NCBI	GCF_000385335.1	ser	serA
-Hippea alviniae EP5-r	1759	NCBI	GCF_000420385.1	ser	serC
 Hippea alviniae EP5-r	1759	NCBI	GCF_000420385.1	his	hisN
 Methylohalobius crimeensis 10Ki	3286	NCBI	GCF_000421465.1	thr	thrB
 Desulfatiglans anilini DSM 4660	3986	NCBI	GCF_000422285.1	ser	serB
 Desulfatiglans anilini DSM 4660	3986	NCBI	GCF_000422285.1	chorismate	fbp
 Desulfatiglans anilini DSM 4660	3986	NCBI	GCF_000422285.1	his	hisI
-Maridesulfovibrio zosterae DSM 11974	3574	NCBI	GCF_000425265.1	ser	serA
 Maridesulfovibrio zosterae DSM 11974	3574	NCBI	GCF_000425265.1	his	hisN
 Sedimenticola selenatireducens DSM 17993	4186	NCBI	GCF_000428045.1	thr	thrB
 Desulfatibacillum aliphaticivorans DSM 15576	5241	NCBI	GCF_000429905.1	his	hisI
 Desulfogranum mediterraneum DSM 13871	3891	NCBI	GCF_000429965.1	his	hisN
-Desulfogranum mediterraneum DSM 13871	3891	NCBI	GCF_000429965.1	ser	serB
 Desulfogranum mediterraneum DSM 13871	3891	NCBI	GCF_000429965.1	tyr	pre-dehydr
 Desulfogranum mediterraneum DSM 13871	3891	NCBI	GCF_000429965.1	his	hisI
-Maridesulfovibrio bastinii DSM 16055	3483	NCBI	GCF_000429985.1	ser	serA
 Maridesulfovibrio bastinii DSM 16055	3483	NCBI	GCF_000429985.1	his	hisN
 Derxia gummosa DSM 723	4331	NCBI	GCF_000482785.1	chorismate	aroB'
 Derxia gummosa DSM 723	4331	NCBI	GCF_000482785.1	arg	argG
 Derxia gummosa DSM 723	4331	NCBI	GCF_000482785.1	chorismate	aroA'
 Dechloromonas agitata is5	3436	NCBI	GCF_000519045.1	arg	argG
 Haloglycomyces albus DSM 45210	3084	NCBI	GCF_000527155.1	chorismate	aroD
-Sulfurihydrogenibium subterraneum DSM 15120	1690	NCBI	GCF_000619805.1	cys	serC
 Sulfurihydrogenibium subterraneum DSM 15120	1690	NCBI	GCF_000619805.1	chorismate	fbp
 Sulfurihydrogenibium subterraneum DSM 15120	1690	NCBI	GCF_000619805.1	met	metB
 Sulfurihydrogenibium subterraneum DSM 15120	1690	NCBI	GCF_000619805.1	met	metC
-Sulfurihydrogenibium subterraneum DSM 15120	1690	NCBI	GCF_000619805.1	ser	serC
 Sulfurihydrogenibium subterraneum DSM 15120	1690	NCBI	GCF_000619805.1	his	hisN
 Thiothrix lacustris DSM 21227	3579	NCBI	GCF_000621325.1	ser	serB
 Thiothrix lacustris DSM 21227	3579	NCBI	GCF_000621325.1	thr	thrB
@@ -189,10 +172,7 @@ Desulfobacter vibrioformis DSM 8776	3880	NCBI	GCF_000745975.1	his	hisN
 Clostridium tyrobutyricum FAM22553	3003	NCBI	GCF_000816635.1	chorismate	aroL
 Sulfuritalea hydrogenivorans DSM 22779	3575	NCBI	GCF_000828635.1	thr	thrB
 Thermus aquaticus YT-1	2307	NCBI	GCF_001280255.1	arg	carA
-Thermus aquaticus YT-1	2307	NCBI	GCF_001280255.1	ser	serC
 Aquimarina longa SW024	4696	NCBI	GCF_001401755.1	pro	argE
-Stenotrophomonas chelatiphaga DSM 21508	3455	NCBI	GCF_001431535.1	ser	serB
-Hyphomicrobium sulfonivorans WDL6	3315	NCBI	GCF_001541235.1	ser	serB
 Hyphomicrobium sulfonivorans WDL6	3315	NCBI	GCF_001541235.1	ser	serA
 Steroidobacter denitrificans DSM 18526	3018	NCBI	GCF_001579945.1	arg	carA
 Steroidobacter denitrificans DSM 18526	3018	NCBI	GCF_001579945.1	ser	serB
@@ -206,7 +186,6 @@ Thioalkalivibrio halophilus HL17	2685	NCBI	GCF_001995255.1	ser	serB
 Thioalkalivibrio denitrificans ALJD	3343	NCBI	GCF_002000365.1	ser	serB
 Halomonas desiderata SP1	4341	NCBI	GCF_002151265.1	leu	leuA
 Methanospirillum lacunae Ki8-1	3354	NCBI	GCF_003173355.1	his	hisN
-Rhodanobacter denitrificans FW104-10B01	3527	NCBI	GCF_021560695.1	ser	serB
 Thiohalomonas denitrificans HLD2	3188	NCBI	GCF_900102855.1	chorismate	aroA
 Thiohalomonas denitrificans HLD2	3188	NCBI	GCF_900102855.1	thr	thrB
 Desulfuromusa kysingii DSM 7343	3293	NCBI	GCF_900107645.1	his	hisN
@@ -230,3 +209,9 @@ Desulfacinum hydrothermale DSM 13146	3206	NCBI	GCF_900176285.1	his	hisI
 Desulfacinum hydrothermale DSM 13146	3206	NCBI	GCF_900176285.1	ser	serB
 Desulfurobacterium atlanticum DSM 15668	1743	NCBI	GCF_900188395.1	chorismate	fbp
 Desulfurobacterium atlanticum DSM 15668	1743	NCBI	GCF_900188395.1	his	hisN
+Thermoanaerobacter kivui LKT-1	2269	NCBI	GCF_000763575.1	lys	dapL
+Nitrosopumilus maritimus SCM1	1924	NCBI	GCF_000018465.1	asn	gatC
+Nitrosopumilus maritimus SCM1	1924	NCBI	GCF_000018465.1	his	hisI
+Nitrosopumilus maritimus SCM1	1924	NCBI	GCF_000018465.1	lys	lysN
+Nitrosopumilus maritimus SCM1	1924	NCBI	GCF_000018465.1	met	metB
+Nitrosopumilus maritimus SCM1	1924	NCBI	GCF_000018465.1	met	metC

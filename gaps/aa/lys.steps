@@ -39,7 +39,18 @@ dapD	tetrahydrodipicolinate succinylase	EC:2.3.1.117
 # similarity to succinylornithine transaminases (EC:2.6.1.81) is ignored.
 dapC	N-succinyldiaminopimelate aminotransferase	EC:2.6.1.17	EC:2.6.1.52	ignore:SwissProt::O50434	ignore_other:EC 2.6.1.81
 
-dapE	succinyl-diaminopimelate desuccinylase	EC:3.5.1.18
+# DapE is missing in several genera of Bacteroidota, and a search for
+# conserved essential genes identified the putative aminohydrolase
+# Echvi_1427 (uniprot:L0FXC2)as a candidate.  This protein is 43%
+# identical to the dipeptidase DradM20D (PMID:26456402) and 42%
+# identical to an carboxypeptidase/aminoacylase from Pyrococcus
+# horikoshii (PMC92634); it also has more distant homology to
+# N-acetyl-L,L-diaminopimelate deactylase; these are all very similar
+# reactions.  Echvi_1427 has conserved active site residues and
+# docking N-succinyl-L,L-diaminopimelate to its predicted structure
+# with AutoDock Vina gave predicted binding (-6.5 kcal/mol) with the
+# amide bond near the catalytic arginine (R264).
+dapE	succinyl-diaminopimelate desuccinylase	EC:3.5.1.18	predicted:L0FXC2
 
 # L,L-diaminopimelate to meso-diaminopimelate.
 # A putative amino acid racemase (A0A9Q5JK70) is in a conserved operon with lysA ("dapF2" in PMC9026213);

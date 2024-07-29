@@ -159,7 +159,11 @@ lysY	[LysW]-glutamate-6-phosphate reductase	EC:1.2.1.106	uniprot:Q5JFW1
 lysJ	[LysW]-glutamate-semialdehyde aminotransferase	EC:2.6.1.124	ignore_other:2.6.1.118
 
 # TK0274 from Thermococcus kodakarensis (uniprot:Q5JFW4) is bifunctional, for lysine and ornithine synthesis (PMC5076833).
-lysK	[LysW]-ornithine hydrolase	EC:3.5.1.132
+# NMAR_RS06940 (uniprot:A9A1L3) is probably bifunctional for [LysW]-ornithine and [LysW]-lysined hydrolase;
+# this would explain how ornithine is formed in Nitrosopumilus maritimus, and
+# it is similar to [LysW]-lysine hydrolyze uniprot:Q8VUS5,
+# which is reported to hydrolyze acetyllysine or acetylornithine in vitro.
+lysK	[LysW]-ornithine hydrolase	EC:3.5.1.132	predicted:A9A1L3
 
 # In L-arginine biosynthesis I, ornithine forms via acetylated intermediates, argA, and argE (metacyc:ARGSYN-PWY).
 ornithine: argA argB argC argD argE
