@@ -1263,7 +1263,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
         my $hmmsearch = "../bin/hmmsearch";
         die "No such executable: $hmmsearch\n" unless -x $hmmsearch;
         my $faaCand = "$tmp.genome.faa";
-        FetchSeqs("../bin/blast", $faafile, [$orgId.":".$cand->{locusId}], $faaCand);
+        GetOrgSequence($faafile, $orgId, $cand->{locusId}, $faaCand);
         print "<pre>";
         system($hmmsearch, $hmmFile, $faaCand) == 0
           || die "hmmsearch failed: $!";
