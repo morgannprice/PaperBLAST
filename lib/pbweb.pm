@@ -1309,11 +1309,15 @@ sub runTimerHTML() {
   return qq{<SPAN id="TimerText"></SPAN>};
 }
 
-# Prints stuff every two seconds
-sub doTimer() {
+# Prints stuff every two seconds, until the  original process no longer exists
+# (or until doWhileCommenting() kills this child)
+sub doTimer($) {
+  my ($ppidOriginal) = @_;
   my $n = 0;
-  while(1) {
+  while(1){
     sleep(2);
+    # If the parent was killed, our parent will be set to something else
+    exit(0) if getppid() != $ppidOriginal;
     $n += 2;
     print "<!-- waiting for job for $n sec -->\n";
     if ($showTimer) {
@@ -1337,11 +1341,11 @@ sub runWhileCommenting(@) {
 
 sub doWhileCommenting(&) {
   my ($code) = @_;
+  my $ppid = $$;
   my $pid = fork();
   die "Cannot fork: $!" unless defined $pid;
   if ($pid == 0) {
-    doTimer(); # runs forever
-    die;
+    doTimer($ppid); # runs forever (or until the main process exits)
   }
   #else
   my $value = $code->();
