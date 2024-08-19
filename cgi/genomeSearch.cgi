@@ -385,7 +385,7 @@ unless($isNuc) {
   my %parsed = (); # input sequence to list of hits
 
   print p("Running ublast with E &le; $maxEvalue\n");
-  system("$usearch -ublast $chitsfaaFile -db $seqFile -threads $nCPU -evalue $maxEvalue -blast6out $ublastFile >& /dev/null") == 0
+  system("$usearch -ublast $chitsfaaFile -db $seqFile -threads $nCPU -evalue $maxEvalue -blast6out $ublastFile > /dev/null 2>&1") == 0
     || die "usearch failed: $!";
   unlink($seqFile);
   my $uhits = ParseUblast($ublastFile, \%seqs, \%idToChit);
@@ -453,7 +453,7 @@ if ($assembly) {
 my $xfile = "$fnafile.aa6";
 if (! -e $xfile) {
   my $cmd = "$usearch -fastx_findorfs $fnafile -aaout $xfile -orfstyle 7 -mincodons $minCodons";
-  system("$cmd >& /dev/null") == 0
+  system("$cmd > /dev/null 2>&1") == 0
     || die "usearch findorfs failed:\n$cmd\n$!";
 }
 unlink($seqFile) if $upfile;
@@ -469,7 +469,7 @@ close($fhx) || die "Error reading $xfile";
 
 print p("Running ublast against the 6-frame translation.",
         "All reading frames of at least $minCodons codons are included."), "\n";
-system("$usearch -ublast $chitsfaaFile -db $xfile -threads $nCPU -evalue $maxEvalue -blast6out $ublastFile >& /dev/null") == 0
+system("$usearch -ublast $chitsfaaFile -db $xfile -threads $nCPU -evalue $maxEvalue -blast6out $ublastFile > /dev/null 2>&1") == 0
   || die "usearch failed: $!";
 
 my $uhits = ParseUblast($ublastFile, \%seqsx, \%idToChit);

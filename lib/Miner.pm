@@ -205,7 +205,7 @@ sub PDFFileToText($) {
     my ($file) = @_;
     my $txtfile = "$file.$$.txt";
     # use ASCII7 to convert ligatures to standard text
-    unless (system("pdftotext -enc ASCII7 $file $txtfile >& /dev/null") == 0) {
+    unless (system("pdftotext -enc ASCII7 $file $txtfile > /dev/null 2>&1") == 0) {
         print STDERR "Error: cannot run pdftotext on $file: $!";
         unlink($txtfile);
         return "";

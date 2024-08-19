@@ -618,7 +618,7 @@ if ($seqsSet) {
         print $fh ">$id\n" . $seqs{$id} . "\n";
       }
       close($fh) || die "Error writing to $tmpDb";
-      my $formatCmd = "$formatdb -p T -i $tmpDb >& /dev/null";
+      my $formatCmd = "$formatdb -p T -i $tmpDb > /dev/null 2>&1";
       system($formatCmd) == 0 || die "Command failed: $formatCmd";
 
       while (my ($id,$seq) = each %addSeq) {
@@ -630,7 +630,7 @@ if ($seqsSet) {
         print $fh ">seq\n" . $seq . "\n";
         close($fh) || die "Error writing to $seqFile";
         my $hitsFile = "$tmpPre.hits";
-        my $blastCmd = "$blastall -p blastp -e 0.01 -d $tmpDb -i $seqFile -o $hitsFile -m 8 >& /dev/null";
+        my $blastCmd = "$blastall -p blastp -e 0.01 -d $tmpDb -i $seqFile -o $hitsFile -m 8 > /dev/null 2>&1";
         system($blastCmd) ==0 || die "blast failed: $blastCmd";
         open($fh, "<", $hitsFile) || die "Cannot read $hitsFile from $blastCmd";
         my @hitLines = <$fh>;

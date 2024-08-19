@@ -93,7 +93,7 @@ if (exists $dosteps{"explodeeco"}) {
   die "Error listing $ecotar" unless $first;
 
   &maybe_run("(cd $indir; tar xzf ecoli.tar.gz)");
-  &maybe_run("(cd $indir; rm ecocyc >& /dev/null; ln -s $first ecocyc)");
+  &maybe_run("(cd $indir; rm ecocyc > /dev/null 2>&1; ln -s $first ecocyc)");
   if (! defined $test) {
     foreach my $file ("$indir/ecocyc/data/proteins.dat", "$indir/ecocyc/data/protseq.fsa") {
       die "Cannot find ecocyc file $file\n" unless -e $file;
@@ -236,7 +236,7 @@ if (exists $dosteps{"refseq"}) {
   close(LIST) || die "Error writing to $listfile";
   &maybe_run("$Bin/submitter.pl $cmdsfile");
   my @out = &read_list($listfile);
-  &maybe_run("($Bin/convertRefSeqQueries.pl -files $listfile > $workdir/refseq.query) >& $workdir/refseq.query.log");
+  &maybe_run("($Bin/convertRefSeqQueries.pl -files $listfile > $workdir/refseq.query) > $workdir/refseq.query.log 2>&1");
 }
 
 # Given words from pm/pmc/am, find identifiers matching UniProt
@@ -258,7 +258,7 @@ if (exists $dosteps{"byorg"}) {
 
 if (exists $dosteps{"comb"}) {
   my @in = map "$workdir/$_.query", qw{mo refseq sprot byorg};
-  &maybe_run("($Bin/uniqueQueries.pl " . join(" ", @in) . " > $workdir/comb.query) >& $workdir/comb.query.log");
+  &maybe_run("($Bin/uniqueQueries.pl " . join(" ", @in) . " > $workdir/comb.query) > $workdir/comb.query.log 2>&1");
 }
 
 if (exists $dosteps{"stats"}) {

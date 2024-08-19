@@ -63,7 +63,7 @@ sub ForkCommandsAndWait;
     foreach my $part (@parts) {
         my $cmd = "$Bin/queryEuropePMC.pl -in $part -out $part.out -wait $minWait ";
         $cmd .= " -URL $baseURL" if defined $baseURL;
-        $cmd .= " >& $part.log";
+        $cmd .= " > $part.log 2>&1";
         push @cmds, $cmd;
     }
 

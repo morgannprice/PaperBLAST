@@ -87,7 +87,7 @@ my $clusterFile = "$tmpPre.cluster";
 # -M 0 -- no memory limit
 # -d 5 -- word length 5 (appropriate for higher %identities)
 # -d 0 -- stop at 1st space in defline
-my $cmd = "$cdhit -i $tmpPre.faa -o $clusterFile -c $identity -M 0 -T $nThreads -n 5 -d 0 -aS $minCoverage >& $logFile";
+my $cmd = "$cdhit -i $tmpPre.faa -o $clusterFile -c $identity -M 0 -T $nThreads -n 5 -d 0 -aS $minCoverage > $logFile 2>&1";
 system($cmd) == 0 || die "cdhit failed\n$cmd\n$!";
 
 open (my $fhClust, "<", "$clusterFile.clstr")

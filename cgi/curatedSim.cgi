@@ -118,10 +118,10 @@ foreach my $subjectId (@subjectIds) {
 }
 close($fhS) || die "Error writing $subjectFile";
 
-system("$formatdb -p T -i $subjectFile >& /dev/null") == 0
+system("$formatdb -p T -i $subjectFile > /dev/null 2>&1") == 0
   || die "$formatdb for $subjectFile failed: $!";
 my $hitsFile = "$tmpPre.hits";
-system(qq{$blastall -p blastp -d $subjectFile -i $queryFile -e 1e-3 -m 8 -F "m S" -o $hitsFile >& /dev/null}) == 0
+system(qq{$blastall -p blastp -d $subjectFile -i $queryFile -e 1e-3 -m 8 -F "m S" -o $hitsFile > /dev/null 2>&1}) == 0
   || die "$blastall on $subjectFile $queryFile failed: $!";
 
 unlink($queryFile);

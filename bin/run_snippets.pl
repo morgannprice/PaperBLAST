@@ -82,34 +82,34 @@ die "Crossref token not fund: no such file: $crossref_token\n"
   unless -e $crossref_token || defined $cacheOnly;
 
 if (exists $dosteps{"parse"}) {
-  &maybe_run("$Bin/parseEuropePMCHits.pl -in $workdir/comb.query -hits $workdir/epmc -out $workdir/hits >& $workdir/epmc_parse.log");
+  &maybe_run("$Bin/parseEuropePMCHits.pl -in $workdir/comb.query -hits $workdir/epmc -out $workdir/hits > $workdir/epmc_parse.log 2>&1");
 }
 
 if (exists $dosteps{"pmclinks"}) {
-  &maybe_run("$Bin/addPMCLinks.pl -query $workdir/comb.query -papers $workdir/hits.papers -in $indir -out $workdir/pmclinks >& $workdir/addpmclinks.log");
+  &maybe_run("$Bin/addPMCLinks.pl -query $workdir/comb.query -papers $workdir/hits.papers -in $indir -out $workdir/pmclinks > $workdir/addpmclinks.log" 2>&1);
 }
 
 if (exists $dosteps{"oa"}) {
   my @files = &read_list("$indir/oa/files");
   my @in = map "$indir/oa/$_", @files;
   &write_list(\@in, "$workdir/snippets.oa.list");
-  &maybe_run("$Bin/buildSnippets.pl -list $workdir/snippets.oa.list -out $workdir/snippets_oa $workdir/hits.papers $workdir/pmclinks.papers >& $workdir/snippets_oa.log");
+  &maybe_run("$Bin/buildSnippets.pl -list $workdir/snippets.oa.list -out $workdir/snippets_oa $workdir/hits.papers $workdir/pmclinks.papers > $workdir/snippets_oa.log 2>&1");
 }
 
 if (exists $dosteps{"am"}) {
   my @files = &read_list("$indir/am/xml.list");
   my @in = map "$indir/am/$_", @files;
   &write_list(\@in, "$workdir/snippets.am.list");
-  &maybe_run("$Bin/buildSnippets.pl -list $workdir/snippets.am.list -out $workdir/snippets_am $workdir/hits.papers $workdir/pmclinks.papers >& $workdir/snippets_am.log");
+  &maybe_run("$Bin/buildSnippets.pl -list $workdir/snippets.am.list -out $workdir/snippets_am $workdir/hits.papers $workdir/pmclinks.papers > $workdir/snippets_am.log 2>&1");
 }
 
 if (exists $dosteps{"elsevier"} && !defined $cacheOnly) {
-  &maybe_run("$Bin/elsevierFetch.pl -key $elsevier_key -dir $cachedir -papers $workdir/hits.papers -journals $Bin/../static/elsevier_journals >& $workdir/snippets_elsevier.log");
+  &maybe_run("$Bin/elsevierFetch.pl -key $elsevier_key -dir $cachedir -papers $workdir/hits.papers -journals $Bin/../static/elsevier_journals > $workdir/snippets_elsevier.log 2>&1");
 }
 
 if (exists $dosteps{"crossref"}) {
   my $cache_only_arg = defined $cacheOnly ? "-cache-only" : "";
-  &maybe_run("$Bin/crossrefSnippets.pl $cache_only_arg -token $crossref_token -papers $workdir/hits.papers -dir $cachedir -out $workdir/snippets_crossref >& $workdir/snippets_crossref.log");
+  &maybe_run("$Bin/crossrefSnippets.pl $cache_only_arg -token $crossref_token -papers $workdir/hits.papers -dir $cachedir -out $workdir/snippets_crossref > $workdir/snippets_crossref.log 2>&1");
 }
 
 if (exists $dosteps{"pubmed"}) {
@@ -117,7 +117,7 @@ if (exists $dosteps{"pubmed"}) {
 }
 
 if (exists $dosteps{"comb"}) {
-  &maybe_run("$Bin/combineSnippets.pl -out $workdir/snippets_comb $workdir/snippets_oa $workdir/snippets_am $workdir/snippets_crossref $workdir/snippets_pubmed  >& $workdir/snippets_comb.log");
+  &maybe_run("$Bin/combineSnippets.pl -out $workdir/snippets_comb $workdir/snippets_oa $workdir/snippets_am $workdir/snippets_crossref $workdir/snippets_pubmed  > $workdir/snippets_comb.log 2>&1");
 }
 
 if (exists $dosteps{"generif"}) {
@@ -149,7 +149,7 @@ if (exists $dosteps{"generif"}) {
   # there could be exceptions. This will lead to unnecessary entries in generif_tab.queries
   # buildLitDb.pl will remove these from the final FAA file, so they will not show up as BLAST hits,
   # and they will not be in the GenePaper table, but, they could be in the final Gene table.
-  &maybe_run("$Bin/generifTables.pl -rif $indir/generifs_basic -prot $workdir/generifs_prot -query $workdir/refseq.query -known $workdir/hits.queries -papers $workdir/generifs_pmid.tab -out $workdir/generif_tab >& $workdir/generifTables.log");
+  &maybe_run("$Bin/generifTables.pl -rif $indir/generifs_basic -prot $workdir/generifs_prot -query $workdir/refseq.query -known $workdir/hits.queries -papers $workdir/generifs_pmid.tab -out $workdir/generif_tab > $workdir/generifTables.log 2>&1");
 }
 
 if (exists $dosteps{"stats"} && !defined $test) {

@@ -159,7 +159,7 @@ print $fhFaa ">$header\n$seq\n";
 close($fhFaa) || die "Error writing to $seqFile\n";
 die "No such executable: $blastall\n" unless -x $blastall;
 # m S means mask complex sequences for lookup but not for alignment
-system("$blastall -F 'm S' -p blastp -i $seqFile -d $blastdb -e $maxE -a $nCPU -o $seqFile.out -b $maxHits -v $maxHits -a $nCPU >& /dev/null") == 0
+system("$blastall -F 'm S' -p blastp -i $seqFile -d $blastdb -e $maxE -a $nCPU -o $seqFile.out -b $maxHits -v $maxHits -a $nCPU > /dev/null 2>&1") == 0
   || die "$blastall failed: $!\n";
 unlink($seqFile);
 my $searchio = Bio::SearchIO->new(-format => 'blast', -file => "$seqFile.out")

@@ -161,7 +161,7 @@ if ($envFile ne "") {
 		    if ($upstring && $up < $maxload) {
 			my $logstart = "$cdPrefix$logPrefix";
 			$logstart = $logPrefix if $cdPrefix =~ m!/$! && $logPrefix =~ m!^/!;
-			my $cmd = "($cdCmd $envCommand time $commands[$ncmd]) >& $logstart-$ncmd.log";
+			my $cmd = "($cdCmd $envCommand time $commands[$ncmd]) > $logstart-$ncmd.log 2>&1";
 			my $execute = $host eq "" ? $cmd : "$shellString '$cmd'";
 			if ($debug) {
 			    print "Would execute $execute\n";

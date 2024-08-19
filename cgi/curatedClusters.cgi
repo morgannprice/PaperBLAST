@@ -529,7 +529,7 @@ print p("Running BLASTp"), "\n" unless $format;
 my $covFrac = $minCoverage / 100;
 my $formatCmd = "$formatdb -i $tmpPre.faa -p T";
 system($formatCmd) == 0 || die "formatdb failed -- $formatCmd -- $!";
-my $blastCmd = qq{$blastall -p blastp -i $tmpPre.faa -d $tmpPre.faa -F "m S" -e 0.001 -m 8 -a $nCPU -o $tmpPre.hits >& /dev/null};
+my $blastCmd = qq{$blastall -p blastp -i $tmpPre.faa -d $tmpPre.faa -F "m S" -e 0.001 -m 8 -a $nCPU -o $tmpPre.hits > /dev/null 2>&1};
 system($blastCmd) == 0 || die "blastall failed -- $blastCmd -- $!";
 unlink("$tmpPre.faa");
 foreach my $suffix (qw{phr pin psq}) {
