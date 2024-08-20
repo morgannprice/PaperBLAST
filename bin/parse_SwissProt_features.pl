@@ -74,10 +74,16 @@ while(<>) {
   foreach my $ft (@ftEvidence) {
     # Swiss-Prot files from 2019, parsed with Swisskinfe 1.73, had the
     # evidence code in [6] ($ev)
-    # As of February 2020, need to use Swisskinfe 1.79 to parse the
-    # evidence code, and it is in [7] ($ev2)
-    my ($ftKey, $ftFrom, $ftTo, $ftDesc, undef, undef, $ev, $ev2) = @$ft;
+    # As of February 2020, had to use Swissknife 1.79 to parse the
+    # evidence code, and it was in [7] ($ev2)
+    # As of August 2024, Swissknife 1.81 has it in [7] and also has an additional hash of features that may include
+    # the ligand
+    my ($ftKey, $ftFrom, $ftTo, $ftDesc, undef, undef, $ev, $ev2, $hash) = @$ft;
     my $evidence = $ev2 || $ev;
+    $ftDesc = $hash->{ligand} if exists $hash->{ligand} && $ftDesc eq "";
+    # Extracting pmids often fails becaues of text like Ref.3. In principle these could be converted using the Refs
+    # module and looking for the entry with RN=3 and RX->{PubMed}, but I think these are often
+    # references to structures not papers.
     my @pmIds = $evidence =~ m!ECO:0000269[|]PubMed:(\d+)!g;
     my %pmId = map { $_ => 1 } @pmIds;
     @pmIds = sort {$a <=> $b} keys %pmId;
