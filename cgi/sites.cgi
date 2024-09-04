@@ -4,7 +4,9 @@ use strict;
 # sites.cgi -- compare a protein sequence to known functional sites
 #
 # Optional CGI parameters:
-# query -- this should be the protein sequence in FASTA or UniProt or plain format
+# query -- this should be the protein sequence in FASTA or UniProt
+# hmmId -- an hmm identifier from PFam or TIGRFam, or of the form hex.MD5 (created when uploading an hmm)
+# hmmfile -- an uploaded hmm to search
 # format -- set to "tsv" to download a tab-delimited table
 #
 # If query is not specified, shows a query box
@@ -18,7 +20,8 @@ use LWP::Simple qw{get};
 use HTML::Entities;
 use IO::Handle; # for autoflush
 use lib "../lib";
-use pbweb qw{start_page finish_page GetMotd loggerjs parseSequenceQuery sequenceToHeader};
+use pbutils qw{NewerThan};
+use pbweb qw{start_page finish_page GetMotd loggerjs parseSequenceQuery sequenceToHeader HmmToFile};
 use Bio::SearchIO;
 use URI::Escape;
 
@@ -75,16 +78,103 @@ and (2) protein structures with bound ligands, from the
 END
 ;
 
+my $maxMB = 10; # maximum size of uploaded HMM
+$CGI::POST_MAX = $maxMB*1024*1024;
+
 my $cgi=CGI->new;
 my $query = $cgi->param('query') || "";
+my $hmmSpec = $cgi->param('hmmId') || "";
+$hmmSpec =~ s/^\s+//;
+$hmmSpec =~ s/\s+$//;
+my $hmmUp = $cgi->upload('hmmfile');
 my $maxHits = 20;
 my $maxE = 0.001;
 
 my $format = $cgi->param('format') || "";
 $format = "" unless $format eq "tsv";
 
+my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
+autoflush STDOUT 1; # show preliminary results
+
+my ($header, $seq, $hmmFile, $queryLen);
+if ($hmmSpec) {
+  die "Invalid hmmSpec" unless $hmmSpec =~ m/^[a-zA-Z0-9_.-]+$/;
+  $hmmFile = HmmToFile($hmmSpec);
+  # Compute query length
+  open(my $fh, "<", $hmmFile) || die "Cannot read $hmmFile";
+  while(my $line = <$fh>) {
+    $queryLen = $1 if $line =~ m/^LENG\s+(\d+)$/;
+  }
+  close($fh) || die "Error reading $hmmFile";
+  die "No LENG line in $hmmFile\n" unless $queryLen;
+} elsif ($hmmUp) {
+  # Check the uploaded file, save it, set up an MD5-based hmmid, and redirect
+  my $fh = $hmmUp->handle;
+  my @lines = <$fh>;
+  my @errors = ();
+  push @errors, "Uploaded file does not start with HMMER3"
+    unless ($lines[0] =~ m/^HMMER3/i);
+  push @errors, "Uploaded file does not end with a // line"
+    unless (@lines > 0 && $lines[-1] =~ m!^//\r?\n?!);
+  my @endlines = grep m!^//!, @lines;
+  push @errors, "Uploaded file has more than one record-ending // line"
+    unless @endlines == 1;
+  my @namelines = grep m/^NAME /, @lines;
+  push @errors, "Uploaded file has no NAME field"
+    unless @namelines > 0;
+  push @errors, "Uploaded file has more than one NAME"
+    unless @namelines <= 1;
+  if (@errors > 0) {
+    print header,
+      start_html(-title => "HMM Upload failed"),
+      h2("Not a valid HMM file"),
+      p(join(". ", @errors)),
+      a({ -href => "sites.cgi"}, "Try another search");
+    finish_page();
+  }
+  my $name = $namelines[0];
+  chomp $name;
+  $name =~ s/^NAME +//;
+
+  my $hex = Digest::MD5::md5_hex(@lines);
+  my $hmmId = "hex.$hex";
+  my $file = "../tmp/$hmmId.hmm";
+  unless (-e $file) {
+    open(my $sfh, ">", $file) || die "Cannot write to $file";
+    print $sfh @lines;
+    close($sfh) || die "Error writing to $file";
+  }
+  print $cgi->redirect("sites.cgi?hmmId=$hmmId");
+  exit(0);
+} else {
+  ($header, $seq) = parseSequenceQuery(-query => $query,
+                                       -dbh => $dbh,
+                                       -blastdb => $blastdb,
+                                       -fbdata => $fbdata);
+  $queryLen = length($seq);
+}
+
+if ($format eq "tsv") {
+  die "No query found\n" if !defined $seq && !defined $hmmFile;
+  print "Content-Type:text/tab-separated-values\n";
+  my $title = $hmmSpec ? "SitesHMM" : "SitesBLAST";
+  print "Content-Disposition: attachment; filename=$title.tsv\n\n";
+}
+
 if ($format ne "tsv") {
   my $title = "SitesBLAST";
+  if ($hmmSpec) {
+    my $showId = $hmmSpec;
+    if (defined $hmmFile && $hmmSpec =~ m/^hex[.]/) {
+      $showId = "Uploaded HMM $hmmSpec";
+    } else {
+      my $hmmName = `egrep '^NAME' $hmmFile`;
+      $hmmName =~ s/[\r\n].*//;
+      $hmmName =~ s/^NAME +//;
+      $showId = "$hmmSpec ($hmmName)" unless $hmmSpec eq $hmmName;
+    }
+    $title = "SitesHMM for $showId";
+  }
   start_page('title' => $title,
              'banner' => 'SitesBLAST &ndash; <small>Find functional sites</small>',
              'bannerURL' => 'sites.cgi');
@@ -94,20 +184,7 @@ END
 ;
 }
 
-my $dbh = DBI->connect("dbi:SQLite:dbname=$sqldb","","",{ RaiseError => 1 }) || die $DBI::errstr;
-autoflush STDOUT 1; # show preliminary results
-my ($header, $seq) = parseSequenceQuery(-query => $query,
-                                        -dbh => $dbh,
-                                        -blastdb => $blastdb,
-                                        -fbdata => $fbdata);
-
-if ($format eq "tsv") {
-  die "No sequence found\n" if !defined $seq;
-  print "Content-Type:text/tab-separated-values\n";
-  print "Content-Disposition: attachment; filename=SitesBLAST.tsv\n\n";
-}
-
-unless (defined $seq) {
+unless (defined $seq || defined $hmmFile) {
   print
     GetMotd(),
     p("Given a protein sequence, SitesBLAST finds homologs that have known functional residues and",
@@ -119,8 +196,18 @@ unless (defined $seq) {
       b("Enter a protein sequence in FASTA format, or an identifier from UniProt, RefSeq, or MicrobesOnline"),
       br(),
       textarea( -name  => 'query', -value => '', -cols  => 70, -rows  => 10 )),
+    p("Or an HMM accession:", textfield(-name => "hmmId", -value => "", -size => 12),
+      br(),
+      small("like",
+            a({-href => "sites.cgi?hmmId=TIGR00110"}, "TIGR00110"),
+            "or",
+            a({-href => "sites.cgi?hmmId=PF01817"}, "PF01817"))),
     p(submit('Search'), reset()),
     end_form,
+    start_form(-name => 'upload', -method => 'POST', -action => 'sites.cgi'),
+    p("Or upload an HMM:",
+      filefield(-name => 'hmmfile', -size => 50),
+      submit('Go')),
     p("Or try", a({-href => "treeSites.cgi", -title =>"Sites on a Tree: view functional residues in an alignment"},
                   "Sites on a Tree"),
      "or", a({-href => "litSearch.cgi", -title => "PaperBLAST: Find papers about a protein or its homologs"},
@@ -129,55 +216,102 @@ unless (defined $seq) {
   exit(0);
 }
 #else
-my $hasDef = $header ne "";
-$header = sequenceToHeader($seq) unless $hasDef;
-$query = ">$header\n$seq\n";
 
-my $query2 = $query; $query2 =~ s/[|]/./g;
-print
-  p("Comparing $header to proteins with known functional sites using BLASTp with E &le; $maxE."),
-  p("Or try",
-    a({-href => "treeSites.cgi?query=".uri_escape($query),
-       -title => "Sites on a Tree: view functional residues in an alignment"},
-      "Sites on a Tree")
-    .",",
-    a({-href => "litSearch.cgi?query=".uri_escape($query),
-       -title => "PaperBLAST: find papers about homologs"},
-      "PaperBLAST")
-    .",",
-    a({-href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=".uri_escape($query2),
-       -title => "Compare your sequence to NCBI's Conserved Domains Database (CDD)"}, "Conserved Domains")
-    .",",
-    "or compare to",
-    a({ -href => "http://www.ebi.ac.uk/thornton-srv/databases/cgi-bin/pdbsum/FindSequence.pl?pasted=$seq",
-              -title => "Find similar proteins with known structures (PDBsum)" },
-            "all protein structures"))
-  . "\n"
-  unless $format eq "tsv";
-open(my $fhFaa, ">", $seqFile) || die "Cannot write to $seqFile\n";
-print $fhFaa ">$header\n$seq\n";
-close($fhFaa) || die "Error writing to $seqFile\n";
-die "No such executable: $blastall\n" unless -x $blastall;
-# m S means mask complex sequences for lookup but not for alignment
-system("$blastall -F 'm S' -p blastp -i $seqFile -d $blastdb -e $maxE -a $nCPU -o $seqFile.out -b $maxHits -v $maxHits -a $nCPU > /dev/null 2>&1") == 0
-  || die "$blastall failed: $!\n";
-unlink($seqFile);
-my $searchio = Bio::SearchIO->new(-format => 'blast', -file => "$seqFile.out")
-  || die "Failed to read $seqFile.out\n";
-my @hits = ();
-while (my $result = $searchio->next_result) {
-  while (my $hit = $result->next_hit) {
-    push @hits, $hit;
+my @hits;
+if (defined $hmmFile) {
+  $header = $hmmSpec =~ m/^hex/ ? "uploaded HMM" : $hmmSpec;
+  print
+    p("Comparing $header to proteins with known functional sites using HMMer"),
+    p("Or try",
+      a({ -href => "hmmSearch.cgi?hmmId=$hmmSpec"}, "Family Search vs. Papers"))
+    . "\n"
+    unless $format eq "tsv";
+  my $resultsFile = "$tmpDir/$hmmSpec.hmmer.sites";
+  unless (-e $resultsFile
+          && NewerThan($resultsFile, $hmmFile)
+          && NewerThan($resultsFile,  $blastdb)) {
+    my $hmmsearch = "../bin/hmmsearch";
+    die "No such executable: $hmmsearch" unless -x $hmmsearch;
+    # If it has no trusted cutoff line, try running it with -E 0.01
+    my $tmpResultsFile = "$resultsFile.$$.tmp";
+    if (system("$hmmsearch", "--cut_tc", "-o", $tmpResultsFile, $hmmFile, $blastdb) != 0) {
+      print p("Rerunning HMMer with -E 0.01 instead of trying to use the trusted cutoff")."\n";
+      system($hmmsearch, "-E", 0.01, "-o", $tmpResultsFile, $hmmFile, $blastdb) == 0
+        || die "Error runniung hmmsearch: $!";
+    }
+    rename($tmpResultsFile, $resultsFile)
+      || die "Error renaming to $resultsFile";
   }
+  # The hmmer parser sometimes outputs lines like
+  # "Missed this line: [No individual domains that satisfy reporting thresholds (although complete target did)]"
+  # So, temporarily redirect STDOUT
+  open(my $old_stdout, ">&STDOUT") || die "Cannot duplicate STDOUT: $!";
+  open(STDOUT, ">", "/dev/null") || die "Cannot redirect STDOUT: $!";
+  my $searchio = Bio::SearchIO->new(-format => 'hmmer', -file => $resultsFile)
+    || die "Failed to read $resultsFile";
+  while (my $result = $searchio->next_result) {
+    while (my $hit = $result->next_hit) {
+      # In some cases, a hit has no high-scoring domains, but meets the overall threshold; skip those
+      my @hsps = $hit->hsps;
+      if (@hsps > 0) {
+        push @hits, $hit;
+        last if @hits >= $maxHits;
+      }
+    }
+  }
+  open(STDOUT, ">&", $old_stdout) || die "Cannot duplicate filehandle: $!";
+} else {
+  my $hasDef = $header ne "";
+  $header = sequenceToHeader($seq) unless $hasDef;
+  $query = ">$header\n$seq\n";
+
+  my $query2 = $query; $query2 =~ s/[|]/./g;
+  print
+    p("Comparing $header to proteins with known functional sites using BLASTp with E &le; $maxE."),
+    p("Or try",
+      a({-href => "treeSites.cgi?query=".uri_escape($query),
+         -title => "Sites on a Tree: view functional residues in an alignment"},
+        "Sites on a Tree")
+      .",",
+      a({-href => "litSearch.cgi?query=".uri_escape($query),
+         -title => "PaperBLAST: find papers about homologs"},
+        "PaperBLAST")
+      .",",
+      a({-href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=".uri_escape($query2),
+         -title => "Compare your sequence to NCBI's Conserved Domains Database (CDD)"}, "Conserved Domains")
+      .",",
+      "or compare to",
+      a({ -href => "http://www.ebi.ac.uk/thornton-srv/databases/cgi-bin/pdbsum/FindSequence.pl?pasted=$seq",
+          -title => "Find similar proteins with known structures (PDBsum)" },
+        "all protein structures"))
+    . "\n"
+    unless $format eq "tsv";
+  open(my $fhFaa, ">", $seqFile) || die "Cannot write to $seqFile\n";
+  print $fhFaa ">$header\n$seq\n";
+  close($fhFaa) || die "Error writing to $seqFile\n";
+  die "No such executable: $blastall\n" unless -x $blastall;
+  # m S means mask complex sequences for lookup but not for alignment
+  system("$blastall -F 'm S' -p blastp -i $seqFile -d $blastdb -e $maxE -a $nCPU -o $seqFile.out -b $maxHits -v $maxHits -a $nCPU > /dev/null 2>&1") == 0
+    || die "$blastall failed: $!\n";
+  unlink($seqFile);
+  my $searchio = Bio::SearchIO->new(-format => 'blast', -file => "$seqFile.out")
+    || die "Failed to read $seqFile.out\n";
+  while (my $result = $searchio->next_result) {
+    while (my $hit = $result->next_hit) {
+      push @hits, $hit;
+    }
+  }
+  unlink("$seqFile.out");
 }
+
 my $nHits = scalar(@hits) || "no";
 $nHits .= " (the maximum)" if $nHits eq $maxHits;
+my $baseURL = "sites.cgi?" . (defined $hmmFile ? "hmmId=$hmmSpec" : "query=".uri_escape($query));
+my $baseTitle = defined $hmmFile ? "Family Search vs. Sites" : "SitesBLAST";
 print p("Found $nHits hits to proteins with known functional sites",
-       "(" . a({ -href => "sites.cgi?format=tsv&query=".uri_escape($query),
-                 -title => "SitesBLAST results in a tab-delimited format"}, "download") . ")"), "\n"
+        "(" . a({ -href => "$baseURL&format=tsv",
+                  -title => "$baseTitle results in a tab-delimited format" }, "download") . ")"), "\n"
   unless $format eq "tsv";
-unlink("$seqFile.out");
-
 print join("\t", qw{queryId subjectDb subjectId identity queryAlnBegin queryAlnEnd sujectAlnBegin subjectAlnEnd
                     subjectDescription evalue bits
                     subjectSite subjectSiteRange subjectSiteSeq querySiteRange querySiteSeq pubMedIds})."\n"
@@ -188,18 +322,34 @@ foreach my $hit (@hits) {
   $nHit++;
   my $hitId = $hit->name;
   my $bits = $hit->bits;
-  my $eval = $hit->significance;
   my $hsp = $hit->hsp; # will consider only the best one
   my ($queryBeg, $hitBeg) = $hsp->start('list');
   my ($queryEnd, $hitEnd) = $hsp->end('list');
-  my $aln = $hsp->get_aln();
+  my $eval = $hit->significance(); # for an HMM, the e-value for the whole sequence
   # The aligned sequences for query and subject over the given range, with dashes
-  my $alnQ = $aln->get_seq_by_pos(1)->seq;
-  my $alnS = $aln->get_seq_by_pos(2)->seq;
+  # (For an HMM query, the sequence is partly lower-case)
+  my ($alnQ, $alnS);
+  if ($hmmSpec) {
+    $bits = $hsp->score();
+    # Non-matching positions are lower-case in HMMer output, but matching positions will be highlighted anyway
+    $alnQ = uc( $hsp->query_string );
+    $alnS = uc( $hsp->hit_string );
+    # Convert . to - (HMMer alignments use . for gaps, but BLAST use -)
+    $alnQ =~ s/[.]/-/g;
+    $alnS =~ s/[.]/-/g;
+  } else {
+    $bits = $hit->bits;
+    my $aln = $hsp->get_aln();
+    $alnQ = $aln->get_seq_by_pos(1)->seq;
+    $alnS = $aln->get_seq_by_pos(2)->seq;
+  }
+
   my $seqQ = $alnQ; $seqQ =~ s/-//g;
-  die "BLAST parsing error, query sequences do not line up:\n$seqQ\n"
-    . substr($seq,$queryBeg-1,$queryEnd-$queryBeg+1)
+  unless ($hmmSpec) {
+    die "BLAST parsing error, query sequences do not line up:\n$seqQ\n"
+      . substr($seq,$queryBeg-1,$queryEnd-$queryBeg+1)
       unless $seqQ eq substr($seq, $queryBeg-1, $queryEnd-$queryBeg+1);
+  }
 
   # Get information about the subject
   my @hitIds = split /:/, $hitId;
@@ -216,7 +366,6 @@ foreach my $hit (@hits) {
     $id2 = $info->{id2};
   }
 
-  my $queryLen = length($seq);
   my $subjectLen = $info->{length};
 
   my $sites = $dbh->selectall_arrayref("SELECT * FROM Site WHERE db = ? AND id = ? AND chain = ? ORDER BY posFrom",
@@ -227,7 +376,7 @@ foreach my $hit (@hits) {
   my %alnPosToQpos = ();
   my $atQ = $queryBeg;
   my $atS = $hitBeg;
-  my $alnLen = $aln->length();
+  my $alnLen = length($alnQ);
   foreach my $alnPos (1..$alnLen) {
     my $valQ = substr($alnQ, $alnPos-1, 1);
     if ($valQ ne "-") {
@@ -279,8 +428,8 @@ foreach my $hit (@hits) {
   my $hitURL = "";
   $hitURL = "https://www.rcsb.org/structure/" . $id if $db eq "PDB";
   $hitURL = "https://www.uniprot.org/uniprot/" . $id if $db eq "SwissProt";
-  my $identityString = int(0.5 + 100 * $hsp->frac_identical);
-  my $coverageString = int(0.5 + 100 * ($queryEnd-$queryBeg+1) / length($seq));
+  my $identityString = $hmmSpec ? "" : int(0.5 + 100 * $hsp->frac_identical);
+  my $coverageString = int(0.5 + 100 * ($queryEnd-$queryBeg+1) / $queryLen);
   # subject length is always known right now, but not 100% sure this will always be the case
   my $fromSubjectString = $subjectLen ne "" ? "/" . $subjectLen : "";
   print p({-style => "margin-bottom: 0.5em;"},
@@ -291,9 +440,9 @@ foreach my $hit (@hits) {
           small($paperLink),
           br(),
           small(a({-title => "$bits bits, E = $eval"},
-                  "${identityString}% identity,",
+                  $hmmSpec ? "$bits bits," : "${identityString}% identity,",
                   "${coverageString}% coverage:",
-                  "${queryBeg}:${queryEnd}/${queryLen} of query aligns to",
+                  "${queryBeg}:${queryEnd}/${queryLen} of " . ($hmmSpec?"HMM":"query") . " aligns to",
                   "${hitBeg}:${hitEnd}${fromSubjectString} of ${id}${chain}")))
     if $format ne "tsv";
 
@@ -401,9 +550,12 @@ foreach my $hit (@hits) {
   # but would not work in opera and perhaps some other common browsers, not sure.
 
   # for sequences outside the bounds of the query)
-  my $queryColumns = FormatAlnString($alnQ, $queryBeg, {}, "query", $hitBeg, $alnS, $id.$chain);
+  my $queryText = $hmmSpec? "HMM" : "query";
+  my $queryColumns = FormatAlnString($alnQ, $queryBeg, {},
+                                     $queryText,
+                                     $hitBeg, $alnS, $id.$chain);
   my $siteColumns = FormatAlnSites($alnQ, $alnS, $queryBeg, $hitBeg, $id.$chain, \%sposToSite);
-  my $hitColumns = FormatAlnString($alnS, $hitBeg, \%sposToSite, $id.$chain, $queryBeg, $alnQ, "query");
+  my $hitColumns = FormatAlnString($alnS, $hitBeg, \%sposToSite, $id.$chain, $queryBeg, $alnQ, $queryText);
   my @alnColumns = ();
   foreach my $i (0..($alnLen-1)) {
     my @onMouseOver = ();
@@ -425,7 +577,9 @@ foreach my $hit (@hits) {
                                $siteColumns->[$i],
                                $hitColumns->[$i]));
   }
-  my @alnLabels = (a({-title => "amino acids $queryBeg to $queryEnd/$queryLen"}, "query"),
+  my $alnTitle = ($hmmSpec? "HMM consensus for positions" : "amino acids")
+    . " $queryBeg to $queryEnd/$queryLen";
+  my @alnLabels = (a({-title => $alnTitle}, "$queryText"),
                    "sites",
                    a({-title => "amino acids $hitBeg to $hitEnd$fromSubjectString"}, $id.$chain ));
   print "\n",
@@ -479,7 +633,7 @@ foreach my $hit (@hits) {
               $posShow .= " (vs. gap)";
             } else {
               $qPos = $alnPosToQpos{ $site->{posAlnFrom} };
-              my $qShow = a({-title => "$qChar$qPos in query" }, $qChar.$qPos);
+              my $qShow = a({-title => "$qChar$qPos in " . ($hmmSpec?"HMM":"query") }, $qChar.$qPos);
               my $matchChar = $qChar eq $sChar ? "=" : "<span style='color:darkred'>&ne;</span>";
               $posShow .= " ($matchChar $qShow)";
             }
@@ -489,7 +643,7 @@ foreach my $hit (@hits) {
           push @posShow, $posShow;
           print join("\t", $header, $db,
                      $db eq "PDB" ? "$id:$chain" : $id2,
-                     sprintf("%.1f", 100 * $hsp->frac_identical),
+                     $hmmSpec? "" : sprintf("%.1f", 100 * $hsp->frac_identical),
                      $queryBeg, $queryEnd, $hitBeg, $hitEnd,
                      $desc, $eval, $bits,
                      $site->{shortDesc},
@@ -554,7 +708,7 @@ foreach my $hit (@hits) {
                 if (@qPos > 0) {
                   $qShow .= $qFirst;
                   $qShow .= ":" . $qLast if $qFirst != $qLast;
-                  $qShow = a({-title => "$qShow in query"}, $qShow);
+                  $qShow = a({-title => "$qShow in " . ($hmmSpec?"HMM":"query")}, $qShow);
                 }
                 $showPos .= $qShow . ")";
               }
@@ -591,7 +745,7 @@ foreach my $hit (@hits) {
           }
           print join("\t", $header, $db,
                      $db eq "PDB" ? $id.$chain : $id2,
-                     sprintf("%.1f", 100 * $hsp->frac_identical),
+                     $hmmSpec? "" : sprintf("%.1f", 100 * $hsp->frac_identical),
                      $queryBeg, $queryEnd, $hitBeg, $hitEnd,
                      $desc, $eval, $bits,
                      join("; ", map $_->{shortDesc}, @$sitesHere),
@@ -612,12 +766,14 @@ foreach my $hit (@hits) {
 
 exit(0) if $format eq "tsv";
 
-my @pieces = $seq =~ /.{1,60}/g;
-print
-  h3("Query Sequence"),
-  p({-style => "font-family: monospace;"}, small(join(br(), ">" . HTML::Entities::encode($header), @pieces))),
-  p("Or try a", a({-href => "sites.cgi"}, "new SitesBLAST search")),
-  h3("SitesBLAST's Database"),
+if (! $hmmSpec) {
+  my @pieces = $seq =~ /.{1,60}/g;
+  print
+    h3("Query Sequence"),
+    p({-style => "font-family: monospace;"}, small(join(br(), ">" . HTML::Entities::encode($header), @pieces))),
+    p("Or try a", a({-href => "sites.cgi"}, "new SitesBLAST search"));
+}
+print  h3("SitesBLAST's Database"),
   p($docstring);
 finish_page();
 
