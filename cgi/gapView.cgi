@@ -122,8 +122,8 @@ my $maxMB = 100;
 $CGI::POST_MAX = $maxMB*1024*1024;
 my $maxNSeqsK = 100;
 my $maxNSeqs = $maxNSeqsK * 1000;
-my $charsInId = "a-zA-Z0-9:._-"; # only these characters are allowed in protein ids
-# (Some other characters, like "|", break fastacmd, and
+my $charsInId = "a-zA-Z0-9:._|()-"; # only these characters are allowed in protein ids
+# ("|" is now allowed; it formerly broke fastacmd;
 # ";" could creates issues with links because it affects CGI parameter parsing
 # and the ids are currently not quoted)
 
