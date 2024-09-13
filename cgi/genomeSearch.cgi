@@ -144,6 +144,12 @@ if ($gdb && $gquery) {
       end_form;
   } else {
     print p("Sorry, no matching genomes were found.");
+    if ($gdb eq "NCBI") {
+      print p("Try searching",
+              a({ -href => "https://www.ncbi.nlm.nih.gov/taxonomy/?term=" . uri_escape($gquery) },
+                "NCBI taxonomy") . ".",
+              "(The taxon name may have changed.)");
+    }
   }
   print p("Try", a({ -href => "genomeSearch.cgi?gdb=$gdb" }, "another genome"));
   finish_page();
