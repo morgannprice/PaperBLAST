@@ -86,7 +86,7 @@ if (exists $dosteps{"parse"}) {
 }
 
 if (exists $dosteps{"pmclinks"}) {
-  &maybe_run("$Bin/addPMCLinks.pl -query $workdir/comb.query -papers $workdir/hits.papers -in $indir -out $workdir/pmclinks > $workdir/addpmclinks.log" 2>&1);
+  &maybe_run("$Bin/addPMCLinks.pl -query $workdir/comb.query -papers $workdir/hits.papers -in $indir -out $workdir/pmclinks > $workdir/addpmclinks.log 2>&1");
 }
 
 if (exists $dosteps{"oa"}) {
