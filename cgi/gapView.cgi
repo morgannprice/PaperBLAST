@@ -1862,6 +1862,7 @@ sub CuratedToLink($$$) {
   my ($curatedIds, $pathwayId, $stepId) = @_;
   die "Undefined curatedIds" unless defined $curatedIds;
   my $stepDefURL = "gapView.cgi?orgs=$orgsSpec&set=$set&showdef=1&path=$pathwayId#$stepId";
+  my $seq = CuratedToSeq($curatedIds);
   my $curatedDesc;
   if ($curatedIds =~ m/^curated2:(.*)$/) {
     my $protId = $1;
@@ -1907,7 +1908,15 @@ sub CuratedToLink($$$) {
   } elsif ($first =~ m/^predicted:/) {
     $first =~ s/^predicted://;
   }
-  my $URL = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=" . $first;
+  # $first was previously used so that just an id could be the query argument for PaperBLAST, but that
+  # is not 100% reliable, so just include the identifier for reference.
+  if ($first =~ m/^reanno/) {
+    $first =~ s/^reanno::[^:]+://;
+  } else {
+    $first =~ s/^[^:]+:+//;
+  }
+  my $fasta = ">$first $curatedDesc\n$seq\n";
+  my $URL = "http://papers.genomics.lbl.gov/cgi-bin/litSearch.cgi?query=" . uri_escape($fasta);
   my $link = a({-href => $URL, -title => "View $idShowHit in PaperBLAST"}, $curatedDesc);
   $link .= " (" . a({-title => $charTitle}, $charLabel) . ")";
   return $link;
@@ -1928,6 +1937,13 @@ sub CuratedToSeq($) {
     my ($seq) = $dbhS->selectrow_array(qq{SELECT seq FROM StepQuery WHERE queryType = "uniprot" AND uniprotId = ?},
                                        {}, $uniprotId);
     die "Unknown uniprot id $uniprotId" unless $seq;
+    return $seq;
+  }
+  #else
+  if ($curatedIds =~ m/^predicted:(.*)$/) {
+    my $uniprotId = $1;
+    my ($seq) = $dbhS->selectrow_array(qq{SELECT seq FROM StepQuery WHERE queryType = "predicted" AND uniprotId = ?},
+                                       {}, $uniprotId);
     return $seq;
   }
   #else
