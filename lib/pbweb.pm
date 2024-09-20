@@ -1261,8 +1261,14 @@ sub parseSequenceQuery {
     }
 
     my $shortSafe = HTML::Entities::encode($short);
-    &fail("Sorry -- we were not able to find a protein sequence for the identifier <b>$shortSafe</b>. We checked it against our database of proteins that are linked to papers, against UniProt (including their ID mapping service), against MicrobesOnline, against the NCBI protein database (RefSeq and Genbank), and against PDB/RCSB. Please use the sequence as a query instead.")
-      if !defined $query;
+    if (!defined $query) {
+      print p("Sorry -- we were not able to find a protein sequence for the identifier <b>$shortSafe</b>. We checked it against our database of proteins that are linked to papers, against UniProt (including their ID mapping service), against MicrobesOnline, against the NCBI protein database (RefSeq and Genbank), and against PDB/RCSB.");
+      if ($short =~ m/^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}$/) {
+        print p("Your identifier might be an obsolete UniProt identifier. Try",
+                a({-href => "https://www.uniprot.org/uniprotkb/$short/history"}, "UniProt history"));
+      }
+      &fail("Please use the sequence as a query instead.");
+    }
   }
 
   my $seq = "";
