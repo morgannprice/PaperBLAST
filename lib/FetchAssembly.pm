@@ -17,7 +17,8 @@ use CGI qw{end_html a p};
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
-@EXPORT = qw(GetMatchingAssemblies CacheAssembly AASeqToAssembly
+@EXPORT = qw(GetMatchingAssemblies CacheAssembly
+             AASeqToAssembly SeqsToAssembly
              SetPrivDir GetPrivDir
              GetFitnessBrowserPath SetFitnessBrowserPath
              GetMaxNAssemblies ParseNCBIFeatureFile
@@ -786,6 +787,39 @@ sub AASeqToAssembly($$) {
     }
     close($fhA) || die "Error writing to $tmpFile";
     rename($tmpFile, $faaFile) || die "Cannot rename $tmpFile to $faaFile";
+  }
+  return CacheAssembly('local', $hex, $dir);
+}
+
+# Given a hash of header to nucleotide sequence, and a header to protein sequence,
+# compute the CRC, and save it as an assembly
+sub SeqsToAssembly($$$) {
+  my ($ntseq, $aaseq, $dir) = @_;
+  die "Empty genome input to GenomeSeqToAssembly() is not allowed\n"
+    unless scalar(keys %$ntseq) > 0;
+  die "Empty protein sequence input to GenomeSeqToAssembly() is not allowed\n"
+    unless scalar(keys %$aaseq) > 0;
+  my $md5 = Digest::MD5->new;
+  foreach my $key (sort keys %$ntseq) {
+    $md5->add($key, "\n", $ntseq->{$key}, "\n");
+  }
+  foreach my $key (sort keys %$aaseq) {
+    $md5->add($key, "\n", $aaseq->{$key}, "\n");
+  }
+  my $hex = $md5->hexdigest;
+  -d "$dir/$hex" || mkdir("$dir/$hex") || die "Cannot make directory $dir/$hex";
+  foreach my $suffix ("fna","faa") {
+    my $hash = $suffix eq "fna" ? $ntseq : $aaseq;
+    my $file = "$dir/$hex/$suffix";
+    unless (-e $file) {
+      my $tmpFile = $file . ".$$.tmp";
+      open(my $fh, ">", $tmpFile) || die "Cannot write to $tmpFile";
+      foreach my $key (sort keys %$hash) {
+        print $fh ">" . $key . "\n" . $hash->{$key} . "\n";
+      }
+      close($fh) || die "Error writing to $tmpFile";
+      rename($tmpFile, $file) || die "Cannot rename $tmpFile to $file";
+    }
   }
   return CacheAssembly('local', $hex, $dir);
 }
