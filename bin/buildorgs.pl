@@ -4,8 +4,8 @@ use Getopt::Long;
 use FindBin qw{$Bin};
 use lib "$Bin/../lib";
 use Steps qw{WriteAssemblyAsOrgProteins WriteSixFrameAsOrgProteins};
-use FetchAssembly qw{CacheAssembly SetFitnessBrowserPath SetPrivDir AASeqToAssembly};
-use pbutils qw{ReadFastaEntry ReadFastaDesc};
+use FetchAssembly qw{CacheAssembly SetFitnessBrowserPath SetPrivDir AASeqToAssembly SeqsToAssembly};
+use pbutils qw{ReadFasta ReadFastaEntry ReadFastaDesc};
 
 my $cachedir = "$Bin/../tmp/downloaded";
 my $privdir = "$Bin/../private"; # for JGI access key
@@ -21,6 +21,9 @@ gdb is one of the genome databases supported by FetchAssembly
 and gid is a genome identifier,
  or gdb=file and gid=filename
  or gdb=file and gid=filename:genomeName
+  where filename contains protein sequences in fasta format.
+  If filename ends in .faa, buildorgs.pl will also look for
+  nucleotide sequences in the corresponding .fna file.
 
 If using -orgfile -- the input file should contain one organism
 specifier per line, or comment lines that begin with "#".
@@ -107,7 +110,18 @@ foreach my $orgspec (@orgspec) {
     my $n = scalar(@ids);
     $genomeName = "$ids[0]:$ids[-1] ($n proteins)"
       unless defined $genomeName;
-    $assembly = AASeqToAssembly(\%headerToSeq, $cachedir);
+    my $fnaFile;
+    if ($gid =~ m/[.]faa$/) {
+      $fnaFile = $gid;
+      $fnaFile =~ s/[.]faa$/.fna/;
+    }
+    if (defined $fnaFile && -e $fnaFile) {
+      my $ntseq = ReadFasta($fnaFile);
+      my @ids = keys %$ntseq;
+      $assembly = SeqsToAssembly($ntseq, \%headerToSeq, $cachedir);
+    } else {
+      $assembly = AASeqToAssembly(\%headerToSeq, $cachedir);
+    }
     $assembly->{genomeName} = $genomeName;
   } else {
     $assembly = CacheAssembly($gdb, $gid, $cachedir);
