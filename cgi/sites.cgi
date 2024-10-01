@@ -146,20 +146,8 @@ if ($hmmSpec) {
   }
   print $cgi->redirect("sites.cgi?hmmId=$hmmId");
   exit(0);
-} else {
-  ($header, $seq) = parseSequenceQuery(-query => $query,
-                                       -dbh => $dbh,
-                                       -blastdb => $blastdb,
-                                       -fbdata => $fbdata);
-  $queryLen = length($seq);
 }
-
-if ($format eq "tsv") {
-  die "No query found\n" if !defined $seq && !defined $hmmFile;
-  print "Content-Type:text/tab-separated-values\n";
-  my $title = $hmmSpec ? "SitesHMM" : "SitesBLAST";
-  print "Content-Disposition: attachment; filename=$title.tsv\n\n";
-}
+# else it is a sequence, but, must call parseSequenceQuery after page is started
 
 if ($format ne "tsv") {
   my $title = "SitesBLAST";
@@ -178,13 +166,28 @@ if ($format ne "tsv") {
   start_page('title' => $title,
              'banner' => 'SitesBLAST &ndash; <small>Find functional sites</small>',
              'bannerURL' => 'sites.cgi');
-print <<END
+  print <<END
 <SCRIPT src="../static/pb.js"></SCRIPT>
 END
-;
+    ;
 }
 
-unless (defined $seq || defined $hmmFile) {
+if (!defined $hmmFile) {
+  ($header, $seq) = parseSequenceQuery(-query => $query,
+                                       -dbh => $dbh,
+                                       -blastdb => $blastdb,
+                                       -fbdata => $fbdata);
+  $queryLen = length($seq);
+}
+
+if ($format eq "tsv") {
+  die "No query found\n" if !defined $seq && !defined $hmmFile;
+  print "Content-Type:text/tab-separated-values\n";
+  my $title = $hmmSpec ? "SitesHMM" : "SitesBLAST";
+  print "Content-Disposition: attachment; filename=$title.tsv\n\n";
+}
+
+if ($format ne "tsv" && !defined $hmmFile && !defined $seq) {
   print
     GetMotd(),
     p("Given a protein sequence, SitesBLAST finds homologs that have known functional residues and",
@@ -215,7 +218,6 @@ unless (defined $seq || defined $hmmFile) {
   finish_page();
   exit(0);
 }
-#else
 
 my @hits;
 if (defined $hmmFile) {
