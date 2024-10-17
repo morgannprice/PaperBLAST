@@ -1616,6 +1616,9 @@ END
                     "paper from 2019"),
                   "on GapMind for amino acid biosynthesis"),
                li("the",
+                  a({ -href => "https://www.biorxiv.org/content/10.1101/2024.10.14.618325v1" }, "2024 update"),
+                  "on GapMind for amino acid biosynthesis"),
+               li("the",
                   a({ -href => "https://doi.org/10.1371/journal.pgen.1010156",
                   -title => "Filling gaps in bacterial catabolic pathways with computation and high-throughput genetics" },
                 "paper from 2022"),
@@ -1629,7 +1632,7 @@ END
   my $changesFile = "../gaps/$set/changes";
   if (defined $setDesc && -e $changesFile) {
     push @info,
-      li(a({ -href => $changesFile }, "changes"), "to", i($setDesc), "since the publication.");
+      li(a({ -href => $changesFile }, "changes"), "to", i($setDesc), "since the original publication.");
   }
   print join("\n", @info);
   print "</UL>\n";
