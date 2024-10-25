@@ -492,8 +492,8 @@ if (!$seqsSet && !$alnSet) {
   print
     p(i("Sites on a Tree"),
       "shows a phylogenetic tree for a protein family along with the sites you choose",
-      "(".a({-href => "treeSites.cgi?alnId=DUF1080&treeId=DUF1080&tsvId=DUF1080&anchor=BT2157&pos=134,164,166",
-         -title => "putative active site of the 3-ketoglycoside hydrolase family" },
+      "(".a({-href => "treeSites.cgi?alnId=DUF1080&treeId=DUF1080&tsvId=DUF1080&anchor=BT2157&pos=134,164,166,190,245,275",
+         -title => "putative active site of the 3-ketoglycoside lyase family" },
         "example").").",
       "Or, it can show all the known functional residues",
       "(".a({-href => "treeSites.cgi?alnId=BT2402&treeId=BT2402&tsvId=BT2402&posSet=functional&anchor=BT2402",
