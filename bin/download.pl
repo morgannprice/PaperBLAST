@@ -55,7 +55,8 @@ From EcoCyc: ecoli.tar.gz (158 MB)
 
 PDB metadata (109 MB):
   http://www.ebi.ac.uk/thornton-srv/databases/pdbsum/data/protnames.lst
-  ftp://ftp.wwpdb.org/pub/pdb/data/monomers/components.cif.gz
+  https://files.wwpdb.org/pub/pdb/data/monomers/components.cif.gz
+  https://files.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt.gz
 
 BioLiP annotation files (461 MB):
   https://zhanggroup.org/BioLiP/download/BioLiP_nr.txt.gz
@@ -222,9 +223,9 @@ if (exists $dosteps{"uniprot"}) {
 if (exists $dosteps{"pdb"}) {
   &maybe_wget("http://www.ebi.ac.uk/thornton-srv/databases/pdbsum/data/protnames.lst",
               "$dir/protnames.lst");
-  &maybe_wget("ftp://ftp.wwpdb.org/pub/pdb/data/monomers/components.cif.gz",
+  &maybe_wget("https://files.wwpdb.org/pub/pdb/data/monomers/components.cif.gz",
               "$dir/components.cif.gz");
-  &maybe_wget("ftp://ftp.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt.gz",
+  &maybe_wget("https://files.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt.gz",
               "$dir/pdb_seqres.txt.gz");
   &maybe_run("gunzip $dir/pdb_seqres.txt.gz");
 }
