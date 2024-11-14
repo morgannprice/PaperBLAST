@@ -399,7 +399,7 @@ if ($query =~ m/^transporter:(.+)$/) {
   }
   print end_ul(),
     p("Or see an",
-      a({ -href => "gapView.cgi?set=$set&orgs=orgsFit&path=$pathSpec&showdef=1" },
+      a({ -href => "gapView.cgi?set=$set&orgs=orgsDef&path=$pathSpec&showdef=1" },
         "overview of $pathInfo{$pathSpec}{desc}")),
     p("Or see",
       a({-href => "curatedClusters.cgi?set=$set&path=all"}, "all pathways"));
