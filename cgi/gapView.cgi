@@ -695,7 +695,11 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
     print end_ul, "\n";
   } elsif ($orgId eq "" && $pathSpec ne "") {
     # mode: Overview of this pathway across organisms
-    print p("Analysis of pathway $pathSpec in", scalar(@orgs), "genomes"), "\n";
+    print p("Analysis of pathway",
+            a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=$pathSpec&showdef=1",
+               -title => "pathway definition"},
+              $pathSpec),
+            "in", scalar(@orgs), "genomes"), "\n";
     my $ruleScores = $dbhG->selectall_arrayref("SELECT * from RuleScore WHERE pathwayId = ? AND ruleId = 'all'",
                                                { Slice => {} }, $pathSpec);
     my %orgScore = map { $_->{orgId} => $_ } @$ruleScores;
