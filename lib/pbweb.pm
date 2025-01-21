@@ -786,8 +786,14 @@ sub RefSeqToFasta($) {
     close($fh) || die "Error writing to $cacheGbk";
     $seqio = Bio::SeqIO->new(-fh => IO::String->new($gb), -format => "genbank");
   }
+  my $hasGene = 0;
   while (my $seq = $seqio->next_seq) {
     foreach my $ft ($seq->get_SeqFeatures) {
+      if ($ft->primary_tag eq "gene"
+          && (($ft->has_tag("locus_tag") && ($ft->get_tag_values("locus_tag"))[0] eq $short)
+              || ($ft->has_tag("old_locus_tag") && ($ft->get_tag_values("old_locus_tag"))[0] eq $short))) {
+        $hasGene = 1;
+      }
       next unless $ft->primary_tag eq "CDS"
         && $ft->has_tag("translation")
         && (($ft->has_tag("locus_tag") && ($ft->get_tag_values("locus_tag"))[0] eq $short)
@@ -801,7 +807,11 @@ sub RefSeqToFasta($) {
       return ">$defline\n$aaseq";
     }
   }
-  print p("Sorry, failed find $short in the genbank file, see $cacheGbk");
+  if ($hasGene) {
+    print p("Sorry, <B>$short</B> is not a protein-coding gene.");
+  } else {
+    print p("Sorry, failed find <B>$short</B> in the genbank file, see $cacheGbk");
+  }
   return undef;
 }
 
