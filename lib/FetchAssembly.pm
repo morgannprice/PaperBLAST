@@ -43,7 +43,7 @@ sub FetchWithRetry($$) {
   return undef;
 }
 
-my $datasetsAPI = "https://api.ncbi.nlm.nih.gov/datasets/v2alpha";
+my $datasetsAPI = "https://api.ncbi.nlm.nih.gov/datasets/v2";
 
 # One argument: the query, either a text string or a GCF/GCA identifier
 # Returns a list of results (up to maxAssemblyList), with each row a hash including
@@ -62,8 +62,10 @@ sub FetchNCBIInfo($) {
       . "&filters.exclude_paired_reports=true"
       . "&page_size=" . GetMaxNAssemblies();
   } else {
-    # Use /genome/taxon/Bacteria,Archaea/dataset_report with search_text=$query
-    $URL = "$datasetsAPI/genome/taxon/Bacteria,Archaea/dataset_report"
+    # I used to use Bacteria,Archaea instead of 131567 (cellular organisms) but that no longer works
+    # So use /genome/taxon/Bacteria Archaea/dataset_report with search_text=$query
+    # Unfortunately, the returned report does not have any taxonomic information, so cannot filter out eukaryotes
+    $URL = "$datasetsAPI/genome/taxon/131567/dataset_report"
       . "?filters.search_text=" . uri_escape($query)
       . "&filters.has_annotation=true"
       . "&filters.exclude_paired_reports=true"
