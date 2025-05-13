@@ -1408,8 +1408,8 @@ sub analysisLinks {
       . " in UniProt"
         unless $param{skip}{UniProt};
   push @out, "Compare to "
-    . a({ -href => "http://www.ebi.ac.uk/thornton-srv/databases/cgi-bin/pdbsum/FindSequence.pl?pasted=$seq",
-          -title => "Find similar proteins with known structures (PDBsum)" },
+    . a({ -href => "http://papers.genomics.lbl.gov/cgi-bin/pdbBlast.cgi?query=$queryE",
+          -title => "Find similar proteins with known structures" },
         "protein structures");
   push @out, "Predict transmenbrane helices: "
     . a({-href => "https://fit.genomics.lbl.gov/cgi-bin/myPhobius.cgi?name=${descE}&seq=${seq}",
