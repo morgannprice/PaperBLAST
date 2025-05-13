@@ -138,3 +138,11 @@ CREATE TABLE PdbLigand(
   ligandName TEXT,
   PRIMARY KEY (ligandId)
 );
+
+/* This stores the descriptions for the clustered PDB entires in pdbClust.faa, used by pdbBlast.cgi */
+CREATE TABLE PdbClustInfo(
+  id TEXT,
+  chain TEXT,
+  desc TEXT,
+  PRIMARY KEY (id,chain)
+);
