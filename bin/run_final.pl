@@ -7,7 +7,7 @@ use lib "$Bin/../lib";
 use pbutils;
 use DBI;
 
-my @allsteps = qw{sprot ecocyc biolip db stats compare};
+my @allsteps = qw{sprot ecocyc biolip db stats compare pdbclust};
 my $allsteps = join(",",@allsteps);
 my $comparedir = "$Bin/../data";
 
@@ -166,4 +166,12 @@ if (exists $dosteps{compare}) {
   } else {
     &maybe_run("$Bin/compare_dbs.pl -old $olddb -new $newdb -out $workdir/dbcmp");
   }
+}
+
+if (exists $dosteps{pdbclust}) {
+  &maybe_run("$Bin/fastagrep.pl mol:protein < $indir/pdb_seqres.txt > $workdir/pdb.faa");
+  &maybe_run("$Bin/usearch -cluster_fast $workdir/pdb.faa -id 0.8 -sort length -centroids $workdir/pdb80 -quiet");
+  &maybe_run("$Bin/pdbDesc.pl $workdir/pdb80 $indir/protnames.lst > $outdir/pdbClust.faa");
+  &maybe_run("$Bin/blast/formatdb -p T -i $outdir/pdbClust.faa");
+  &maybe_run("$Bin/pdbClustLoad.pl -in $outdir/pdbClust.faa -db $outdir/litsearch.db");
 }
