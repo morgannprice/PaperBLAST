@@ -1372,7 +1372,7 @@ sub doWhileCommenting(&) {
 
 # The arguments should be a hash including desc and seq (not uri escaped)
 # Optional arguments:
-# skip (a hash) -- optionally skip links to PaperBLAST, fast.genomics, UniProt, or FitnessBLAST
+# skip (a hash) -- optionally skip links to PaperBLAST, SitesBLAST, fast.genomics, UniProt, FitnessBLAST
 # psortType -- archaea or positive or negative (defaults to Gram-negative)
 # fbLoad -- if set, loads the fitness blast scripts (defaults to 0)
 sub analysisLinks {
@@ -1394,7 +1394,8 @@ sub analysisLinks {
   push @out, "Find functional residues: "
     . a({ -href => "https://papers.genomics.lbl.gov/cgi-bin/sites.cgi?query=$queryE",
           -title => "Compare to proteins with known functional residues" },
-        "SitesBLAST");
+        "SitesBLAST")
+    unless $param{skip}{SitesBLAST};
   my $desc2 = $desc; $desc2 =~ s/[|]/./g; # CDD doesn't like | in the defline
   push @out, "Search for "
     . a({ -href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput="
