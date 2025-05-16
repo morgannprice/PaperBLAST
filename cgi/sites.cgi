@@ -21,7 +21,7 @@ use HTML::Entities;
 use IO::Handle; # for autoflush
 use lib "../lib";
 use pbutils qw{NewerThan};
-use pbweb qw{start_page finish_page GetMotd loggerjs parseSequenceQuery sequenceToHeader HmmToFile};
+use pbweb qw{start_page finish_page GetMotd loggerjs parseSequenceQuery sequenceToHeader HmmToFile analysisLinks};
 use Bio::SearchIO;
 use URI::Escape;
 
@@ -222,12 +222,13 @@ if ($format ne "tsv" && !defined $hmmFile && !defined $seq) {
 my @hits;
 if (defined $hmmFile) {
   $header = $hmmSpec =~ m/^hex/ ? "uploaded HMM" : $hmmSpec;
-  print
-    p("Comparing $header to proteins with known functional sites using HMMer"),
-    p("Or try",
-      a({ -href => "hmmSearch.cgi?hmmId=$hmmSpec"}, "Family Search vs. Papers"))
-    . "\n"
-    unless $format eq "tsv";
+  unless ($format eq "tsv") {
+    print
+      p("Comparing $header to proteins with known functional sites using HMMer"),
+      p("Or try",
+        a({ -href => "hmmSearch.cgi?hmmId=$hmmSpec"}, "Family Search vs. Papers")),
+      "\n";
+  }
   my $resultsFile = "$tmpDir/$hmmSpec.hmmer.sites";
   unless (-e $resultsFile
           && NewerThan($resultsFile, $hmmFile)
@@ -268,26 +269,23 @@ if (defined $hmmFile) {
   $query = ">$header\n$seq\n";
 
   my $query2 = $query; $query2 =~ s/[|]/./g;
-  print
-    p("Comparing $header to proteins with known functional sites using BLASTp with E &le; $maxE."),
-    p("Or try",
-      a({-href => "treeSites.cgi?query=".uri_escape($query),
-         -title => "Sites on a Tree: view functional residues in an alignment"},
-        "Sites on a Tree")
-      .",",
-      a({-href => "litSearch.cgi?query=".uri_escape($query),
-         -title => "PaperBLAST: find papers about homologs"},
-        "PaperBLAST")
-      .",",
-      a({-href => "http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=".uri_escape($query2),
-         -title => "Compare your sequence to NCBI's Conserved Domains Database (CDD)"}, "Conserved Domains")
-      .",",
-      "or compare to",
-      a({ -href => "http://www.ebi.ac.uk/thornton-srv/databases/cgi-bin/pdbsum/FindSequence.pl?pasted=$seq",
-          -title => "Find similar proteins with known structures (PDBsum)" },
-        "all protein structures"))
-    . "\n"
-    unless $format eq "tsv";
+
+  unless ($format eq "tsv") {
+    my @links = analysisLinks('desc' => $header, 'seq' => $seq,
+                              'skip' => { 'SitesBLAST' => 1 },
+                              'fbLoad' => 1);
+    print
+      qq{<DIV style="float:right; padding-left: 10px; width:25%; background-color: #EEEEEE; font-size: 95%;">},
+      map(p({-style => "margin-top: 0.5em; margin-bottom: 0.5em;"}, $_),
+          "Other sequence analysis tools:", @links),
+            qq{</DIV>},
+      p("Comparing $header to proteins with known functional sites using BLASTp with E &le; $maxE."),
+      p("Or try",
+        a({-href => "treeSites.cgi?query=".uri_escape($query),
+           -title => "Sites on a Tree: view functional residues in an alignment"},
+          "Sites on a Tree")),
+        "\n";
+  }
   open(my $fhFaa, ">", $seqFile) || die "Cannot write to $seqFile\n";
   print $fhFaa ">$header\n$seq\n";
   close($fhFaa) || die "Error writing to $seqFile\n";
@@ -607,7 +605,7 @@ foreach my $hit (@hits) {
       }
       foreach my $ligandId (sort keys %byLigand) {
         my $ligSites = $byLigand{$ligandId};
-        my $ligShow;
+        my $ligShow = "";
         if ($ligandId eq "") {
           $ligShow = "active site:";
         } elsif ($ligandId eq "NUC") {
