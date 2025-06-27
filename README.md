@@ -38,18 +38,13 @@ directory)
 
 sqlite3 is required
 
-To identify search terms from MicrobesOnline, the MicrobesOnline code
-base must be in ~/Genomics. (This is required for building the
-database; it is not required by the CGI scripts.) See
-http://www.microbesonline.org/programmers.html#source
-
 The swissknife perl library must be in the SWISS subdirectory (so that
 the *.pm files are in SWISS/lib/SWISS/). It is available at
 
 http://swissknife.sourceforge.net/docs/
 https://sourceforge.net/projects/swissknife/files/latest/download
 
-As of February 2020, we are using swissknife version 1.79.
+As of June 2025, we are using swissknife version 1.81.
 
 Finally, PaperBLAST uses these standard Perl libraries:
 
