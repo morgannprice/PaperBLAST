@@ -24,7 +24,8 @@ our (@ISA,@EXPORT);
              parseSequenceQuery sequenceToHeader
              warning fail
              doWhileCommenting runWhileCommenting runTimerHTML
-             analysisLinks);
+             analysisLinks
+             coloredAAChar);
 
 # Returns a list of entries from SubjectToGene, 1 for each duplicate (if any),
 # sorted by priority
@@ -1453,6 +1454,40 @@ sub analysisLinks {
     push @out, $fb;
   }
   return map $_."\n", @out;
+}
+
+# To show alignments
+my %aaColor = ("D" => "#FB9A99",
+               "E" => "#E31A1C",
+               "N" => "#CCE6FF",
+               "Q" => "#A7C9EC",
+               "K" => "#81ADD9",
+               "R" => "#5892C7",
+               "H" => "#1F78B4",
+               "F" => "#FDBF6F",
+               "W" => "#FFA043",
+               "Y" => "#FF7F00",
+               "P" => "#FFFF99",
+               "M" => "#DBAB5E",
+               "C" => "#B15928",
+               "G" => "#E6FFE6",
+               "A" => "#BDE7B7",
+               "V" => "#93D089",
+               "L" => "#68B85C",
+               "I" => "#33A02C",
+               "S" => "#CAB2D6",
+               "T" => "#6A3D9A",
+               "-" => "#EEEEEE" );
+
+sub coloredAAChar($$$) {
+  my ($aa, $pos, $title) = @_;
+  my $out = $aa;
+  if ($aa ne "-") {
+    $out = qq{<A TITLE="$aa$pos in $title">$out</A>};
+  }
+  my $color = $aaColor{$aa} || "white";
+  my $pad = "0.5em";
+  return qq{<SPAN style="background-color:$color; padding: 0.15em 0.3em 0.15em 0.3em;">$out</SPAN>};
 }
 
 1
