@@ -75,6 +75,7 @@ if (exists $dosteps{"explodeam"}) {
   print STDERR "Step: explode\n";
   my @files = &read_list("$indir/am/files");
   foreach my $gz (@files) {
+    next unless $gz =~ m/_xml/; # ignore all the txt files, the am step only uses xml files
     $gz =~ m/[.]tar[.]gz$/ || die "Do not know how to handle $gz";
     &maybe_run("(cd $indir/am; tar xzf $gz)");
   }
