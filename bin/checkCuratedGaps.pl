@@ -73,7 +73,7 @@ if (-e $cgapFile) {
   print STDERR "No curated gaps for $set\n";
 }
 
-my @kgapHeader = qw{genomeName gdb gid pathway step gtax};
+my @kgapHeader = qw{genomeName gdb gid pathway step};
 my $kgapFile = "$stepDir/$set.known.gaps.tsv";
 my @kgaps;
 if (-e $kgapFile) {
