@@ -139,7 +139,7 @@ step.
 If you're interested in known gaps, then aa.sum.knownsim will report
 which organisms in your data set ("orgId") are similar to organisms
 with known gaps ("orgId2"). For the actual known gaps see
-gaps/aa/aa,known.steps.gaps and gaps/aa/aa.known.gaps.orgs (both
+gaps/aa/aa.known.gaps.tsv and gaps/aa/aa.curated.gaps.tsv (both
 tab-delimited).
 
 To analyze your own genomes, use bin/buildorgs.pl to convert the
