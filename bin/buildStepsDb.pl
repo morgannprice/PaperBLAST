@@ -12,9 +12,14 @@ use pbutils qw{ReadTable ReadFastaEntry SqliteImport};
 my $usage = <<END
 Usage: buildStepsDb.pl -set set [ -dir tmp/path.set ]
 
-Assumes that the directory already contains curated.db and *.query for
-each step as well as any related HMM models. Does not check for
-consistency between *.query and curated.db.
+Assumes that the (tmp/path.set) directory already contains curated.db
+and *.query for each step as well as any related HMM models. Does not
+check for consistency between *.query and curated.db. If known or
+curated (spurious) gaps are being used, then those should be in the
+set directory (set.known.gaps.tsv and set.curated.gaps.tsv) and all
+marker sequences for relevant orgs should be in the
+tmp/path.set/allmarkers.faa (this may also include marker sequences
+for organisms that do not have gaps; those will be ignored).
 
 Optional arguments:
   -doquery -- build all of the query files
@@ -86,9 +91,11 @@ my @curatedGaps = ();
 # Read in marker sequences corresponding to known gaps
 my %markerSeq = (); # gdb => gid => marker => sequence
 # (Marker identifiers are gene names from TIGRFam like S20 or rpsA)
-my $markerSeqFile = "$stepDir/${set}.known.gaps.markers.faa";
-if (-e $markerSeqFile) {
-  open(my $fh, "<", $markerSeqFile) || die "Cannot read $markerSeqFile\n";
+my $markerSeqIn = "$stepDir/allmarkers.faa";
+my $markerSeqOut = "$stepDir/${set}.known.gaps.markers.faa";
+unlink($markerSeqOut);
+if (-e $markerSeqIn && scalar(@knownGapsIn) + scalar(@curatedGaps) > 0) {
+  open(my $fh, "<", $markerSeqIn) || die "Cannot read $markerSeqIn\n";
   my $state = {};
   while (my ($header,$seq) = ReadFastaEntry($fh, $state)) {
     my ($orgId, $marker) = split /:/, $header;
@@ -99,7 +106,30 @@ if (-e $markerSeqFile) {
     my $gid = join("__", @parts);
     $markerSeq{$gdb}{$gid}{$marker} = $seq;
   }
-}
+  close($fh) || die "Error reading $markerSeqIn\n";
+
+  my %korgs = (); # gdb => gid => 1 if in known or curated gaps
+  foreach my $row (@knownGapsIn, @curatedGaps) {
+    my $gdb = $row->{gdb};
+    my $gid = $row->{gid};
+    $korgs{$gdb}{$gid} = 1;
+  }
+  open(my $fhOut, ">", $markerSeqOut) || die "Cannot write to $markerSeqOut\n";
+  foreach my $gdb (sort keys %korgs) {
+    foreach my $gid (sort keys %{ $korgs{$gdb} }) {
+      if (exists $markerSeq{$gdb}{$gid}) {
+        my $seqs = $markerSeq{$gdb}{$gid};
+        foreach my $marker (sort keys %$seqs) {
+          print $fhOut ">${gdb}__{$gid}:${marker}\n" . $seqs->{$marker} . "\n";
+        }
+      } else {
+        print STDERR "Warning: no markers for $gdb $gid which has known or curated gaps\n";
+      }
+    }
+  }
+  close($fhOut) || die "Error writing $markerSeqOut\n";
+  print STDERR "Wrote $markerSeqOut\n";
+} # end if there are marker sequences and known/curated gaps
 
 my $tmpDir = $ENV{TMP} || "/tmp";
 my $tmpDbFile = "$tmpDir/buildStepsDb.$$.db";
@@ -263,8 +293,6 @@ my %curatedGaps = map { join("::", $_->{gdb}, $_->{gid}, $_->{pathway}, $_->{ste
 my @knownGaps = ();
 my %hasKnownGap = (); # gdb => gid => pathway => step => 1
 foreach my $kg (@knownGapsIn) {
-  print STDERR "No marker sequences for $kg->{gdb} $kg->{gid}, which has known gaps\n"
-    unless exists $markerSeq{ $kg->{gdb} }{ $kg->{gid} };
   $hasKnownGap{ $kg->{gdb} }{ $kg->{gid} }{ $kg->{pathway} }{ $kg->{step} } = 1;
   my $key = join("::", $kg->{gdb}, $kg->{gid}, $kg->{pathway}, $kg->{step});
   my ($gapClass, $comment);
@@ -297,14 +325,12 @@ my @markerSeq = ();
 foreach my $gdb (sort keys %markerSeq) {
   my $gidHash = $markerSeq{$gdb};
   foreach my $gid (sort keys %$gidHash) {
-    if (!exists $hasKnownGap{$gdb}{$gid}) {
-      print STDERR "Warning: $markerSeqFile includes $gdb $gid which has no known gaps\n";
-      next;
-    }
-    my $markerHash = $gidHash->{$gid};
-    foreach my $marker (sort keys %$markerHash) {
-      my $seq = $markerHash->{$marker};
-      push @markerSeq, [ $gdb, $gid, $marker, $seq ];
+    if (exists $hasKnownGap{$gdb}{$gid}) {
+      my $markerHash = $gidHash->{$gid};
+      foreach my $marker (sort keys %$markerHash) {
+        my $seq = $markerHash->{$marker};
+        push @markerSeq, [ $gdb, $gid, $marker, $seq ];
+      }
     }
   }
 }
