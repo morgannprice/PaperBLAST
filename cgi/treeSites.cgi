@@ -27,8 +27,10 @@ use DBI;
 # anchor -- sequence to choose positions from
 # pos -- comma-delimited list of positions (in anchor if set, or else, in alignment)
 #	ranges like 90:96 may also be used
+# posSet -- instead, show "functional" or "filtered" positions
 # tsvFile or tsvId -- descriptions for the ids (as uploaded file or file id)
 # zoom -- an internal node (as numbered by MOTree) to zoom into
+#   (ignored if posSet is sued)
 # svg -- output an svg image, not an html page
 # tsv -- output a tab-separated table of proteins and alignment positions, not an html page
 #	(zoom should be ignored)
@@ -956,9 +958,11 @@ if (param('tsvFile')) {
 }
 
 # Now have the alignment, tree, and table (if any)
+# baseURL ignores zoom because
+# the zoom parameter is ignored in auto-sites mode
 my $baseURL = "treeSites.cgi?alnId=$alnId&treeId=$treeId";
 $baseURL .= "&tsvId=$tsvId" if $tsvId;
-foreach my $attr (qw{anchor pos zoom}) {
+foreach my $attr (qw{anchor pos}) {
   my $value = param($attr);
   $baseURL .= "&" . $attr . "=" . uri_escape($value)
     if defined $value && $value ne "";
@@ -1249,9 +1253,9 @@ if (defined param('pos') && param('pos') ne "") {
   }
 }
 
-# the zoom parameter is ignored in auto-sites mode
-my $nodeZoom = param('zoom');
 my @showLeaves = ();
+my $nodeZoom = param('zoom');
+$nodeZoom = undef if param('posSet');
 if (defined $nodeZoom && $nodeZoom =~ m/^\d+$/) {
   die "Invalid node id $nodeZoom"
     if $nodeZoom == $root
