@@ -59,8 +59,8 @@ PDB metadata (109 MB):
   https://files.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt.gz
 
 BioLiP annotation files (461 MB):
-  https://zhanggroup.org/BioLiP/download/BioLiP_nr.txt.gz
-  https://zhanggroup.org/BioLiP/download/BioLiP.txt.gz
+  https://aideepmed.com/BioLiP/download/BioLiP_nr.txt.gz
+  https://aideepmed.com/BioLiP/download/BioLiP.txt.gz
 
 (Most sizes for downloads are as of January 2017; PDB/BioLip sizes are from January 2023)
 
