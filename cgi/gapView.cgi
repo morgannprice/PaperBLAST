@@ -1321,6 +1321,9 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
                  submit("Go"),
                  end_form);
     push @links, join("", @form2);
+    push @links, a({ -title => "Compare a protein of interest to this genome",
+                     -href => "genomeBlast.cgi?gdb=$orgs{$orgId}{gdb}&gid=$orgs{$orgId}{gid}" },
+                   "BLAST this genome");
     push @links, join(" ",
                       a({ -href => OrgIdToURL($orgId) }, $orgs{$orgId}{genomeName}),
                       small('(' . $orgs{$orgId}{gid} . ')'),

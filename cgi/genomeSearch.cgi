@@ -563,6 +563,8 @@ foreach my $input (@inputsX) {
 }
 
 unlink($chitsfaaFile);
+print p("Try", a({-href => $URLnoq}, "another query"),
+        "or", a({-href => "genomeBlast.cgi?gdb=$gdb&gid=$gid"}, "BLAST"), "one protein against this genome");
 finish_page();
 
 
