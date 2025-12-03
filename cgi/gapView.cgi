@@ -78,6 +78,8 @@ sub OrgIdToURL($);
 sub ShowCandidatesForStep($); # row in StepScore => HTML for the top two candidates
 sub LegendForColorCoding();
 sub ShowWarnings($$); # orgId (or undef) and pathSpec (or undef)
+sub GrowthForTable($$); # orgId and pathwayId to short HTML for growth, to use in a table
+sub GrowthLong($$); # orgId and pathwayId to long HTML for growth
 
 sub Finish(); # show "About GapMind" and exit
 
@@ -129,8 +131,10 @@ my $charsInId = "a-zA-Z0-9:._|()-"; # only these characters are allowed in prote
 
 # These are global because they are used by many subroutines to build URLs and HTML
 my ($set, $orgsSpec, $setDesc);
-# database handles for the curated database, the steps database, and the gaps database
-my ($dbhC, $dbhS, $dbhG);
+# database handles for the curated database, the steps database, the gaps database,
+# and the growth database.
+# (The growth database is optional, and the handle may be undef)
+my ($dbhC, $dbhS, $dbhG, $dbhGrowth);
 
 # Not-too-big data from the database
 my %markerSim = (); # orgId to list of rows
@@ -426,7 +430,9 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
   %orgs = map { $_->{orgId} => $_ } @orgs;
   my $faafile = "$orgPre.faa";
   die "No such file: $faafile" unless -e $faafile;
-
+  my $dbGrowthFile = "../tmp/$orgsSpec/$set.growth.db";
+  $dbhGrowth = DBI->connect("dbi:SQLite:dbname=$dbGrowthFile","","", {})
+    if -e $dbGrowthFile;
   my $pathSpec = param("path");
   $pathSpec = "" if !defined $pathSpec;
   die "Invalid path parameter $pathSpec"
@@ -621,6 +627,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
       print p($totals);
 
       my @th = qw{Pathway Step Organism Best-candidate 2nd-candidate};
+      unshift @th, "Growth" if $dbhGrowth;
       my $showOrg = $orgId eq "" && scalar(@orgs) > 1;
       @th = grep { $_ ne "Organism" } @th unless $showOrg;
       map s/-/ /g, @th;
@@ -640,6 +647,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
                        -title => ScoreToLabel($row->{score}),
                        -style => ScoreToStyle($row->{score}) },
                      "$s: $stepDesc{$p}{$s}") );
+        unshift @td, GrowthForTable($o, $p) if $dbhGrowth;
         push @td, a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$o" }, $orgs{$o}{genomeName})
           if $showOrg;
         push @td, ( $show1, $show2 );
@@ -711,6 +719,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
     }
     my @tr = ();
     my @th = qw{Genome Best-path};
+    unshift @th, "Growth" if $dbhGrowth;
     map s/-/ /, @th;
     push @tr, Tr(th({-valign => "top"}, \@th));
     foreach my $org (@orgsSorted) {
@@ -719,12 +728,13 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
       die unless $all->{expandedPath};
       my @expandedPath = split / /, $all->{expandedPath};
       my $score = RuleToMinScore($all);
-      push @tr, Tr(td({-valign => "top"},
-                      [ a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=$pathSpec&orgId=$orgId",
-                            -style => ScoreToStyle($score),
-                            -title => "$pathSpec $ruleScoreLabels[$score]" },
-                          $orgs{$orgId}{genomeName}),
-                        PathToHTML(\@expandedPath, $orgStepScore{$orgId}) ]));
+      my @columns = ( a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=$pathSpec&orgId=$orgId",
+                          -style => ScoreToStyle($score),
+                          -title => "$pathSpec $ruleScoreLabels[$score]" },
+                        $orgs{$orgId}{genomeName}),
+                      PathToHTML(\@expandedPath, $orgStepScore{$orgId}) );
+      unshift @columns, GrowthForTable($orgId, $pathSpec) if $dbhGrowth;
+      push @tr, Tr(td({-valign => "top"}, \@columns));
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
     print LegendForColorCoding();
@@ -791,6 +801,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
   } elsif ($orgId ne "" && $pathSpec eq "" && $locusSpec eq "") {
     # mode: Overview of pathways for this organism
     my @hr = ("Pathway", span({-title=>"Best path"}, "Steps"));
+    unshift @hr, "Growth" if $dbhGrowth;
     my @tr = ();
     push @tr, th({-valign => "top"}, \@hr);
     my $allScores = $dbhG->selectall_arrayref("SELECT * from RuleScore WHERE ruleId = 'all' AND orgId = ?",
@@ -827,20 +838,23 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
       my @show = ();
       my @expandedPath = split / /, $all->{expandedPath};
       my $score = $all->{minScore};
-      push @tr, Tr({-valign => "top"},
-                   td([ a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathwayId",
-                            -style => ScoreToStyle($score),
-                            -title => $pathDesc{$pathwayId} . " - " . $ruleScoreLabels[$score] }, $pathwayId),
-                        PathToHTML(\@expandedPath, $stepScores{$pathwayId}) ]));
+      my @columns = ( a({ -href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathwayId",
+                          -style => ScoreToStyle($score),
+                          -title => $pathDesc{$pathwayId} . " - " . $ruleScoreLabels[$score] }, $pathwayId),
+                      PathToHTML(\@expandedPath, $stepScores{$pathwayId}) );
+      unshift @columns, GrowthForTable($orgId, $pathwayId) if $dbhGrowth;
+      push @tr, Tr({-valign => "top"}, td(\@columns));
     }
     print table({-cellpadding=>2, -cellspacing=>0, -border=>1}, @tr), "\n";
     print LegendForColorCoding();
     ShowWarnings($orgId, undef); # all pathways, this organism
   } elsif ($orgId ne "" && $pathSpec ne "" && $stepSpec eq "" && $locusSpec eq "") {
     # mode: Show this pathway in this organism:
+    # growth comment (if any),
     # pathway=level gap comment (if any),
     # a summary of the best path, the rules (hierarchically),
     # a table of all of the steps, and the dependency warnings.
+    print GrowthLong($orgId, $pathSpec) if $dbhGrowth;
     if (exists $knownGaps{$orgId}{$pathSpec}{""}) {
       my $kg = $knownGaps{$orgId}{$pathSpec}{""};
       print p(i("Classification of gap:"), $kg->{gapClass},
@@ -951,9 +965,10 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
     print LegendForColorCoding();
     ShowWarnings($orgId, $pathSpec);
   } elsif ($orgId ne "" && $pathSpec ne "" && $stepSpec ne "" && $locusSpec eq "") {
-    # mode: Show step in an organism: if it is a known gap,
+    # mode: Show step in an organism: growth, if it is a known gap,
     # candidates, fitness link for candidates (if relevant),
     # the step's definition, and known gaps in related organisms (if any)
+    print GrowthLong($orgId, $pathSpec) if $dbhGrowth;
     my $stepScore = $dbhG->selectrow_hashref("SELECT * FROM StepScore WHERE orgId = ? AND pathwayId = ? AND stepId = ?",
                                              {}, $orgId, $pathSpec, $stepSpec);
     die "No score for $pathSpec $stepSpec and org $orgId" unless $stepScore;
@@ -1218,7 +1233,6 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
       h3("Sequence"),
       join("\n", "<pre>", @seqparts, "</pre>"), "\n";
   } elsif ($locusSpec ne "" && $stepSpec ne "") {
-    #XX die unless $pathSpec ne "" & $orgId ne "";
     # mode: Show alignments for a gene
     push @links, a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&orgId=$orgId&path=$pathSpec&step=$stepSpec"},
                     "All candidates for step $stepSpec in", $orgs{$orgId}{genomeName});
@@ -2058,4 +2072,50 @@ sub RulesToHTML($$$) {
   }
   $out .= end_ul;
   return $out;
+}
+
+sub GrowthForTable($$) {
+  my ($orgId, $pathwayId) = @_;
+  if ($dbhGrowth) {
+    my $growth = $dbhGrowth->selectrow_hashref("SELECT * from Growth WHERE orgId = ? AND pathwayId = ?",
+                                               {}, $orgId, $pathwayId);
+    if ($growth) {
+      my $color = "black";
+      my $text = "?";
+      if ($growth->{status} < 0) {
+        $color = "red";
+        $text = "No";
+      } elsif ($growth->{status} > 0) {
+        $color = "green";
+        $text = "Yes";
+      }
+      return a({-href => "gapView.cgi?orgs=$orgsSpec&set=$set&path=$pathwayId&orgId=$orgId",
+                -title => HTML::Entities::encode($growth->{comment}),
+                -style => "color: $color; text-decoration: none;"}, $text);
+    }
+  }
+  return "&nbsp;";
+}
+
+sub GrowthLong($$) {
+  my ($orgId, $pathwayId) = @_;
+  if ($dbhGrowth) {
+    my $growth = $dbhGrowth->selectrow_hashref("SELECT * from Growth WHERE orgId = ? AND pathwayId = ?",
+                                               {}, $orgId, $pathwayId);
+    if ($growth) {
+      my $color = "black";
+      my $text = "?";
+      if ($growth->{status} < 0) {
+        $color = "red";
+        $text = "No";
+      } elsif ($growth->{status} > 0) {
+        $color = "green";
+        $text = "Yes";
+      }
+      return p("Growth:",
+               a({-href => $growth->{URL}, -style => "color: $color;"}, $text) . ".",
+               HTML::Entities::encode($growth->{comment})) . "\n";
+    }
+  }
+  return "";
 }
