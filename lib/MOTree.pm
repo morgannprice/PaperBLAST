@@ -6,6 +6,7 @@ require Exporter;
 
 use strict;
 use List::Util qw{min max};
+use HTML::Entities;
 
 # A MOTree has the following entries:
 # Note all internal_id => objects are arrays not hashes
@@ -1123,8 +1124,10 @@ sub drawSvg {
     my $title = $nodeTitle->{$node};
     $circle .= "<TITLE>$title</TITLE>" if defined $title && $title ne "";
     $circle .= "</circle>";
-    $circle = qq{<A xlink:href="$nodeURL->{$node}">$circle</A>}
-      if $nodeURL->{$node};
+    if ($nodeURL->{$node}) {
+      my $URL = encode_entities($nodeURL->{$node});
+      $circle = qq{<A xlink:href="$URL">$circle</A>}
+    }
     push @svg, $circle;
   }
   return @svg;
