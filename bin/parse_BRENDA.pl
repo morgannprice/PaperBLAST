@@ -114,8 +114,19 @@ while(my $record = <$fhIn>) {
       }
       # note that spaces were not removed from end above so should still be there, regardless of
       # if there is a trailing name or not
-      # In rare cases the uniprot id contains lower-case characters but is correct
-      unless ($rest =~ m/^(.*) ([A-Za-z][A-Za-z0-9_]+[0-9]) (SwissProt|UniProt) /) {
+      # The 2025.1 release has the remaining identifier in a form like this:
+      # Bacteroides thetaiotaomicron {Q8A6C8; source: UniProt}
+      # Vibrio anguillarum serotype O1 {A0A077T980 AND A0A077T7U5 AND  A0A077T7Z1; source: UniProt}
+      # Saccharomyces cerevisiae {P54839; source: SwissProt} (#47# NCBI  NM_000512 <27>)
+      # (the "AND" is sometimes lower case, and the UniProt id is occasionally lower-case)
+      # For both formats, in rare cases the uniprot id contains lower-case characters but is correct
+      my ($org, $protId, $db);
+      if ($rest =~ m/^(.*)\s+[{]([0-9A-Za-z\t ]+);\s+source:\s*(UniProt|SwissProt)[}]/) {
+        ($org, $protId, $db) = ($1,$2,$3);
+      } elsif ($rest =~ m/^(.*) ([A-Za-z][A-Za-z0-9_]+[0-9]) (SwissProt|UniProt) /) {
+        # The older style without the "{"
+        ($org, $protId, $db) = ($1,$2,$3);
+      } else {
         # In rare cases, there is a UniProt statement but no UniProt id. I.e. the PR field is
         # PR      #114# Phaeobacter inhibens  UniProt <129>
         # or the identifier is not in UniProt format (mangled?), i.e.
@@ -125,10 +136,10 @@ while(my $record = <$fhIn>) {
         next;
       }
 
-      my ($org, $protId, $db) = ($1,$2,$3);
       $protId = uc($protId);
-      my @protId = ($protId);
-      # And handle AND entries, which will show up as strings of " uniprotId AND" at the end of $org
+      # In the new format, multiple protIds are delimited by AND with whitespace (which varies)
+      my @protId = split /\s+AND\s+/, $protId;
+      # And handle AND entries at the end of org (old format)
       my $ok = 1;
       while($org =~ s/\s+(\S+)\s+AND\s*$//i) {
         my $newid = $1;
