@@ -543,13 +543,18 @@ sub HmmToFile($) {
   my ($hmmId) = @_;
   return undef unless $hmmId;
   if ($hmmId && $hmmId =~ m/^[a-zA-Z0-9_.-]+$/) {
-    my @hmmdir = ("../static/pfam", "../static/tigrfam", "../tmp");
+    my @hmmdir = ("../static/pfam",  "../static/hmm_PGAP", "../static/tigrfam", "../tmp");
     foreach my $hmmdir (@hmmdir) {
       return "$hmmdir/$hmmId.hmm" if -e "$hmmdir/$hmmId.hmm";
+      return "$hmmdir/$hmmId.HMM" if -e "$hmmdir/$hmmId.HMM";
     }
-    # also handle file names like PF11902.8.hmm from hmmId PF11902
-    my @glob = glob("../static/pfam/$hmmId.*.hmm");
-    return @glob > 0 ? $glob[0] : undef;
+    if ($hmmId =~ m/^PF/) {
+      my @glob = glob("../static/pfam/$hmmId.*.hmm");
+      return @glob > 0 ? $glob[0] : undef;
+    } else {
+      my @glob = glob("../static/hmm_PGAP/$hmmId.*.HMM");
+      return @glob > 0 ? $glob[0] : undef;
+    }
   }
   return undef;
 }
@@ -1166,11 +1171,11 @@ sub FormatStepPart($$$$$) {
 
 sub HMMToURL($) {
   my ($hmmId) = @_;
-  if ($hmmId =~ m/^TIGR/) {
-    return "https://www.ncbi.nlm.nih.gov/Structure/cdd/".$hmmId;
-  } elsif ($hmmId =~ m/^PF/) {
-    my $hmmIdShort = $hmmId; $hmmIdShort =~ s/[.]\d+$//;
-    return "https://www.ebi.ac.uk/interpro/entry/pfam/$hmmIdShort/";
+  $hmmId =~ s/[.]\d+$//; # no version number
+  if ($hmmId =~ m/^PF/) {
+    return "https://www.ebi.ac.uk/interpro/entry/pfam/$hmmId/";
+  } elsif ($hmmId =~ m/^TIGR|NF/) {
+    return "https://www.ncbi.nlm.nih.gov/protfam/?term=$hmmId";
   }
   return "";
 }
