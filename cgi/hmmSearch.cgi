@@ -11,6 +11,7 @@
 # hmmId -- what hmm to search for
 # curated -- show curated hits only
 # hmmfile -- an uploaded HMM
+# byeval -- ignore trusted cutoff and use (per-domain) E < 0.01 instead
 
 use strict;
 use CGI qw(:standard Vars);
@@ -27,7 +28,7 @@ $CGI::POST_MAX = $maxMB*1024*1024;
 
 my $cgi = CGI->new;
 my $hmmId = $cgi->param('hmmId');
-my $curatedOnly = $cgi->param('curated');
+my $curatedOnly = $cgi->param('curated') ? 1 : 0;
 
 my $base = "../data";
 my $blastdb = "$base/uniq.faa";
@@ -110,6 +111,7 @@ if (!defined $hmmfile) {
               "NF001994"))),
     p("HMM Accession:", textfield(-name => "hmmId", -value => '', -size => 12)),
     p(checkbox(-name => 'curated', -checked => 0, -label => "Show hits to curated sequences only")),
+    p(checkbox(-name => 'byeval', -checked => 0, -label => "Use E < 0.01 instead of trusted cutoff")),
     p(submit('Search')),
     end_form,
     start_form(-name => 'upload', -method => 'POST', -action => 'hmmSearch.cgi'),
@@ -134,8 +136,25 @@ print GetMotd();
 autoflush STDOUT 1; # show preliminary results
 print "\n";
 
-# See if the search results exist already
+my $byE = $cgi->param('byeval') ? 1 : 0; # ignore trusted cutoff if set
+
+my @tc;
+open(my $fh, "<", $hmmfile) || die "Cannot read $hmmfile";
+while(my $line = <$fh>) {
+  my @parts = split /\s+/, $line;
+  if (@parts == 3 && $parts[0] eq "TC") {
+    shift @parts;
+    @tc = @parts;
+    last;
+  }
+}
+close($fh) || die "Error reading $hmmfile";
+
+$byE = 1 if @tc == 0; # Always use by E if no trusted cutoff
 my $resultsFile = "$tmpDir/$hmmId.hmmer.dom";
+$resultsFile .= ".byE" if $byE;
+
+# See if the search results exist already
 unless (-e $resultsFile
         && NewerThan($resultsFile, $hmmfile)
         && NewerThan($resultsFile,  $blastdb)) {
@@ -144,11 +163,15 @@ unless (-e $resultsFile
   my $tmpResultsFile = "$resultsFile.$$.tmp";
   print p("Running HMMer for $showId") . "\n";
   # If it has no trusted cutoff line, try running it with -E 0.001
-  if (system($hmmsearch, "--cut_tc", "-o", "/dev/null", "--domtblout", $tmpResultsFile, $hmmfile, $blastdb) != 0) {
-    print p("Rerunning HMMer with -E 0.001 instead of trying to use the trusted cutoff")."\n";
-    system($hmmsearch, "-E", 0.001, "-o", "/dev/null", "--domtblout", $tmpResultsFile, $hmmfile, $blastdb) == 0
-    || die "Error running hmmsearch: $!";
+  my @cmd;
+  if ($byE) {
+    print p("Searching for hits with E &le; 0.01") . "\n";
+     @cmd = ($hmmsearch, "-E", 0.01, "-o", "/dev/null", "--domtblout", $tmpResultsFile, $hmmfile, $blastdb);
+  } else {
+    @cmd = ($hmmsearch, "--cut_tc", "-o", "/dev/null", "--domtblout", $tmpResultsFile, $hmmfile, $blastdb);
   }
+  system(@cmd) == 0
+      || die "Error running hmmsearch: $!";
   rename($tmpResultsFile, $resultsFile)
     || die "Error renaming to $resultsFile";
 }
@@ -182,18 +205,35 @@ my $hmmLink = $isUploaded ? "Uploaded HMM" : $hmmId;
 $hmmLink = a({-href => $URL}, $hmmLink) if $URL;
 if (keys %hits > 0) {
   my $first = (values %hits)[0];
-  my @parts = ($hmmLink, "hits",
-               scalar(keys %hits), "sequences in PaperBLAST's database above the trusted cutoff.");
-  if ($curatedOnly) {
-    push @parts, "Showing hits to curated sequences only.",
-      "Or see",
-        a({-href => "hmmSearch.cgi?hmmId=$hmmId"}, "all hits");
+  my $evalueSection;
+  if ($byE) {
+    $evalueSection = "with E &le; 0.01";
+    if (@tc > 0) {
+      $evalueSection .= " (or use the "
+        . a({-href => "hmmSearch.cgi?hmmId=$hmmId&curated=${curatedOnly}"}, "trusted cutoff")
+        . " of " . escapeHTML( join(", ", @tc)  ) . " bits instead)";
+    }
+    $evalueSection .= ".";
   } else {
-    push @parts, "Showing all hits.",
-      "Or show",
-      a({-href => "hmmSearch.cgi?hmmId=$hmmId&curated=1"}, "only hits to curated sequences");
+    $evalueSection = "above the trusted cutoff of "
+      . escapeHTML( join(",", @tc) )
+      . " bits (or use "
+      . a({-href => "hmmSearch.cgi?hmmId=$hmmId&curated=${curatedOnly}&byeval=1"}, "E < 0.01")
+      . " instead).";
   }
-  push @parts, "or try", a({-href => "hmmSearch.cgi"}, "another family.");
+  my @parts = ($hmmLink, "hits",
+               scalar(keys %hits), "sequences in PaperBLAST's database",
+               $evalueSection);
+  if ($curatedOnly) {
+    push @parts, "<BR>Showing hits to curated sequences only,",
+      "or see",
+        a({-href => "hmmSearch.cgi?hmmId=$hmmId&byeval=$byE"}, "all hits with papers") . ",";
+  } else {
+    push @parts, "<BR>Showing all hits,",
+      "or show",
+      a({-href => "hmmSearch.cgi?hmmId=$hmmId&curated=1&byeval=$byE"}, "hits to curated sequences only") . ",";
+  }
+  push @parts, "or try", a({-href => "hmmSearch.cgi"}, "another search.");
   print p(@parts);
 } else {
   print p("Sorry, no hits for $hmmLink.",
@@ -245,7 +285,8 @@ foreach my $uniqId (@uniq_sorted) {
                             scalar(@$alns) == 1 ? "covers" : "covering up to",
                             sprintf("%.1f%%", $maxHMMCoverage*100.0),
                             "of $showId,",
-                            $hits{$uniqId}{score}, "bits" );
+                            a({-title => "per-sequence score"},
+                              $hits{$uniqId}{score}, "bits"));
   print GenesToHtml($dbh, $uniqId, \@genes, $coverage_html, $maxPapers);
   print "\n";
 }
