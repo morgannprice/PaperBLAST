@@ -222,12 +222,30 @@ if ($format ne "tsv" && !defined $hmmFile && !defined $seq) {
 my @hits;
 if (defined $hmmFile) {
   $header = $hmmSpec =~ m/^hex/ ? "uploaded HMM" : $hmmSpec;
+
   unless ($format eq "tsv") {
+    my @tc;
+    open(my $fh, "<", $hmmFile) || die "Cannot read $hmmFile";
+    while (my $line = <$fh>) {
+      my @parts = split /\s+/, $line;
+      if (@parts == 3 && $parts[0] eq "TC") {
+        shift @parts;
+        @tc = @parts;
+        last;
+      }
+    }
+    close($fh) || die "Error reading $hmmFile";
+
+    my $URL = pbweb::HMMToURL($hmmSpec);
+    my $hmmLink = $hmmSpec =~ m/^hex/ ? "Uploaded HMM" : $hmmSpec;
+    $hmmLink = a({-href => $URL}, $hmmLink) if $URL;
     print
-      p("Comparing $header to proteins with known functional sites using HMMer"),
-      p("Or try",
-        a({ -href => "hmmSearch.cgi?hmmId=$hmmSpec"}, "Family Search vs. Papers")),
-      "\n";
+      p("Comparing", $hmmLink, "to proteins with known functional sites using HMMer (E &le; 0.01).",
+        "Or try",
+        a({ -href => "hmmSearch.cgi?hmmId=$hmmSpec"}, "Family Search vs. Papers"));
+    print p("Trusted cutoff would be", escapeHTML(join(", ", @tc)), " bits")
+      if (@tc > 0);
+    print "\n";
   }
   my $resultsFile = "$tmpDir/$hmmSpec.hmmer.sites";
   unless (-e $resultsFile
@@ -237,11 +255,8 @@ if (defined $hmmFile) {
     die "No such executable: $hmmsearch" unless -x $hmmsearch;
     # If it has no trusted cutoff line, try running it with -E 0.01
     my $tmpResultsFile = "$resultsFile.$$.tmp";
-    if (system("$hmmsearch", "--cut_tc", "-o", $tmpResultsFile, $hmmFile, $blastdb) != 0) {
-      print p("Rerunning HMMer with -E 0.01 instead of trying to use the trusted cutoff")."\n";
-      system($hmmsearch, "-E", 0.01, "-o", $tmpResultsFile, $hmmFile, $blastdb) == 0
+    system($hmmsearch, "-E", 0.01, "-o", $tmpResultsFile, $hmmFile, $blastdb) == 0
         || die "Error runniung hmmsearch: $!";
-    }
     rename($tmpResultsFile, $resultsFile)
       || die "Error renaming to $resultsFile";
   }
