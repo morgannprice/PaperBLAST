@@ -120,7 +120,7 @@ if (-e $markerSeqIn && scalar(@knownGapsIn) + scalar(@curatedGaps) > 0) {
       if (exists $markerSeq{$gdb}{$gid}) {
         my $seqs = $markerSeq{$gdb}{$gid};
         foreach my $marker (sort keys %$seqs) {
-          print $fhOut ">${gdb}__{$gid}:${marker}\n" . $seqs->{$marker} . "\n";
+          print $fhOut ">${gdb}__${gid}:${marker}\n" . $seqs->{$marker} . "\n";
         }
       } else {
         print STDERR "Warning: no markers for $gdb $gid which has known or curated gaps\n";
