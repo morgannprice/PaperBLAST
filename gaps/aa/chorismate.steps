@@ -33,7 +33,9 @@ aroD	3-dehydroquinate dehydratase	EC:4.2.1.10	ignore:BRENDA::B9CK59	ignore_other
 # Ga0059261_2194 / BDW16_RS10815 (uniprot:A0A2M8WD96) has auxotrophic phenotypes in RB-TnSeq data and
 # can complement an aroE- strain of E. coli (Bradley Biggs).
 # CH_122204 in CharProtDB is ignored because it is probably quinate dehydrogenase, not shikimate dehydrogenase.
-aroE	shikimate dehydrogenase	EC:1.1.1.25	EC:1.1.1.282	uniprot:Q8A006_BACTN	uniprot:A0A2M8WD96	ignore:CharProtDB::CH_122204
+# In Bifidobacterium breve, BBR_RS15520 (uniprot:A0AAX3NHF2) is strongly cofit with aroA (BBR_RS14370, r = 0.85) which confirms that
+# it is aroE.
+aroE	shikimate dehydrogenase	EC:1.1.1.25	EC:1.1.1.282	uniprot:Q8A006_BACTN	uniprot:A0A2M8WD96	ignore:CharProtDB::CH_122204	uniprot:A0AAX3NHF2
 
 # In E. coli, AroL and AroK are isozymes.
 # In Bacillus subtilis, this gene was known as AroI, and it was cloned by complementation

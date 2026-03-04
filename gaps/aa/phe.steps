@@ -36,7 +36,12 @@ cmutase	chorismate mutase	EC:5.4.99.5	hmm:PF01817	curated:BRENDA::P43902	curated
 # The putative prephenate dehydratase from Carboxydothermus pertinax (A0A1L8CUL6) is lacking
 # the regulatory (ACT) domain but has the active site residues and is often encoded near aromatic amino
 # acid synthesis genes (it might be an arogenate dehydratase instead).
-preph-dehydratase	prephenate dehydratase	EC:4.2.1.51	uniprot:Q8A0T5_BACTN	ignore_other:EC 4.2.1.91	uniprot:D4GRZ0	uniprot:A0A160HWY7	predicted:A0A1L8CUL6
+# In Bifidobacterium breve, a diverged PDT domain protein (BBR_RS16680, uniprot:A0AAW4U3Y5) is very important for fitness in
+# defined media with no phenylalanine. It is not certain if BBR_RS16680 is prephenate or arogenate dehydratase, but
+# some homologs are fused to chorismate mutase (implying channeling of prephenate), and a homolog
+# (misannotated as chorismate mutase) was co-crystallized with phenylpyruvate (PDB:3luyA), so prephenate dehydratase is
+# more likely.
+preph-dehydratase	prephenate dehydratase	EC:4.2.1.51	uniprot:Q8A0T5_BACTN	ignore_other:EC 4.2.1.91	uniprot:D4GRZ0	uniprot:A0A160HWY7	predicted:A0A1L8CUL6	uniprot:A0AAW4U3Y5
 
 # This enzyme forms arogenate, also known as pretyrosine.
 # Similarity to uniprot:O50434 is ignored because it is not acutally characterized.

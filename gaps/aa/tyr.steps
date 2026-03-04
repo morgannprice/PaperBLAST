@@ -30,7 +30,11 @@ import phe.steps:cmutase ptransferase # chorismate mutase and prephenate aminotr
 #  is in a conserved operon with aromatic amino acid biosynthesis genes.
 # In Nitrosopumilus maritimus, NMAR_RS02920 (uniprot:A9A228) is diverged but is in a conserved operon
 # with chorismate synthase.
-pre-dehydr	prephenate dehydrogenase	EC:1.3.1.12	EC:1.3.1.13	uniprot:Q8A0T8_BACTN	curated:reanno::DvH:209400	uniprot:D8IR44_HERSS	uniprot:A0A1L6J750	ignore_other:EC 1.3.1.78	ignore_other:EC 1.3.1.43	ignore_other:EC 1.3.1.78	uniprot:D4GXG3	ignore:BRENDA::P06959	uniprot:Q92MG1	predicted:E1QE65	predicted:A9A228
+# In Dehalococcoides mcarttyi, DET_RS02495 (uniprot:Q3Z995) is diverged but is in a conserved operon with chorismate synthase,
+# and many of the tyrosine binding residues are conserved with 2pv7B.
+# In Desulfogranum mediterraneum, G494_RS0108960 (similar to uniprot:A0A7T5VEL0) contains fused prephenate dehydrogenase and prephenate
+# dehydratase domains, and many of the tyrosine binding residues are conserved with 2pv7B.
+pre-dehydr	prephenate dehydrogenase	EC:1.3.1.12	EC:1.3.1.13	uniprot:Q8A0T8_BACTN	curated:reanno::DvH:209400	uniprot:D8IR44_HERSS	uniprot:A0A1L6J750	ignore_other:EC 1.3.1.78	ignore_other:EC 1.3.1.43	ignore_other:EC 1.3.1.78	uniprot:D4GXG3	ignore:BRENDA::P06959	uniprot:Q92MG1	predicted:E1QE65	predicted:A9A228	predicted:Q3Z995	predicted:A0A7T5VEL0
 
 # The specificity of the aminotransferase is difficult to predict.
 # Include EC:2.6.1.1 (aspartate amnotransferase) because it is reported to act on aromatic amino acids including tyrosine.
@@ -46,8 +50,13 @@ tyrB	tyrosine aminotransferase	EC:2.6.1.5	EC:2.6.1.27	EC:2.6.1.57	EC:2.6.1.1	ign
 # BT3933 and DVU0464 and HSERO_RS18425 are included but their specificity is uncertain
 aro-dehydr	arogenate dehydrogenase	EC:1.3.1.78	EC:1.3.1.43	EC:1.3.1.78	uniprot:Q8A0T8_BACTN	curated:reanno::DvH:209400	uniprot:D8IR44_HERSS	uniprot:A0A1L6J750	ignore_other:EC 1.3.1.12	ignore_other:EC 1.3.1.13
 
-# This enzyme requires oxygen
-PAH	phenylalanine hydroxylase	EC:1.14.16.1
+# This enzyme reduces oxygen to water while oxidizing phenylalanine to tyrosine and
+# tetrahydrobiopterin to 4a-hydroxybiopterin; conversion of
+# the 4a-hydroxybiopterin back to tetrahydrobiopterin (via dihydrobiopterin) is not represented in GapMind.
+# RR42_RS20365 (UniProt:A0A0C4YLK0) from Cupriavidus sp. FW507-4G11 is very important for
+# phenylalanine utilization, which confirms that it has this activity; it is described here because
+# homologs in various Bacteroidota are probably involved in tyrosine synthesis.
+PAH	phenylalanine 4-hydroxylase	EC:1.14.16.1	uniprot:A0A0C4YLK0
 
 from-phe: PAH
 all: cmutase pre-dehydr tyrB

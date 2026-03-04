@@ -2,22 +2,23 @@ Major changes to amino acid biosynthesis since the original 2019
 publication:
 
 arg: Better described the lysW-based pathway and argX. Added putative
-Steroidobacter dgcN-like argA. Proposed that "argA3" substitutes for
-argE.
+Steroidobacter dgcN-like argA (O-succinyl- forming). Showed that
+Veillonella "argA3" substitutes for argE.
 
 chorismate: Added putative aroA and aroD from Pyrolobus.
 
 gln: Added putative glnA from Clostridium kluyveri.
 
-gly: Added glyXL/glyXS from Bifidobacterium and Methanococcus
+gly: Added glyXL/glyXS from Bifidobacterium and Methanococcus and
+agx1 (glycine transaminase) from Bifidobacterium
 
 his: Added Bifidobacterium hisN
 
 ile: Improved definition of cimA.
 
 lys: Improved the lysW-based pathway to include genes from
-Thermococcus kodakarensis. Added predicted dapL and dapF2 from
-Staphylococcus.q
+Thermococcus kodakarensis. Added predicted dapL and confirmed dapF2
+from Staphylococcus and confirmed dapE from Echinicola and Pedobacter.
 
 met: Added the core methionine synthase mesB, the mesD-mesX system,
 and renamed metE' to mesA. Added the predicted synthases mesC and
@@ -26,7 +27,12 @@ a putative B12 reactivation protein from Heliobacterium. Added a
 putative NIL/ferredoxin component (for reductive sulfuration of
 L-aspartate semialdehyde) from Methanococcus. Added a putative
 persulfide-forming protein (for reductive sulfuration of L-aspartate
-semialdehyde) from Hippea.
+semialdehyde) from Hippea. Added the thiocarboxylate pathway for
+sulfur transfer to O-phosphohomoserine from Streptomyces albulus, as
+well as a diverged mec ([MetO sulfur-carrier protein]-L-cysteine
+hydrolase) from Dissulfurispira thermophila. Added the putative
+bifunctional metB/metC from Rhodanobacter and other Xanthomonadales.
+Added hom from Brevunidomonas.
 
 phe: Improved definition of prephenate dehydratase, including a
 diverged enzyme from Brevundimonas and a putative enzyme from
@@ -36,15 +42,19 @@ pro: Added synthesis via ornithine 5-aminotransferase (EC 2.6.1.13),
 and allowed more options for ornithine biosynthesis (such as the lysW
 pathway). Added archaeal ornithine cyclodeaminase.
 
-ser: Added serA from Thermococcus and a predicted serA from
-Roseburia. Added serC from Methanocaldococcus and from
-Staphylococcus. Added predicted serC from Clostridia ("serC3") and some
-related enzymes. Added serB from Entamoeba histolytica, as this is
-similar to some putative bacterial serB. Added a subfamily of DUF1015 as
-a predicted replacement for serB.
+ser: Added serA from Thermococcus and predicted serA from Roseburia
+and from Rhodoferax. Added serC from Methanocaldococcus and from
+Staphylococcus. Added the confirmed serC from Clostridia ("serC3") and
+related enzymes, two of which were validated experimentally. Added
+serB from Entamoeba histolytica, as this is similar to some putative
+bacterial serB. Added a subfamily of DUF1015 ("serBK") as a putative
+serine kinase that was experimentally confirmed to replace serB.
+Added the diverged serB from Lysobacter and Xanthomonas. Added the
+confirmed inositol-monophosphatase-like serB from Rhodanobacter.
 
-thr: Added the putative alternative to homoserine kinase,
-homK/thrB2/TIGR02535.
+thr: Added homoserine phosphotransferase (homK/thrB2/TIGR02535) from
+Bacteroides and Dehalococcoides and moved it to a separate step
+(homK). Added thrB from Bacillus subtilis.
 
 tyr: Improved the definition of prephenate dehydrogenase, including a
 predicted enzyme from Desulfarculus.

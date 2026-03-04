@@ -2,7 +2,9 @@
 # L-methionine biosynthesis I via O-succinylhomoserine and cystathionine (metacyc:HOMOSER-METSYN-PWY),
 # II via O-phosphohomoserine and cystathionine (metacyc:PWY-702),
 # III via O-acetylhomoserine (metacyc:HSERMETANA-PWY),
-# or IV with reductive sulfhydrylation of aspartate semialdehyde (metacyc:PWY-7977).
+# IV with reductive sulfhydrylation of aspartate semialdehyde (metacyc:PWY-7977), or
+# a recently discovered pathway via O-phosphohomoserine and sulfide that involves
+# a sulfur carrier protein with a thiocarboxylate intermediate (PMC11497804).
 # These pathways vary in how aspartate semialdehyde is reduced and sulfhydrylated to homocysteine.
 # GapMind does not represent the formation of the methyl donors for methionine synthase,
 # such as 5-methyltetrahydrofolate or methyl corrinoid proteins.
@@ -48,15 +50,15 @@ metA	homoserine O-succinyltransferase	EC:2.3.1.46
 # adhaerens).
 metX	homoserine O-acetyltransferase	EC:2.3.1.31
 
-hom_kinase	homoserine kinase	EC:2.7.1.39
-
 # Many metB proteins have some activity as O-succinylhomoserine sulfhydrylase (metZ) as well,
 # and many metZ proteins are annotated with this EC number. So this step
 # may include both enzymes.
 # METI_BACSU (uniprot:O31631) has activity as CGS but is given a more vague EC number.
 # uniprot:Q1M0P5 is now thought to be a gamma-lyase instead (see metacyc:HP_RS00540-MONOMER), so it
-# is ignored.
-metB	cystathionine gamma-synthase	EC:2.5.1.48	curated:SwissProt::O31631	ignore:SwissProt::Q1M0P5
+# is ignored. Fitness data and crystal structures (see definition of metC for details) suggest that the
+# metB protein from Xanthomonas, Rhodanobacter, or other Xanthomonadales
+# (uniprot:Q5H1U9, uniprot:I4WT24) is a bifunctional gamma-synthase / beta-lyase.
+metB	cystathionine gamma-synthase	EC:2.5.1.48	curated:SwissProt::O31631	ignore:SwissProt::Q1M0P5	uniprot:Q5H1U9	uniprot:I4WT24
 
 # BRENDA annotates Q84UD0 with this EC number but it may be a cystine lyase only (PMID:12525491).
 # BRENDA annotates Q9EYM7 with this EC but it appears to be a cystathionine beta synthase (PMID:12101301).
@@ -64,9 +66,15 @@ metB	cystathionine gamma-synthase	EC:2.5.1.48	curated:SwissProt::O31631	ignore:S
 # CH_088676 is annotated as this but with a different EC number, so it is ignored.
 # uniprot:Q4606 is annotated as cysteine desulfidase but is nearly identical to uniprot:Q93QC6, which is
 # a cystathionine beta-lyase, so it is ignored.
-# XoMetC (uniprot:Q5H4T8) is annotated as a gamma-lyase by BRENDA, but it also has beta-lyase activity
-# (PMID:24531493).
-metC	cystathionine beta-lyase	EC:4.4.1.13	ignore:BRENDA::Q84UD0	ignore:BRENDA::Q9EYM7	ignore:SwissProt::Q9SIV0	ignore:CharProtDB::CH_088676	ignore:BRENDA::Q46061	curated:BRENDA::Q5H4T8
+# In various genera of Xanthomonadales (Xanthomonas, Rhodanobacter, Dyella,
+# and Lysobacter), no metC-like protein is important for fitness in minimal medium, so we propose that
+# the metB protein (such as "XometB", uniprot:Q5H1U9, or LRK54_RS05305, uniprot:I4WT24) has both activities.
+# This is supported by crystal structures of XometB bound to PLP-aminoacrylate,
+# which is a step in the catalytic mechanism of beta-lyase (PDB:6ld8), and to PLP-cystathionine (PDB:6ld9).
+# Earlier versions of GapMind included XoMetC (uniprot:Q5H4T8), which is annotated as a gamma-lyase by BRENDA,
+# but also has beta-lyase activity (PMID:24531493); however, genetic data from other Xanthomonadales suggest that
+# this family is not involved in methionine synthesis.
+metC	cystathionine beta-lyase	EC:4.4.1.13	ignore:BRENDA::Q84UD0	ignore:BRENDA::Q9EYM7	ignore:SwissProt::Q9SIV0	ignore:CharProtDB::CH_088676	ignore:BRENDA::Q46061	uniprot:Q5H1U9	uniprot:I4WT24
 
 # METI_BACSU (uniprot:O31631) has activity as OAS but is given a more vague EC number.
 # CH_123612, uniprot:Q9WZY4, and uniprot:Q5SK88 are annotated as this but without the EC number.
@@ -74,11 +82,14 @@ metC	cystathionine beta-lyase	EC:4.4.1.13	ignore:BRENDA::Q84UD0	ignore:BRENDA::Q
 # it is usually annotated as O-succinylhomoserine sulfhydrylase, but the acylating enzmye (C8P68_RS13005)
 # is similar to O-acetyltransferases and has the correct functional residues (i.e., similar to H1YC36 in
 # supplementary data set 3 of PMID:28581482); so it must be an o-acetylhomoserine sulfhydrylase.
-metY	O-acetylhomoserine sulfhydrylase	EC:2.5.1.49	curated:SwissProt::O31631	ignore_other:O-succinylhomoserine sulfhydrylase	curated:CharProtDB::CH_123612	curated:SwissProt::Q9WZY4	curated:SwissProt::Q5SK88	uniprot:A0A2T5J8K7
+# BRENDA annotated uniprot:Q7M844 (EL168_RS03585) from Wollinella succogenes as metY, but this is not the
+# protein studied by the referenced paper (PMC3176619), and the studied protein (see pdb:3RI6 or WS1012) is proposed to
+# use a protein thiocarboxylate as a substrate instead of sulfide.
+metY	O-acetylhomoserine sulfhydrylase	EC:2.5.1.49	curated:SwissProt::O31631	ignore_other:O-succinylhomoserine sulfhydrylase	curated:CharProtDB::CH_123612	curated:SwissProt::Q9WZY4	curated:SwissProt::Q5SK88	uniprot:A0A2T5J8K7	ignore:BRENDA::Q7M844
 
 # No EC number for metZ, so use "O-succinylhomoserine sulfhydrylase", which matches
 # uniprot:METZ_PSEAE and uniprot:METZ_MYCTU.
-metZ	O-succinylhomoserine sulfhydrylase	term:O-succinylhomoserine sulfhydrylase	ignore_other:EC 2.5.1.49
+metZ	O-succinylhomoserine sulfhydrylase	term:O-succinylhomoserine sulfhydrylase	ignore_other:EC 2.5.1.49	
 
 metE	vitamin B12-independent methionine synthase	EC:2.1.1.14
 
@@ -103,7 +114,10 @@ split_metE_2	vitamin B12-independent methionine synthase, catalytic component	pr
 # 3-part split MetH proteins from Phaeobacter are ignored.
 metH	vitamin B12-dependent methionine synthase	EC:2.1.1.13	ignore:reanno::Phaeo:GFF1501	ignore:reanno::Phaeo:GFF1318	ignore:reanno::Phaeo:GFF1321	ignore:reanno::Phaeo:GFF1319	ignore:reanno::Phaeo:GFF1582	uniprot:Q72BP9_DESVH	uniprot:B8DKK4_DESVM
 
-# In Phaeobacter and some related bacteria, MetH is split into 3 parts (PMC5764234)
+# In Phaeobacter and some related bacteria, MetH is split into 3 parts (PMC5764234):
+# PGA1_c13350 (cbp, GFF1319) has the B12 binding and B12-binding cap domains;
+# PGA1_c13370 (bmt, GFF1321) has the catalytic domain;
+# and PGA1_c16040 (GFF1582) has the pterin-binding domain.
 split_metH_1	Methionine synthase component, B12 binding and B12-binding cap domains	curated:reanno::Phaeo:GFF1319
 split_metH_2	Methionine synthase component, methyltransferase domain	curated:reanno::Phaeo:GFF1321
 split_metH_3	Methionine synthase component, pterin-binding domain	curated:reanno::Phaeo:GFF1582
@@ -138,7 +152,7 @@ asd-S-transferase	L-aspartate semialdehyde sulfurtransferase, persulfide compone
 asd-S-ferredoxin	L-aspartate semialdehyde sulfurtransferase, NIL/ferredoxin component	curated:SwissProt::Q8TPT3	curated:reanno::Miya:8499492	predicted:A6UQ02
 
 # The putative persulfide forming component is MA1715 or DvMF_0044 (see PMID:25315403 and PMC5764234).
-# A conserved cysetien in MA1821 is modified to a persulfide in vivo (PMID:28165724).
+# A conserved cysteine in MA1821 is modified to a persulfide in vivo (PMID:28165724).
 # This component is not 100% required in Methanosarcina acetivorans (possible redundancy).
 # In Hippea alviniae, this protein (G415_RS0107280, similar to uniprot:F2LX84) is diverged but is in an operon with the other components.
 asd-S-perS	L-aspartate semialdehyde sulfurtransferase, persulfide-forming component	uniprot:Y1715_METAC	curated:reanno::Miya:8499265	predicted:F2LX84
@@ -179,21 +193,75 @@ asd-sulfhydrylation: asd-S-transferase asd-S-ferredoxin asd-S-perS
 
 homoserine: aspartate-semialdehyde hom
 
+# ThrB from Bacillus subtilis (uniprot:P04948) can complement a thrB- strain of E. coli (PMC1167255; Bradley Biggs).
+# Fitness data from Bifidobacterium breve confirms that BBR_RS19535 (uniprot:D4BQD2) is a diverged homoserine kinase.
+thrB	homoserine kinase	EC:2.7.1.39	uniprot:P04948	uniprot:D4BQD2
+
+# BT2402 (uniprot:Q8PX04) is required for threonine synthesis
+# (PMC7311316) and belongs to a family (TIGR02535) that was proposed
+# replace the missing homoserine kinase based on conserved gene
+# context. This family is also known as ThrB2 (PMC9026213). Homologs
+# from Phocaeicola are also required for threonine synthesis (Surya
+# Tripathi, personal communication).  Also, BT2402 and a homolog from
+# Dehalococcoides, DET_RS08350 (uniprot:Q3Z620) complemented a thrB- strain of
+# E. coli.  HomK is related to cofactor-independent phosphoglycerate mutases and has a conserved
+# metal binding site and catalytic serine; it probably
+# transfers phosphate groups between a donor (such as phosphoenolpyruvate or phosphoserine), the catalytic
+# serine, and homoserine.
+# In GapMind, HomK is described separately from ThrB
+# because it probably carries out a different reaction.
+# Similarity to Ga0116910_103027 = BJR36_RS16050 (uniprot:A0A1D3TXG7), which is annotated as a phosphoglycerate mutase in
+# BRENDA, is ignored because the cited work just mentions that two putative phosphoglycerate mutases were detected by proteomics;
+# BJR36_RS16050 is over 40% identical to BT2402, is encoded next to homoserine dehydrogenase,
+# so it is probably a homoserine phosphotransferase.
+# Diverged homologs of BT2402 that have conserved functional residues and are encoded near homoserine
+# dehydrogenase are also likely to be homoserine phosphotransferases
+# (DGI_RS12430 = uniprot:T2GDP6, DCC48_11680 = uniprot:A0A6G0A630, C5O24_RS09365 = uniprot:A0A2V1IX31).
+homK	homoserine phosphotransferase	uniprot:Q8PX04	uniprot:Q3Z620	ignore:BRENDA::A0A1D3TXG7	predicted:T2GDP6	predicted:A0A6G0A630	predicted:A0A2V1IX31
+
+phosphohomoserine: homoserine thrB
+phosphohomoserine: homoserine homK
+
 # Transsulfuration is the conversion of homoserine to homocysteine, with the sulfur being obtained from cysteine.
 # It is thought to occur with any
 # of the activated forms of homoserine (O-acetyl-, O-succinyl-, or O-phospho-homoserine).
 transsulfuration: metA metB metC
 transsulfuration: metX metB metC
-transsulfuration: hom_kinase metB metC
+transsulfuration: thrB metB metC
+transsulfuration: homK metB metC
 
 # Homocysteine can be formed by reduction of aspartate semialdehyde, direct sulfurylation of activated homoserine,
 # or transsulfuration of (activated) homoserine.
 # Activated forms of homoserine include O-acetylhomoserine, O-succinylhomoserine, or O-phospho-homoserine.
 
+# The thiocarboxylate pathway, described in Streptomyces, involves transfer of a sulfur group from
+#  a sulfur carrier protein (MetO) to O-phospho-homoserine (Hasebe et al 2024, PMC11497804).
+# (These are analogous to cysteine synthesis in Mycobacterium, where CysO is the sulfur carrier protein.)
+# The Mec protein removes the C-terminal cysteine from MetO; MoeZ transfers a sulfide onto the C-terminal amino group;
+# and MetM transfers the sulfur group to O-phosphohomoserine.
+# The sulfur carrier protein MetO is similar to the sulfur carrier CysO, which is ignored.
+metO	sulfur carrier protein MetO	uniprot:A0A059W7F4	ignore_other:CysO
+
+# Mec removes the C-terminal cysteine residue from MetO (PMC11497804).
+# Mec is similar to to CysO-S-cysteine hydrolase (EC 3.13.1.6), which is ignored.
+# In Dissulfurispira thermophila, a homolog of cysO-S-cysteine hydrolase (JTV28_RS02045, uniprot:A0A7G1H0A1)
+# is encoded in a conserved gene cluster with
+# other parts of the pathway (homK, metO, moeZ in two pieces, and metM), so we predict that this is the missing mec.
+mec	[MetO sulfur-carrier protein]-L-cysteine hydrolase Mec	uniprot:A0A059W3G7	ignore_other:EC 3.13.1.6	predicted:A0A7G1H0A1
+
+# Some homologs of the Streptomyces MoeZ (PMC11497804) perform the same molecular function,
+# but as part of the synthesis of secondary metabolites (ptmS4, see PMC6006322) or cysteine;
+# these are ignored.
+moeZ	[MetO sulfur carrier protein]--sulfur ligase MoeZ	uniprot:A0A401R754	ignore_other:%sulfur ligase
+
+# MetM converts O-phosphohomoserine to homocysteine using the sulfur atom from the thiocarboxylate-carrying MetO (PMC11497804).
+metM	MetO-thiocarboxylate-dependent L-homocysteine synthase MetM	uniprot:A0A059WBP2
+
 homocysteine: aspartate-semialdehyde asd-sulfhydrylation
 homocysteine: homoserine metX metY
 homocysteine: homoserine metA metZ
 homocysteine: homoserine transsulfuration
+homocysteine: phosphohomoserine metO mec moeZ metM
 
 # MetH occasionally oxidizes the vitamin B12 cofactor from Co(I) to Co(II), so
 # a reductase is needed to maintain its activity.

@@ -31,7 +31,8 @@ hisB	imidazoleglycerol-phosphate dehydratase	EC:4.2.1.19	uniprot:B2SZ63	uniprot:
 # Fitness data for BPHYT_RS14905 from Burkholderia phytofirmans suggests that it is an aromatic amino acid transaminase,
 # but it is 55% identical to TK06_RS12685, which can complement a hisC- mutant of E.coli (Bradley Biggs),
 # so any similarity to it is ignored.
-hisC	histidinol-phosphate aminotransferase	EC:2.6.1.9	uniprot:HIS8_BACSU	uniprot:A0A2R7PAQ8	uniprot:A0A975E8Y9	ignore:reanno::BFirm:BPHYT_RS14905
+# Fitness data confirms that BBR_RS17050 (uniprot:A0AAW7LC73) from Bifidobacterium breve is hisC.
+hisC	histidinol-phosphate aminotransferase	EC:2.6.1.9	uniprot:HIS8_BACSU	uniprot:A0A2R7PAQ8	uniprot:A0A975E8Y9	ignore:reanno::BFirm:BPHYT_RS14905	uniprot:A0AAW7LC73
 
 # In Bacillus subtilis and some related bacteria, histidinol-phosphate phosphatase is known as HisJ
 # and has been confirmed by biochemical assays of purified proteins (PMC3570733).

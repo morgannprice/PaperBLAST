@@ -26,10 +26,11 @@
 # uniprot:Q9I3W7 is annotated as this in BRENDA but we did not find experimental evidence of its activity
 # on glutamate, so it is ignored.
 # In Steroidobacter denitrificans, argA is missing but the arginine synthesis cluster includes a
-# potential N-acetyltransferase ACG33_RS14135 (uniprot:A0A127FCT3). Homologs of this protein are
+# putative N-succinyltransferase ACG33_RS14135 (uniprot:A0A127FCT3). Homologs of this protein are
 # conserved in the cluster, and it is never found together with argA; it is distantly related to
 # D-glutamate acetyltransferase dgcN (formerly DUF1611, see PMC10030869).
-argA	N-acylglutamate synthase	EC:2.3.1.1	term:N-succinylglutamate synthase	uniprot:Q8A1A5_BACTN	uniprot:L0G3H4_ECHVK	curated:BRENDA::A0A0H2X8L7	curated:BRENDA::Q8P8J6	ignore:ecocyc::G6759-MONOMER	ignore_other:EC 2.3.1.35	ignore:CharProtDB::CH_123299	curated:CharProtDB::CH_122594	ignore:BRENDA::Q9I3W7	ignore:BRENDA::Q8P8J6	predicted:A0A127FCT3
+# CAB95024.1 = uniprot:Q9K3D6 from Moritella abyssi is a fusion of argH to a diverged argA (PMC94458).
+argA	N-acylglutamate synthase	EC:2.3.1.1	term:N-succinylglutamate synthase	uniprot:Q8A1A5_BACTN	uniprot:L0G3H4_ECHVK	curated:BRENDA::A0A0H2X8L7	curated:BRENDA::Q8P8J6	ignore:ecocyc::G6759-MONOMER	ignore_other:EC 2.3.1.35	ignore:CharProtDB::CH_123299	curated:CharProtDB::CH_122594	ignore:BRENDA::Q9I3W7	ignore:BRENDA::Q8P8J6	predicted:A0A127FCT3	uniprot:Q9K3D6
 
 # ArgB includes Bacteroides proteins that act on N-succinylglutamate instead
 # of the usual N-acetylglutamate (i.e. BT3395).
@@ -60,13 +61,14 @@ argC	N-acylglutamylphosphate reductase	EC:1.2.1.38	term:N-succinylglutamylphosph
 argD	N-acetylornithine aminotransferase	EC:2.6.1.11	ignore_other:EC 2.6.1.81	ignore_other:EC 2.6.1.19	ignore:metacyc::MONOMER-18314	ignore_other:EC 2.6.1.48	uniprot:A0A806JQF3
 
 # This EC number also includes N-acetylcitrulline deacetylase, which is part of pathway III.
-# A putative amidohydrolase "ArgA3" (W3Y6L2) is in a conserved
+# A putative amidohydrolase "ArgA3" (uniprot:W3Y6L2) is in a conserved
 # operon with ornithine carbamoyltransferase (the next step) in Veillonella and
 # related genera (PMC9026213). The genome context includes other
-# arginine synthesis genes as well. Although ArgA3 was proposed to be a N-acetylglutamate
-# synthase, it is related to N-acetyl-cysteine deacetylase, and the genomes with "ArgA3"
-# are lacking argE as well; so we think argE is the more likely function.
-argE	N-acetylornithine deacetylase	EC:3.5.1.16	term:N-acetylcitrulline deacetylase	predicted:W3Y6L2
+# arginine synthesis genes as well. Although W3Y6L2 was proposed to be a N-acetylglutamate
+# synthase, it is related to N-acetyl-cysteine deacetylase, and the genomes with homologs of W3Y6L2
+# are lacking argE as well; so we think argE is the more likely function. Furthermore,
+# W3Y6L2 allowed an argE- strain of E. coli to grow in minimal media under anaerobic conditions.
+argE	N-acetylornithine deacetylase	EC:3.5.1.16	term:N-acetylcitrulline deacetylase	uniprot:W3Y6L2
 
 # This could obtain the amino group from glutamine (EC:6.3.5.5) or from ammonia (EC:6.3.4.16)
 carA	carbamoyl phosphate synthase subunit alpha	term:carbamoyl-phosphate synthase%small	ignore_other:EC 6.3.5.5	ignore_other:EC 6.3.4.16	hmm:TIGR01368
