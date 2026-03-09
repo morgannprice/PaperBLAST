@@ -11,7 +11,7 @@ use IO::String;
 use Bio::SeqIO;
 use URI::Escape;
 use FindBin qw{$RealBin};
-use pbutils qw{addNCBIKey getMicrobesOnlineDbh};
+use pbutils qw{addNCBIKey getMicrobesOnlineDbh ReadFastaEntry};
 
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
@@ -751,6 +751,35 @@ sub VIMSSToFasta($) {
   return ">$short\n$aaseq\n" if $desc;
 }
 
+# query should be a locus_tag (or old_locus_tag)
+# returns hasGene, header, a.a. sequence
+sub FindProteinInGenbank($$) {
+  my ($gbkFile, $query) = @_;
+  my $seqio = Bio::SeqIO->new(-file => $gbkFile, -format => "genbank");
+  my $hasGene = 0;
+  while (my $seq = $seqio->next_seq) {
+    foreach my $ft ($seq->get_SeqFeatures) {
+      if ($ft->primary_tag eq "gene"
+          && (($ft->has_tag("locus_tag") && ($ft->get_tag_values("locus_tag"))[0] eq $query)
+              || ($ft->has_tag("old_locus_tag") && ($ft->get_tag_values("old_locus_tag"))[0] eq $query))) {
+        $hasGene = 1;
+      }
+      next unless $ft->primary_tag eq "CDS"
+        && $ft->has_tag("translation")
+        && (($ft->has_tag("locus_tag") && ($ft->get_tag_values("locus_tag"))[0] eq $query)
+            || ($ft->has_tag("old_locus_tag") && ($ft->get_tag_values("old_locus_tag"))[0] eq $query));
+      my ($aaseq) = $ft->get_tag_values("translation");
+      my $defline = $query;
+      $defline .= " " . ($ft->get_tag_values("protein_id"))[0] if $ft->has_tag("protein_id");
+      $defline .= " " . ($ft->get_tag_values("product"))[0] if $ft->has_tag("product");
+      $defline .= " [" . $seq->desc . "]";
+      $defline =~ s/[\t\r\n]+/ /g; # not sure if this can ever occur
+      return (1, $defline, $aaseq);
+    }
+  }
+  return ($hasGene, undef, undef);
+}
+
 sub RefSeqToFasta($) {
   my ($short) = @_;
   die unless defined $short;
@@ -764,8 +793,7 @@ sub RefSeqToFasta($) {
   return undef unless $short =~ m/^[A-Za-z][A-Za-z0-9]+_[A-Za-z0-9]+[.]?\d?$/;
 
   my $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.cgi?db=Nucleotide&retmode=json&term=$short";
-  my $url2 = addNCBIKey($url);
-  my $result = get($url2);
+  my $result = get(addNCBIKey($url));
   if (!defined $result) {
     print p(small("Sorry, NCBI eutils failed:", a({-href => $url}, "url"))) . "\n";
     return undef;
@@ -776,13 +804,10 @@ sub RefSeqToFasta($) {
   return undef unless $id;
 
   # Fetch genbank format for entry $id
-  print "<P>Looking for $short in genbank entry $id\n";
+  print "<P>" . small("Looking for $short in genbank entry $id.") . "\n";
   my $cacheGbk = "../tmp/cache/gb.$id.gbk";
   my $seqio;
-  if (-e $cacheGbk) {
-    open my $fh, "<", $cacheGbk || die "Cannot read $cacheGbk";
-    $seqio = Bio::SeqIO->new(-fh => $fh, -format => "genbank");
-  } else {
+  unless (-e $cacheGbk) {
     $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=Nucleotide&rettype=gbwithparts&retmode=text&id=$id";
     my $gb = get(addNCBIKey($url));
     fail("Failed to fetch $url from NCBI, please try again") if !defined $gb;
@@ -790,33 +815,57 @@ sub RefSeqToFasta($) {
     open my $fh, ">", $cacheGbk || die "Cannot write to $cacheGbk";
     print $fh $gb;
     close($fh) || die "Error writing to $cacheGbk";
-    $seqio = Bio::SeqIO->new(-fh => IO::String->new($gb), -format => "genbank");
   }
-  my $hasGene = 0;
-  while (my $seq = $seqio->next_seq) {
-    foreach my $ft ($seq->get_SeqFeatures) {
-      if ($ft->primary_tag eq "gene"
-          && (($ft->has_tag("locus_tag") && ($ft->get_tag_values("locus_tag"))[0] eq $short)
-              || ($ft->has_tag("old_locus_tag") && ($ft->get_tag_values("old_locus_tag"))[0] eq $short))) {
-        $hasGene = 1;
-      }
-      next unless $ft->primary_tag eq "CDS"
-        && $ft->has_tag("translation")
-        && (($ft->has_tag("locus_tag") && ($ft->get_tag_values("locus_tag"))[0] eq $short)
-            || ($ft->has_tag("old_locus_tag") && ($ft->get_tag_values("old_locus_tag"))[0] eq $short));
-      my ($aaseq) = $ft->get_tag_values("translation");
-      my $defline = $short;
-      $defline .= " " . ($ft->get_tag_values("protein_id"))[0] if $ft->has_tag("protein_id");
-      $defline .= " " . ($ft->get_tag_values("product"))[0] if $ft->has_tag("product");
-      $defline .= " [" . $seq->desc . "]";
-      $defline =~ s/[\t\r\n]+/ /g; # not sure if this can ever occur
-      return ">$defline\n$aaseq";
-    }
-  }
+  my ($hasGene, $header, $seq) = FindProteinInGenbank($cacheGbk, $short);
+  return ">$header\n$seq\n" if $seq;
   if ($hasGene) {
     print p("Sorry, <B>$short</B> is not a protein-coding gene.");
-  } else {
-    print p("Sorry, failed find <B>$short</B> in the genbank file, see $cacheGbk");
+    return undef;
+  }
+
+  # else try to convert the Nucleotide (nuccore) id into an assembly id
+  $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=nuccore&db=assembly&retmode=json&id=".$id;
+  $result = get(addNCBIKey($url));
+  if (!defined $result) {
+    print p(small("Sorry, NCBI eutils failed: " . a({-href => $url }, "url")))."\n";
+    return undef;
+  }
+  $json = from_json($result);
+  return undef unless defined $json;
+  my $assemblyId = $json->{linksets}[0]{linksetdbs}[0]{links}[0];
+  return undef unless $assemblyId && $assemblyId =~ m/^[A-Z0-9_.]+$/;
+
+  $url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=assembly&retmode=json&id=" . $assemblyId;
+  $result = get(addNCBIKey($url));
+  if (!defined $result) {
+    print p(small("Sorry, NCBI eutils failed: " . a({-href => $url }, "url")))."\n";
+    return undef;
+  }
+  $json = from_json($result);
+  return undef unless defined $json && exists $json->{result};
+  my $hash = $json->{result}{$assemblyId};
+  return undef unless $hash->{ftppath_genbank};
+  print " ".small("Looking in assembly", $hash->{assemblyaccession}, "($assemblyId)"),"\n";
+
+  $cacheGbk = "../tmp/cache/assembly.$assemblyId.gbk";
+  if (! -e $cacheGbk) {
+    $url = $hash->{ftppath_genbank} . "/" . $hash->{assemblyaccession} . "_" . $hash->{assemblyname} . "_genomic.gbff.gz";
+    $url =~ s!^ftp://!https://!;
+    $result = get($url);
+    unless ($result) {
+      print p(small("Failed to fetch fasta sequences at", a({-href => $url}, $url))) . "\n";
+      return undef;
+    }
+    open(my $fh, ">", "$cacheGbk.gz") || die "Cannot write to $cacheGbk.gz";
+    print $fh $result;
+    close($fh) || die "Error writing to $cacheGbk.gz";
+    system("gunzip", "$cacheGbk.gz") == 0 || fail("gunzip failed for $cacheGbk.gz");
+  }
+  ($hasGene, $header, $seq) = FindProteinInGenbank($cacheGbk, $short);
+  return ">$header\n$seq\n" if $seq;
+  if ($hasGene) {
+    print p("Sorry, <B>$short</B> is not a protein-coding gene.");
+    return undef;
   }
   return undef;
 }
