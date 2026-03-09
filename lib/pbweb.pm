@@ -824,9 +824,13 @@ sub RefSeqToFasta($) {
 sub UniProtToFasta($) {
   my ($short) = @_;
   die unless defined $short;
-  # Make sure there are no " or &
+  # Remove any flanking "
   $short = $1 if $short =~ m/^"([^"]+)"$/;
-  return if $short =~ m/^["&]/;
+  # Must look like an identifier or ORG_GENE; allow . because they might have version numbers
+  # or (speculatively) for locus-tag searches
+  return undef unless $short =~ m/^[A-Za-z]/
+    && $short =~ m/^[a-zA-Z0-9_.]+$/
+    && $short =~ m/[_0-9]/;
   # size limits #results returned
   my $url = qq{https://rest.uniprot.org/uniprotkb/search?query="${short}"&format=fasta&includeIsoform=false&size=2};
   my $results = get($url);
@@ -846,7 +850,28 @@ sub UniProtToFasta($) {
     }
     return join("\n", @out)."\n";
   }
-  # else
+  # else look in UniParc
+  $url = "https://rest.uniprot.org/uniparc/search?query=" . $short;
+  $results = get($url);
+  if (!defined $results) {
+    print p(small("Sorry, could not reach",
+                  a({ -href => $url }, "uniprot.org"))) . "\n";
+    return undef;
+  }
+  #else
+  my $json = from_json($results);
+  return undef unless defined $json && exists $json->{results}[0];
+  my $hit = $json->{results}[0];
+  my $uniParcId = $hit->{uniParcId};
+  my $org = $hit->{commonTaxons}[0]{commonTaxon} || "";
+  my $seq = $hit->{sequence}{value};
+  my $acc = $hit->{uniProtKBAccessions}[0];
+  if (defined $uniParcId && defined $seq && $seq ne "") {
+    my $header = $uniParcId;
+    $header .= " ($acc)" if $acc;
+    $header .= " from $org" if $org;
+    return ">" . $header . "\n" . $seq . "\n";
+  }
   return undef;
 }
 
