@@ -145,6 +145,7 @@ sub FetchNCBIFileGz($$$) {
   my $tmpfile = $outfile . $procId . $timestamp;
   my $tmpfilegz = $outfile . $procId . $timestamp . ".gz";
   my $URL = $assembly->{ftp};
+  $URL =~ s!/$!!;
   return 0 unless $URL =~ m!/([^/]+)$!;
   my $prefix = $1;
   $URL = join("", $URL, "/", $prefix, "_", $suffix, ".gz");
