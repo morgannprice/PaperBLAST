@@ -329,12 +329,13 @@ sub FetchPubMed {
   return @out;
 }
 
+
 # Given a file handle and a state object, return DOM objects, or undef if there are no more to read
 # For the first call with a file handle, the state object should be empty
 sub ReadXMLArticle($$) {
   my ($fh, $state) = @_;
+  # state is not currently used
   die unless ref $state;
-  $state->{isFirst} = 1 unless exists $state->{isFirst}; # no longer used
 
   while (my $line = <$fh>) {
     # Because of carriage return (\r) characters, do not use chomp.
@@ -345,52 +346,42 @@ sub ReadXMLArticle($$) {
     next if $line eq "";
 
     # May need to skip past <articles> or <!DOCTYPE ...> or <?xml-stylesheet ...>
-    
     # first line should begin with "<"
-    # It should end with ">" (and possibly with whitespace) but there
-    # could be continuation lines
+    # First, ignore starting DOCTYPE lines
     die "xml file entry does not begin with < -- $line"
       unless $line =~ m/^</;
-    # Because of the weird PMC comments, don't add extra lines if </article> appears anywhere
-    while ($line !~ m/>\s*$/ && $line !~ m!</article>!) {
-      my $extraLine = <$fh>
-        || die "Cannot read successor line in xml -- bad header?";
-      $extraLine =~ s/[\r\n]+$//;
-      $extraLine =~ s/\r/ /g;
-      $line .= " $extraLine";
-    }
-    next if $line =~ m/^<!DOCTYPE.*>/;
-
     # sometimes there is an xml-stylesheet before the <article>
     $line =~ s/^<[?]xml-stylesheet .*[?]>//;
     # ignore <articles> tag, sometimes on a line before the <article>
     $line =~ s/^<articles>//;
+    # Also ignore </articles> on a line by itself
+    $line =~ s!^</articles>$!!;
+    next if $line eq ""; # might be empty now
 
-    next if $line eq "";
+    $line =~ m/^<article[> ]/
+      || $line =~ m/^<!DOCTYPE /
+      || die "xml entry does not begin with <article> or <!DOCTYPE> tags -- " . substr($line, 0, 100);
 
-    return undef if $line eq "</articles>"; # end of file
-
-    # now line should be the article, or the beginning of an article
-
-    $line =~ m/^<article[> ]/ || die "xml entry does not begin with <article> -- " . substr($line, 0, 100);
-    $line = removePMCComment($line);
-    my @lines = ( $line );
-    until ($lines[-1] =~ m!</article>!) {
-      $line = <$fh>;
-      if (defined $line) {
-        $line =~ s/[\r\n]+$//;
-        $line =~ s/\r/ /g;
-        $line = removePMCComment($line);
-        push @lines, $line;
-      } else {
-        last;
-      }
+    # Read from the current <article ...> tag to the ending </article>
+    # <article > objects may be spread across lines, and may even be nested
+    # If line ends with </article> (possibly followed by whitespace), assume this is the end of the article
+    # If line ends with </articles>, then it should be the end of everything
+    my $entry = $line;
+    while ($entry !~ m!</article>\s*$! && $entry !~ m!</articles>\s*!) {
+      my $extraLine = <$fh>
+        || die "Cannot read successor line in xml -- bad header?";
+      $extraLine =~ s/[\r\n]+$//;
+      $entry .= "\n" . $extraLine;
     }
-
-    my $entry = join("\n", @lines);
-    print STDERR "Last article is truncated? Starts with " . substr($lines[0], 0, 100) . "\n"
+    $entry =~ s!\s*$!!;
+    print STDERR "Last article is truncated? Starts with " . substr($entry, 0, 100) . "\n"
       unless $entry =~ m!</article>!;
-    $entry =~ s/\s*$//; # the xml parser does not like trailing whitespace
+    # Remove starting <!DOCTYPE ... > if any
+    $entry =~ s/^<!DOCTYPE [!>]+>//;
+    $entry =~ s/^\s*//;
+    # Remove starting <articles> if any
+    $entry =~ s/^<articles>//;
+    $entry =~ s/^\s*//;
     # without recover, get errors like
     # :1: parser error : Premature end of data in tag p line 1
     # l 2004 news article &#x0201c;Reaching across the Border with the SBRP&#x0201d; [
@@ -398,15 +389,5 @@ sub ReadXMLArticle($$) {
   }
   return undef;
 }
-
-sub removePMCComment($) {
-  my ($line) = @_;
-  # Work-around for a strange bug in some PMC files where the string
-  # <!-- PMCEdits, 09/14/2023 (davenpor),
-  # appears after the <article> tag
-  # (This should not affect valid comments such as for release delay or for license.)
-  $line =~ s|</article><!-- PMC.*$|</article>|;
-  return $line;
-}  
 
 1;
