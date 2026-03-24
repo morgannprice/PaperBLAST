@@ -9,6 +9,7 @@ use Miner;
 my $snippetBefore = 15;
 my $snippetAfter = 30;
 my $maxChar = 1000;
+my $debug;
 
 my $usage = <<END
 buildSnippets.pl -in xml -out snippets oa.papers ... refseq.papers
@@ -55,7 +56,8 @@ sub ProcessArticle($);
                            'out=s' => \$outfile,
                            'before=i' => \$snippetBefore,
                            'after=i' => \$snippetAfter,
-                           'maxChar=i' => \$maxChar )
+                           'maxChar=i' => \$maxChar,
+                           'debug' => \$debug)
         && (defined $infile xor defined $listfile)
         && defined $outfile
         && scalar(@ARGV) > 0;
@@ -109,6 +111,7 @@ sub ProcessArticle($);
     my $n = 0;
     my $nSeen = 0;
     foreach my $file (@files) {
+      print STDERR "Processing $file\n" if $debug;
       $gunzip = $file =~ m/[.]gz$/;
       my $fhIn;
       if ($gunzip) {
