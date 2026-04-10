@@ -305,6 +305,8 @@ my $filename = $procId . $timestamp;
 my $seqFile = "$tmpDir/$filename.fasta";
 
 autoflush STDOUT 1; # show preliminary results
+my $hiLoad = checkHighLoad($cgi) if $query;
+$nCPU = 1 if $hiLoad;
 my ($def, $seq) = parseSequenceQuery(-query => $query,
                                      -dbh => $dbh,
                                      -blastdb => $blastdb,

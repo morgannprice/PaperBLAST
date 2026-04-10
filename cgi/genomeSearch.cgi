@@ -275,6 +275,7 @@ if ($gdb && $gquery) {
 # Do the actual query -- first, validate the input
 fail("No genome fetched") unless defined $genomeName;
 die "No query\n" unless $query;
+$nCPU = 1 if checkHighLoad($cgi);
 
 my $isNuc; # Is the main sequence set protein?
 

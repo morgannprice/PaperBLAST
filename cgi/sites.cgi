@@ -21,7 +21,8 @@ use HTML::Entities;
 use IO::Handle; # for autoflush
 use lib "../lib";
 use pbutils qw{NewerThan};
-use pbweb qw{start_page finish_page GetMotd loggerjs parseSequenceQuery sequenceToHeader HmmToFile analysisLinks};
+use pbweb qw{start_page finish_page GetMotd loggerjs parseSequenceQuery sequenceToHeader HmmToFile analysisLinks
+             checkHighLoad};
 use Bio::SearchIO;
 use URI::Escape;
 
@@ -170,6 +171,8 @@ if ($format ne "tsv") {
 <SCRIPT src="../static/pb.js"></SCRIPT>
 END
     ;
+  my $hiLoad = checkHighLoad($cgi) if $query;
+  $nCPU = 1 if $hiLoad;
 }
 
 if (!defined $hmmFile) {

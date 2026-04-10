@@ -110,6 +110,7 @@ sub colorLegendWidth();
 # maximum size of posted data, in bytes
 my $maxMB = 25;
 $CGI::POST_MAX = $maxMB*1024*1024;
+my $cgi=CGI->new;
 my $maxN = 2000; # maximum number of sequences in alignment or leaves in tree
 my $maxNAlign = 200; # maximum number of sequences to align
 my $maxLenAlign = 10000;
@@ -204,6 +205,7 @@ if (defined $query && $query ne "") {
                                       -dbh => $dbh,
                                       -blastdb => $blastdb,
                                       -fbdata => $fbdata);
+  $nCPU = 1 if checkHighLoad($cgi);
   fail("No sequence") unless defined $seq;
 
   my $identityParam = param('identity');
@@ -670,6 +672,7 @@ if ($seqsSet) {
       if scalar(keys %seqs) < 2;
     die "buildAln without seqsId" unless $seqsId;
     autoflush STDOUT 1; # show preliminary results
+    $nCPU = 1 if checkHighLoad($cgi);
     my $muscle = "../bin/muscle3";
     die "No such executable: $muscle" unless -x $muscle;
     print p("Running",
@@ -819,6 +822,7 @@ if (! $treeSet) { # Build the tree or show the form
     my $trimLower = param('trimLower') ? 1 : 0;
     my $ft = "../bin/FastTree";
     die "No such executable: $ft" unless -x $ft;
+    $nCPU = 1 if checkHighLoad($cgi);
 
     # Trim the alignment
     my @keep = (); # positions to keep

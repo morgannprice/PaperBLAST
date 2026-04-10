@@ -14,7 +14,7 @@ use Time::HiRes qw{gettimeofday};
 use FindBin qw{$RealBin};
 use IO::Handle; # for autoflush
 use lib "../lib";
-use pbweb qw{finish_page};
+use pbweb qw{finish_page checkHighLoad};
 
 my $psortb = "$RealBin/../bin/psortb";
 die "No such executable: $psortb" unless -x $psortb;
@@ -49,6 +49,7 @@ print
           "(" . length($seq) . " amino acids)"),
   "\n";
 autoflush STDOUT 1; # show preliminary results
+checkHighLoad($cgi) if $seq;
 
 my $procId = $$;
 my $timestamp = int (gettimeofday() * 1000);

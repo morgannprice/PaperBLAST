@@ -52,6 +52,7 @@ my $subjectSpec = $cgi->param('subject') || "";
 die "Invalid subject" unless $subjectSpec =~ m/^[0-9a-zA-Z_]*$/;
 
 start_page('title' => 'BLAST against PDB');
+checkHighLoad($cgi) if $seq;
 print GetMotd(), "\n";
 if (!defined $seq) {
   print
