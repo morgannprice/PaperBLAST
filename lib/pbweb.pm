@@ -25,7 +25,8 @@ our (@ISA,@EXPORT);
              warning fail
              doWhileCommenting runWhileCommenting runTimerHTML
              analysisLinks
-             coloredAAChar);
+             coloredAAChar
+             getLoad getMaxLoad checkHighLoad);
 
 # Returns a list of entries from SubjectToGene, 1 for each duplicate (if any),
 # sorted by priority
@@ -1567,6 +1568,52 @@ sub coloredAAChar($$$) {
   my $color = $aaColor{$aa} || "white";
   my $pad = "0.5em";
   return qq{<SPAN style="background-color:$color; padding: 0.15em 0.3em 0.15em 0.3em;">$out</SPAN>};
+}
+
+sub getLoad() { # 1-minute load
+  open(my $fh, "<", "/proc/loadavg");
+  if ($fh) {
+    my $line = <$fh>;
+    $line =~ s/ .*//;
+    close($fh);
+    return $line || 0;
+  }
+  return 1;
+}
+
+sub getMaxLoad() {
+  return (-e "../maxload" ? `cat ../maxload` : "") || $ENV{MAXLOAD} || 100;
+}
+
+# If load is above >2 * maxload, give up.
+# If load is above maxload, sleep and then ask the user to confirm the request unless it has
+#   already been confirmed (force=1). Returns 1 if load is high.
+# If there are posted parameters, those will go inside the URL, which might make it too long
+sub checkHighLoad($) {
+  my ($cgi) = @_;
+  my $load = getLoad();
+  my $maxLoad = getMaxLoad();
+  return 0 if $load < $maxLoad;
+  sleep(1);
+  if ($load > 2 * $maxLoad) {
+    print p("Sorry, the load on this server is very high. Please try again later.");
+    exit(0);
+  }
+  return 1 if $cgi->param('force');
+  # else show confirmation URL and exit
+  my $url = CGI::url(-absolute => 1);
+
+  my @params = map {
+    my $key = $_;
+    map { "$key=" . $cgi->escape($_) } $cgi->param($key)
+  } $cgi->param();
+  push @params, "force=1";
+  $url .= "?" . join("&", @params) if @params > 0;
+  print p("Sorry, the load on this server is high.",
+          "Do you really want to run this analysis?",
+          "If yes, click",
+          a({-href => $url}, "here") . ".");
+  exit(0);
 }
 
 1
