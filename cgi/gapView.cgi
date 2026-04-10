@@ -51,7 +51,7 @@ use lib "../lib";
 use Steps;
 use pbutils;
 use pbweb qw{start_page GetMotd LinkifyComment DataForStepParts FormatStepPart HMMToURL analysisLinks
-             runWhileCommenting};
+             runWhileCommenting getLoad getMaxLoad};
 use FetchAssembly qw{CacheAssembly AASeqToAssembly GetMatchingAssemblies GetMaxNAssemblies};
 use List::Util qw{max};
 use File::stat;
@@ -338,10 +338,10 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
     print "\n";
 
     # Check if the load is high
-    my $uptime = `uptime`;
-    my $load = $1 if $uptime =~ m/load average: ([0-9.]+)/;
-    my $maxLoad = (-e "../maxload" ? `cat ../maxload` : "") || $ENV{MAXLOAD} || 100;
-    if (defined $load && $load > $maxLoad) {
+    my $load = getLoad();
+    my $maxLoad = getMaxLoad();
+    if ($load > $maxLoad) {
+      sleep(1); # always delay when load is high
       my $URL = "gapView.cgi?set=${set}&orgs=${orgsSpec}";
       my $key = getNCBIKey() || "";
       my $confirm = md5_hex($key . $URL);
