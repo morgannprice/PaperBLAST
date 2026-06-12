@@ -197,19 +197,18 @@ homoserine: aspartate-semialdehyde hom
 # Fitness data from Bifidobacterium breve confirms that BBR_RS19535 (uniprot:D4BQD2) is a diverged homoserine kinase.
 thrB	homoserine kinase	EC:2.7.1.39	uniprot:P04948	uniprot:D4BQD2
 
-# BT2402 (uniprot:Q8PX04) is required for threonine synthesis
+# BT2402 (uniprot:Q8A542) is required for threonine synthesis
 # (PMC7311316) and belongs to a family (TIGR02535) that was proposed
 # replace the missing homoserine kinase based on conserved gene
 # context. This family is also known as ThrB2 (PMC9026213). Homologs
 # from Phocaeicola are also required for threonine synthesis (Surya
 # Tripathi, personal communication).  Also, BT2402 and a homolog from
-# Dehalococcoides, DET_RS08350 (uniprot:Q3Z620) complemented a thrB- strain of
-# E. coli.  HomK is related to cofactor-independent phosphoglycerate mutases and has a conserved
-# metal binding site and catalytic serine; it probably
-# transfers phosphate groups between a donor (such as phosphoenolpyruvate or phosphoserine), the catalytic
-# serine, and homoserine.
-# In GapMind, HomK is described separately from ThrB
-# because it probably carries out a different reaction.
+# Dehalococcoides, DET_RS08350 (uniprot:Q3Z620) complemented a thrB-
+# strain of E. coli.  HomK is related to cofactor-independent
+# phosphoglycerate mutases and has a conserved metal binding site and
+# catalytic serine; it probably transfers phosphate groups between a
+# donor (such as phosphoserine), the catalytic serine, and homoserine.
+# In GapMind, HomK is described separately from ThrB because it probably carries out a different reaction.
 # Similarity to Ga0116910_103027 = BJR36_RS16050 (uniprot:A0A1D3TXG7), which is annotated as a phosphoglycerate mutase in
 # BRENDA, is ignored because the cited work just mentions that two putative phosphoglycerate mutases were detected by proteomics;
 # BJR36_RS16050 is over 40% identical to BT2402, is encoded next to homoserine dehydrogenase,
@@ -217,7 +216,7 @@ thrB	homoserine kinase	EC:2.7.1.39	uniprot:P04948	uniprot:D4BQD2
 # Diverged homologs of BT2402 that have conserved functional residues and are encoded near homoserine
 # dehydrogenase are also likely to be homoserine phosphotransferases
 # (DGI_RS12430 = uniprot:T2GDP6, DCC48_11680 = uniprot:A0A6G0A630, C5O24_RS09365 = uniprot:A0A2V1IX31).
-homK	homoserine phosphotransferase	uniprot:Q8PX04	uniprot:Q3Z620	ignore:BRENDA::A0A1D3TXG7	predicted:T2GDP6	predicted:A0A6G0A630	predicted:A0A2V1IX31
+homK	homoserine phosphotransferase	uniprot:Q8A542	uniprot:Q3Z620	ignore:BRENDA::A0A1D3TXG7	predicted:T2GDP6	predicted:A0A6G0A630	predicted:A0A2V1IX31
 
 phosphohomoserine: homoserine thrB
 phosphohomoserine: homoserine homK
