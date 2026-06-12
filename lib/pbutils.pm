@@ -42,7 +42,7 @@ sub wget($$) {
     if ($ENV{PB_DOWNLOAD_PASS} && -s $file) {
       print STDERR "Using existing non-empty file for $file\n";
     } else {
-      while(system("wget", "-nv", "-O", $file, $url) != 0) {
+      while(system("wget", "-o", "wget.log", "-nv", "-O", $file, $url) != 0) {
         $nFailures++;
         die "Failed to load $url\n" if $nFailures >= $nFailMax;
         print STDERR "Waiting and retrying\n";
