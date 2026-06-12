@@ -11,6 +11,7 @@ use IO::String;
 use Bio::SeqIO;
 use URI::Escape;
 use FindBin qw{$RealBin};
+use HTML::Entities;
 use pbutils qw{addNCBIKey getMicrobesOnlineDbh ReadFastaEntry};
 
 our (@ISA,@EXPORT);
