@@ -54,7 +54,8 @@ confirmed inositol-monophosphatase-like serB from Rhodanobacter.
 
 thr: Added homoserine phosphotransferase (homK/thrB2/TIGR02535) from
 Bacteroides and Dehalococcoides and moved it to a separate step
-(homK). Added thrB from Bacillus subtilis.
+(homK). Added thrB from Bacillus subtilis. (June 2026: fixed the
+description of homK, which had an erroneous accession for BT2402.)
 
 tyr: Improved the definition of prephenate dehydrogenase, including a
 predicted enzyme from Desulfarculus.
