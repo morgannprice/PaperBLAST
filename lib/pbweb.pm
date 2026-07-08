@@ -855,7 +855,8 @@ sub RefSeqToFasta($) {
     $url =~ s!^ftp://!https://!;
     $result = get($url);
     unless ($result) {
-      print p(small("Failed to fetch fasta sequences at", a({-href => $url}, $url))) . "\n";
+      print p(small("Failed to fetch genbank file from", a({-href => $url}, $url),
+                    br(), "This assembly may be out of date.")), "\n";
       return undef;
     }
     open(my $fh, ">", "$cacheGbk.gz") || die "Cannot write to $cacheGbk.gz";
