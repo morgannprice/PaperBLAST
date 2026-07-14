@@ -1637,7 +1637,7 @@ END
                     "paper from 2019"),
                   "on GapMind for amino acid biosynthesis"),
                li("the",
-                  a({ -href => "https://www.biorxiv.org/content/10.1101/2024.10.14.618325v1" }, "2024 update"),
+                  a({ -href => "https://www.biorxiv.org/content/10.1101/2024.10.14.618325v2" }, "2026 update"),
                   "on GapMind for amino acid biosynthesis"),
                li("the",
                   a({ -href => "https://doi.org/10.1371/journal.pgen.1010156",
