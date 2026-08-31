@@ -10,6 +10,7 @@ use pbutils qw{ReadTable};
 use Steps qw{ReadOrgTable ReadOrgProtein ParseOrgLocus};
 
 my $maxCand = 5;
+my $minCoverage = 0.5;
 my @weightsDef = (-2,-0.1,1); # default weights for rules with low/medium/high candidates
 my $fOverlap = 0.5;
 my $usage = <<END
@@ -56,6 +57,8 @@ Optional arguments:
 -overlap $fOverlap -- ignore hits to other sequences that do not
    overlap at least this fraction of the original hit's alignment.
 -noSplit -- do not search for split loci
+-minCoverage $minCoverage -- hits below the minimum coverage
+  (of the reference gene) are ignored
 END
 ;
 
@@ -106,7 +109,8 @@ sub MergeHits($$$$$$);
                       'maxCand=i' => \$maxCand,
                       'weights=f{3,3}' => \@weights,
                       'overlap=f' => \$fOverlap,
-                      'noSplit' => \$noSplit)
+                      'noSplit' => \$noSplit,
+                      'minCoverage=f' => \$minCoverage)
       && defined $set && defined $orgprefix
       && defined $hitsFile && defined $revhitsFile && defined $outpre;
   @weights = @weightsDef unless @weights;
@@ -119,6 +123,7 @@ sub MergeHits($$$$$$);
     die "No such file: $file\n" unless -s $file;
   }
   die "-maxCand must be at least 1\n" unless $maxCand >= 1;
+  die "-minCoverage must be under 1\n" unless $minCoverage < 1;
 
   # Load all the inputs
   my @orgs = ReadOrgTable("$orgprefix.org");
@@ -636,7 +641,7 @@ sub ScoreCandidate($$) {
     grep { $_->{type} eq "blast" } @$hits;
   my $bestBlastHit;
   foreach my $hit (@blastHits) {
-    next unless $hit->{coverage} >= 0.5;
+    next unless $hit->{coverage} >= $minCoverage;
     my $rh = RelevantRevhit($hit->{locusBegin}, $hit->{locusEnd}, $revhits);
     my $otherBits = defined $rh ? $rh->{bits} : -100;
     my $score = 0;
