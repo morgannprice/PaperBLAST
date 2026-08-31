@@ -430,6 +430,16 @@ sub GenesToHtml($$$$$) {
         }
       }
       my $title = $paper->{title};
+      # Tags in titles from EuropePMC queries may highly quoted, i.e. for PMC12997753, the title in the
+      # EuropePMC query includes
+      # "...the &lt;i&gt;ped&lt;/i&gt; gene cluster in &lt;i&gt;Pseudomonas&lt;/i&gt; species"
+      # and this ends up in GenePaper.title. So trip out any use of <i> <sup> <sub>
+      $title =~ s!&lt;i&gt;!!g;
+      $title =~ s!&lt;/i&gt;!!g;
+      $title =~ s!&lt;sup&gt;!!g;
+      $title =~ s!&lt;/sup&gt;!!g;
+      $title =~ s!&lt;sub&gt;!!g;
+      $title =~ s!&lt;/sub&gt;!!g;
       $title = a({-href => $paper_url, -onmousedown => loggerjs("pb", $gene->{showName})}, $title)
         if defined $paper_url;
       my $authorShort = $paper->{authors};
