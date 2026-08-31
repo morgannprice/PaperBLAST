@@ -287,7 +287,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
       && param("gdb") && param("gid")) {
     # try to find this organism in a standard set
     my @orgsInSets = ReadTable($orgSetsFile, qw{orgId gdb gid orgSet});
-    my $orgId = join("__", param("gdb"), param("gid"));
+    my $orgId = param("gdb") . "__" . param("gid");
     @orgsInSets = grep { $_->{orgId} eq $orgId } @orgsInSets;
     if (@orgsInSets > 0) {
       my $orgSet = $orgsInSets[0]{orgSet};
