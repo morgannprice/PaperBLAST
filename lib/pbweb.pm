@@ -1603,8 +1603,11 @@ sub getMaxLoad() {
 # If there are posted parameters, those will go inside the URL, which might make it too long
 sub checkHighLoad($) {
   my ($cgi) = @_;
-  my $load = getLoad();
-  my $maxLoad = getMaxLoad();
+  my $load = getLoad(); chomp $load;
+  my $maxLoad = getMaxLoad(); chomp $maxLoad;
+  # For debugging -- but this could maybe prevent some download pages from working correctly
+  # (in principle, all results should be computed & cached before a download page is reached)
+  # print "<!-- load $load maxLoad $maxLoad -->\n";
   return 0 if $load < $maxLoad;
   sleep(1);
   if ($load > 2 * $maxLoad) {
