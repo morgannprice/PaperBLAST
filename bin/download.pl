@@ -136,18 +136,20 @@ if (exists $dosteps{"ecocyc"}) {
     }
 }
 
+my $pmcBase = "https://ftp.ebi.ac.uk/pub/databases/pmc";
+
 if (exists $dosteps{"oa"}) {
     print STDERR "Step oa\n";
     &mkdir_if_needed("$dir/oa");
     unlink($listfile); # in case it exists -- wget will not overwrite if PB_DOWNLOAD_PASS is set
-    &wget("http://europepmc.org/ftp/oa/", $listfile);
+    &wget("$pmcBase/oa/", $listfile);
     my @files = &ftp_html_to_files($listfile);
     @files = grep m/[.]xml[.]gz$/, @files;
     die "No .xml.gz files in oa, see $listfile" if @files == 0;
     print STDERR "Found " . scalar(@files) . " oa gz files to fetch\n";
     &write_list(\@files, "$dir/oa/files");
     foreach my $file (@files) {
-        &maybe_wget("http://europepmc.org/ftp/oa/$file", "$dir/oa/$file");
+        &maybe_wget("$pmcBase/oa/$file", "$dir/oa/$file");
     }
 }
 
@@ -155,21 +157,21 @@ if (exists $dosteps{"am"}) {
     print STDERR "Step am\n";
     &mkdir_if_needed("$dir/am");
     unlink($listfile);
-    &wget("http://europepmc.org/ftp/manuscripts/", $listfile);
+    &wget("$pmcBase/manuscripts/", $listfile);
     my @files = &ftp_html_to_files($listfile);
     @files = grep m/[.]tar[.]gz$/, @files;
     die "No .tar.gz files in am, see $listfile" if @files == 0;
     print STDERR "Found " . scalar(@files) . " am gz files to fetch\n";
     &write_list(\@files, "$dir/am/files");
     foreach my $file (@files) {
-        &maybe_wget("http://europepmc.org/ftp/manuscripts/$file", "$dir/am/$file");
+        &maybe_wget("$pmcBase/manuscripts/$file", "$dir/am/$file");
     }
 }
 
 if (exists $dosteps{"pmclinks"}) {
   print STDERR "Step pmclinks\n";
   foreach my $file (qw{uniprot.csv refseq.csv}) {
-    &maybe_wget("ftp://ftp.ebi.ac.uk/pub/databases/pmc/TextMinedTerms/$file", "$dir/$file");
+    &maybe_wget("$pmcBase/TextMinedTerms/$file", "$dir/$file");
   }
 }
 
