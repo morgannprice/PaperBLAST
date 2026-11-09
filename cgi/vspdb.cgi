@@ -77,6 +77,7 @@ print Tr({-valign => "top"},
 
 my %sourceToURL = ( "SwissProt" => "http://www.uniprot.org/uniprot/",
                     "SwissProt/TReMBL" => "http://www.uniprot.org/uniprot/",
+                    "TReMBL" => "http://www.uniprot.org/uniprot/",
                     "BRENDA" => "http://www.uniprot.org/uniprot/",
                     "MicrobesOnline" => "http://www.microbesonline.org/cgi-bin/fetchLocus.cgi?locus=",
                     "RefSeq" => "http://www.ncbi.nlm.nih.gov/protein/",
