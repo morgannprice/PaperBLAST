@@ -96,6 +96,7 @@ END
             } elsif ($URL) {
               my $tmpfile = "$prefix.tmp";
               my $newtype = &CrossrefFetch($URL, $type, $tmpfile, $journal);
+              $newtype =~ s/; charset=.*// if $newtype;
               if ($newtype) {
                 # Figure out what type it is, and rename if necessary
                 if ($newtype eq "application/xml") {
