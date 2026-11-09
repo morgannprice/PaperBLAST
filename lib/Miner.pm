@@ -188,7 +188,9 @@ sub XMLFileToText($) {
     open(CACHE, "<:encoding(UTF-8)", $file) || die "Error reading cache file $file";
     my @lines = <CACHE>;
     close(CACHE) || die "Error reading cache file $file";
-    my $dom = XML::LibXML->load_xml(string => join("\n",@lines), recover => 1);
+    my $string = join("\n", @lines);
+    return undef unless $string =~ m/>/;
+    my $dom = XML::LibXML->load_xml(string => $string, recover => 1);
     return undef if ! $dom;
     return &RemoveWideCharacters( &NodeText($dom) );
 }
