@@ -230,7 +230,7 @@ sub SubjectToGene($$) {
       $gene->{source} = "RefSeq";
     } elsif ($subjectId =~ m/^[A-Z][A-Z0-9]+$/) { # SwissProt/TREMBL
       $gene->{URL} = "https://www.uniprot.org/uniprot/$subjectId";
-      $gene->{source} = "SwissProt/TReMBL";
+      $gene->{source} = "TReMBL";
     } else {
       die "Cannot build a URL for subject $subjectId";
     }
@@ -294,10 +294,18 @@ sub GeneToHtmlLine($) {
   }
   die "URL not set for $gene->{subjectId}" unless exists $gene->{URL};
   my $fromText = $gene->{organism} ? " from " . i($gene->{organism}) : "";
-  my @pieces = ( a({ -href => $gene->{URL}, -title => $gene->{source},
+  my $curatedString = $gene->{curated} ? "curated" : "not curated";
+  my $title = "description from $gene->{source} ($curatedString)";
+  my $desc = a({-title => $title}, $gene->{desc});
+  if ($gene->{curated}) {
+    $desc = b($desc);
+  } else {
+    $desc .= $fromText;
+  }
+  my @pieces = ( a({ -href => $gene->{URL}, -title => "$gene->{source} ($curatedString)",
                      -onmousedown => loggerjs("curated", $gene->{showName}) },
                    $gene->{showName}),
-                 ($gene->{curated} ? b($gene->{desc}) : $gene->{desc}) . $fromText);
+                 $desc );
 
   # Formerly showed the coverage on the 1st line, but decided this was a bit wierd
   #push @pieces, $coverage_html if $gene == $genes->[0];
