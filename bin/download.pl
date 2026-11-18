@@ -54,7 +54,7 @@ From EcoCyc: ecoli.tar.gz (158 MB)
 	or you can download the tar ball manually into ecoli.tar.gz
 
 PDB metadata (109 MB):
-  https://www.ebi.ac.uk/thornton-srv/databases/pdbsum/data/protnames.lst
+  https://files.wwpdb.org/pub/pdb/derived_data/index/entries.idx
   https://files.wwpdb.org/pub/pdb/data/monomers/components.cif.gz
   https://files.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt.gz
 
@@ -223,8 +223,8 @@ if (exists $dosteps{"uniprot"}) {
 }
 
 if (exists $dosteps{"pdb"}) {
-  &maybe_wget("https://www.ebi.ac.uk/thornton-srv/databases/pdbsum/data/protnames.lst",
-              "$dir/protnames.lst");
+  &maybe_wget("https://files.wwpdb.org/pub/pdb/derived_data/index/entries.idx",
+              "$dir/pdbNames.tsv");
   &maybe_wget("https://files.wwpdb.org/pub/pdb/data/monomers/components.cif.gz",
               "$dir/components.cif.gz");
   &maybe_wget("https://files.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt.gz",
