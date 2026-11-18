@@ -22,7 +22,7 @@ our (@ISA,@EXPORT);
              idToSites idToSiteRows
              ParseClustal ParseStockholm
              setNCBIKey getNCBIKey addNCBIKey
-             getMicrobesOnlineDbh!;
+             getMicrobesOnlineDbh readPdbNames!;
 
 sub read_list($) {
   my ($file) = @_;
@@ -631,4 +631,27 @@ sub getMicrobesOnlineDbh() {
   return $moDbh;
 }
 
+# Given a file of pdb entries from PDBe, return a refernce to a hash of pdb id => description
+# If the description is all-caps, lowercases it except for the 1st letter
+# Example input line:
+# 100D	DNA-RNA HYBRID	12/05/94	CRYSTAL STRUCTURE OF THE HIGHLY DISTORTED CHIMERIC DECAMER R(C)D(CGGCGCCG)R(G)-SPERMINE COMPLEX-SPERMINE BINDING TO PHOSPHATE ONLY AND MINOR GROOVE TERTIARY BASE-PAIRING		Ban, C., Ramakrishnan, B., Sundaralingam, M.	1.9	X-RAY DIFFRACTION
+sub readPdbNames($) {
+  my ($file) = @_;
+  open(my $fh, "<", $file) || die "Cannot read PDB names file $file\n";
+  my %pdbDesc;
+  while (my $line = <$fh>) {
+    chomp $line;
+    next unless $line =~ m/\t/; # skip header lines
+    my @F = split /\t/, $line;
+    die "Cannot parse pdb names from $line\n" unless @F >= 8;
+    my $id = lc($F[0]);
+    $pdbDesc{$id} = $F[3];
+    if ($pdbDesc{$id} =~ m/[A-Z]/ && $pdbDesc{$id} !~ m/[a-z]/) {
+      # change capitalization of all-caps description
+      $pdbDesc{$id} = ucfirst(lc($pdbDesc{$id}));
+    }
+  }
+  close($fh) || die "Error reading $file";
+  return \%pdbDesc;
+}
 1;
