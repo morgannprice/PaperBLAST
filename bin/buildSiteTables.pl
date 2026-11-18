@@ -3,7 +3,7 @@ use strict;
 use Getopt::Long;
 use FindBin qw{$Bin};
 use lib "$Bin/../lib";
-use pbutils qw{ReadFastaEntry SQLiteLine};
+use pbutils qw{ReadFastaEntry SQLiteLine readPdbNames};
 
 my $outdir = ".";
 my @outtypes = qw{binding modified functional mutagenesis};
@@ -11,7 +11,7 @@ my %outtypes = map { $_ => 1 } @outtypes;
 my $usage = <<END
 Usage: buildSiteTables.pl -sprot sprotFt.tab -biolip anno_nr.txt
        -seqres pdb_seqres.txt -sprotFasta uniprot_sprot.fasta.gz
-       -pdbnames protnames.lst
+       -pdbnames pdbNames.tsv
   (-biolip may have multiple arguments)
 Optional arguments:
   -outdir $outdir -- directory to put the output files in
@@ -353,9 +353,10 @@ while (my $line = <$fhPdbSeq>) {
   chomp $line;
   next unless $line =~ m/>(.*)$/;
   my $header = $1;
-  $header =~ m/([0-9a-zA-Z]+)_([0-9a-zA-Z]+) mol:[a-z ]+:(\d+) +(.*)$/
+  $header =~ m/([0-9a-zA-Z]+)_([0-9a-zA-Z]*) mol:[a-z ]+:(\d+) +(.*)$/
     || die "Cannot parse header line from $pdbSeqFile\n$header";
   my ($pdbId, $chain, $seqlen, $desc) = ($1, $2, $3, $4);
+  next if $chain eq ""; # not sure why this happens
   if (exists $pdbSeq{$pdbId}{$chain}) {
     # Do not check that sequences match -- having a few extra a.a at beginning or end is very common
     # Conver all-uppercase to all-lowercase
@@ -365,20 +366,12 @@ while (my $line = <$fhPdbSeq>) {
 }
 close($fhPdbSeq) || die "Error reading $pdbSeqFile\n";
 
-# Parse PDB names file from PDBSum
-open(my $fhName, "<", $pdbNameFile) || die "cannot read $pdbNameFile\n";
-while (my $line = <$fhName>) {
-  chomp $line;
-  # example input line:
-  # 100d - 31-Mar-95 X-ray   1.900 Crystal structure of the highly distorted chimeric decamer r(c)d(cggcgccg)r(g)-spermine complex-spermine binding to phosphate only and minor groove tertiary base-pairing
-  my @parts = split /\s+/, $line;
-  if (@parts < 6) {
-    print STDERR "Warning: cannot parse pdb names from $line\n"
-      unless $line =~ m/^[a-z0-9]+ +[*-] +[-] +[-] *$/; # no name
-    next;
+# Parse PDB names file (not sure why both this and $pdbSeqFile are needed)
+my $pdbNames = readPdbNames($pdbNameFile);
+while (my ($id, $desc) = each %$pdbNames) {
+  if (!exists $pdbDesc{$id} || $pdbDesc{$id} eq "") {
+    $pdbDesc{$id} = $desc;
   }
-  my $id = $parts[0];
-  $pdbDesc{$id} = join(" ", splice(@parts, 5));
 }
 
 # And write HasSites.tab

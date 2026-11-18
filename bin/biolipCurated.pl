@@ -3,10 +3,11 @@ use strict;
 use Getopt::Long;
 use FindBin qw{$RealBin};
 use lib "$RealBin/../lib";
+use pbutils qw{readPdbNames};
 
 my $usage = <<END
 biolipCurated.pl -biolip BioLiP_2013-03-6_nr.txt BioLiP_UP_nr.txt
-   -pdbnames protnames.lst
+   -pdbnames pdbNames.tsv
    -pdbligands PDBLigands.tab > biolip.curated_parsed
 
 Produces the biolip curated_parsed file.
@@ -25,25 +26,9 @@ die $usage
   && defined $pdbNamesFile
   && defined $pdbLigandsFile;
 
-my %pdbDesc; # pdb entry to description
-open(my $fhName, "<", $pdbNamesFile) || die "Cannot read $pdbNamesFile\n";
-while (my $line = <$fhName>) {
-  # example input line:
-  # 100d - 31-Mar-95 X-ray   1.900 Crystal structure of the highly distorted chimeric decamer r(c)d(cggcgccg)r(g)-spermine complex-spermine binding to phosphate only and minor groove tertiary base-pairing
-  chomp $line;
-  my @parts = split /\s+/, $line;
-  if (@parts < 6) {
-    print STDERR "Warning: cannot parse pdb names from $line\n"
-      unless $line =~ m/^[a-z0-9]+ +[*-] +[-] +[-] *$/; # no name
-    next;
-  }
-  my $id = $parts[0];
-  $pdbDesc{$id} = join(" ", splice(@parts, 5));
-}
-close($fhName) || die "Error reading $pdbNamesFile";
+my %pdbDesc = %{ readPdbNames($pdbNamesFile) };
 print STDERR "Read " . scalar(keys %pdbDesc) . " pdb descriptions from $pdbNamesFile\n";
 
-# Identifiers will be 
 # id of the form 1a1cB => hash with
 #    desc, uniprotId, seq, pubmedIds (comma-delimited string) and ligandIds (which is a list)
 my %idInfo = ();
