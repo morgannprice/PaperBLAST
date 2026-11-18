@@ -83,7 +83,7 @@ if (exists $dosteps{biolip}) {
   &maybe_run("zcat $indir/BioLiP.txt.gz > $workdir/BioLiP.txt");
   &maybe_run("zcat $indir/components.cif.gz | $Bin/parsePdbCdd.pl > $workdir/PDBLigands.tab");
   my @biolip = ("$workdir/BioLiP_nr.txt");
-  my $protNames = "$indir/protnames.lst";
+  my $protNames = "$indir/pdbNames.tsv";
   foreach my $file ($protNames, @biolip) {
     die "No such file: $file\n" unless -e $file || defined $test;
   }
@@ -103,7 +103,7 @@ if (exists $dosteps{db}) {
           "-BioLiP", "$workdir/BioLiP_clustered.txt",
           "-seqres", "$indir/pdb_seqres.txt",
           "-sprotFasta", "$indir/uniprot_sprot.fasta.gz",
-          "-pdbnames", "$indir/protnames.lst",
+          "-pdbnames", "$indir/pdbNames.tsv",
           "-outdir", $workdir);
   &maybe_run(join(" ", @cmd));
   @cmd = ("$Bin/buildLitDb.pl",
@@ -171,7 +171,7 @@ if (exists $dosteps{compare}) {
 if (exists $dosteps{pdbclust}) {
   &maybe_run("$Bin/fastagrep.pl mol:protein < $indir/pdb_seqres.txt > $workdir/pdb.faa");
   &maybe_run("$Bin/usearch -cluster_fast $workdir/pdb.faa -id 0.8 -sort length -centroids $workdir/pdb80 -quiet");
-  &maybe_run("$Bin/pdbDesc.pl $workdir/pdb80 $indir/protnames.lst > $outdir/pdbClust.faa");
+  &maybe_run("$Bin/pdbDesc.pl $workdir/pdb80 $indir/pdbNames.tsv > $outdir/pdbClust.faa");
   &maybe_run("$Bin/blast/formatdb -p T -o T -i $outdir/pdbClust.faa");
   &maybe_run("$Bin/pdbClustLoad.pl -in $outdir/pdbClust.faa -db $outdir/litsearch.db");
 }
