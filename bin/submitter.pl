@@ -169,9 +169,9 @@ if ($envFile ne "") {
 			    my $child = fork();
 			    if ($child == 0) {
 				# we are the child;
-				system($execute);
-				print "job $ncmd FAILED $? : $commands[$ncmd]\n" if $? != 0;
-				exit(0);
+				my $status = system($execute);
+				print "job $ncmd FAILED $status : $commands[$ncmd]\n" if $status != 0;
+				exit($status == 0 ? 0 : 1);
 			    } else {
 				$joblist[$slot] = $child;
 				$cmdJobs[$ncmd] = $child;
