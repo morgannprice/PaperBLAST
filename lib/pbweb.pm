@@ -18,7 +18,7 @@ our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
 @EXPORT = qw(UniqToGenes SubjectToGene AddCuratedInfo
              GeneToHtmlLine GenesToHtml
-             GetMotd FetchFasta HmmToFile loggerjs start_page finish_page
+             GetMotd FetchFasta HmmToFile HmmNameToId loggerjs start_page finish_page
              VIMSSToFasta RefSeqToFasta UniProtToFasta FBrowseToFasta DBToFasta pdbToFasta
              commify
              LinkifyComment FormatStepPart DataForStepParts HMMToURL
@@ -559,6 +559,27 @@ sub FetchFasta($$$) {
     return join("", @lines);
 }
 
+# Convert pfam name to hmm Id
+sub HmmNameToId($) {
+  my ($hmmName) = @_;
+  return unless $hmmName =~ m/^[a-zA-Z0-9_-]+$/;
+  # Try searching the pfam.tab file
+  open(my $fh, "<", "../static/pfam/pfam.tab");
+  if ($fh) {
+    while(my $line = <$fh>) {
+      chomp $line;
+      my ($acc,$name) = split /\t/, $line;
+      next if $acc eq "acc";
+      if (lc($name) eq lc($hmmName)) {
+        close($fh);
+        return $acc;
+      }
+    }
+  }
+  close($fh);
+  return undef;
+}
+
 sub HmmToFile($) {
   my ($hmmId) = @_;
   return undef unless $hmmId;
@@ -570,11 +591,10 @@ sub HmmToFile($) {
     }
     if ($hmmId =~ m/^PF/) {
       my @glob = glob("../static/pfam/$hmmId.*.hmm");
-      return @glob > 0 ? $glob[0] : undef;
-    } else {
-      my @glob = glob("../static/hmm_PGAP/$hmmId.*.HMM");
-      return @glob > 0 ? $glob[0] : undef;
+      return $glob[0] if @glob > 0;
     }
+    my @glob = glob("../static/hmm_PGAP/$hmmId.*.HMM");
+    return $glob[0] if @glob > 0;
   }
   return undef;
 }
