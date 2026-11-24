@@ -1321,6 +1321,7 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
                      . " and have homologs in this genome",
                      -href => "genomeSearch.cgi?gid=$orgs{$orgId}{gid}&gdb=$orgs{$orgId}{gdb}" },
                    "Curated BLAST:"),
+                 "&nbsp;",
                  textfield(-name => 'query', -value => '', -size => 30, -maxlength => 200),
                  submit("Go"),
                  end_form);
@@ -1335,9 +1336,18 @@ my $transporterStyle = " background-color: gainsboro; padding:0.05em; border-rad
                  submit("Go"),
                  end_form);
     push @links, join("", @form2);
-    push @links, a({ -title => "Compare a protein of interest to this genome",
+    push @links, a({ -title => "Compare a protein of interest to this proteome",
                      -href => "genomeBlast.cgi?gdb=$orgs{$orgId}{gdb}&gid=$orgs{$orgId}{gid}" },
                    "BLAST this genome");
+    my @form3 = (start_form(-method => 'get', -action => 'genomeHmm.cgi'),
+                 hidden(-name => 'gdb', -value => $orgs{$orgId}{gdb}, -override => 1),
+                 hidden(-name => 'gid', -value => $orgs{$orgId}{gid}, -override => 1),
+                 a({-title => "Compare a protein family HMM to this proteome"},
+                   "HMMer: "),
+                 textfield(-name => 'hmmId', -value => '', -size => 12),
+                 submit('Go'),
+                 end_form);
+    push @links, join("", @form3);
     push @links, join(" ",
                       a({ -href => OrgIdToURL($orgId) }, $orgs{$orgId}{genomeName}),
                       small('(' . $orgs{$orgId}{gid} . ')'),
