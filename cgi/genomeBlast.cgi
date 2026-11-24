@@ -38,8 +38,7 @@ my $gid = $cgi->param('gid');
 die "Invalid genome identifier $gid\n" unless defined $gid && $gid =~ m/^[0-9A-Za-z_:.-]+$/;
 my $query = $cgi->param('query') || "";
 
-&start_page('title' => "Genome BLAST",
-           'bannerURL' => "genomeBlast.cgi");
+&start_page('title' => "Genome BLAST");
 autoflush STDOUT 1; # show preliminary results
 
 # To allow access to fitness browser genomes
